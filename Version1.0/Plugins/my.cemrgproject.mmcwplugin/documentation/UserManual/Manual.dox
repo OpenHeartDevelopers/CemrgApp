@@ -1,0 +1,20 @@
+/**
+\page my_cemrgproject_mmcwplugin The Cemrg Mmcw Plugin
+
+\imageMacro{icon.xpm,"Icon of Cemrg Mmcw Plugin",2.00}
+
+\tableofcontents
+
+\section my_cemrgproject_mmcwpluginOverview Overview
+
+Describe the features of your cemrg plugin here
+
+<ul>
+  <li>Increases productivity</li>
+  <li>Creates beautiful images</li>
+  <li>Generates PhD thesis</li>
+  <li>Brings world peace</li>
+</ul>
+
+*/
+

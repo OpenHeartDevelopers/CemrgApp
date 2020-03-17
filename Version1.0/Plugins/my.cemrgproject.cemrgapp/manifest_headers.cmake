@@ -1,0 +1,5 @@
+set(Plugin-Name "Cemrg Application")
+set(Plugin-Version "0.1")
+set(Plugin-Vendor "Cemrg Company")
+set(Plugin-ContactAddress "http://www.cemrgproject.my")
+set(Require-Plugin org.mitk.gui.qt.ext)

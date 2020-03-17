@@ -1,0 +1,19 @@
+/**
+\bundlemainpage{my.cemrgproject.easi} Easi
+
+\image html icon.xpm "Icon of Easi"
+
+Available sections:
+  - \ref my.cemrgproject.easiOverview
+
+\section my.cemrgproject.easiOverview
+Describe the features of your awesome plugin here
+<ul>
+<li>Increases productivity
+<li>Creates beautiful images
+<li>Generates PhD thesis
+<li>Brings world peace
+</ul>
+
+*/
+

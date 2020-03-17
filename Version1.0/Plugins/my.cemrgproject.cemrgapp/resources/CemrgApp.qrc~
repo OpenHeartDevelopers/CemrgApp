@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CemrgApp">
+        <file>icon_research.xpm</file>
+        <file>MyLogo.png</file>
+    </qresource>
+</RCC>

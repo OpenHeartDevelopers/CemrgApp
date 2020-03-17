@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  
+  <extension point="org.blueberry.ui.views">
+    <view id="my.cemrgproject.views.mmcwview"
+          name="Cemrg Motion Quantification"
+          class="MmcwView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.views">
+    <view id="my.cemrgproject.views.mmcwviewplot"
+          name="Cemrg Motion Quantification Plot"
+          class="MmcwViewPlot"
+          icon="resources/icon.xpm" />
+  </extension>
+
+</plugin>

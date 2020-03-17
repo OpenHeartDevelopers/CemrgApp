@@ -1,0 +1,19 @@
+/**
+\bundlemainpage{my.cemrgproject.wathca} Wathca
+
+\image html icon.xpm "Icon of Wathca"
+
+Available sections:
+  - \ref my.cemrgproject.wathcaOverview
+
+\section my.cemrgproject.wathcaOverview
+Describe the features of your awesome plugin here
+<ul>
+<li>Increases productivity
+<li>Creates beautiful images
+<li>Generates PhD thesis
+<li>Brings world peace
+</ul>
+
+*/
+

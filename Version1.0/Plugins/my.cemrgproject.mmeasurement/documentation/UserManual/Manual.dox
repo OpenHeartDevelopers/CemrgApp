@@ -1,0 +1,19 @@
+/**
+\bundlemainpage{my.cemrgproject.mmmvplugin} Mmmvplugin
+
+\image html icon.xpm "Icon of Mmmvplugin"
+
+Available sections:
+  - \ref my.cemrgproject.mmmvpluginOverview
+
+\section my.cemrgproject.mmmvpluginOverview
+Describe the features of your cemrg plugin here
+<ul>
+<li>Increases productivity
+<li>Creates beautiful images
+<li>Generates PhD thesis
+<li>Brings world peace
+</ul>
+
+*/
+

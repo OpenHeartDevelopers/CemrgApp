@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  
+  <extension point="org.blueberry.ui.views">
+    <view id="my.cemrgproject.views.atrialscarview"
+          name="Cemrg Scar Quantification"
+          class="AtrialScarView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.views">
+    <view id="my.cemrgproject.views.atrialscarclipperview"
+          name="Cemrg Clippers for Scar Quantification"
+          class="AtrialScarClipperView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.views">
+    <view id="my.cemrgproject.views.yzsegview"
+          name="Cemrg Ventricular Scar Quantification"
+          class="YZSegView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+</plugin>

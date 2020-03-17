@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  
+  <extension point="org.blueberry.ui.views">
+    <view id="my.cemrgproject.views.mmeasurementview"
+          name="Cemrg Anatomical Measurements"
+          class="MmeasurementView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+</plugin>

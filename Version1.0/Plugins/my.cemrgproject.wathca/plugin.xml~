@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  
+    <extension point="org.blueberry.ui.views">
+        <view id="my.cemrgproject.views.wallthicknesscalculationsview"
+            name="Cemrg Morphological Measurements"
+            class="WallThicknessCalculationsView"
+            icon="resources/icon.xpm" />
+    </extension>
+
+    <extension point="org.blueberry.ui.views">
+        <view id="my.cemrgproject.views.wallthicknesscalculationsclipperview"
+            name="Cemrg Morphological Measurements Clippers"
+            class="WallThicknessCalculationsClipperView"
+            icon="resources/icon.xpm" />
+    </extension>
+
+</plugin>

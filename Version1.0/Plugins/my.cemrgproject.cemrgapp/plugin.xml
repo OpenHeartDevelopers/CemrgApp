@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+  <extension id="my.cemrgproject.cemrgapp" point="org.blueberry.osgi.applications">
+    <application>
+      <run class="QmitkCemrgApplication"/>
+    </application>
+  </extension>
+
+  <extension point="org.blueberry.ui.perspectives">
+    <perspective id="my.cemrgproject.CemrgJBPerspective"
+      name="Cemrg Motion Quantification"
+      class="QmitkCemrgJBPerspective"
+      icon="resources/icon_research.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.perspectives">
+    <perspective id="my.cemrgproject.CemrgRRPerspective"
+      name="Cemrg Anatomical Measurements"
+      class="QmitkCemrgRRPerspective"
+      icon="resources/icon_research.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.perspectives">
+    <perspective id="my.cemrgproject.CemrgHCPerspective"
+      name="Cemrg Scar Quantification"
+      class="QmitkCemrgHCPerspective"
+      icon="resources/icon_research.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.perspectives">
+    <perspective id="my.cemrgproject.CemrgWathcaPerspective"
+      name="Cemrg Morphological Measurements"
+      class="QmitkCemrgWathcaPerspective"
+      icon="resources/icon_research.xpm" />
+  </extension>
+
+</plugin>
