@@ -1,0 +1,16 @@
+/**
+  \defgroup kcl_cemrgapp_powertrans kcl.cemrgapp.powertrans
+  \ingroup MITKPlugins
+
+  \brief Describe your plugin here.
+
+*/
+
+/**
+  \defgroup kcl_cemrgapp_powertrans_internal Internal
+  \ingroup kcl_cemrgapp_powertrans
+
+  \brief This subcategory includes the internal classes of the kcl.cemrgapp.powertrans plugin. Other
+  plugins must not rely on these classes. They contain implementation details and their interface
+  may change at any time. We mean it.
+*/

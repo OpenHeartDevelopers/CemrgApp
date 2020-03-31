@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+
+  <!-- <extension point="org.blueberry.ui.views">
+    <view id="org.mitk.views.renderwindoweditor"
+          name="Render Window Editor"
+          class="QmitkCemrgRenderWindowEditor"
+          icon="resources/icon.xpm" />
+  </extension> -->
+
+  <extension point="org.blueberry.ui.editors">
+    <editor
+      id="kcl.cemrgapp.editors.renderwindow"
+      name="Cemrg Render Window"
+      default="true"
+      extensions="mitk"
+      class="QmitkCemrgRenderWindowEditor">
+    </editor>
+  </extension>
+
+</plugin>

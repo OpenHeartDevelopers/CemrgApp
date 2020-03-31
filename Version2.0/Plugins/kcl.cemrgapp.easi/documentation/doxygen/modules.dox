@@ -1,0 +1,16 @@
+/**
+  \defgroup kcl_cemrgapp_easi kcl.cemrgapp.easi
+  \ingroup MITKPlugins
+
+  \brief Describe your plugin here.
+
+*/
+
+/**
+  \defgroup kcl_cemrgapp_easi_internal Internal
+  \ingroup kcl_cemrgapp_easi
+
+  \brief This subcategory includes the internal classes of the kcl.cemrgapp.easi plugin. Other
+  plugins must not rely on these classes. They contain implementation details and their interface
+  may change at any time. We mean it.
+*/

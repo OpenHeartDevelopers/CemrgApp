@@ -1,0 +1,16 @@
+/**
+  \defgroup kcl_cemrgapp_festive kcl.cemrgapp.festive
+  \ingroup MITKPlugins
+
+  \brief Describe your plugin here.
+
+*/
+
+/**
+  \defgroup kcl_cemrgapp_festive_internal Internal
+  \ingroup kcl_cemrgapp_festive
+
+  \brief This subcategory includes the internal classes of the kcl.cemrgapp.festive plugin. Other
+  plugins must not rely on these classes. They contain implementation details and their interface
+  may change at any time. We mean it.
+*/
