@@ -22,7 +22,7 @@ Requirements
 
 Instructions
 ------------
-Refer to Wiki pages.
+Refer to Wiki pages at https://github.com/CemrgAppDevelopers/CemrgApp/wiki
 
 Contacts
 --------
