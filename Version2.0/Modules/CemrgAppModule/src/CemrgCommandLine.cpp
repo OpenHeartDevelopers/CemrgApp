@@ -120,9 +120,9 @@ CemrgCommandLine::~CemrgCommandLine() {
 QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, float th, int blur, int smth) {
 
     QString retOutput;
-    QString dockerOutput = dockerSurf(dir, segPath, iter, th, blur, smth);
+    //QString dockerOutput = dockerSurf(dir, segPath, iter, th, blur, smth);
 
-    if(!isOutputSuccessful(dockerOutput)) {
+    if(true) {//!isOutputSuccessful(dockerOutput)) {
 
         //Absolute path
         QString aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
@@ -216,7 +216,7 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
             retOutput = "";
         }
     } else {
-        retOutput = dockerOutput;
+        retOutput="";// = dockerOutput;
     }
     return retOutput;
 }

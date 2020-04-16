@@ -101,21 +101,19 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
-    connect(m_Controls.mainButton_1, SIGNAL(clicked()), this, SLOT(EnableManualAnalysis()));
-    connect(m_Controls.mainButton_2, SIGNAL(clicked()), this, SLOT(AutomaticAnalysis()));
     connect(m_Controls.button_1, SIGNAL(clicked()), this, SLOT(LoadDICOM()));
     connect(m_Controls.button_2, SIGNAL(clicked()), this, SLOT(ProcessIMGS()));
-    connect(m_Controls.button_3, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
-    connect(m_Controls.button_4, SIGNAL(clicked()), this, SLOT(CreateSurf()));
-    connect(m_Controls.button_5, SIGNAL(clicked()), this, SLOT(ScarMap()));
-    connect(m_Controls.button_6, SIGNAL(clicked()), this, SLOT(Threshold()));
+    connect(m_Controls.button_3, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
+    connect(m_Controls.button_4, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
+    connect(m_Controls.button_5, SIGNAL(clicked()), this, SLOT(CreateSurf()));
+    connect(m_Controls.button_6, SIGNAL(clicked()), this, SLOT(ScarMap()));
+    connect(m_Controls.button_7, SIGNAL(clicked()), this, SLOT(Threshold()));
     connect(m_Controls.button_x, SIGNAL(clicked()), this, SLOT(Registration()));
     connect(m_Controls.button_y, SIGNAL(clicked()), this, SLOT(ClipPVeins()));
     connect(m_Controls.button_z, SIGNAL(clicked()), this, SLOT(ClipperMV()));
     connect(m_Controls.button_s, SIGNAL(clicked()), this, SLOT(Sphericity()));
+    connect(m_Controls.button_c, SIGNAL(clicked()), this, SLOT(ExtraCalcs()));
     connect(m_Controls.button_r, SIGNAL(clicked()), this, SLOT(ResetMain()));
-    connect(m_Controls.button_r2, SIGNAL(clicked()), this, SLOT(RestartPipeline()));
-    connect(m_Controls.button_fandi, SIGNAL(clicked()), this, SLOT(ExtraCalcs()));
 
     //Sub-buttons signals
     connect(m_Controls.button_2_1, SIGNAL(clicked()), this, SLOT(ConvertNII()));
@@ -123,28 +121,25 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_x_2, SIGNAL(clicked()), this, SLOT(Transform()));
     connect(m_Controls.button_z_1, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
     connect(m_Controls.button_z_2, SIGNAL(clicked()), this, SLOT(ClipMitralValve()));
-    connect(m_Controls.button_debugscar, SIGNAL(clicked()), this, SLOT(ScarDebug()));
+    connect(m_Controls.button_deb, SIGNAL(clicked()), this, SLOT(ScarDebug()));
 
     //Set visibility of buttons
-    m_Controls.button_s->setVisible(true);
+    m_Controls.button_4->setVisible(false);
+    m_Controls.button_5->setVisible(false);
+    m_Controls.button_6->setVisible(false);
+    m_Controls.button_7->setVisible(false);
+    m_Controls.button_x->setVisible(false);
+    m_Controls.button_y->setVisible(false);
+    m_Controls.button_z->setVisible(false);
+    m_Controls.button_s->setVisible(false);
+
+    //Set visibility of sub-buttons
     m_Controls.button_2_1->setVisible(false);
     m_Controls.button_x_1->setVisible(false);
     m_Controls.button_x_2->setVisible(false);
     m_Controls.button_z_1->setVisible(false);
     m_Controls.button_z_2->setVisible(false);
-    m_Controls.button_debugscar->setVisible(false);
-
-    m_Controls.manualLabel->setVisible(false);
-    m_Controls.automaticLabel->setVisible(false);
-    m_Controls.button_r2->setVisible(false);
-
-    bool devbranch = true;
-    if(!devbranch) {
-        m_Controls.mainButton_2->setEnabled(false);
-        m_Controls.button_fandi->setEnabled(false);
-    }
-    else
-        SetManualAnalysisOff();
+    m_Controls.button_deb->setVisible(false);
 }
 
 void AtrialScarView::SetFocus() {
@@ -156,557 +151,7 @@ void AtrialScarView::OnSelectionChanged(
         berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
-// Automatic segmentation
-void AtrialScarView::SetManualAnalysisOn() {
 
-    MITK_INFO << "Setting Manual analysis buttons ON.";
-
-    //m_Controls.manualLabel->setVisible(true);
-    m_Controls.button_1->setVisible(true);
-    m_Controls.button_2->setVisible(true);
-    m_Controls.button_3->setVisible(true);
-    m_Controls.button_4->setVisible(true);
-    m_Controls.button_5->setVisible(true);
-    m_Controls.button_6->setVisible(true);
-    m_Controls.button_x->setVisible(true);
-    m_Controls.button_y->setVisible(true);
-    m_Controls.button_z->setVisible(true);
-    m_Controls.button_s->setVisible(true);
-
-    //Set visibility of buttons
-    m_Controls.button_s->setVisible(true);
-    m_Controls.dockerOn_radioButton->setVisible(true);
-    m_Controls.button_2_1->setVisible(false);
-    m_Controls.button_x_1->setVisible(false);
-    m_Controls.button_x_2->setVisible(false);
-    m_Controls.button_z_1->setVisible(false);
-    m_Controls.button_z_2->setVisible(false);
-    m_Controls.button_debugscar->setVisible(false);
-}
-
-void AtrialScarView::SetManualAnalysisOff() {
-
-    MITK_INFO << "Setting Manual analysis buttons OFF";
-
-    m_Controls.button_3->setVisible(false);
-    m_Controls.button_4->setVisible(false);
-    m_Controls.button_5->setVisible(false);
-    m_Controls.button_6->setVisible(false);
-    m_Controls.button_x->setVisible(false);
-    m_Controls.button_y->setVisible(false);
-    m_Controls.button_z->setVisible(false);
-    m_Controls.button_s->setVisible(false);
-    m_Controls.dockerOn_radioButton->setVisible(false);
-}
-
-void AtrialScarView::EnableManualAnalysis() {
-
-    //Toggle visibility of buttons
-    if (m_Controls.button_3->isVisible()) {
-
-        this->RestartPipeline();
-    } else {
-
-        MITK_INFO << "Performing manual analysis.";
-        this->SetManualAnalysisOn();
-        m_Controls.mainButton_2->setVisible(false);
-    }
-}
-
-void AtrialScarView::AutomaticAnalysis() {
-
-    if(!m_Controls.mainButton_1->isVisible()) {
-
-        this->RestartPipeline();
-    } else {
-
-        MITK_INFO << "Performing automatic analysis.";
-        this->SetManualAnalysisOff();
-        m_Controls.mainButton_1->setVisible(false);
-
-        MITK_INFO << "============= Automatic segmentation module ====================";
-
-        QString direct, mraPath, lgePath, cnnPath;
-        bool debugging=true;
-
-        if(directory.isEmpty()) {
-            direct = QFileDialog::getExistingDirectory(
-                        NULL, "Open Project Directory",
-                        mitk::IOUtil::GetProgramPath().c_str(),
-                        QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-            directory = direct;
-        } else{
-            direct=directory;
-        }
-
-        QDirIterator searchit(direct, QDirIterator::Subdirectories);
-
-        if(debugging)
-            MITK_INFO << "[DEBUG] Searching for CEMRGNET output";
-
-        while(searchit.hasNext()) {
-            QFileInfo searchfinfo(searchit.next());
-            if(searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-                if(searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
-                    lgePath = searchfinfo.absoluteFilePath();
-
-                if(searchfinfo.fileName().contains("dcm-MRA", Qt::CaseSensitive))
-                    mraPath = searchfinfo.absoluteFilePath();
-
-                if(debugging && searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
-                    cnnPath = searchfinfo.absoluteFilePath();
-            }
-        }
-
-        QDialog* inputs = new QDialog(0,0);
-        m_UIcemrgnet.setupUi(inputs);
-        connect(m_UIcemrgnet.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
-        connect(m_UIcemrgnet.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-        int dialogCode = inputs->exec();
-
-        QString meType_UI;
-        int minStep_UI =-1, maxStep_UI = 3;
-        int methodType_UI = 2, thresh_methodType_UI = 1;
-        QStringList separated_thresh_list;
-        std::vector<double> values_vector;
-
-        if(dialogCode == QDialog::Accepted) {
-
-            MITK_INFO << "[UI] User inputs being selected.";
-            MITK_INFO << "[UI] Intensity projection";
-            bool ok1, ok2;
-            minStep_UI = m_UIcemrgnet.minStep_lineEdit->text().toInt(&ok1);
-            maxStep_UI = m_UIcemrgnet.maxStep_lineEdit->text().toInt(&ok2);
-            if(!ok1) minStep_UI = -1;
-            if(!ok2) maxStep_UI = 3;
-
-            methodType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? 2 : 1;
-            meType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? "Max" : "Mean";
-
-            MITK_INFO << ("[UI] Using: " + meType_UI + " Intensity projection.").toStdString();
-            MITK_INFO << ("[UI] In/out values: (" + QString::number(minStep_UI) + ", " +
-                          QString::number(maxStep_UI) + ")").toStdString();
-            MITK_INFO << QString::number(methodType_UI);
-            MITK_INFO << "[UI] Thresholding information.";
-
-            //bool ok3;
-            thresh_methodType_UI = m_UIcemrgnet.iir_radioButton->isChecked() ? 1 : 2;
-            QString thresh_list, whichThresh;
-
-            if (m_UIcemrgnet.iir_radioButton->isChecked()) { // IIR method
-                whichThresh = "IIR";
-                thresh_list = m_UIcemrgnet.iir_textEdit->toPlainText();
-                separated_thresh_list << "0.97" << "1.16";
-            }else if(m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
-                whichThresh = "MEAN+SD";
-                thresh_list = m_UIcemrgnet.meanSD_textEdit->toPlainText();
-                separated_thresh_list << "2.3" << "3.3";
-            }
-
-            MITK_INFO << ("[UI] Threshold: " + whichThresh).toStdString();
-            MITK_INFO << ("[UI] Threshold list: " + thresh_list).toStdString();
-            MITK_INFO << QString::number(thresh_methodType_UI);
-
-            thresh_list.remove(" ", Qt::CaseSensitive);
-            if(!thresh_list.isEmpty()) {
-
-                MITK_INFO << "[UI] Creating list of thresholds";
-                separated_thresh_list.removeLast();
-                separated_thresh_list.removeLast();
-                separated_thresh_list = thresh_list.split("," , QString::SkipEmptyParts);
-                int listspaces = separated_thresh_list.removeAll(" ");
-                int listduplicates = separated_thresh_list.removeDuplicates();
-                separated_thresh_list.sort();
-                if (debugging) {
-                    MITK_INFO << ("[UI][DEBUG] Spaces: " + QString::number(listspaces)).toStdString();
-                    MITK_INFO << ("[UI][DEBUG] Duplicates: " + QString::number(listduplicates)).toStdString();
-                }
-            }
-
-            double tryNumber;
-            bool vOK;
-            for(int ix=0; ix<separated_thresh_list.size(); ix++) {
-                MITK_INFO << separated_thresh_list.at(ix);
-                tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
-                if(vOK) values_vector.push_back(tryNumber);
-            }
-
-            inputs->close();
-            inputs->deleteLater();
-
-        } else if (dialogCode == QDialog::Rejected) {
-
-            MITK_INFO << "[ATTENTION] Cancelled automatic analysis.";
-            QMessageBox::warning(
-                        NULL, "Automatic analysis cancelled",
-                        "'Cancel' button pressed, no calculations were made.");
-            inputs->close();
-            inputs->deleteLater();
-            this->RestartPipeline(); // remove this line
-            return;
-        }//_if
-
-        MITK_INFO << ("Files to be read: \n\n [LGE]: " + lgePath + "\n [MRA]: " + mraPath).toStdString();
-
-        if(!mraPath.isEmpty()) {
-
-            vtkSmartPointer<vtkTimerLog> timerLog = vtkSmartPointer<vtkTimerLog>::New();
-            typedef itk::Image<short, 3> ImageTypeSHRT;
-            typedef itk::Image<short, 3> ImageTypeCHAR;
-            std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-            MITK_INFO << "[AUTOMATIC_ANALYSIS] Setting Docker on MIRTK to OFF";
-            cmd->setUseMIRKTDocker(false);
-
-            timerLog->StartTimer();
-            if(cnnPath.isEmpty()) {
-                cnnPath = cmd->dockerCemrgNetPrediction(mraPath);
-            }
-
-            if(!cnnPath.isEmpty()) {
-
-                MITK_INFO << ("Successful prediction with file "+cnnPath).toStdString();
-                // QString direct = finfo.absolutePath();
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][1] Adjust CNN label to MRA";
-                mitk::Image::Pointer mraIMG = mitk::IOUtil::Load<mitk::Image>(mraPath.toStdString());
-                mitk::Image::Pointer cnnIMG = mitk::IOUtil::Load<mitk::Image>(cnnPath.toStdString());
-                double origin[3]; double spacing[3];
-                mraIMG->GetGeometry()->GetOrigin().ToArray(origin);
-                mraIMG->GetGeometry()->GetSpacing().ToArray(spacing);
-
-                vtkSmartPointer<vtkImageResize> resizeFilter = vtkSmartPointer<vtkImageResize>::New();
-                resizeFilter->SetResizeMethodToOutputDimensions();
-                resizeFilter->SetOutputDimensions(mraIMG->GetDimension(0), mraIMG->GetDimension(1), mraIMG->GetDimension(2));
-                resizeFilter->InterpolateOff();
-                resizeFilter->SetInputData(cnnIMG->GetVtkImageData());
-                resizeFilter->Update();
-
-                vtkSmartPointer<vtkImageChangeInformation> changeFilter = vtkSmartPointer<vtkImageChangeInformation>::New();
-                changeFilter->SetInputConnection(resizeFilter->GetOutputPort());
-                changeFilter->SetOutputSpacing(spacing);
-                changeFilter->SetOutputOrigin(origin);
-                changeFilter->Update();
-
-                mitk::Image::Pointer cnnLA = mitk::Image::New();
-                cnnIMG->Initialize(changeFilter->GetOutput());
-                cnnIMG->SetVolume(changeFilter->GetOutput()->GetScalarPointer());
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][2] Image registration";
-                QString cnnPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
-                QString laregPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA-reg.nii";
-
-                mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());
-                cmd->ExecuteRegistration(direct, lgePath, mraPath);
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][3] Clean segmentation";
-                typedef itk::ImageRegionIteratorWithIndex<ImageTypeCHAR> ItType;
-                typedef itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> ConnectedComponentImageFilterType;
-                typedef itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR> LabelShapeKeepNObjImgFilterType;
-                using DuplicatorType = itk::ImageDuplicator<ImageTypeCHAR>;
-
-                ImageTypeCHAR::Pointer orgSegImage = ImageTypeCHAR::New();
-                mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(laregPath.toStdString()), orgSegImage);
-
-                ConnectedComponentImageFilterType::Pointer connected1 = ConnectedComponentImageFilterType::New();
-                connected1->SetInput(orgSegImage);
-                connected1->Update();
-
-                LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr1 = LabelShapeKeepNObjImgFilterType::New();
-                lblShpKpNObjImgFltr1->SetInput(connected1->GetOutput());
-                lblShpKpNObjImgFltr1->SetBackgroundValue(0);
-                lblShpKpNObjImgFltr1->SetNumberOfObjects(1);
-                lblShpKpNObjImgFltr1->SetAttribute(
-                            LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
-                lblShpKpNObjImgFltr1->Update();
-
-                DuplicatorType::Pointer duplicator = DuplicatorType::New();
-                duplicator->SetInputImage(lblShpKpNObjImgFltr1->GetOutput());
-                duplicator->Update();
-                ItType itDUP(duplicator->GetOutput(), duplicator->GetOutput()->GetRequestedRegion());
-                for (itDUP.GoToBegin(); !itDUP.IsAtEnd(); ++itDUP)
-                    if ((int)itDUP.Get() != 0)
-                        itDUP.Set(1);
-                QString segCleanPath = direct + mitk::IOUtil::GetDirectorySeparator() +
-                        "prodClean.nii";
-                mitk::IOUtil::Save(mitk::ImportItkImage(duplicator->GetOutput()), segCleanPath.toStdString());
-                MITK_INFO << ("[...][3.1] Saved file: "+segCleanPath).toStdString();
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][4] Vein clipping mesh";
-                cmd->ExecuteTouch(direct+mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk");
-                QString output1 = cmd->ExecuteSurf(direct, segCleanPath, 1, .5, 0, 10);
-                mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
-                vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
-                deci->SetInputData(shell->GetVtkPolyData());
-                deci->SetTargetReduction(0.1);
-                deci->PreserveTopologyOn();
-                deci->Update();
-                shell->SetVtkPolyData(deci->GetOutput());
-
-                vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
-                vtkSmartPointer<vtkPolyData> pd = shell->Clone()->GetVtkPolyData();
-                for (int i=0; i<pd->GetNumberOfPoints(); i++) {
-                    double* point = pd->GetPoint(i);
-                    point[0] = -point[0];
-                    point[1] = -point[1];
-                    pd->GetPoints()->SetPoint(i, point);
-                }//_for
-                pointLocator->SetDataSet(pd);
-                pointLocator->BuildLocator();
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][5] Separate veins";
-                typedef itk::BinaryCrossStructuringElement<ImageTypeCHAR::PixelType, 3> CrossType;
-                typedef itk::BinaryMorphologicalOpeningImageFilter<ImageTypeCHAR, ImageTypeCHAR, CrossType> MorphFilterType;
-                typedef itk::RelabelComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> RelabelFilterType;
-
-                ImageTypeCHAR::Pointer veinsSegImage = ImageTypeCHAR::New();
-                veinsSegImage = lblShpKpNObjImgFltr1->GetOutput();
-                ItType itORG(orgSegImage, orgSegImage->GetRequestedRegion());
-                ItType itVEN(veinsSegImage, veinsSegImage->GetRequestedRegion());
-                itORG.GoToBegin();
-
-                for (itVEN.GoToBegin(); !itVEN.IsAtEnd(); ++itVEN) {
-                    if ((int)itVEN.Get() != 0)
-                        itVEN.Set((int)itORG.Get());
-                    ++itORG;
-                }
-                for (itVEN.GoToBegin(); !itVEN.IsAtEnd(); ++itVEN)
-                    if ((int)itVEN.Get() != 2)
-                        itVEN.Set(0);
-
-                CrossType binaryCross;
-                binaryCross.SetRadius(2.0);
-                binaryCross.CreateStructuringElement();
-                MorphFilterType::Pointer morphFilter = MorphFilterType::New();
-                morphFilter->SetInput(veinsSegImage);
-                morphFilter->SetKernel(binaryCross);
-                morphFilter->SetForegroundValue(2);
-                morphFilter->SetBackgroundValue(0);
-                morphFilter->UpdateLargestPossibleRegion();
-                veinsSegImage = morphFilter->GetOutput();
-                mitk::IOUtil::Save(mitk::ImportItkImage(veinsSegImage), (direct + "/prodVeins.nii").toStdString());
-
-                ConnectedComponentImageFilterType::Pointer connected2 = ConnectedComponentImageFilterType::New();
-                connected2->SetInput(veinsSegImage);
-                connected2->Update();
-
-                RelabelFilterType::Pointer relabeler = RelabelFilterType::New();
-                relabeler->SetInput(connected2->GetOutput());
-                relabeler->Update();
-                mitk::IOUtil::Save(mitk::ImportItkImage(relabeler->GetOutput()), (direct + "/prodSeparatedVeins.nii").toStdString());
-                MITK_INFO << ("[...][5.1] Saved file: "+direct + "/prodSeparatedVeins.nii").toStdString();
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][6] Find vein landmark";
-                veinsSegImage = relabeler->GetOutput();
-                ItType itLMK(veinsSegImage, veinsSegImage->GetRequestedRegion());
-                vtkSmartPointer<vtkIdList> pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-                pickedSeedIds->Initialize();
-                std::vector<std::vector<double>> veinsCentre;
-                const int nveins = static_cast<int>(connected2->GetObjectCount());
-
-                MITK_INFO << ("[...][6.1] Number of veins found: "+QString::number(nveins)).toStdString();
-                for (int j=0; j<nveins; j++) {
-                    int ctrVeinsVoxels = 0;
-                    std::vector<double> veinLandmark(3, 0.0);
-                    for (itLMK.GoToBegin(); !itLMK.IsAtEnd(); ++itLMK) {
-                        if ((int)itLMK.Get() == (j+1)) {
-                            ImageTypeCHAR::PointType point;
-                            veinsSegImage->TransformIndexToPhysicalPoint(itLMK.GetIndex(), point);
-                            veinLandmark[0] += point[0];
-                            veinLandmark[1] += point[1];
-                            veinLandmark[2] += point[2];
-                            ctrVeinsVoxels++;
-                        }
-                    }//_for
-                    veinLandmark[0] /= ctrVeinsVoxels;
-                    veinLandmark[1] /= ctrVeinsVoxels;
-                    veinLandmark[2] /= ctrVeinsVoxels;
-                    veinsCentre.push_back(veinLandmark);
-                }
-                for (int j=0; j<nveins; j++) {
-                    double veinLandmark[3];
-                    veinLandmark[0] = veinsCentre.at(j)[0];
-                    veinLandmark[1] = veinsCentre.at(j)[1];
-                    veinLandmark[2] = veinsCentre.at(j)[2];
-                    vtkIdType id = pointLocator->FindClosestPoint(veinLandmark);
-                    pickedSeedIds->InsertNextId(id);
-                }
-                std::vector<int> pickedSeedLabels;
-                for (int j=0; j<nveins; j++)
-                    pickedSeedLabels.push_back(21);
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
-                std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(direct, shell));
-                clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, false);
-                MITK_INFO << "[...][7.1] ComputeCtrLines finished .";
-                clipper->ComputeCtrLinesClippers(pickedSeedLabels);
-                MITK_INFO << "[...][7.2] ComputeCtrLinesClippers finished .";
-                clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(duplicator->GetOutput()), false);
-                MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][8] Create a mesh from clipped segmentation of veins";
-                QString output2 = cmd->ExecuteSurf(direct, (direct + "/PVeinsCroppedImage.nii"), 1, .5, 0, 10);
-                mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][9] Clip the mitral valve";
-                ImageTypeCHAR::Pointer mvImage = ImageTypeCHAR::New();
-                mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(segCleanPath.toStdString()), mvImage);
-                ItType itMVI1(mvImage, mvImage->GetRequestedRegion());
-                itORG.GoToBegin();
-                for (itMVI1.GoToBegin(); !itMVI1.IsAtEnd(); ++itMVI1) {
-                    if ((int)itMVI1.Get() != 0)
-                        itMVI1.Set((int)itORG.Get());
-                    ++itORG;
-                }
-                for (itMVI1.GoToBegin(); !itMVI1.IsAtEnd(); ++itMVI1)
-                    if ((int)itMVI1.Get() != 3)
-                        itMVI1.Set(0);
-                typedef itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> ConnectedComponentImageFilterType;
-                ConnectedComponentImageFilterType::Pointer connected3 = ConnectedComponentImageFilterType::New();
-                connected3->SetInput(mvImage);
-                connected3->Update();
-                typedef itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR> LabelShapeKeepNObjImgFilterType;
-                LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr2 = LabelShapeKeepNObjImgFilterType::New();
-                lblShpKpNObjImgFltr2->SetInput(connected3->GetOutput());
-                lblShpKpNObjImgFltr2->SetBackgroundValue(0);
-                lblShpKpNObjImgFltr2->SetNumberOfObjects(1);
-                lblShpKpNObjImgFltr2->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
-                lblShpKpNObjImgFltr2->Update();
-                mvImage = lblShpKpNObjImgFltr2->GetOutput();
-                mitk::IOUtil::Save(mitk::ImportItkImage(mvImage), (direct + "/prodMVI.nii").toStdString());
-
-                // Make vtk of prodMVI
-                QString mviShellPath = cmd->dockerExpandSurf(direct, "prodMVI.nii", 1, 0.5, 0, 10);
-                // Implement code from command line tool
-                mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(mviShellPath.toStdString());
-                vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
-                implicitFn->SetInput(ClipperSurface->GetVtkPolyData());
-                vtkMTimeType mtime = implicitFn->GetMTime();
-                std::cout << "MTime: " << mtime<< std::endl ;
-                vtkSmartPointer<vtkClipPolyData> mvclipper = vtkSmartPointer<vtkClipPolyData>::New();
-                mvclipper->SetClipFunction(implicitFn);
-                mvclipper->SetInputData(LAShell->GetVtkPolyData());
-                mvclipper->InsideOutOff();
-                mvclipper->Update();
-
-                MITK_INFO << "[...][9.1] Extract and clean surface mesh.";
-                vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
-                surfer->SetInputData(mvclipper->GetOutput());
-                surfer->Update();
-
-                MITK_INFO << "[...][9.2] Cleaning...";
-                vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-                cleaner->SetInputConnection(surfer->GetOutputPort());
-                cleaner->Update();
-
-                MITK_INFO << "[...][9.3] Largest region...";
-                vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
-                lrgRegion->SetInputConnection(cleaner->GetOutputPort());
-                lrgRegion->SetExtractionModeToLargestRegion();
-                lrgRegion->Update();
-                cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-                cleaner->SetInputConnection(lrgRegion->GetOutputPort());
-                cleaner->Update();
-
-                MITK_INFO << ("[...][9.4] Saving to file: " + output2).toStdString();
-                LAShell->SetVtkPolyData(cleaner->GetOutput());
-                mitk::IOUtil::Save(LAShell, output2.toStdString());
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][10] Scar projection";
-                int minStep = minStep_UI;
-                int maxStep = maxStep_UI;
-                int methodType = methodType_UI;
-                std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
-                scar->SetMinStep(minStep);
-                scar->SetMaxStep(maxStep);
-                scar->SetMethodType(methodType);
-                ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
-                mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>((direct + "/PVeinsCroppedImage.nii").toStdString()), segITK);
-                ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
-                mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeITK);
-                itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::Pointer resampleFilter;
-                resampleFilter = itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::New();
-                resampleFilter->SetInput(segITK);
-                resampleFilter->SetReferenceImage(lgeITK);
-                resampleFilter->SetUseReferenceImage(true);
-                resampleFilter->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageTypeCHAR>::New());
-                resampleFilter->SetDefaultPixelValue(0);
-                resampleFilter->UpdateLargestPossibleRegion();
-                segITK = resampleFilter->GetOutput();
-                mitk::IOUtil::Save(mitk::ImportItkImage(segITK), (direct + "/PVeinsCroppedImage.nii").toStdString());
-                scar->SetScarSegImage(mitk::ImportItkImage(segITK));
-                mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
-                MITK_INFO << "[...][10.1] Converting cell to point data";
-                vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
-                cell_to_point->SetInputData(scarShell->GetVtkPolyData());
-                cell_to_point->PassCellDataOn();
-                cell_to_point->Update();
-                scarShell->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
-                mitk::IOUtil::Save(scarShell, (direct + "/MaxScar.vtk").toStdString());
-                scar->SaveScarDebugImage("Max_debugScar.nii", direct);
-
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][11] Thresholding";
-                int vxls = 3;
-                int threshType = thresh_methodType_UI;
-
-                typedef itk::Image<float, 3> ImageType;
-                typedef itk::BinaryBallStructuringElement<ImageTypeCHAR::PixelType, 3> BallType;
-                typedef itk::GrayscaleErodeImageFilter<ImageTypeCHAR, ImageType, BallType> ErosionFilterType;
-                BallType binaryBall;
-                binaryBall.SetRadius(vxls);
-                binaryBall.CreateStructuringElement();
-                ErosionFilterType::Pointer erosionFilter = ErosionFilterType::New();
-                erosionFilter->SetInput(segITK);
-                erosionFilter->SetKernel(binaryBall);
-                erosionFilter->UpdateLargestPossibleRegion();
-                mitk::Image::Pointer roiImage = mitk::Image::New();
-                roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
-                ImageType::Pointer lgeFloat = ImageType::New();
-                mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
-                double mean = 0.0, stdv = 0.0;
-                scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
-                MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
-                QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
-                scar->saveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
-                MITK_INFO << "[...][11.2] Saving to files.";
-                double thisThresh, thisPercentage, thisValue;
-                ofstream prodFile1, prodFileExplanation;
-                prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
-                for(int ix=0; (unsigned) ix < values_vector.size(); ix++) {
-                    thisValue = values_vector.at(ix);
-                    thisThresh = (threshType == 1) ? mean*thisValue : mean + thisValue*stdv;
-                    thisPercentage = scar->Thresholding(thisThresh);
-                    prodFile1 << thisValue << "\n";
-                    prodFile1 << threshType << "\n";
-                    prodFile1 << mean << "\n";
-                    prodFile1 << stdv << "\n";
-                    prodFile1 << thisThresh << "\n";
-                    prodFile1 << "SCORE: " << thisPercentage << "\n";
-                    prodFile1 << "=============== separation ================\n";
-                }
-                prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
-                prodFileExplanation << "VALUE\n";
-                prodFileExplanation << "THRESHOLD TYPE: (1 = V*IIR, 2 = MEAN + V*STDev)\n";
-                prodFileExplanation << "MEAN INTENSITY\n";
-                prodFileExplanation << "STANDARD DEVIATION (STDev)\n";
-                prodFileExplanation << "THRESHOLD\n";
-                prodFileExplanation << "SCAR SCORE (percentage)\n";
-                prodFileExplanation << "=============== separation ================";
-                prodFile1.close();
-                prodFileExplanation.close();
-                timerLog->StopTimer();
-
-                QStringList rtminsec = QString::number(timerLog->GetElapsedTime()/60).split(".");
-                QString rtmin = rtminsec.at(0);
-                QString rtsec = QString::number(("0."+rtminsec.at(1)).toFloat()*60, 'f',1);
-                QString outstr = "Operation finshed in " + rtmin + " min and " + rtsec + " s.";
-                MITK_INFO << "[AUTOMATIC_ANALYSIS][FINISHED]";
-                QMessageBox::information(NULL, "Automatic analysis", outstr);
-
-            } else
-                QMessageBox::warning(NULL, "Attention", "Error with automatic segmentation! Check the LOG file.");
-        } else
-            QMessageBox::information(NULL, "Attention", "Operation cancelled");
-    }
-}
 
 void AtrialScarView::LoadDICOM() {
 
@@ -858,6 +303,517 @@ void AtrialScarView::ConvertNII() {
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
 
+void AtrialScarView::AnalysisChoice() {
+
+    int reply = QMessageBox::question(
+                NULL, "Question", "Do you want an automatic analysis?", QMessageBox::Yes, QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+
+        MITK_INFO << "Setting up automatic analysis.";
+        AutomaticAnalysis();
+
+    } else {
+
+        MITK_INFO << "Setting up manual analysis.";
+
+        //Set visibility of buttons
+        m_Controls.button_4->setVisible(true);
+        m_Controls.button_5->setVisible(true);
+        m_Controls.button_6->setVisible(true);
+        m_Controls.button_7->setVisible(true);
+        m_Controls.button_x->setVisible(true);
+        m_Controls.button_y->setVisible(true);
+        m_Controls.button_z->setVisible(true);
+        m_Controls.button_s->setVisible(true);
+    }//_if
+}
+
+void AtrialScarView::AutomaticAnalysis() {
+
+    MITK_INFO << "Performing automatic analysis.";
+    MITK_INFO << "============= Automatic segmentation module ====================";
+
+    QString direct, mraPath, lgePath, cnnPath;
+    bool debugging=true;
+
+    if(directory.isEmpty()) {
+        direct = QFileDialog::getExistingDirectory(
+                    NULL, "Open Project Directory",
+                    mitk::IOUtil::GetProgramPath().c_str(),
+                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+        directory = direct;
+    } else{
+        direct=directory;
+    }
+
+    QDirIterator searchit(direct, QDirIterator::Subdirectories);
+
+    if(debugging)
+        MITK_INFO << "[DEBUG] Searching for CEMRGNET output";
+
+    while(searchit.hasNext()) {
+        QFileInfo searchfinfo(searchit.next());
+        if(searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
+            if(searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
+                lgePath = searchfinfo.absoluteFilePath();
+
+            if(searchfinfo.fileName().contains("dcm-MRA", Qt::CaseSensitive))
+                mraPath = searchfinfo.absoluteFilePath();
+
+            if(debugging && searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
+                cnnPath = searchfinfo.absoluteFilePath();
+        }
+    }
+
+    QDialog* inputs = new QDialog(0,0);
+    m_UIcemrgnet.setupUi(inputs);
+    connect(m_UIcemrgnet.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UIcemrgnet.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    QString meType_UI;
+    int minStep_UI =-1, maxStep_UI = 3;
+    int methodType_UI = 2, thresh_methodType_UI = 1;
+    QStringList separated_thresh_list;
+    std::vector<double> values_vector;
+
+    if (dialogCode == QDialog::Accepted) {
+
+        MITK_INFO << "[UI] User inputs being selected.";
+        MITK_INFO << "[UI] Intensity projection";
+        bool ok1, ok2;
+        minStep_UI = m_UIcemrgnet.minStep_lineEdit->text().toInt(&ok1);
+        maxStep_UI = m_UIcemrgnet.maxStep_lineEdit->text().toInt(&ok2);
+        if(!ok1) minStep_UI = -1;
+        if(!ok2) maxStep_UI = 3;
+
+        methodType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? 2 : 1;
+        meType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? "Max" : "Mean";
+
+        MITK_INFO << ("[UI] Using: " + meType_UI + " Intensity projection.").toStdString();
+        MITK_INFO << ("[UI] In/out values: (" + QString::number(minStep_UI) + ", " +
+                      QString::number(maxStep_UI) + ")").toStdString();
+        MITK_INFO << QString::number(methodType_UI);
+        MITK_INFO << "[UI] Thresholding information.";
+
+        //bool ok3;
+        thresh_methodType_UI = m_UIcemrgnet.iir_radioButton->isChecked() ? 1 : 2;
+        QString thresh_list, whichThresh;
+
+        if (m_UIcemrgnet.iir_radioButton->isChecked()) { // IIR method
+            whichThresh = "IIR";
+            thresh_list = m_UIcemrgnet.iir_textEdit->toPlainText();
+            separated_thresh_list << "0.97" << "1.16";
+        } else if(m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
+            whichThresh = "MEAN+SD";
+            thresh_list = m_UIcemrgnet.meanSD_textEdit->toPlainText();
+            separated_thresh_list << "2.3" << "3.3";
+        }
+
+        MITK_INFO << ("[UI] Threshold: " + whichThresh).toStdString();
+        MITK_INFO << ("[UI] Threshold list: " + thresh_list).toStdString();
+        MITK_INFO << QString::number(thresh_methodType_UI);
+
+        thresh_list.remove(" ", Qt::CaseSensitive);
+        if(!thresh_list.isEmpty()) {
+
+            MITK_INFO << "[UI] Creating list of thresholds";
+            separated_thresh_list.removeLast();
+            separated_thresh_list.removeLast();
+            separated_thresh_list = thresh_list.split("," , QString::SkipEmptyParts);
+            int listspaces = separated_thresh_list.removeAll(" ");
+            int listduplicates = separated_thresh_list.removeDuplicates();
+            separated_thresh_list.sort();
+            if (debugging) {
+                MITK_INFO << ("[UI][DEBUG] Spaces: " + QString::number(listspaces)).toStdString();
+                MITK_INFO << ("[UI][DEBUG] Duplicates: " + QString::number(listduplicates)).toStdString();
+            }
+        }
+
+        double tryNumber;
+        bool vOK;
+        for(int ix=0; ix<separated_thresh_list.size(); ix++) {
+            MITK_INFO << separated_thresh_list.at(ix);
+            tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
+            if(vOK) values_vector.push_back(tryNumber);
+        }
+
+        inputs->close();
+        inputs->deleteLater();
+
+    } else if (dialogCode == QDialog::Rejected) {
+
+        MITK_INFO << "[ATTENTION] Cancelled automatic analysis.";
+        QMessageBox::warning(
+                    NULL, "Automatic analysis cancelled",
+                    "'Cancel' button pressed, no calculations were made.");
+        inputs->close();
+        inputs->deleteLater();
+        return;
+    }//_if
+
+    MITK_INFO << ("Files to be read: \n\n [LGE]: " + lgePath + "\n [MRA]: " + mraPath).toStdString();
+
+    if(!mraPath.isEmpty()) {
+
+        vtkSmartPointer<vtkTimerLog> timerLog = vtkSmartPointer<vtkTimerLog>::New();
+        typedef itk::Image<short, 3> ImageTypeSHRT;
+        typedef itk::Image<short, 3> ImageTypeCHAR;
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        MITK_INFO << "[AUTOMATIC_ANALYSIS] Setting Docker on MIRTK to OFF";
+        cmd->setUseMIRKTDocker(false);
+
+        timerLog->StartTimer();
+        if(cnnPath.isEmpty()) {
+            cnnPath = cmd->dockerCemrgNetPrediction(mraPath);
+        }
+
+        if(!cnnPath.isEmpty()) {
+
+            MITK_INFO << ("Successful prediction with file "+cnnPath).toStdString();
+            // QString direct = finfo.absolutePath();
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][1] Adjust CNN label to MRA";
+            mitk::Image::Pointer mraIMG = mitk::IOUtil::Load<mitk::Image>(mraPath.toStdString());
+            mitk::Image::Pointer cnnIMG = mitk::IOUtil::Load<mitk::Image>(cnnPath.toStdString());
+            double origin[3]; double spacing[3];
+            mraIMG->GetGeometry()->GetOrigin().ToArray(origin);
+            mraIMG->GetGeometry()->GetSpacing().ToArray(spacing);
+
+            vtkSmartPointer<vtkImageResize> resizeFilter = vtkSmartPointer<vtkImageResize>::New();
+            resizeFilter->SetResizeMethodToOutputDimensions();
+            resizeFilter->SetOutputDimensions(mraIMG->GetDimension(0), mraIMG->GetDimension(1), mraIMG->GetDimension(2));
+            resizeFilter->InterpolateOff();
+            resizeFilter->SetInputData(cnnIMG->GetVtkImageData());
+            resizeFilter->Update();
+
+            vtkSmartPointer<vtkImageChangeInformation> changeFilter = vtkSmartPointer<vtkImageChangeInformation>::New();
+            changeFilter->SetInputConnection(resizeFilter->GetOutputPort());
+            changeFilter->SetOutputSpacing(spacing);
+            changeFilter->SetOutputOrigin(origin);
+            changeFilter->Update();
+
+            mitk::Image::Pointer cnnLA = mitk::Image::New();
+            cnnIMG->Initialize(changeFilter->GetOutput());
+            cnnIMG->SetVolume(changeFilter->GetOutput()->GetScalarPointer());
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][2] Image registration";
+            QString cnnPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
+            QString laregPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA-reg.nii";
+
+            mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());
+            cmd->ExecuteRegistration(direct, lgePath, mraPath);
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][3] Clean segmentation";
+            typedef itk::ImageRegionIteratorWithIndex<ImageTypeCHAR> ItType;
+            typedef itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> ConnectedComponentImageFilterType;
+            typedef itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR> LabelShapeKeepNObjImgFilterType;
+            using DuplicatorType = itk::ImageDuplicator<ImageTypeCHAR>;
+
+            ImageTypeCHAR::Pointer orgSegImage = ImageTypeCHAR::New();
+            mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(laregPath.toStdString()), orgSegImage);
+
+            ConnectedComponentImageFilterType::Pointer connected1 = ConnectedComponentImageFilterType::New();
+            connected1->SetInput(orgSegImage);
+            connected1->Update();
+
+            LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr1 = LabelShapeKeepNObjImgFilterType::New();
+            lblShpKpNObjImgFltr1->SetInput(connected1->GetOutput());
+            lblShpKpNObjImgFltr1->SetBackgroundValue(0);
+            lblShpKpNObjImgFltr1->SetNumberOfObjects(1);
+            lblShpKpNObjImgFltr1->SetAttribute(
+                        LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+            lblShpKpNObjImgFltr1->Update();
+
+            DuplicatorType::Pointer duplicator = DuplicatorType::New();
+            duplicator->SetInputImage(lblShpKpNObjImgFltr1->GetOutput());
+            duplicator->Update();
+            ItType itDUP(duplicator->GetOutput(), duplicator->GetOutput()->GetRequestedRegion());
+            for (itDUP.GoToBegin(); !itDUP.IsAtEnd(); ++itDUP)
+                if ((int)itDUP.Get() != 0)
+                    itDUP.Set(1);
+            QString segCleanPath = direct + mitk::IOUtil::GetDirectorySeparator() +
+                    "prodClean.nii";
+            mitk::IOUtil::Save(mitk::ImportItkImage(duplicator->GetOutput()), segCleanPath.toStdString());
+            MITK_INFO << ("[...][3.1] Saved file: "+segCleanPath).toStdString();
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][4] Vein clipping mesh";
+            cmd->ExecuteTouch(direct+mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk");
+            QString output1 = cmd->ExecuteSurf(direct, segCleanPath, 1, .5, 0, 10);
+            mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
+            vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
+            deci->SetInputData(shell->GetVtkPolyData());
+            deci->SetTargetReduction(0.1);
+            deci->PreserveTopologyOn();
+            deci->Update();
+            shell->SetVtkPolyData(deci->GetOutput());
+
+            vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
+            vtkSmartPointer<vtkPolyData> pd = shell->Clone()->GetVtkPolyData();
+            for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+                double* point = pd->GetPoint(i);
+                point[0] = -point[0];
+                point[1] = -point[1];
+                pd->GetPoints()->SetPoint(i, point);
+            }//_for
+            pointLocator->SetDataSet(pd);
+            pointLocator->BuildLocator();
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][5] Separate veins";
+            typedef itk::BinaryCrossStructuringElement<ImageTypeCHAR::PixelType, 3> CrossType;
+            typedef itk::BinaryMorphologicalOpeningImageFilter<ImageTypeCHAR, ImageTypeCHAR, CrossType> MorphFilterType;
+            typedef itk::RelabelComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> RelabelFilterType;
+
+            ImageTypeCHAR::Pointer veinsSegImage = ImageTypeCHAR::New();
+            veinsSegImage = lblShpKpNObjImgFltr1->GetOutput();
+            ItType itORG(orgSegImage, orgSegImage->GetRequestedRegion());
+            ItType itVEN(veinsSegImage, veinsSegImage->GetRequestedRegion());
+            itORG.GoToBegin();
+
+            for (itVEN.GoToBegin(); !itVEN.IsAtEnd(); ++itVEN) {
+                if ((int)itVEN.Get() != 0)
+                    itVEN.Set((int)itORG.Get());
+                ++itORG;
+            }
+            for (itVEN.GoToBegin(); !itVEN.IsAtEnd(); ++itVEN)
+                if ((int)itVEN.Get() != 2)
+                    itVEN.Set(0);
+
+            CrossType binaryCross;
+            binaryCross.SetRadius(2.0);
+            binaryCross.CreateStructuringElement();
+            MorphFilterType::Pointer morphFilter = MorphFilterType::New();
+            morphFilter->SetInput(veinsSegImage);
+            morphFilter->SetKernel(binaryCross);
+            morphFilter->SetForegroundValue(2);
+            morphFilter->SetBackgroundValue(0);
+            morphFilter->UpdateLargestPossibleRegion();
+            veinsSegImage = morphFilter->GetOutput();
+            mitk::IOUtil::Save(mitk::ImportItkImage(veinsSegImage), (direct + "/prodVeins.nii").toStdString());
+
+            ConnectedComponentImageFilterType::Pointer connected2 = ConnectedComponentImageFilterType::New();
+            connected2->SetInput(veinsSegImage);
+            connected2->Update();
+
+            RelabelFilterType::Pointer relabeler = RelabelFilterType::New();
+            relabeler->SetInput(connected2->GetOutput());
+            relabeler->Update();
+            mitk::IOUtil::Save(mitk::ImportItkImage(relabeler->GetOutput()), (direct + "/prodSeparatedVeins.nii").toStdString());
+            MITK_INFO << ("[...][5.1] Saved file: "+direct + "/prodSeparatedVeins.nii").toStdString();
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][6] Find vein landmark";
+            veinsSegImage = relabeler->GetOutput();
+            ItType itLMK(veinsSegImage, veinsSegImage->GetRequestedRegion());
+            vtkSmartPointer<vtkIdList> pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
+            pickedSeedIds->Initialize();
+            std::vector<std::vector<double>> veinsCentre;
+            const int nveins = static_cast<int>(connected2->GetObjectCount());
+
+            MITK_INFO << ("[...][6.1] Number of veins found: "+QString::number(nveins)).toStdString();
+            for (int j=0; j<nveins; j++) {
+                int ctrVeinsVoxels = 0;
+                std::vector<double> veinLandmark(3, 0.0);
+                for (itLMK.GoToBegin(); !itLMK.IsAtEnd(); ++itLMK) {
+                    if ((int)itLMK.Get() == (j+1)) {
+                        ImageTypeCHAR::PointType point;
+                        veinsSegImage->TransformIndexToPhysicalPoint(itLMK.GetIndex(), point);
+                        veinLandmark[0] += point[0];
+                        veinLandmark[1] += point[1];
+                        veinLandmark[2] += point[2];
+                        ctrVeinsVoxels++;
+                    }
+                }//_for
+                veinLandmark[0] /= ctrVeinsVoxels;
+                veinLandmark[1] /= ctrVeinsVoxels;
+                veinLandmark[2] /= ctrVeinsVoxels;
+                veinsCentre.push_back(veinLandmark);
+            }
+            for (int j=0; j<nveins; j++) {
+                double veinLandmark[3];
+                veinLandmark[0] = veinsCentre.at(j)[0];
+                veinLandmark[1] = veinsCentre.at(j)[1];
+                veinLandmark[2] = veinsCentre.at(j)[2];
+                vtkIdType id = pointLocator->FindClosestPoint(veinLandmark);
+                pickedSeedIds->InsertNextId(id);
+            }
+            std::vector<int> pickedSeedLabels;
+            for (int j=0; j<nveins; j++)
+                pickedSeedLabels.push_back(21);
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
+            std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(direct, shell));
+            clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, false);
+            MITK_INFO << "[...][7.1] ComputeCtrLines finished .";
+            clipper->ComputeCtrLinesClippers(pickedSeedLabels);
+            MITK_INFO << "[...][7.2] ComputeCtrLinesClippers finished .";
+            clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(duplicator->GetOutput()), false);
+            MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][8] Create a mesh from clipped segmentation of veins";
+            QString output2 = cmd->ExecuteSurf(direct, (direct + "/PVeinsCroppedImage.nii"), 1, .5, 0, 10);
+            mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][9] Clip the mitral valve";
+            ImageTypeCHAR::Pointer mvImage = ImageTypeCHAR::New();
+            mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(segCleanPath.toStdString()), mvImage);
+            ItType itMVI1(mvImage, mvImage->GetRequestedRegion());
+            itORG.GoToBegin();
+            for (itMVI1.GoToBegin(); !itMVI1.IsAtEnd(); ++itMVI1) {
+                if ((int)itMVI1.Get() != 0)
+                    itMVI1.Set((int)itORG.Get());
+                ++itORG;
+            }
+            for (itMVI1.GoToBegin(); !itMVI1.IsAtEnd(); ++itMVI1)
+                if ((int)itMVI1.Get() != 3)
+                    itMVI1.Set(0);
+            typedef itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> ConnectedComponentImageFilterType;
+            ConnectedComponentImageFilterType::Pointer connected3 = ConnectedComponentImageFilterType::New();
+            connected3->SetInput(mvImage);
+            connected3->Update();
+            typedef itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR> LabelShapeKeepNObjImgFilterType;
+            LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr2 = LabelShapeKeepNObjImgFilterType::New();
+            lblShpKpNObjImgFltr2->SetInput(connected3->GetOutput());
+            lblShpKpNObjImgFltr2->SetBackgroundValue(0);
+            lblShpKpNObjImgFltr2->SetNumberOfObjects(1);
+            lblShpKpNObjImgFltr2->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+            lblShpKpNObjImgFltr2->Update();
+            mvImage = lblShpKpNObjImgFltr2->GetOutput();
+            mitk::IOUtil::Save(mitk::ImportItkImage(mvImage), (direct + "/prodMVI.nii").toStdString());
+
+            // Make vtk of prodMVI
+            QString mviShellPath = cmd->dockerExpandSurf(direct, "prodMVI.nii", 1, 0.5, 0, 10);
+            // Implement code from command line tool
+            mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(mviShellPath.toStdString());
+            vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
+            implicitFn->SetInput(ClipperSurface->GetVtkPolyData());
+            vtkMTimeType mtime = implicitFn->GetMTime();
+            std::cout << "MTime: " << mtime<< std::endl ;
+            vtkSmartPointer<vtkClipPolyData> mvclipper = vtkSmartPointer<vtkClipPolyData>::New();
+            mvclipper->SetClipFunction(implicitFn);
+            mvclipper->SetInputData(LAShell->GetVtkPolyData());
+            mvclipper->InsideOutOff();
+            mvclipper->Update();
+
+            MITK_INFO << "[...][9.1] Extract and clean surface mesh.";
+            vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+            surfer->SetInputData(mvclipper->GetOutput());
+            surfer->Update();
+
+            MITK_INFO << "[...][9.2] Cleaning...";
+            vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+            cleaner->SetInputConnection(surfer->GetOutputPort());
+            cleaner->Update();
+
+            MITK_INFO << "[...][9.3] Largest region...";
+            vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+            lrgRegion->SetInputConnection(cleaner->GetOutputPort());
+            lrgRegion->SetExtractionModeToLargestRegion();
+            lrgRegion->Update();
+            cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+            cleaner->SetInputConnection(lrgRegion->GetOutputPort());
+            cleaner->Update();
+
+            MITK_INFO << ("[...][9.4] Saving to file: " + output2).toStdString();
+            LAShell->SetVtkPolyData(cleaner->GetOutput());
+            mitk::IOUtil::Save(LAShell, output2.toStdString());
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][10] Scar projection";
+            int minStep = minStep_UI;
+            int maxStep = maxStep_UI;
+            int methodType = methodType_UI;
+            std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
+            scar->SetMinStep(minStep);
+            scar->SetMaxStep(maxStep);
+            scar->SetMethodType(methodType);
+            ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
+            mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>((direct + "/PVeinsCroppedImage.nii").toStdString()), segITK);
+            ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
+            mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeITK);
+            itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::Pointer resampleFilter;
+            resampleFilter = itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::New();
+            resampleFilter->SetInput(segITK);
+            resampleFilter->SetReferenceImage(lgeITK);
+            resampleFilter->SetUseReferenceImage(true);
+            resampleFilter->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageTypeCHAR>::New());
+            resampleFilter->SetDefaultPixelValue(0);
+            resampleFilter->UpdateLargestPossibleRegion();
+            segITK = resampleFilter->GetOutput();
+            mitk::IOUtil::Save(mitk::ImportItkImage(segITK), (direct + "/PVeinsCroppedImage.nii").toStdString());
+            scar->SetScarSegImage(mitk::ImportItkImage(segITK));
+            mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
+            MITK_INFO << "[...][10.1] Converting cell to point data";
+            vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
+            cell_to_point->SetInputData(scarShell->GetVtkPolyData());
+            cell_to_point->PassCellDataOn();
+            cell_to_point->Update();
+            scarShell->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
+            mitk::IOUtil::Save(scarShell, (direct + "/MaxScar.vtk").toStdString());
+            scar->SaveScarDebugImage("Max_debugScar.nii", direct);
+
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][11] Thresholding";
+            int vxls = 3;
+            int threshType = thresh_methodType_UI;
+
+            typedef itk::Image<float, 3> ImageType;
+            typedef itk::BinaryBallStructuringElement<ImageTypeCHAR::PixelType, 3> BallType;
+            typedef itk::GrayscaleErodeImageFilter<ImageTypeCHAR, ImageType, BallType> ErosionFilterType;
+            BallType binaryBall;
+            binaryBall.SetRadius(vxls);
+            binaryBall.CreateStructuringElement();
+            ErosionFilterType::Pointer erosionFilter = ErosionFilterType::New();
+            erosionFilter->SetInput(segITK);
+            erosionFilter->SetKernel(binaryBall);
+            erosionFilter->UpdateLargestPossibleRegion();
+            mitk::Image::Pointer roiImage = mitk::Image::New();
+            roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
+            ImageType::Pointer lgeFloat = ImageType::New();
+            mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
+            double mean = 0.0, stdv = 0.0;
+            scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
+            MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
+            QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
+            scar->saveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
+            MITK_INFO << "[...][11.2] Saving to files.";
+            double thisThresh, thisPercentage, thisValue;
+            ofstream prodFile1, prodFileExplanation;
+            prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
+            for(int ix=0; (unsigned) ix < values_vector.size(); ix++) {
+                thisValue = values_vector.at(ix);
+                thisThresh = (threshType == 1) ? mean*thisValue : mean + thisValue*stdv;
+                thisPercentage = scar->Thresholding(thisThresh);
+                prodFile1 << thisValue << "\n";
+                prodFile1 << threshType << "\n";
+                prodFile1 << mean << "\n";
+                prodFile1 << stdv << "\n";
+                prodFile1 << thisThresh << "\n";
+                prodFile1 << "SCORE: " << thisPercentage << "\n";
+                prodFile1 << "=============== separation ================\n";
+            }
+            prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
+            prodFileExplanation << "VALUE\n";
+            prodFileExplanation << "THRESHOLD TYPE: (1 = V*IIR, 2 = MEAN + V*STDev)\n";
+            prodFileExplanation << "MEAN INTENSITY\n";
+            prodFileExplanation << "STANDARD DEVIATION (STDev)\n";
+            prodFileExplanation << "THRESHOLD\n";
+            prodFileExplanation << "SCAR SCORE (percentage)\n";
+            prodFileExplanation << "=============== separation ================";
+            prodFile1.close();
+            prodFileExplanation.close();
+            timerLog->StopTimer();
+
+            QStringList rtminsec = QString::number(timerLog->GetElapsedTime()/60).split(".");
+            QString rtmin = rtminsec.at(0);
+            QString rtsec = QString::number(("0."+rtminsec.at(1)).toFloat()*60, 'f',1);
+            QString outstr = "Operation finshed in " + rtmin + " min and " + rtsec + " s.";
+            MITK_INFO << "[AUTOMATIC_ANALYSIS][FINISHED]";
+            QMessageBox::information(NULL, "Automatic analysis", outstr);
+
+        } else
+            QMessageBox::warning(NULL, "Attention", "Error with automatic segmentation! Check the LOG file.");
+    } else
+        QMessageBox::information(NULL, "Attention", "Operation cancelled");
+}
+
 void AtrialScarView::SegmentIMGS() {
 
     int reply = QMessageBox::question(
@@ -961,7 +917,7 @@ void AtrialScarView::Register() {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(
                 NULL, "Image Registration",
-                "Have you completed steps 1 to 3 before using this feature?", QMessageBox::Yes|QMessageBox::No);
+                "Have you completed steps 1 to 4 before using this feature?", QMessageBox::Yes|QMessageBox::No);
     if (reply == QMessageBox::No)
         return;
 
@@ -1018,7 +974,7 @@ void AtrialScarView::Register() {
             this->BusyCursorOn();
             mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
             std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-            cmd->setUseMIRKTDocker(m_Controls.dockerOn_radioButton->isChecked());
+            cmd->setUseMIRKTDocker(false);
             cmd->ExecuteRegistration(directory, lge, mra);
             QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
             this->BusyCursorOff();
@@ -1087,7 +1043,7 @@ void AtrialScarView::Transform() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                cmd->setUseMIRKTDocker(m_Controls.dockerOn_radioButton->isChecked());
+                cmd->setUseMIRKTDocker(false);
                 cmd->ExecuteTransformation(directory, pathTemp.right(8), regFileName);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
@@ -1233,7 +1189,7 @@ void AtrialScarView::CreateSurf() {
                 mitk::IOUtil::Save(image, pathTemp.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                cmd->setUseMIRKTDocker(m_Controls.dockerOn_radioButton->isChecked());
+                cmd->setUseMIRKTDocker(false);
                 path = cmd->ExecuteSurf(directory, pathTemp, iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
@@ -1587,6 +1543,7 @@ void AtrialScarView::ScarMap() {
                     lut->SetTableRange(0, scar->GetMaxScalar());
                     lut->SetHueRange(0.33, 0.0);
                     lut->Build();
+                    lut->SetTableValue(0, 0.0, 0.0, 0.0, 1.0);
                     scarLut->SetVtkLookupTable(lut);
                     node->SetProperty("LookupTable", mitk::LookupTableProperty::New(scarLut));
                     node->SetProperty("scalar visibility", mitk::BoolProperty::New(true));
@@ -1624,7 +1581,7 @@ void AtrialScarView::ScarDebug() {
     }
     mitk::IOUtil::Load(debugSCARname.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
-    m_Controls.button_debugscar->setVisible(false);
+    m_Controls.button_deb->setVisible(false);
     //Restore image name
     //char sep = mitk::IOUtil::GetDirectorySeparator();
     //fileName = path.mid(path.lastIndexOf(sep) + 1);
@@ -1806,19 +1763,24 @@ void AtrialScarView::Sphericity() {
     QMessageBox::information(NULL, "Sphericity", message);
 }
 
-void AtrialScarView::RestartPipeline() {
-
-    this->SetManualAnalysisOff();
-    m_Controls.automaticLabel->setVisible(false);
-    m_Controls.manualLabel->setVisible(false);
-    m_Controls.mainButton_1->setVisible(true);
-    m_Controls.mainButton_2->setVisible(true);
-    m_Controls.button_r2->setVisible(false);
-}
-
 void AtrialScarView::ResetMain() {
 
     Reset(true);
+    m_Controls.button_3->setVisible(true);
+    m_Controls.button_4->setVisible(false);
+    m_Controls.button_5->setVisible(false);
+    m_Controls.button_6->setVisible(false);
+    m_Controls.button_7->setVisible(false);
+    m_Controls.button_x->setVisible(false);
+    m_Controls.button_y->setVisible(false);
+    m_Controls.button_z->setVisible(false);
+    m_Controls.button_s->setVisible(false);
+    m_Controls.button_2_1->setVisible(false);
+    m_Controls.button_x_1->setVisible(false);
+    m_Controls.button_x_2->setVisible(false);
+    m_Controls.button_z_1->setVisible(false);
+    m_Controls.button_z_2->setVisible(false);
+    m_Controls.button_deb->setVisible(false);
 }
 
 void AtrialScarView::Reset(bool allItems) {

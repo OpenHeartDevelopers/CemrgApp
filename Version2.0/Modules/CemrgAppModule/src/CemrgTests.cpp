@@ -60,6 +60,55 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkDelaunay2D.h>
 #include <vtkLookupTable.h>
 
+
+void autoNIIconvert() {
+    
+    std::string frames;
+    ifstream file0("/home/or15/Desktop/MRI/process/frames.txt");
+    if (file0.is_open())
+        getline(file0,frames);
+    file0.close();
+
+    for (int i=1; i<=QString::fromStdString(frames).toInt(); i++) {
+
+        unsigned int slices = 0;
+        mitk::Image::Pointer img3D = mitk::Image::New();
+
+        std::string line;
+        ifstream file1("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
+        if (file1.is_open()) {
+            getline(file1,line);
+            while (getline(file1,line)) {
+                if (line=="path.txt")
+                    break;
+                slices++;
+            }
+        }
+        file1.close();
+        int ctr = 0;
+        bool first = true;
+        ifstream file2("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
+        if (file2.is_open()) {
+            getline(file2,line);
+            while (getline(file2,line)) {
+                if (line=="path.txt")
+                    break;
+                mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/" + line);
+                if (first) {
+                    mitk::ImageDescriptor::Pointer dsc = image->GetImageDescriptor();
+                    img3D->Initialize(dsc->GetChannelDescriptor(0).GetPixelType(), *image->GetGeometry(), slices, 1);
+                    first = false;
+                }
+                img3D->SetVolume(mitk::ImageReadAccessor(image).GetData(),0,ctr);
+                ctr++;
+            }
+        }
+        file2.close();
+
+        mitk::IOUtil::Save(img3D, "/home/or15/Desktop/MRI/process/dcm-" + QString::number(i-1).toStdString() + ".nii");
+    }//for
+}
+
 int ctr = -5;
 void CreateSyntImage() {
 

@@ -63,12 +63,12 @@ protected slots:
     void LoadDICOM();
     void ProcessIMGS();
     void ConvertNII();
+    void AnalysisChoice();
     void SegmentIMGS();
     void Registration();
     void Register();
     void Transform();
     void ClipPVeins();
-    void ExtraCalcs();
     void CreateSurf();
     void ClipperMV();
     void SelectLandmarks();
@@ -77,11 +77,8 @@ protected slots:
     void ScarDebug();
     void Threshold();
     void Sphericity();
+    void ExtraCalcs();
     void ResetMain();
-    void RestartPipeline();
-    // Automatic segmentation
-    void EnableManualAnalysis();
-    void AutomaticAnalysis();
 
 protected:
 
@@ -99,16 +96,14 @@ protected:
 
 private:
 
-    // Automatic segmentation
-    void SetManualAnalysisOn();
-    void SetManualAnalysisOff();
+    void AutomaticAnalysis();
     void Reset(bool allItems);
 
     QString fileName;
     QString directory;
     QString debugSCARname;
-    bool _useDockerOnMirtk = false; // change to FALSE to use MIRTK static libraries
     std::unique_ptr<CemrgScar3D> scar;
+    bool _useDockerOnMirtk = false; // change to FALSE to use MIRTK static libraries
 };
 
 #endif // AtrialScarView_h

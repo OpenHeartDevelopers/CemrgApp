@@ -65,6 +65,7 @@ PURPOSE.  See the above copyright notices for more information.
 // CemrgAppModule
 #include <CemrgCommandLine.h>
 #include <CemrgCommonUtils.h>
+#include </home/or15/Install/CemrgApp/CemrgApp/Version2.0/Modules/CemrgAppModule/src/CemrgTests.cpp>
 
 // Generic
 #include <usModuleRegistry.h>
@@ -596,6 +597,7 @@ void EASIView::Simulation() {
     //RRcalcsAuto();
     //CreateSyntImage();
     //MeshReader();
+    autoNIIconvert();
 }
 
 void EASIView::LoadMesh() {

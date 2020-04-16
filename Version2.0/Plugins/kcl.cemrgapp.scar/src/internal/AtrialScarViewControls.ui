@@ -73,64 +73,17 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="line_2">
-     <property name="lineWidth">
-      <number>2</number>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item alignment="Qt::AlignHCenter">
-    <widget class="QLabel" name="manualLabel">
-     <property name="text">
-      <string>Manual Analysis</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="mainButton_1">
-     <property name="text">
-      <string>Manual Analysis</string>
-     </property>
-    </widget>
-   </item>
-   <item alignment="Qt::AlignHCenter">
-    <widget class="QLabel" name="automaticLabel">
-     <property name="text">
-      <string>Automatic Analysis</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="mainButton_2">
-     <property name="text">
-      <string>Automatic Analysis</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QRadioButton" name="dockerOn_radioButton">
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-       <italic>true</italic>
-      </font>
-     </property>
-     <property name="whatsThis">
-      <string comment="Select whether the MIRTK functionalities (Register+Transform) are accessed through Docker (Default: ON)" extracomment="Select whether the MIRTK functionalities (Register+Transform) are accessed through Docker (Default: ON)"/>
-     </property>
-     <property name="text">
-      <string>Use Docker on MIRTK</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="button_3">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>   Step3: Scar Analysis</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_4">
      <property name="toolTip">
       <string>Do image processing</string>
      </property>
@@ -138,7 +91,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step3: Segment Images</string>
+      <string>   Step4: Segment Images</string>
      </property>
     </widget>
    </item>
@@ -210,7 +163,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_4">
+    <widget class="QPushButton" name="button_5">
      <property name="toolTip">
       <string>Do image processing</string>
      </property>
@@ -218,7 +171,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step4: Create Surface</string>
+      <string>   Step5: Create Surface</string>
      </property>
     </widget>
    </item>
@@ -277,17 +230,29 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_5">
+    <widget class="QPushButton" name="button_6">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step5: Scar Map</string>
+      <string>   Step6: Scar Map</string>
      </property>
     </widget>
    </item>
    <item alignment="Qt::AlignHCenter">
-    <widget class="QPushButton" name="button_debugscar">
+    <widget class="QPushButton" name="button_deb">
+     <property name="minimumSize">
+      <size>
+       <width>140</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>140</width>
+       <height>16777215</height>
+      </size>
+     </property>
      <property name="acceptDrops">
       <bool>false</bool>
      </property>
@@ -300,12 +265,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_6">
+    <widget class="QPushButton" name="button_7">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step6: Scar Quantification</string>
+      <string>   Step7: Scar Quantification</string>
      </property>
     </widget>
    </item>
@@ -317,7 +282,7 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="line">
+    <widget class="Line" name="line_1">
      <property name="lineWidth">
       <number>2</number>
      </property>
@@ -327,7 +292,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_fandi">
+    <widget class="QPushButton" name="button_c">
      <property name="styleSheet">
       <string notr="true">color: rgb(115, 210, 22);</string>
      </property>
@@ -337,23 +302,16 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="line_3">
+    <widget class="Line" name="line_2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_r2">
-     <property name="text">
-      <string>Restart</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="button_r">
      <property name="styleSheet">
-      <string notr="true">color:rgb(239, 41, 41)</string>
+      <string notr="true"/>
      </property>
      <property name="text">
       <string>Reset</string>
