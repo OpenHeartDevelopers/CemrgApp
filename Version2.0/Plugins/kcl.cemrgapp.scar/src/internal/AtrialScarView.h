@@ -103,7 +103,7 @@ private:
     QString directory;
     QString debugSCARname;
     std::unique_ptr<CemrgScar3D> scar;
-    bool _useDockerOnMirtk = false; // change to FALSE to use MIRTK static libraries
+    bool _useDockerInPlugin = true; // change to FALSE to use MIRTK static libraries
 };
 
 #endif // AtrialScarView_h

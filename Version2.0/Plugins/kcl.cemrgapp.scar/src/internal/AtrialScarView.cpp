@@ -462,7 +462,7 @@ void AtrialScarView::AutomaticAnalysis() {
         typedef itk::Image<short, 3> ImageTypeCHAR;
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         MITK_INFO << "[AUTOMATIC_ANALYSIS] Setting Docker on MIRTK to OFF";
-        cmd->setUseMIRKTDocker(false);
+        cmd->setUseDockerContainers(_useDockerInPlugin);
 
         timerLog->StartTimer();
         if(cnnPath.isEmpty()) {
@@ -974,7 +974,7 @@ void AtrialScarView::Register() {
             this->BusyCursorOn();
             mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
             std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-            cmd->setUseMIRKTDocker(false);
+            cmd->setUseDockerContainers(_useDockerInPlugin);
             cmd->ExecuteRegistration(directory, lge, mra);
             QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
             this->BusyCursorOff();
@@ -1043,7 +1043,7 @@ void AtrialScarView::Transform() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                cmd->setUseMIRKTDocker(false);
+                cmd->setUseDockerContainers(_useDockerInPlugin);
                 cmd->ExecuteTransformation(directory, pathTemp.right(8), regFileName);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
@@ -1189,7 +1189,7 @@ void AtrialScarView::CreateSurf() {
                 mitk::IOUtil::Save(image, pathTemp.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                cmd->setUseMIRKTDocker(false);
+                cmd->setUseDockerContainers(_useDockerInPlugin);
                 path = cmd->ExecuteSurf(directory, pathTemp, iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();

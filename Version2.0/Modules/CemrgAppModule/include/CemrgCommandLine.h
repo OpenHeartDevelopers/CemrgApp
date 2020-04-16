@@ -80,7 +80,7 @@ public:
     void ExecuteTouch(QString filepath);
     std::string printFullCommand(QString command, QStringList arguments);
     void checkForStartedProcess();
-    void setUseMIRKTDocker(bool dockerOnMirtk);
+    void setUseDockerContainers(bool dockerContainersOnOff);
 
 protected slots:
 
@@ -97,7 +97,7 @@ private:
     std::unique_ptr<QProcess> process;
     bool completion;
     bool isUI;
-    bool useMirtkDocker;
+    bool useDockerContainers;
 };
 
 #endif // CemrgCommandLine_h
