@@ -1,6 +1,6 @@
 Cardiac Electromechanics Research Group App
 -------------------------------------------
-CemrgApp is an MITK based interactive medical imaging platform with image processing and computer vision toolkits for cardiovascular research.
+CemrgApp is an MITK based interactive medical imaging application with image processing and computer vision toolkits for cardiovascular research.
 
 License
 -------
