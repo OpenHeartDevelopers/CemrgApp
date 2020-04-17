@@ -13,6 +13,10 @@ Current Versions
 ----------------
 Versions of CemrgApp are organised in separate folders in the repository.
 
+Instructions
+------------
+Refer to Wiki pages at https://github.com/CemrgAppDevelopers/CemrgApp/wiki
+
 Contacts
 --------
 - http://www.cemrgapp.com/
