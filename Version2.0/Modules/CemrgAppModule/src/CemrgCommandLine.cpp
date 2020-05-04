@@ -224,6 +224,10 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
 }
 
 QString CemrgCommandLine::ExecuteCreateCGALMesh(QString dir, QString fileName, QString templatePath) {
+    bool debugvar = false;
+    MITK_INFO(debugvar) << ("DIRECTORY: " + dir).toStdString();
+    MITK_INFO(debugvar) << ("FILENAME: " + fileName).toStdString();
+    MITK_INFO(debugvar) << ("TEMPLATE: " + templatePath).toStdString();
 
     QString dockerOutput = dockerCreateCGALMesh(dir, fileName, templatePath);
     QString retOutput;
@@ -266,6 +270,9 @@ QString CemrgCommandLine::ExecuteCreateCGALMesh(QString dir, QString fileName, Q
         arguments << "-out_name" << fileName;
 
         completion = false;
+        MITK_INFO << printFullCommand(mesh3D, arguments);
+
+        checkForStartedProcess();
         process->start(mesh3D, arguments);
         while (!completion) {
           std::this_thread::sleep_for(std::chrono::seconds(1));
