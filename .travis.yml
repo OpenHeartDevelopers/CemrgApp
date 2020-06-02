@@ -1,0 +1,15 @@
+language:
+  - cpp
+
+os:
+  - linux
+
+dist:
+  - bionic
+
+compiler:
+  - clang
+  - gcc
+
+script:
+  ./.BuildProcess.sh
