@@ -12,4 +12,4 @@ compiler:
   - gcc
 
 script:
-  ./.BuildProcess.sh
+  ./TestScripts/BuildProcess.sh
