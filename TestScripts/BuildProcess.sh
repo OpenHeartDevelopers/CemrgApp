@@ -1,11 +1,11 @@
 #!/bin/sh
 
 #Build QT
-apt-get build-dep qt5-default
-apt-get install libxcb-xinerama0-dev
+sudo apt-get build-dep qt5-default
+sudp apt-get install libxcb-xinerama0-dev
 
-git clone https://phabricator.mitk.org/source/mitk.git MITK
-git checkout v2018.04.2
+#Build MITK
+git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git MITK
 
 #Download CemrgApp
 #git
@@ -13,5 +13,5 @@ git checkout v2018.04.2
 
 mkdir Build; cd Build
 #cmake -DMITK_EXTENSION_DIRS:PATH=??? ../
-cmake ..
+cmake ../MITK
 make -j8
