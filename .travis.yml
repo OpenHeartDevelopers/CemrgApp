@@ -11,5 +11,12 @@ compiler:
   - clang
   - gcc
 
+before_install:
+  - sudo apt-get -y build-dep qt5-default
+  - sudo apt-get -y install libxcb-xinerama0-dev
+addons:
+  apt:
+    update: true
+    
 script:
   ./TestScripts/BuildProcess.sh
