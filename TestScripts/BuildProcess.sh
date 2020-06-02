@@ -9,7 +9,7 @@
 #Build QT
 git clone --branch 5.12 https://code.qt.io/qt/qt5.git
 cd qt5; git submodule update --init --recursive
-../qt5/configure -developer-build -opensource -nomake examples -nomake tests
+../qt5/configure -developer-build -confirm-license -opensource -nomake examples -nomake tests
 make -j$(nproc)
 
 echo $PWD
