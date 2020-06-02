@@ -2,7 +2,7 @@
 
 #Build QT
 sudo apt-get build-dep qt5-default
-sudp apt-get install libxcb-xinerama0-dev
+sudo apt-get install libxcb-xinerama0-dev
 
 #Build MITK
 git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git MITK
