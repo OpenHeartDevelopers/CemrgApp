@@ -12,8 +12,8 @@ compiler:
   - gcc
 
 before_install:
-  - sudo apt-get -y build-dep qt5-default
-  - sudo apt-get -y install libxcb-xinerama0-dev
+  - sudo apt-get -y install qt5-default
+
 addons:
   apt:
     update: true
