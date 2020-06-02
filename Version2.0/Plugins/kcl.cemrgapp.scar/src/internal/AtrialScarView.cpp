@@ -502,7 +502,8 @@ void AtrialScarView::AutomaticAnalysis() {
             QString laregPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA-reg.nii";
 
             mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());
-            cmd->ExecuteRegistration(direct, lgePath, mraPath);
+            cmd->ExecuteRegistration(direct, lgePath, mraPath); // rigid.dof is the default name
+            cmd->ExecuteTransformation(direct, cnnPath, laregPath); 
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][3] Clean segmentation";
             typedef itk::ImageRegionIteratorWithIndex<ImageTypeCHAR> ItType;
