@@ -1597,12 +1597,20 @@ bool CemrgCommandLine::isOutputSuccessful(QString outputfullpath) {
 }
 
 void CemrgCommandLine::ExecuteTouch(QString filepath) {
-
+    QString commandName;
     QStringList arguments;
+    #ifdef _WIN32
+    commandName = "echo"; // echo . > filepath
+    arguments << "." << ">";
+    #else
+    commandName = "touch"; // touch filepath
+    #endif
     arguments << filepath;
-
     completion = false;
-    process->start("touch", arguments);
+
+    MITK_INFO << printFullCommand(commandName, arguments);
+    process->start(commandName, arguments);
+    checkForStartedProcess();
     while (!completion) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
