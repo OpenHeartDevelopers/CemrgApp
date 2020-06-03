@@ -589,15 +589,51 @@ void EASIView::ConfrmSITE() {
     }//_if
 }
 
+//#include <itkImageDuplicator.h>
+//#include <itkLabelShapeKeepNObjectsImageFilter.h>
+//#include <mitkIOUtil.h>
+//#include <itkImageRegionIteratorWithIndex.h>
+//#include <itkConnectedComponentImageFilter.h>
+//#include <mitkImageCast.h>
+//#include <mitkITKImageImport.h>
 void EASIView::Simulation() {
 
-    //MeshError();
-    //binariseImage();
-    //ColourMesh();
-    //RRcalcsAuto();
-    //CreateSyntImage();
-    //MeshReader();
-    // autoNIIconvert();
+//    typedef itk::Image<short, 3> ImageTypeCHAR;
+//    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+//    for (int i=11; i<=30; i++) {
+
+        //Prepare dirctories (1)
+//        QString direct = "/home/or15/Downloads/Test";
+
+        //Get LGE and MRA image (2)
+//       QString cnnPath = direct + "/out_" + QString::number(i) + "_3D.nii.gz";
+
+        //Clean the segmentation
+//        typedef itk::ImageRegionIteratorWithIndex<ImageTypeCHAR> ItType;
+//        ImageTypeCHAR::Pointer orgSegImage = ImageTypeCHAR::New();
+//        CastToItkImage(mitk::IOUtil::Load<mitk::Image>(cnnPath.toStdString()), orgSegImage);
+//        typedef itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> ConnectedComponentImageFilterType;
+//        ConnectedComponentImageFilterType::Pointer connected1 = ConnectedComponentImageFilterType::New();
+//        connected1->SetInput(orgSegImage);
+//        connected1->Update();
+//        typedef itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR> LabelShapeKeepNObjImgFilterType;
+//        LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr1 = LabelShapeKeepNObjImgFilterType::New();
+//        lblShpKpNObjImgFltr1->SetInput(connected1->GetOutput());
+//        lblShpKpNObjImgFltr1->SetBackgroundValue(0);
+//        lblShpKpNObjImgFltr1->SetNumberOfObjects(1);
+//        lblShpKpNObjImgFltr1->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+//        lblShpKpNObjImgFltr1->Update();
+//        using DuplicatorType = itk::ImageDuplicator<ImageTypeCHAR>;
+//        DuplicatorType::Pointer duplicator = DuplicatorType::New();
+//        duplicator->SetInputImage(lblShpKpNObjImgFltr1->GetOutput());
+//        duplicator->Update();
+//        ItType itDUP(duplicator->GetOutput(), duplicator->GetOutput()->GetRequestedRegion());
+//        for (itDUP.GoToBegin(); !itDUP.IsAtEnd(); ++itDUP)
+//            if ((int)itDUP.Get() != 0)
+//                itDUP.Set(1);
+//        QString segCleanPath = direct + "/prodClean_" + QString::number(i) + ".nii";
+//        mitk::IOUtil::Save(mitk::ImportItkImage(duplicator->GetOutput()), segCleanPath.toStdString());
+//   }
 }
 
 void EASIView::LoadMesh() {

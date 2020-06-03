@@ -1,0 +1,31 @@
+language:
+  - cpp
+
+os:
+  - linux
+
+dist:
+  - bionic
+
+compiler:
+  - clang
+  - gcc
+
+before_install:
+  - sudo apt-add-repository --yes ppa:beineri/opt-qt-5.12.0-bionic
+  - sudo apt-get -qq update
+addons:
+  apt:
+    update: true
+    
+install:
+  - sudo apt-get --yes install mesa-common-dev libglu1-mesa-dev
+  - sudo apt-get --yes install qt512-meta-full
+  
+before_script:
+  - QTDIR="/opt/qt512"
+  - PATH="$QTDIR/bin:$PATH"
+  - source /opt/qt512/bin/qt512-env.sh
+    
+script:
+  ./TestScripts/BuildProcess.sh
