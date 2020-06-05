@@ -51,7 +51,7 @@ public:
     QDialog* GetDialog();
 
     QString ExecuteSurf(QString dir, QString segPath, int iter, float th, int blur, int smth);
-    QString ExecuteCreateCGALMesh(QString dir, QString fileName, QString templatePath);
+    QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName="converted.inr");
     void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output="tsffd.dof");
     void ExecuteApplying(QString dir, QString inputMesh, double iniTime, QString dofin, int noFrames, int smooth);
     void ExecuteRegistration(QString dir, QString fixed, QString moving, QString txname="rigid.dof", QString modelname="Rigid");
@@ -70,8 +70,6 @@ public:
     void GPUReconstruction(QString userID, QString server, QStringList imgsList, QString targetImg, double resolution, double delta, int package, QString out);
 
     // Docker specific functions
-    QString dockerCreateCGALMesh(QString dir, QString fileName, QString templatePath);
-
     QString dockerCemrgNetPrediction(QString mra);
 
     // Helper functions
@@ -80,10 +78,15 @@ public:
     void ExecuteTouch(QString filepath);
     std::string printFullCommand(QString command, QStringList arguments);
     bool checkForStartedProcess();
-    void setUseDockerContainers(bool dockerContainersOnOff);
-    void setDockerImage(QString dockerimage);
-    void setDockerImage(std::string dockerimage);
+
     QStringList getDockerArguments(QString volume, QString dockerexe = "");
+    void setUseDockerContainers(bool dockerContainersOnOff);
+
+    inline void setUseDockerContainersOn(){setUseDockerContainers(true);};
+    inline void setUseDockerContainersOff(){setUseDockerContainers(false);};
+    inline void setDockerImage(QString dockerimage){_dockerimage = dockerimage;};
+    inline void setDockerImage(std::string dockerimage){_dockerimage = QString::fromStdString(dockerimage);};
+    inline QString getDockerImage(){return _dockerimage;};
 
 protected slots:
 
@@ -99,9 +102,9 @@ private:
     QVBoxLayout* layout;
     QString _dockerimage;
     std::unique_ptr<QProcess> process;
-    bool completion;
     bool isUI;
-    bool useDockerContainers;
+    bool completion;
+    bool _useDockerContainers;
 };
 
 #endif // CemrgCommandLine_h
