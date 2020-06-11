@@ -45,11 +45,11 @@ class MITKCEMRGAPPMODULE_EXPORT CemrgCommandLine : public QObject {
 public:
 
     CemrgCommandLine();
-    CemrgCommandLine(bool cmd);
     CemrgCommandLine(std::string dockerimage);
     ~CemrgCommandLine();
     QDialog* GetDialog();
 
+    // Execute functions
     QString ExecuteSurf(QString dir, QString segPath, int iter, float th, int blur, int smth);
     QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName="converted.inr");
     void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output="tsffd.dof");
@@ -65,6 +65,7 @@ public:
     QString ExecuteExtractSurface(QString dir, QString segPath, QString outputPath = "segmentation.vtk", float th=0.5, int blur=0);
     QString ExecuteSmoothSurface(QString dir, QString segPath, QString outputPath, int smth=10);
 
+    // Server functions
     bool ConnectToServer(QString userID, QString server);
     bool TransferTFServer(QString directory, QString fname, QString userID, QString server, bool download);
     void GPUReconstruction(QString userID, QString server, QStringList imgsList, QString targetImg, double resolution, double delta, int package, QString out);
@@ -74,11 +75,12 @@ public:
 
     // Helper functions
     bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath);
-    bool isOutputSuccessful(QString outputfullpath);
     void ExecuteTouch(QString filepath);
+    bool isOutputSuccessful(QString outputfullpath);
     std::string printFullCommand(QString command, QStringList arguments);
     bool checkForStartedProcess();
 
+    // Docker helper functions
     QStringList getDockerArguments(QString volume, QString dockerexe = "");
     void setUseDockerContainers(bool dockerContainersOnOff);
 
@@ -102,7 +104,6 @@ private:
     QVBoxLayout* layout;
     QString _dockerimage;
     std::unique_ptr<QProcess> process;
-    bool isUI;
     bool completion;
     bool _useDockerContainers;
 };

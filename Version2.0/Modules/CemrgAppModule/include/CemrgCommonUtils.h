@@ -53,6 +53,7 @@ public:
 
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
+    static QString m3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
 
     //Generic
     static mitk::DataNode::Pointer AddToStorage(

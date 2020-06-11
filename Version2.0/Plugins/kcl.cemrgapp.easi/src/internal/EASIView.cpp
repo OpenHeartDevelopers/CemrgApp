@@ -473,21 +473,15 @@ void EASIView::CreateMesh() {
 
                     //Checking input files
                     if (templatePath.isEmpty()) {
-                        //Absolute path
-                        QString aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "M3DLib";
-#if defined(__APPLE__)
-                        aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                                mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                                mitk::IOUtil::GetDirectorySeparator() + QString("M3DLib");
-#endif
-                        QMessageBox::warning(NULL, "Attention", "Reverting to default parameter file!");
-                        templatePath = aPath + mitk::IOUtil::GetDirectorySeparator() + "param-template.par";
+                        templatePath = CemrgCommonUtils::m3dlibParamFileGenerator(directory);
                     }//_if
 
                     //Run Mesh3DTool
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                    cmd->setUseDockerContainersOff(); // meshtools3d attempts the local libraries and falls back to docker.
+                    cmd->setDockerImage(QString("alonsojasl/meshtools3d:v1.0"));
                     QString output = cmd->ExecuteCreateCGALMesh(directory, "CGALMesh", templatePath);
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
 
@@ -497,9 +491,6 @@ void EASIView::CreateMesh() {
                     vtkSmartPointer<vtkUnstructuredGrid> vtkGrid = mitkVtkGrid->GetVtkUnstructuredGrid();
                     for (vtkIdType i=0; i<vtkGrid->GetNumberOfPoints(); i++) {
                         double* point = vtkGrid->GetPoint(i);
-                        point[0] /= 1000;
-                        point[1] /= 1000;
-                        point[2] /= 1000;
                         point[0] += origin.GetElement(0);
                         point[1] += origin.GetElement(1);
                         point[2] += origin.GetElement(2);

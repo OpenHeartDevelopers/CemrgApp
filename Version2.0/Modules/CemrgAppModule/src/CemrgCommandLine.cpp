@@ -47,7 +47,6 @@ PURPOSE.  See the above copyright notices for more information.
 
 CemrgCommandLine::CemrgCommandLine() {
 
-    isUI = true;
     _useDockerContainers = true;
     _dockerimage = "biomedia/mirtk:v1.1.0";
 
@@ -75,41 +74,8 @@ CemrgCommandLine::CemrgCommandLine() {
     connect(process.get(), SIGNAL(finished(int)), this, SLOT(FinishedAlert()));
 }
 
-CemrgCommandLine::CemrgCommandLine(bool cmd) {
-
-    isUI = cmd;
-    _useDockerContainers = true;
-    _dockerimage = "biomedia/mirtk:v1.1.0";
-
-    if(cmd) {
-        //Setup panel
-        panel = new QTextEdit(0,0);
-        QPalette palette = panel->palette();
-        palette.setColor(QPalette::Base, Qt::black);
-        palette.setColor(QPalette::Text, Qt::red);
-        panel->setPalette(palette);
-        panel->setReadOnly(true);
-
-        //Setup dialog
-        layout = new QVBoxLayout();
-        dial = new QDialog(0,0);
-        dial->setFixedSize(640, 480);
-        dial->setLayout(layout);
-        dial->layout()->addWidget(panel);
-        dial->show();
-    }
-
-    //Setup the process
-    process = std::unique_ptr<QProcess>(new QProcess(this));
-    process->setProcessChannelMode(QProcess::MergedChannels);
-    connect(process.get(), SIGNAL(readyReadStandardOutput()), this, SLOT(UpdateStdText()));
-    connect(process.get(), SIGNAL(readyReadStandardError()), this, SLOT(UpdateErrText()));
-    connect(process.get(), SIGNAL(finished(int)), this, SLOT(FinishedAlert()));
-}
-
 CemrgCommandLine::CemrgCommandLine(std::string dockerimage) {
 
-    isUI = true;
     _useDockerContainers = true;
     _dockerimage = QString::fromStdString(dockerimage);
 
@@ -186,6 +152,7 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
      segmentationDirectory = dir + mitk::IOUtil::GetDirectorySeparator();
      outputDirectory = segmentationDirectory + "CGALMeshDir";
      outAbsolutepath = outputDirectory + mitk::IOUtil::GetDirectorySeparator() + outputName;
+     outAbsolutepath += ".vtk"; // many outputs are created with meshtools3d. .vtk is the one used in CemrgApp
 
      if(_useDockerContainers){
          MITK_INFO << "Using docker containers.";
@@ -242,12 +209,12 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
      }
 
      if(!successful) {
-         if (_useDockerContainers){
-             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-             setUseDockerContainersOff();
+         if (!_useDockerContainers){
+             MITK_WARN << "MESHTOOLS3D did not produce a good outcome. Trying with the MESHTOOLS3D Docker container.";
+             setUseDockerContainersOn();
              return ExecuteCreateCGALMesh(dir, outputName, paramsFullPath, segmentationName);
          } else{
-             MITK_WARN << "Local MESHTOOLS3D libraries did not produce a good outcome.";
+             MITK_WARN << "MESHTOOLS3D Docker container did not produce a good outcome.";
              return "ERROR_IN_PROCESSING";
          }
      } else {
