@@ -391,7 +391,7 @@ void WallThicknessCalculationsView::SegmentIMGS() {
     }//_if
 }
 
-void WallThicknessCalculationsView::SelectROI() {    
+void WallThicknessCalculationsView::SelectROI() {
 }
 
 void WallThicknessCalculationsView::SelectLandmarks() {
@@ -793,14 +793,9 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
 
                     //Absolute path
                     if (templatePath.isEmpty()) {
-                        QString aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "M3DLib";
-#if defined(__APPLE__)
-                        aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                                mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                                mitk::IOUtil::GetDirectorySeparator() + QString("M3DLib");
-#endif
-                        QMessageBox::warning(NULL, "Attention", "Reverting to default parameter file!");
-                        templatePath = aPath + mitk::IOUtil::GetDirectorySeparator() + "param-template.par";
+                        QString paramFileName = "param-template.par";
+                        QString thicknessCalc = "1";
+                        templatePath = CemrgCommonUtils::m3dlibParamFileGenerator(directory,paramFileName,thicknessCalc);
                     }//_if
 
                     //FileName checks
@@ -812,6 +807,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                    cmd->setUseDockerContainersOff();
                     cmd->ExecuteCreateCGALMesh(directory, meshName, templatePath);
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                     this->BusyCursorOff();

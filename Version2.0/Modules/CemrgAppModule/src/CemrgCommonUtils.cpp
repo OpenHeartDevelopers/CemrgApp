@@ -45,6 +45,9 @@ PURPOSE.  See the above copyright notices for more information.
 
 //Qt
 #include <QMessageBox>
+#include <QString>
+#include <QFile>
+#include <QTextStream>
 #include "CemrgCommonUtils.h"
 
 mitk::DataNode::Pointer CemrgCommonUtils::imageNode;
@@ -192,6 +195,68 @@ mitk::Surface::Pointer CemrgCommonUtils::LoadVTKMesh(std::string path) {
     } catch (...) {
         return mitk::Surface::New();
     }//_catch
+}
+
+QString CemrgCommonUtils::m3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc){
+    QString path2file = dir + mitk::IOUtil::GetDirectorySeparator() + filename;
+    QFile fi(path2file);
+    if(thicknessCalc.compare("0", Qt::CaseSensitive)!=0 && thicknessCalc.compare("1", Qt::CaseSensitive)!=0){
+        MITK_INFO << "Thickness calculation set to default (OFF)";
+        thicknessCalc = "0";
+    }
+
+    if (fi.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream out(&fi);
+        out << "[segmentation]" << "\n\n";
+        out << "seg_dir" << "=" << "./example" << "\n";
+        out << "seg_name" << "=" << "converted.inr" << "\n";
+        out << "mesh_from_segmentation" << "=" << "1" << "\n\n";
+
+        out << "[meshing]" << "\n\n";
+        out << "readTheMesh" << "=" << "0" << "\n";
+        out << "mesh_dir" << "=" << "." << "\n";
+        out << "mesh_name" << "=" << "mesh" << "\n\n";
+
+        out << "facet_angle" << "=" << "30"<< "\n";
+        out << "facet_size" << "=" << "5.0" << "\n";
+        out << "facet_distance" << "=" << "4"<< "\n";
+        out << "cell_rad_edge_ratio" << "=" << "2.0" << "\n";
+        out << "cell_size" << "=" << "1.0" << "\n\n";
+
+        out << "rescaleFactor" << "=" << "1.0  # rescaling for carp and vtk output" << "\n\n";
+
+        out << "[laplacesolver]" << "\n\n";
+        out << "abs_toll" << "=" << "1e-6 # Also for evaluating the thickness" << "\n";
+        out << "rel_toll" << "=" << "1e-6" << "\n";
+        out << "itr_max" << "=" << "500" << "\n";
+        out << "dimKrilovSp" << "=" << "150" << "\n";
+        out << "verbose" << "=" << "0" << "\n\n";
+
+        out << "[output]" << "\n\n";
+        out << "outdir" << "=" << "." << "\n";
+        out << "name" << "=" << "imgmesh" << "\n\n";
+
+        out << "out_medit" << "=" << "0" << "\n";
+        out << "out_carp" << "=" << "1" << "\n";
+        out << "out_carp_binary" << "=" << "0" << "\n";
+        out << "out_vtk" << "=" << "1" << "\n";
+        out << "out_vtk_binary" << "=" << "0" << "\n";
+        out << "out_potential" << "=" << "0" << "\n";
+        out << "debug_output" << "=" << "0" << "\n";
+        out << "debug_frequency" << "=" << "10000" << "\n\n";
+
+        out << "[others]" << "\n\n";
+        out << "eval_thickness" << "=" << thicknessCalc << "\n";
+        out << "thickalgo" << "=" << "1" << "\n"; //#1: Martin Bishop Algorithm; 2: Cesare Corrado Algorithm
+        out << "swapregions" << "=" << "1" << "\n";
+        out << "verbose" << "=" << "0" << "\n";
+
+        return path2file;
+    } else {
+        MITK_WARN << ("File " + path2file + "not created.").toStdString();
+        return "ERROR_IN_PROCESSING";
+    }
+
 }
 
 mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(

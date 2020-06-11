@@ -1070,9 +1070,9 @@ void ScarCalculationsView::Sphericity() {
 
 // Helper functions
 void ScarCalculationsView::TransformMeshesForComparison() {
-
     MITK_INFO << "[ATTENTION] Implementation of alignement routines.";
 
+    bool successful;
     QString outpath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
     QString sourcename = outpath + "MaxScarPost.vtk";
     QString targetname = outpath + "MaxScarPre.vtk";
@@ -1080,12 +1080,22 @@ void ScarCalculationsView::TransformMeshesForComparison() {
     QString testTX = outpath + "docker.dof";
     this->BusyCursorOn();
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-    bool successful = cmd->dockerSimpleTranslation(directory, sourcename, targetname, alignedname);
+    cmd->ExecuteSimpleTranslation(directory, sourcename, targetname, testTX);
     this->BusyCursorOff();
+    if(cmd->isOutputSuccessful(testTX)){
+        MITK_INFO << "[...] DOF file created successfully, attempting transformation.";
+        this->BusyCursorOn();
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->ExecuteTransformationOnPoints(directory, sourcename, alignedname, testTX);
+        this->BusyCursorOff();
+        successful = cmd->isOutputSuccessful(alignedname);
+    } else {
+        MITK_INFO << "[...] DOF file not created.";
+        successful = false;
+    }
 
     MITK_INFO << "Command Line Operations Finished!";
-    if(!successful)
-        MITK_WARN << "Aligned file NOT created. Check your docker configuration.";
+    MITK_WARN(!successful) << "Aligned file NOT created. Check the log.";
 }
 
 void ScarCalculationsView::GetThresholdValuesFromFile(QString filepath) {
