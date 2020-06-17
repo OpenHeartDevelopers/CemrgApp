@@ -1082,13 +1082,13 @@ void ScarCalculationsView::TransformMeshesForComparison() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->ExecuteSimpleTranslation(directory, sourcename, targetname, testTX);
     this->BusyCursorOff();
-    if(cmd->isOutputSuccessful(testTX)){
+    if(cmd->IsOutputSuccessful(testTX)){
         MITK_INFO << "[...] DOF file created successfully, attempting transformation.";
         this->BusyCursorOn();
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->ExecuteTransformationOnPoints(directory, sourcename, alignedname, testTX);
         this->BusyCursorOff();
-        successful = cmd->isOutputSuccessful(alignedname);
+        successful = cmd->IsOutputSuccessful(alignedname);
     } else {
         MITK_INFO << "[...] DOF file not created.";
         successful = false;

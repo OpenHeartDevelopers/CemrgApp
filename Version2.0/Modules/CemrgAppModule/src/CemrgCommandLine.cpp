@@ -74,35 +74,6 @@ CemrgCommandLine::CemrgCommandLine() {
     connect(process.get(), SIGNAL(finished(int)), this, SLOT(FinishedAlert()));
 }
 
-CemrgCommandLine::CemrgCommandLine(std::string dockerimage) {
-
-    _useDockerContainers = true;
-    _dockerimage = QString::fromStdString(dockerimage);
-
-    //Setup panel
-    panel = new QTextEdit(0,0);
-    QPalette palette = panel->palette();
-    palette.setColor(QPalette::Base, Qt::black);
-    palette.setColor(QPalette::Text, Qt::red);
-    panel->setPalette(palette);
-    panel->setReadOnly(true);
-
-    //Setup dialog
-    layout = new QVBoxLayout();
-    dial = new QDialog(0,0);
-    dial->setFixedSize(640, 480);
-    dial->setLayout(layout);
-    dial->layout()->addWidget(panel);
-    dial->show();
-
-    //Setup the process
-    process = std::unique_ptr<QProcess>(new QProcess(this));
-    process->setProcessChannelMode(QProcess::MergedChannels);
-    connect(process.get(), SIGNAL(readyReadStandardOutput()), this, SLOT(UpdateStdText()));
-    connect(process.get(), SIGNAL(readyReadStandardError()), this, SLOT(UpdateErrText()));
-    connect(process.get(), SIGNAL(finished(int)), this, SLOT(FinishedAlert()));
-}
-
 CemrgCommandLine::~CemrgCommandLine() {
 
     process->close();
@@ -115,21 +86,21 @@ CemrgCommandLine::~CemrgCommandLine() {
  ************************* BUILDING MESH UTILITIES *************************
  ***************************************************************************/
 
-QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, float th, int blur, int smth) {
+QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, QString morphOperation, int iter, float th, int blur, int smth) {
      MITK_INFO << "[ATTENTION] SURFACE CREATION: Close -> Surface -> Smooth";
      QString closeOutputPath, surfOutputPath;
-     QString outAbsolutepath = "ERROR_IN_PROCESSING";
+     QString outAbsolutePath = "ERROR_IN_PROCESSING";
 
-     closeOutputPath = ExecuteMorphologicalOperation("close", dir, segPath, "segmentation.s.nii", iter);
+     closeOutputPath = ExecuteMorphologicalOperation(morphOperation, dir, segPath, "segmentation.s.nii", iter);
      if (QString::compare(closeOutputPath, "ERROR_IN_PROCESSING")!=0){
          surfOutputPath = ExecuteExtractSurface(dir, closeOutputPath, "segmentation.vtk", th, blur);
          if (QString::compare(surfOutputPath, "ERROR_IN_PROCESSING")!=0){
-             outAbsolutepath = ExecuteSmoothSurface(dir, surfOutputPath, surfOutputPath, smth);
+             outAbsolutePath = ExecuteSmoothSurface(dir, surfOutputPath, surfOutputPath, smth);
              remove((dir + mitk::IOUtil::GetDirectorySeparator() + "segmentation.s.nii").toStdString().c_str());
          }
      }
 
-     return outAbsolutepath;
+     return outAbsolutePath;
  }
 
  QString CemrgCommandLine::ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName) {
@@ -138,21 +109,21 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
      QString revertDockerImage = "";
      if (!_dockerimage.contains("meshtools3d", Qt::CaseInsensitive)){
          MITK_INFO << "Changing docker image name to meshtools3d.";
-         revertDockerImage = getDockerImage(); //get current docker image
-         setDockerImage(QString("alonsojasl/meshtools3d:v1.0"));
+         revertDockerImage = GetDockerImage(); //get current docker image
+         SetDockerImage(QString("alonsojasl/meshtools3d:v1.0"));
      }
 
      QString executablePath = "";
      QString executableName;
      QDir meshtools3dhome(dir);
 
-     QString outAbsolutepath, outputDirectory, segmentationDirectory;
+     QString outAbsolutePath, outputDirectory, segmentationDirectory;
      QStringList arguments;
 
      segmentationDirectory = dir + mitk::IOUtil::GetDirectorySeparator();
      outputDirectory = segmentationDirectory + "CGALMeshDir";
-     outAbsolutepath = outputDirectory + mitk::IOUtil::GetDirectorySeparator() + outputName;
-     outAbsolutepath += ".vtk"; // many outputs are created with meshtools3d. .vtk is the one used in CemrgApp
+     outAbsolutePath = outputDirectory + mitk::IOUtil::GetDirectorySeparator() + outputName;
+     outAbsolutePath += ".vtk"; // many outputs are created with meshtools3d. .vtk is the one used in CemrgApp
 
      if(_useDockerContainers){
          MITK_INFO << "Using docker containers.";
@@ -161,7 +132,7 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
          #endif
 
          executableName = executablePath+"docker";
-         arguments = getDockerArguments(meshtools3dhome.absolutePath());
+         arguments = GetDockerArguments(meshtools3dhome.absolutePath());
 
          arguments << "-f" << meshtools3dhome.relativeFilePath(paramsFullPath);
          arguments << "-seg_dir" << meshtools3dhome.relativeFilePath(segmentationDirectory);;
@@ -202,23 +173,23 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
      env.insert("TBB_NUM_THREADS","12");
      process->setProcessEnvironment(env);
  #endif
-     bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+     bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
      if (!revertDockerImage.isEmpty()){ // revert to original docker image (in case the object is used later).
-         setDockerImage(revertDockerImage);
+         SetDockerImage(revertDockerImage);
      }
 
      if(!successful) {
          if (!_useDockerContainers){
              MITK_WARN << "MESHTOOLS3D did not produce a good outcome. Trying with the MESHTOOLS3D Docker container.";
-             setUseDockerContainersOn();
+             SetUseDockerContainersOn();
              return ExecuteCreateCGALMesh(dir, outputName, paramsFullPath, segmentationName);
          } else{
              MITK_WARN << "MESHTOOLS3D Docker container did not produce a good outcome.";
              return "ERROR_IN_PROCESSING";
          }
      } else {
-         return outAbsolutepath;
+         return outAbsolutePath;
      }
  }
 
@@ -234,18 +205,18 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
      QString commandName = "register";
      QDir mirtkhome(dir);
 
-     QString imgTimesFilePath, outAbsolutepath;
+     QString imgTimesFilePath, outAbsolutePath;
      QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
      QStringList arguments;
 
      imgTimesFilePath = imgTimes.contains(dir, Qt::CaseSensitive) ? imgTimes : prodPath + imgTimes;
-     outAbsolutepath = output.contains(dir, Qt::CaseSensitive) ? output : prodPath + output;
+     outAbsolutePath = output.contains(dir, Qt::CaseSensitive) ? output : prodPath + output;
 
-     if(!outAbsolutepath.contains(".dof", Qt::CaseSensitive)) outAbsolutepath += ".dof";
+     if(!outAbsolutePath.contains(".dof", Qt::CaseSensitive)) outAbsolutePath += ".dof";
 
      MITK_INFO << ("[...] IMAGE FILES PATH: " + imgTimesFilePath).toStdString();
 //     MITK_INFO << ("[...] FIXED (target): " + fixedfullpath).toStdString();
-     MITK_INFO << ("[...] OUTPUT DOF: " + outAbsolutepath).toStdString();
+     MITK_INFO << ("[...] OUTPUT DOF: " + outAbsolutePath).toStdString();
 
      if(_useDockerContainers){
          MITK_INFO << "Using docker containers.";
@@ -254,11 +225,11 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
          #endif
 
          executableName = executablePath+"docker";
-         arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+         arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
          arguments << "-images" << mirtkhome.relativeFilePath(imgTimesFilePath);
          if (!param.isEmpty()) arguments << "-parin" << mirtkhome.relativeFilePath(param);
-         arguments << "-dofout" << mirtkhome.relativeFilePath(outAbsolutepath);
+         arguments << "-dofout" << mirtkhome.relativeFilePath(outAbsolutePath);
          arguments << "-threads" << "12";
          arguments << "-verbose" << "3";
 
@@ -278,7 +249,7 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
 
              arguments << "-images" << imgTimesFilePath;
              if (!param.isEmpty()) arguments << "-parin" << param;
-             arguments << "-dofout" << outAbsolutepath;
+             arguments << "-dofout" << outAbsolutePath;
              arguments << "-threads" << "12";
              arguments << "-verbose" << "3";
 
@@ -289,12 +260,12 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
          }//_if
      }
 
-     bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+     bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
      if(!successful) {
          if (_useDockerContainers){
              MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-             setUseDockerContainersOff();
+             SetUseDockerContainersOff();
              ExecuteTracking(dir, imgTimes, param, output);
          } else{
              MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
@@ -316,10 +287,11 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, int iter, fl
      for (int i=0; i<noFrames; i++) {
          thisOutput = output+QString::number(i)+".vtk";
          ExecuteTransformationOnPoints(dir, inputMesh, thisOutput, dofin, iniTime);
+         iniTime += fctTime;
      }
  }
 
-void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString moving, QString txname, QString modelname) {
+void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString moving, QString transformFileName, QString modelname) {
     MITK_INFO << "[ATTENTION] Attempting Registration.";
     //lge : fixed   ||   mra : moving
     QString executablePath = "";
@@ -327,21 +299,21 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
     QString commandName = "register";
     QDir mirtkhome(dir);
 
-    QString fixedfullpath, movingfullpath, outAbsolutepath;
+    QString fixedfullpath, movingfullpath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
     QStringList arguments;
 
     fixedfullpath = fixed.contains(dir, Qt::CaseSensitive) ? fixed : prodPath + fixed;
     movingfullpath = moving.contains(dir, Qt::CaseSensitive) ? moving : prodPath + moving;
-    outAbsolutepath = txname.contains(dir, Qt::CaseSensitive) ? txname : prodPath + txname;
+    outAbsolutePath = transformFileName.contains(dir, Qt::CaseSensitive) ? transformFileName : prodPath + transformFileName;
 
     if(!fixedfullpath.contains(".nii", Qt::CaseSensitive)) fixedfullpath += ".nii";
     if(!movingfullpath.contains(".nii", Qt::CaseSensitive)) movingfullpath += ".nii";
-    if(!outAbsolutepath.contains(".dof", Qt::CaseSensitive)) movingfullpath += ".dof";
+    if(!outAbsolutePath.contains(".dof", Qt::CaseSensitive)) movingfullpath += ".dof";
 
     MITK_INFO << ("[...] MOVING (source): " + movingfullpath).toStdString();
     MITK_INFO << ("[...] FIXED (target): " + fixedfullpath).toStdString();
-    MITK_INFO << ("[...] OUTPUT DOF: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT DOF: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -350,11 +322,11 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(movingfullpath); // input1
         arguments << mirtkhome.relativeFilePath(fixedfullpath); // input2
-        arguments << "-dofout" << mirtkhome.relativeFilePath(outAbsolutepath);
+        arguments << "-dofout" << mirtkhome.relativeFilePath(outAbsolutePath);
         arguments << "-model" << modelname;
         arguments << "-verbose" << "3";
         arguments << "-color";
@@ -375,7 +347,7 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
 
             arguments << movingfullpath;
             arguments << fixedfullpath;
-            arguments << "-dofout" << outAbsolutepath;
+            arguments << "-dofout" << outAbsolutePath;
             arguments << "-model" << modelname;
             arguments << "-verbose" << "3";
 
@@ -387,20 +359,20 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
     }
 
     MITK_INFO << ("Performing a " + modelname + " registration").toStdString();
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
-            ExecuteRegistration(dir, fixed, moving, txname, modelname);
+            SetUseDockerContainersOff();
+            ExecuteRegistration(dir, fixed, moving, transformFileName, modelname);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
         }
     }
 }
 
-void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QString regname, QString txfullpath) {
+void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QString regname, QString transformFileFullPath) {
     MITK_INFO << "[ATTENTION] Attempting Image Transformation.";
 
     QString executablePath = "";
@@ -408,17 +380,17 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
     QString commandName = "transform-image";
     QDir mirtkhome(dir);
 
-    QString dofpath, imgNamefullpath, outAbsolutepath;
+    QString dofpath, imgNamefullpath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
     QStringList arguments;
 
     imgNamefullpath = imgname.contains(dir, Qt::CaseSensitive) ? imgname : prodPath + imgname;
-    outAbsolutepath = regname.contains(dir, Qt::CaseSensitive) ? regname : prodPath + regname;
-    dofpath = txfullpath.contains(dir, Qt::CaseSensitive) ? txfullpath : prodPath + txfullpath;
+    outAbsolutePath = regname.contains(dir, Qt::CaseSensitive) ? regname : prodPath + regname;
+    dofpath = transformFileFullPath.contains(dir, Qt::CaseSensitive) ? transformFileFullPath : prodPath + transformFileFullPath;
 
     MITK_INFO << ("[...] INPUT IMAGE: " + imgNamefullpath).toStdString();
     MITK_INFO << ("[...] INPUT DOF: " + dofpath).toStdString();
-    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -427,10 +399,10 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(imgNamefullpath); //input
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath); //output
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath); //output
         arguments << "-dof" << mirtkhome.relativeFilePath(dofpath);
         arguments << "-verbose" << "3";
 
@@ -449,7 +421,7 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
             process->setWorkingDirectory(executablePath);
 
             arguments << imgNamefullpath; //input
-            arguments << outAbsolutepath; //output
+            arguments << outAbsolutePath; //output
             arguments << "-dof" << dofpath;
             arguments << "-verbose" << "3";
 
@@ -460,13 +432,13 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
-            ExecuteTransformation(dir, imgname, regname, txfullpath);
+            SetUseDockerContainersOff();
+            ExecuteTransformation(dir, imgname, regname, transformFileFullPath);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
         }
@@ -474,25 +446,25 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
 }
 
 void CemrgCommandLine::ExecuteResamplingOnNifti(
-        QString niifullpath, QString outputtniifullpath, int isovalue) {
+        QString niiFullPath, QString outputNiiFullPath, int isovalue) {
     MITK_INFO << "[ATTENTION] Attempting Image Transformation.";
 
     QString executablePath = "";
     QString executableName;
     QString commandName = "resample-image";
-    QFileInfo inputnii(niifullpath);
+    QFileInfo inputnii(niiFullPath);
     QString dir = inputnii.absolutePath();
     QDir mirtkhome(dir);
 
-    QString dofpath, imgNamefullpath, outAbsolutepath;
+    QString dofpath, imgNamefullpath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
     QStringList arguments;
 
-    imgNamefullpath = niifullpath;
-    outAbsolutepath = outputtniifullpath;
+    imgNamefullpath = niiFullPath;
+    outAbsolutePath = outputNiiFullPath;
 
     MITK_INFO << ("[...] INPUT IMAGE: " + imgNamefullpath).toStdString();
-    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -501,10 +473,10 @@ void CemrgCommandLine::ExecuteResamplingOnNifti(
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(imgNamefullpath); //input
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath); //output
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath); //output
         arguments << "-isotropic" << QString::number(isovalue);
         arguments << "-interp" << "CSpline";
         arguments << "-verbose" << "3";
@@ -522,7 +494,7 @@ void CemrgCommandLine::ExecuteResamplingOnNifti(
             process->setWorkingDirectory(executablePath);
 
             arguments << imgNamefullpath; //input
-            arguments << outAbsolutepath; //output
+            arguments << outAbsolutePath; //output
             arguments << "-isotropic" << QString::number(isovalue);
             arguments << "-interp" << "CSpline";
             arguments << "-verbose" << "3";
@@ -534,37 +506,37 @@ void CemrgCommandLine::ExecuteResamplingOnNifti(
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
-            ExecuteResamplingOnNifti(niifullpath, outputtniifullpath,isovalue);
+            SetUseDockerContainersOff();
+            ExecuteResamplingOnNifti(niiFullPath, outputNiiFullPath,isovalue);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
         }
     }
 }
 
-void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshfullpath, QString outputtmeshfullpath, QString txfullpath, double applyingIniTime) {
+void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime) {
     MITK_INFO << "[ATTENTION] Attempting Pointset transformation.";
     QString executablePath = "";
     QString executableName;
     QString commandName = "transform-points";
     QDir mirtkhome(dir);
 
-    QString dofpath, inputMeshFullPath, outAbsolutepath;
+    QString dofpath, inputMeshFullPath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
     QStringList arguments;
 
-    inputMeshFullPath = meshfullpath.contains(dir, Qt::CaseSensitive) ? meshfullpath : prodPath + meshfullpath;
-    outAbsolutepath = outputtmeshfullpath.contains(dir, Qt::CaseSensitive) ? outputtmeshfullpath : prodPath + outputtmeshfullpath;
-    dofpath = txfullpath.contains(dir, Qt::CaseSensitive) ? txfullpath : prodPath + txfullpath;
+    inputMeshFullPath = meshFullPath.contains(dir, Qt::CaseSensitive) ? meshFullPath : prodPath + meshFullPath;
+    outAbsolutePath = outputMeshFullPath.contains(dir, Qt::CaseSensitive) ? outputMeshFullPath : prodPath + outputMeshFullPath;
+    dofpath = transformFileFullPath.contains(dir, Qt::CaseSensitive) ? transformFileFullPath : prodPath + transformFileFullPath;
 
     MITK_INFO << ("[...] INPUT IMAGE: " + inputMeshFullPath).toStdString();
     MITK_INFO << ("[...] INPUT DOF: " + dofpath).toStdString();
-    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -573,10 +545,10 @@ void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshfu
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(inputMeshFullPath); // input
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath); // output
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath); // output
         arguments << "-dofin" << mirtkhome.relativeFilePath(dofpath);
         arguments << "-ascii";
         if (applyingIniTime != -100){
@@ -601,7 +573,7 @@ void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshfu
             process->setWorkingDirectory(executablePath);
 
             arguments << inputMeshFullPath; // input
-            arguments << outAbsolutepath; // output
+            arguments << outAbsolutePath; // output
             arguments << "-dofin" << dofpath;
             arguments << "-ascii";
             if (applyingIniTime != -100){
@@ -618,39 +590,22 @@ void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshfu
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
-            ExecuteTransformationOnPoints(dir, meshfullpath, outputtmeshfullpath, txfullpath);
+            SetUseDockerContainersOff();
+            ExecuteTransformationOnPoints(dir, meshFullPath, outputMeshFullPath, transformFileFullPath);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
         }
     }
 }
 
-QString CemrgCommandLine::ExecuteExpandSurf(QString dir, QString segPath, int iter, float th, int blur, int smth){
-    MITK_INFO << "[ATTENTION] EXPANDED SURFACE CREATION: Dilate -> Surface -> Smooth";
-    QString dilateOutputPath, surfOutputPath;
-    QString outAbsolutepath = "ERROR_IN_PROCESSING";
-
-    dilateOutputPath = ExecuteMorphologicalOperation("dilate", dir, segPath, "segmentation.s.nii", iter);
-    if (QString::compare(dilateOutputPath, "ERROR_IN_PROCESSING")!=0){
-        surfOutputPath = ExecuteExtractSurface(dir, dilateOutputPath, "segmentation.vtk", th, blur);
-        if (QString::compare(surfOutputPath, "ERROR_IN_PROCESSING")!=0){
-            outAbsolutepath = ExecuteSmoothSurface(dir, surfOutputPath, surfOutputPath, smth);
-            remove((dir + mitk::IOUtil::GetDirectorySeparator() + "segmentation.s.nii").toStdString().c_str());
-        }
-    }
-
-    return outAbsolutepath;
-}
-
-void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString txName, bool transformThePoints){
+void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString transformFileName, bool transformThePoints){
     MITK_INFO << "[ATTENTION] Attempting INIT-DOF.";
-    QString aPath, executableName, commandName, sourceMeshPath, targetMeshPath, outAbsolutepath, prodPath;
+    QString aPath, executableName, commandName, sourceMeshPath, targetMeshPath, outAbsolutePath, prodPath;
     QStringList arguments;
     QDir mirtkhome(dir);
 
@@ -659,7 +614,7 @@ void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP
 
     sourceMeshPath = sourceMeshP.contains(dir, Qt::CaseSensitive) ? sourceMeshP : prodPath + sourceMeshP;
     targetMeshPath = targetMeshP.contains(dir, Qt::CaseSensitive) ? targetMeshP : prodPath + targetMeshP;
-    outAbsolutepath = txName.contains(dir, Qt::CaseSensitive) ? txName : prodPath + txName;
+    outAbsolutePath = transformFileName.contains(dir, Qt::CaseSensitive) ? transformFileName : prodPath + transformFileName;
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -668,9 +623,9 @@ void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP
         #endif
 
         executableName = aPath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(),  commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(),  commandName);
 
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath);
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath);
         arguments << "-translations" << "-norotations" << "-noscaling" << "-noshearing";
         if(transformThePoints) {
             arguments << "-displacements";
@@ -695,7 +650,7 @@ void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP
         if (apathd.exists()) {
             process->setWorkingDirectory(aPath);
 
-            arguments << outAbsolutepath;
+            arguments << outAbsolutePath;
             arguments << "-translations" << "-norotations" << "-noscaling" << "-noshearing";
             if(transformThePoints) {
                 arguments << "-displacements";
@@ -715,13 +670,13 @@ void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
-            ExecuteSimpleTranslation(dir, sourceMeshP, targetMeshP, txName, transformThePoints);
+            SetUseDockerContainersOff();
+            ExecuteSimpleTranslation(dir, sourceMeshP, targetMeshP, transformFileName, transformThePoints);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
         }
@@ -752,15 +707,15 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
 
     QDir mirtkhome(dir);
 
-    QString inputImgFullPath, outAbsolutepath;
+    QString inputImgFullPath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
 
     inputImgFullPath = segPath.contains(dir, Qt::CaseSensitive) ? segPath : prodPath + segPath;
-    outAbsolutepath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
+    outAbsolutePath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
 
     MITK_INFO << ("[...] OPERATION: " + operation).toStdString();
     MITK_INFO << ("[...] INPUT IMAGE: " + inputImgFullPath).toStdString();
-    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -769,10 +724,10 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(inputImgFullPath);
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath);
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath);
         arguments << "-iterations" << QString::number(iter);
 
     } else{
@@ -790,7 +745,7 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
             process->setWorkingDirectory(executablePath);
 
             arguments << inputImgFullPath;
-            arguments << outAbsolutepath;
+            arguments << outAbsolutePath;
             arguments << "-iterations" << QString::number(iter);
 
         } else {
@@ -800,19 +755,19 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
+            SetUseDockerContainersOff();
             return ExecuteMorphologicalOperation(operation, dir, segPath, outputPath, iter);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
             return "ERROR_IN_PROCESSING";
         }
     } else {
-        return outAbsolutepath;
+        return outAbsolutePath;
     }
 }
 
@@ -826,15 +781,15 @@ QString CemrgCommandLine::ExecuteExtractSurface(QString dir, QString segPath, QS
 
     QDir mirtkhome(dir);
 
-    QString inputImgFullPath, outAbsolutepath;
+    QString inputImgFullPath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
     QStringList arguments;
 
     inputImgFullPath = segPath.contains(dir, Qt::CaseSensitive) ? segPath : prodPath + segPath;
-    outAbsolutepath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
+    outAbsolutePath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
 
     MITK_INFO << ("[...] INPUT IMAGE: " + inputImgFullPath).toStdString();
-    MITK_INFO << ("[...] OUTPUT MESH: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT MESH: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -843,10 +798,10 @@ QString CemrgCommandLine::ExecuteExtractSurface(QString dir, QString segPath, QS
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(inputImgFullPath);
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath);
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath);
         arguments << "-isovalue" << QString::number(th);
         arguments << "-blur" << QString::number(blur);
         arguments << "-ascii";
@@ -867,7 +822,7 @@ QString CemrgCommandLine::ExecuteExtractSurface(QString dir, QString segPath, QS
             process->setWorkingDirectory(executablePath);
 
             arguments << inputImgFullPath;
-            arguments << outAbsolutepath;
+            arguments << outAbsolutePath;
             arguments << "-isovalue" << QString::number(th);
             arguments << "-blur" << QString::number(blur);
             arguments << "-ascii";
@@ -880,19 +835,19 @@ QString CemrgCommandLine::ExecuteExtractSurface(QString dir, QString segPath, QS
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
+            SetUseDockerContainersOff();
             return ExecuteExtractSurface(dir, segPath, outputPath,th, blur);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
             return "ERROR_IN_PROCESSING";
         }
     } else{
-        return outAbsolutepath;
+        return outAbsolutePath;
     }
 }
 
@@ -906,15 +861,15 @@ QString CemrgCommandLine::ExecuteSmoothSurface(QString dir, QString segPath, QSt
 
     QDir mirtkhome(dir);
 
-    QString inputMeshFullPath, outAbsolutepath;
+    QString inputMeshFullPath, outAbsolutePath;
     QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
     QStringList arguments;
 
     inputMeshFullPath = segPath.contains(dir, Qt::CaseSensitive) ? segPath : prodPath + segPath;
-    outAbsolutepath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
+    outAbsolutePath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
 
     MITK_INFO << ("[...] INPUT IMAGE: " + inputMeshFullPath).toStdString();
-    MITK_INFO << ("[...] OUTPUT MESH: " + outAbsolutepath).toStdString();
+    MITK_INFO << ("[...] OUTPUT MESH: " + outAbsolutePath).toStdString();
 
     if(_useDockerContainers){
         MITK_INFO << "Using docker containers.";
@@ -923,10 +878,10 @@ QString CemrgCommandLine::ExecuteSmoothSurface(QString dir, QString segPath, QSt
         #endif
 
         executableName = executablePath+"docker";
-        arguments = getDockerArguments(mirtkhome.absolutePath(), commandName);
+        arguments = GetDockerArguments(mirtkhome.absolutePath(), commandName);
 
         arguments << mirtkhome.relativeFilePath(inputMeshFullPath);
-        arguments << mirtkhome.relativeFilePath(outAbsolutepath);
+        arguments << mirtkhome.relativeFilePath(outAbsolutePath);
         arguments << "-iterations" << QString::number(smth);
         arguments << "-verbose" << "3";
 
@@ -945,7 +900,7 @@ QString CemrgCommandLine::ExecuteSmoothSurface(QString dir, QString segPath, QSt
             process->setWorkingDirectory(executablePath);
 
             arguments << inputMeshFullPath;
-            arguments << outAbsolutepath;
+            arguments << outAbsolutePath;
             arguments << "-iterations" << QString::number(smth);
             arguments << "-verbose" << "3";
 
@@ -956,19 +911,19 @@ QString CemrgCommandLine::ExecuteSmoothSurface(QString dir, QString segPath, QSt
         }//_if
     }
 
-    bool successful = ExecuteCommand(executableName, arguments, outAbsolutepath);
+    bool successful = ExecuteCommand(executableName, arguments, outAbsolutePath);
 
     if(!successful) {
         if (_useDockerContainers){
             MITK_WARN << "Docker did not produce a good outcome. Trying with local MIRTK libraries.";
-            setUseDockerContainersOff();
+            SetUseDockerContainersOff();
             return ExecuteSmoothSurface(dir, segPath, outputPath, smth);
         } else{
             MITK_WARN << "Local MIRTK libraries did not produce a good outcome.";
             return "ERROR_IN_PROCESSING";
         }
     } else{
-        return outAbsolutepath;
+        return outAbsolutePath;
     }
 }
 
@@ -1142,7 +1097,7 @@ void CemrgCommandLine::GPUReconstruction(QString userID, QString server, QString
 }
 
 //Docker - ML
-QString CemrgCommandLine::dockerCemrgNetPrediction(QString mra) {
+QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
 
     MITK_INFO << "[CEMRGNET] Attempting prediction using Docker";
     QString aPath = "";
@@ -1189,12 +1144,12 @@ QString CemrgCommandLine::dockerCemrgNetPrediction(QString mra) {
             MITK_INFO << inputfilepath.toStdString();
 
             MITK_INFO << "[DEBUG] Docker command to run:";
-            MITK_INFO << printFullCommand(docker, arguments);
+            MITK_INFO << PrintFullCommand(docker, arguments);
         }
 
         completion = false;
         process->start(docker, arguments);
-        checkForStartedProcess();
+        CheckForStartedProcess();
         while (!completion) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
             QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1205,7 +1160,7 @@ QString CemrgCommandLine::dockerCemrgNetPrediction(QString mra) {
         if(test2) {
             MITK_INFO << "[CEMRGNET] Prediction and output creation - successful.";
             res = outputfilepath;
-        } else if(isOutputSuccessful(tempfilepath)) {
+        } else if(IsOutputSuccessful(tempfilepath)) {
             MITK_INFO << "[CEMRGNET] Prediction - successful.";
             res = tempfilepath;
         } else {
@@ -1222,11 +1177,11 @@ QString CemrgCommandLine::dockerCemrgNetPrediction(QString mra) {
 
 //Helper functions
 bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList arguments, QString outputPath){
-    MITK_INFO << printFullCommand(executableName, arguments);
+    MITK_INFO << PrintFullCommand(executableName, arguments);
     completion = false;
     process->start(executableName, arguments);
     bool successful = false;
-    bool processStarted = checkForStartedProcess();
+    bool processStarted = CheckForStartedProcess();
     while (!completion) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1234,16 +1189,16 @@ bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList argume
     mitk::ProgressBar::GetInstance()->Progress();
 
     if (processStarted){
-        successful = isOutputSuccessful(outputPath);
+        successful = IsOutputSuccessful(outputPath);
     }
     return successful;
 }
 
-bool CemrgCommandLine::isOutputSuccessful(QString outputfullpath) {
+bool CemrgCommandLine::IsOutputSuccessful(QString outputFullPath) {
 
     MITK_INFO << "[ATTENTION] Checking for successful output on path:";
-    MITK_INFO << outputfullpath.toStdString();
-    QFileInfo finfo(outputfullpath);
+    MITK_INFO << outputFullPath.toStdString();
+    QFileInfo finfo(outputFullPath);
     bool res = finfo.exists();
     MITK_INFO << (res ? "Successful output" : "Output file not found.");
     return res;
@@ -1261,7 +1216,7 @@ void CemrgCommandLine::ExecuteTouch(QString filepath) {
 #endif
 }
 
-std::string CemrgCommandLine::printFullCommand(QString command, QStringList arguments) {
+std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList arguments) {
 
     QString argumentList = "";
     for (int ix=0; ix < arguments.size(); ix++) {
@@ -1284,7 +1239,7 @@ std::string CemrgCommandLine::printFullCommand(QString command, QStringList argu
 this function prevents freezing of the app when something goes wrong with the
 Qt process.
 */
-bool CemrgCommandLine::checkForStartedProcess() {
+bool CemrgCommandLine::CheckForStartedProcess() {
     bool startedProcess = false;
     bool debugvar = false;
     if(debugvar) {
@@ -1311,13 +1266,13 @@ bool CemrgCommandLine::checkForStartedProcess() {
     return startedProcess;
 }
 
-void CemrgCommandLine::setUseDockerContainers(bool dockerContainersOnOff) {
+void CemrgCommandLine::SetUseDockerContainers(bool dockerContainersOnOff) {
     QString onoff = dockerContainersOnOff ? "ON" : "OFF";
     MITK_INFO << ("[...] Setting _useDockerContainers variable to: " + onoff).toStdString();
     _useDockerContainers = dockerContainersOnOff;
 }
 
-QStringList CemrgCommandLine::getDockerArguments(QString volume, QString dockerexe){
+QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockerexe){
     bool mirtkTest = QString::compare(_dockerimage, "biomedia/mirtk:v1.1.0", Qt::CaseSensitive);
 
     QStringList argumentList;

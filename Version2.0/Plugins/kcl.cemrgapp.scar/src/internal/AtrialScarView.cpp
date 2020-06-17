@@ -462,11 +462,11 @@ void AtrialScarView::AutomaticAnalysis() {
         typedef itk::Image<short, 3> ImageTypeCHAR;
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         MITK_INFO << "[AUTOMATIC_ANALYSIS] Setting Docker on MIRTK to OFF";
-        cmd->setUseDockerContainers(_useDockerInPlugin);
+        cmd->SetUseDockerContainers(_useDockerInPlugin);
 
         timerLog->StartTimer();
         if(cnnPath.isEmpty()) {
-            cnnPath = cmd->dockerCemrgNetPrediction(mraPath);
+            cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
         }
 
         if(!cnnPath.isEmpty()) {
@@ -503,7 +503,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
             mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());
             cmd->ExecuteRegistration(direct, lgePath, mraPath); // rigid.dof is the default name
-            cmd->ExecuteTransformation(direct, cnnPath, laregPath); 
+            cmd->ExecuteTransformation(direct, cnnPath, laregPath);
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][3] Clean segmentation";
             typedef itk::ImageRegionIteratorWithIndex<ImageTypeCHAR> ItType;
@@ -540,7 +540,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][4] Vein clipping mesh";
             cmd->ExecuteTouch(direct+mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk");
-            QString output1 = cmd->ExecuteSurf(direct, segCleanPath, 1, .5, 0, 10);
+            QString output1 = cmd->ExecuteSurf(direct, segCleanPath, "close", 1, .5, 0, 10);
             mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
             vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
             deci->SetInputData(shell->GetVtkPolyData());
@@ -651,7 +651,7 @@ void AtrialScarView::AutomaticAnalysis() {
             MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][8] Create a mesh from clipped segmentation of veins";
-            QString output2 = cmd->ExecuteSurf(direct, (direct + "/PVeinsCroppedImage.nii"), 1, .5, 0, 10);
+            QString output2 = cmd->ExecuteSurf(direct, (direct + "/PVeinsCroppedImage.nii"), "close", 1, .5, 0, 10);
             mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][9] Clip the mitral valve";
@@ -682,7 +682,7 @@ void AtrialScarView::AutomaticAnalysis() {
             mitk::IOUtil::Save(mitk::ImportItkImage(mvImage), (direct + "/prodMVI.nii").toStdString());
 
             // Make vtk of prodMVI
-            QString mviShellPath = cmd->ExecuteExpandSurf(direct, "prodMVI.nii", 1, 0.5, 0, 10);
+            QString mviShellPath = cmd->ExecuteSurf(direct, "prodMVI.nii", "dilate", 1, 0.5, 0, 10);
             // Implement code from command line tool
             mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(mviShellPath.toStdString());
             vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
@@ -975,7 +975,7 @@ void AtrialScarView::Register() {
             this->BusyCursorOn();
             mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
             std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-            cmd->setUseDockerContainers(_useDockerInPlugin);
+            cmd->SetUseDockerContainers(_useDockerInPlugin);
             cmd->ExecuteRegistration(directory, lge, mra);
             QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
             this->BusyCursorOff();
@@ -1044,7 +1044,7 @@ void AtrialScarView::Transform() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                cmd->setUseDockerContainers(_useDockerInPlugin);
+                cmd->SetUseDockerContainers(_useDockerInPlugin);
                 cmd->ExecuteTransformation(directory, pathTemp.right(8), regFileName);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
@@ -1190,8 +1190,8 @@ void AtrialScarView::CreateSurf() {
                 mitk::IOUtil::Save(image, pathTemp.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                cmd->setUseDockerContainers(_useDockerInPlugin);
-                path = cmd->ExecuteSurf(directory, pathTemp, iter, th, blur, smth);
+                cmd->SetUseDockerContainers(_useDockerInPlugin);
+                path = cmd->ExecuteSurf(directory, pathTemp, "close", iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
 

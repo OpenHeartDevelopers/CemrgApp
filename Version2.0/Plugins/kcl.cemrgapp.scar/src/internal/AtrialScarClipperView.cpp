@@ -210,7 +210,7 @@ void AtrialScarClipperView::iniPreSurf() {
                 mitk::IOUtil::Save(image, path.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                QString output = cmd->ExecuteSurf(directory, path, iter, th, blur, smth);
+                QString output = cmd->ExecuteSurf(directory, path, "close", iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
 

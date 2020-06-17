@@ -575,7 +575,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 mitk::IOUtil::Save(bp, path1.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
                 std::unique_ptr<CemrgCommandLine> cmd1(new CemrgCommandLine());
-                QString output = cmd1->ExecuteSurf(directory, path1, iter, th, blur, smth);
+                QString output = cmd1->ExecuteSurf(directory, path1, "close", iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations (Bloodpool) Finished!");
                 //Decimate the mesh to visualise
                 mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(output.toStdString());
@@ -590,7 +590,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 mitk::IOUtil::Save(ap, path2.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
                 std::unique_ptr<CemrgCommandLine> cmd2(new CemrgCommandLine());
-                output = cmd2->ExecuteSurf(directory, path2, iter, th, blur, smth);
+                output = cmd2->ExecuteSurf(directory, path2, "close", iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations (Appendage) Finished!");
                 //Decimate the mesh to visualise
                 shell = mitk::IOUtil::Load<mitk::Surface>(output.toStdString());
@@ -807,7 +807,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                    cmd->setUseDockerContainersOff();
+                    cmd->SetUseDockerContainersOff();
                     cmd->ExecuteCreateCGALMesh(directory, meshName, templatePath);
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                     this->BusyCursorOff();

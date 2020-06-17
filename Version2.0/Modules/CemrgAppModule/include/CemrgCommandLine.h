@@ -45,21 +45,19 @@ class MITKCEMRGAPPMODULE_EXPORT CemrgCommandLine : public QObject {
 public:
 
     CemrgCommandLine();
-    CemrgCommandLine(std::string dockerimage);
     ~CemrgCommandLine();
     QDialog* GetDialog();
 
     // Execute functions
-    QString ExecuteSurf(QString dir, QString segPath, int iter, float th, int blur, int smth);
+    QString ExecuteSurf(QString dir, QString segPath, QString morphOperation="close", int iter=1, float th=0.5, int blur=0, int smth=10);
     QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName="converted.inr");
     void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output="tsffd.dof");
     void ExecuteApplying(QString dir, QString inputMesh, double iniTime, QString dofin, int noFrames, int smooth);
-    void ExecuteRegistration(QString dir, QString fixed, QString moving, QString txname="rigid.dof", QString modelname="Rigid");
-    void ExecuteTransformation(QString dir, QString imgNamefullpath, QString regImgNamefullpath, QString txfullpath="rigid.dof");
-    void ExecuteResamplingOnNifti(QString niifullpath, QString outputtniifullpath, int isovalue);
-    void ExecuteTransformationOnPoints(QString dir, QString meshfullpath, QString outputtmeshfullpath, QString txfullpath, double applyingIniTime=-100);
-    QString ExecuteExpandSurf(QString dir, QString segPath, int iter=1, float th=0.5, int blur=0, int smth=10);
-    void ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString txName="init.dof", bool transformThePoints=true);
+    void ExecuteRegistration(QString dir, QString fixed, QString moving, QString transformFileName="rigid.dof", QString modelname="Rigid");
+    void ExecuteTransformation(QString dir, QString imgNamefullpath, QString regImgNamefullpath, QString transformFileFullPath="rigid.dof");
+    void ExecuteResamplingOnNifti(QString niiFullPath, QString outputNiiFullPath, int isovalue);
+    void ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime=-100);
+    void ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString transformFileName="init.dof", bool transformThePoints=true);
 
     QString ExecuteMorphologicalOperation(QString operation, QString dir, QString segPath, QString outputPath = "segmentation.s.nii", int iter=1);
     QString ExecuteExtractSurface(QString dir, QString segPath, QString outputPath = "segmentation.vtk", float th=0.5, int blur=0);
@@ -71,24 +69,23 @@ public:
     void GPUReconstruction(QString userID, QString server, QStringList imgsList, QString targetImg, double resolution, double delta, int package, QString out);
 
     // Docker specific functions
-    QString dockerCemrgNetPrediction(QString mra);
+    QString DockerCemrgNetPrediction(QString mra);
 
     // Helper functions
     bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath);
     void ExecuteTouch(QString filepath);
-    bool isOutputSuccessful(QString outputfullpath);
-    std::string printFullCommand(QString command, QStringList arguments);
-    bool checkForStartedProcess();
+    bool IsOutputSuccessful(QString outputFullPath);
+    std::string PrintFullCommand(QString command, QStringList arguments);
+    bool CheckForStartedProcess();
 
     // Docker helper functions
-    QStringList getDockerArguments(QString volume, QString dockerexe = "");
-    void setUseDockerContainers(bool dockerContainersOnOff);
+    QStringList GetDockerArguments(QString volume, QString dockerexe = "");
+    void SetUseDockerContainers(bool dockerContainersOnOff);
 
-    inline void setUseDockerContainersOn(){setUseDockerContainers(true);};
-    inline void setUseDockerContainersOff(){setUseDockerContainers(false);};
-    inline void setDockerImage(QString dockerimage){_dockerimage = dockerimage;};
-    inline void setDockerImage(std::string dockerimage){_dockerimage = QString::fromStdString(dockerimage);};
-    inline QString getDockerImage(){return _dockerimage;};
+    inline void SetUseDockerContainersOn(){SetUseDockerContainers(true);};
+    inline void SetUseDockerContainersOff(){SetUseDockerContainers(false);};
+    inline void SetDockerImage(QString dockerimage){_dockerimage = dockerimage;};
+    inline QString GetDockerImage(){return _dockerimage;};
 
 protected slots:
 

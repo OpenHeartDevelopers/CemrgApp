@@ -480,8 +480,8 @@ void EASIView::CreateMesh() {
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                    cmd->setUseDockerContainersOff(); // meshtools3d attempts the local libraries and falls back to docker.
-                    cmd->setDockerImage(QString("alonsojasl/meshtools3d:v1.0"));
+                    cmd->SetUseDockerContainersOff(); // meshtools3d attempts the local libraries and falls back to docker.
+                    cmd->SetDockerImage(QString("alonsojasl/meshtools3d:v1.0"));
                     QString output = cmd->ExecuteCreateCGALMesh(directory, "CGALMesh", templatePath);
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
 
