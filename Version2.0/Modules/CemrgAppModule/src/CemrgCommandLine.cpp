@@ -150,13 +150,13 @@ QString CemrgCommandLine::ExecuteCreateCGALMesh(QString dir, QString outputName,
     } else {
 
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "M3DLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("M3DLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "M3DLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + "meshtools3d";
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -239,13 +239,13 @@ void CemrgCommandLine::ExecuteTracking(QString dir, QString imgTimes, QString pa
 
     } else {
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -342,13 +342,13 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
     } else {
 
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -420,13 +420,13 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
     } else {
 
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -589,13 +589,13 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
 
     } else {
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -667,13 +667,13 @@ QString CemrgCommandLine::ExecuteExtractSurface(QString dir, QString segPath, QS
     } else {
 
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -743,13 +743,13 @@ QString CemrgCommandLine::ExecuteSmoothSurface(QString dir, QString segPath, QSt
 
     } else {
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -831,13 +831,13 @@ void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshFu
 
     } else {
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
                 mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
@@ -914,11 +914,11 @@ void CemrgCommandLine::ExecuteResamplingOnNifti(QString niiFullPath, QString out
     } else {
 
         MITK_INFO << "Using static MIRTK libraries.";
+        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
         executablePath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") + mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") + mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
 #endif
 
-        executablePath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
         executableName = executablePath + mitk::IOUtil::GetDirectorySeparator() + commandName;
         QDir apathd(executablePath);
         if (apathd.exists()) {
