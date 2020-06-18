@@ -563,11 +563,11 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 //Set default values
                 if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if(!ok1) iter = 1;
-                if(!ok2) th   = 0.5;
-                if(!ok3) blur = 0;
-                if(!ok4) smth = 0;
-                if(!ok5) ds   = 0.99;
+                if (!ok1) iter = 1;
+                if (!ok2) th   = 0.5;
+                if (!ok3) blur = 0;
+                if (!ok4) smth = 0;
+                if (!ok5) ds   = 0.99;
                 //_if
 
                 this->BusyCursorOn();
@@ -635,7 +635,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 remove(path2.toStdString().c_str());
                 inputs->deleteLater();
 
-            } else if(dialogCode == QDialog::Rejected) {
+            } else if (dialogCode == QDialog::Rejected) {
                 inputs->close();
                 inputs->deleteLater();
                 this->GetSite()->GetPage()->ResetPerspective();
@@ -812,7 +812,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                     this->BusyCursorOff();
 
-                } else if(dialogCode == QDialog::Rejected) {
+                } else if (dialogCode == QDialog::Rejected) {
                     inputs->close();
                     inputs->deleteLater();
                 }//_if

@@ -152,13 +152,13 @@ int main(int argc, char* argv[]) {
     }
 
     //min step is negative within the code
-    if(minStep>0)
+    if (minStep>0)
     {
         minStep=-1*minStep;
     }
 
     //max step is positive within the code
-    if(maxStep<0)
+    if (maxStep<0)
     {
         maxStep=-1*maxStep;
     }
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     try
     {
         // Code the functionality of the cmd app here.
-        if(verbose)
+        if (verbose)
         {
             MITK_INFO << "Verbose mode ON.";
         }
@@ -318,7 +318,7 @@ int main(int argc, char* argv[]) {
         writer->SetFileName(outFilename.c_str());
         writer->Write();
 
-        if(verbose)
+        if (verbose)
         {
             MITK_INFO << "Goodbye!";
         }

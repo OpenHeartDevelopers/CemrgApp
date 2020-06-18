@@ -168,7 +168,7 @@ QString CemrgScarAdvanced::GetOutputSufix() {
     QString teststr = QString::fromStdString(_prefix);
     if (teststr.compare("pre", Qt::CaseInsensitive))
         return "Pre";
-    else{
+    else {
         if (teststr.compare("post", Qt::CaseInsensitive))
             return "Post";
         else
@@ -306,13 +306,13 @@ std::string CemrgScarAdvanced::PrintScarOverlapResults(double valpre, double val
 
     double ros = this->fandi3_preScarScore / this->fandi3_postScarScore;
     std::string out = "RESULTS:\n\n Scar Score in PRE-ablation: ";
-    if(valpre != valpost) {
+    if (valpre != valpost) {
         out += num2str(this->fandi3_preScarScore,2) + "% \t(" +
                 "Threshold value: " + num2str(valpre,1) + ")\n" +
                 "Scar Score in POST-ablation: " +
                 num2str(this->fandi3_postScarScore,2) + "% \t(" +
                 "Threshold value: " + num2str(valpost,1) + ")\n\n";
-    } else{
+    } else {
         out += num2str(this->fandi3_preScarScore,2) + "% \n" +
                 "Scar Score in POST-ablation: " +
                 num2str(this->fandi3_postScarScore,2) + "% \n " +
@@ -390,7 +390,7 @@ void CemrgScarAdvanced::ScarScore(double thres) {
         this->fandi3_preScarScore = percentage;
         MITK_INFO << "PRE SCAR SCORE (" + _prefix + "): " + num2str(percentage,2);
     }
-    else{
+    else {
         this->fandi3_postScarScore = percentage;
         MITK_INFO << "POST SCAR SCORE (" + _prefix + "): " + num2str(percentage,2);
     }
@@ -664,7 +664,7 @@ void CemrgScarAdvanced::GetConnectedVertices(
         //std::cout << "[INFO] "  << "The cell has " << cell->GetNumberOfEdges() << " edges." ;
 
         //if the cell doesn't have any edges, it is a line
-        if(cell->GetNumberOfEdges() <= 0) {
+        if (cell->GetNumberOfEdges() <= 0) {
             continue;
         }
 
@@ -676,10 +676,10 @@ void CemrgScarAdvanced::GetConnectedVertices(
             vtkIdList* pointIdList = edge->GetPointIds();
             //std::cout << "[INFO] "  << "This cell uses " << pointIdList->GetNumberOfIds() << " points" ;
 
-            if(pointIdList->GetId(0) == seed || pointIdList->GetId(1) == seed) {
-                if(pointIdList->GetId(0) == seed) {
+            if (pointIdList->GetId(0) == seed || pointIdList->GetId(1) == seed) {
+                if (pointIdList->GetId(0) == seed) {
                     connectedVertices->InsertNextId(pointIdList->GetId(1));
-                } else{
+                } else {
                     connectedVertices->InsertNextId(pointIdList->GetId(0));
                 }
             }
@@ -728,12 +728,12 @@ void CemrgScarAdvanced::CorridorFromPointList(std::vector<int> points) {
         vtkSmartPointer<vtkDijkstraGraphGeodesicPath> dijkstra = vtkSmartPointer<vtkDijkstraGraphGeodesicPath>::New();
         dijkstra->SetInputData(poly_data);
 
-        if(this->IsWeighted())
+        if (this->IsWeighted())
             dijkstra->UseScalarWeightsOn();
 
         dijkstra->Update();
 
-        if(i<lim-1) {
+        if (i<lim-1) {
             dijkstra->SetStartVertex(this->_pointidarray[i]);
             dijkstra->SetEndVertex(this->_pointidarray[i+1]);
         }

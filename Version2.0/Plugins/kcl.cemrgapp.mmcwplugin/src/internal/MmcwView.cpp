@@ -570,10 +570,10 @@ void MmcwView::CreateSurf() {
         //Set default values
         if (!ok1 || !ok2 || !ok3 || !ok4)
             QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-        if(!ok1) iter = 1;
-        if(!ok2) th   = 0.5;
-        if(!ok3) blur = 3;
-        if(!ok4) smth = 40;
+        if (!ok1) iter = 1;
+        if (!ok2) th   = 0.5;
+        if (!ok3) blur = 3;
+        if (!ok4) smth = 40;
         //_if
 
         this->BusyCursorOn();
@@ -589,7 +589,7 @@ void MmcwView::CreateSurf() {
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
         inputs->deleteLater();
 
-    } else if(dialogCode == QDialog::Rejected) {
+    } else if (dialogCode == QDialog::Rejected) {
         inputs->close();
         inputs->deleteLater();
     }//_if
@@ -707,11 +707,11 @@ void MmcwView::Tracking() {
         QString aPath;
         if (time.isEmpty()) {
             ofstream file;
-            if(!para.isEmpty()) {
+            if (!para.isEmpty()) {
                 QFileInfo fi(para);
                 aPath = fi.absolutePath();
             }
-            else{
+            else {
                 //Absolute path
                 aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
 #if defined(__APPLE__)
@@ -722,26 +722,26 @@ void MmcwView::Tracking() {
             }
 
             bool dcm_path_fix = true;
-            if(dcm_path_fix) {
+            if (dcm_path_fix) {
                 MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
                 time = directory + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
                 file.open(time.toStdString(), ofstream::binary);
                 file << "dcm- .nii\n";
             }
-            else{
+            else {
                 QDir apathd(aPath);
-                if(apathd.mkpath(aPath)) {
+                if (apathd.mkpath(aPath)) {
                     // file.open(aPath.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst");
                     QDir mainDirectory(directory);
                     QString aRelativePath = mainDirectory.relativeFilePath(aPath);
                     time = aPath + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
                     file.open(time.toStdString(), ofstream::binary);
-                    if(aRelativePath==".")
+                    if (aRelativePath==".")
                         file << "dcm- .nii\n";
                     else
                         file << aRelativePath << mitk::IOUtil::GetDirectorySeparator() << "dcm- .nii\n";
 
-                } else{
+                } else {
                     QMessageBox::warning(NULL, "Attention", "Error creating path:\n" + aPath);
                     directory = QString();
                     return;
@@ -763,7 +763,7 @@ void MmcwView::Tracking() {
         signalMapper->deleteLater();
         inputs->deleteLater();
 
-    } else if(dialogCode == QDialog::Rejected) {
+    } else if (dialogCode == QDialog::Rejected) {
         inputs->close();
         signalMapper->deleteLater();
         inputs->deleteLater();
@@ -835,8 +835,8 @@ void MmcwView::Applying() {
         }
         if (!ok1 || !ok2)
             QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-        if(!ok1) iniTime = 0;
-        if(!ok2) frames = timePoints;
+        if (!ok1) iniTime = 0;
+        if (!ok2) frames = timePoints;
         //_if
 
         //Commandline execution

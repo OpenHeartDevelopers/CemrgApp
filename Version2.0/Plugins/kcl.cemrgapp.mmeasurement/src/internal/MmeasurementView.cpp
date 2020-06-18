@@ -580,7 +580,7 @@ void MmeasurementView::Tracking() {
         signalMapper->deleteLater();
         inputs->deleteLater();
 
-    } else if(dialogCode == QDialog::Rejected) {
+    } else if (dialogCode == QDialog::Rejected) {
         inputs->close();
         signalMapper->deleteLater();
         inputs->deleteLater();
@@ -670,8 +670,8 @@ void MmeasurementView::Applying() {
                 }
                 if (!ok1 || !ok2)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if(!ok1) iniTime = 0;
-                if(!ok2) frames = timePoints;
+                if (!ok1) iniTime = 0;
+                if (!ok2) frames = timePoints;
                 //_if
 
                 //Commandline execution

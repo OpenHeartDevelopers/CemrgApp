@@ -20,4 +20,4 @@ Refer to Wiki pages at https://github.com/CemrgAppDevelopers/CemrgApp/wiki
 Contacts
 --------
 - http://www.cemrgapp.com/
-- app@cemrg.com
+- info@cemrgapp.com

@@ -48,44 +48,39 @@ public:
     ~CemrgCommandLine();
     QDialog* GetDialog();
 
-    // Execute functions
+    //Execute Plugin Specific Functions
     QString ExecuteSurf(QString dir, QString segPath, QString morphOperation="close", int iter=1, float th=0.5, int blur=0, int smth=10);
     QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName="converted.inr");
     void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output="tsffd.dof");
     void ExecuteApplying(QString dir, QString inputMesh, double iniTime, QString dofin, int noFrames, int smooth);
     void ExecuteRegistration(QString dir, QString fixed, QString moving, QString transformFileName="rigid.dof", QString modelname="Rigid");
     void ExecuteTransformation(QString dir, QString imgNamefullpath, QString regImgNamefullpath, QString transformFileFullPath="rigid.dof");
-    void ExecuteResamplingOnNifti(QString niiFullPath, QString outputNiiFullPath, int isovalue);
-    void ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime=-100);
     void ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString transformFileName="init.dof", bool transformThePoints=true);
 
+    //Execute MIRTK Specific Functions
     QString ExecuteMorphologicalOperation(QString operation, QString dir, QString segPath, QString outputPath = "segmentation.s.nii", int iter=1);
     QString ExecuteExtractSurface(QString dir, QString segPath, QString outputPath = "segmentation.vtk", float th=0.5, int blur=0);
     QString ExecuteSmoothSurface(QString dir, QString segPath, QString outputPath, int smth=10);
+    void ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime=-100);
+    void ExecuteResamplingOnNifti(QString niiFullPath, QString outputNiiFullPath, int isovalue);
 
-    // Server functions
-    bool ConnectToServer(QString userID, QString server);
-    bool TransferTFServer(QString directory, QString fname, QString userID, QString server, bool download);
-    void GPUReconstruction(QString userID, QString server, QStringList imgsList, QString targetImg, double resolution, double delta, int package, QString out);
-
-    // Docker specific functions
+    //Execute Docker Specific Functions
     QString DockerCemrgNetPrediction(QString mra);
 
-    // Helper functions
-    bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath);
+    //Docker Helper Functions
+    void SetUseDockerContainers(bool dockerContainersOnOff);
+    inline void SetUseDockerContainersOn() {SetUseDockerContainers(true);};
+    inline void SetUseDockerContainersOff() {SetUseDockerContainers(false);};
+    inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
+    inline QString GetDockerImage() {return _dockerimage;};
+    QStringList GetDockerArguments(QString volume, QString dockerexe = "");
+
+    //Helper Functions
+    bool CheckForStartedProcess();
     void ExecuteTouch(QString filepath);
     bool IsOutputSuccessful(QString outputFullPath);
     std::string PrintFullCommand(QString command, QStringList arguments);
-    bool CheckForStartedProcess();
-
-    // Docker helper functions
-    QStringList GetDockerArguments(QString volume, QString dockerexe = "");
-    void SetUseDockerContainers(bool dockerContainersOnOff);
-
-    inline void SetUseDockerContainersOn(){SetUseDockerContainers(true);};
-    inline void SetUseDockerContainersOff(){SetUseDockerContainers(false);};
-    inline void SetDockerImage(QString dockerimage){_dockerimage = dockerimage;};
-    inline QString GetDockerImage(){return _dockerimage;};
+    bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath);
 
 protected slots:
 
@@ -95,14 +90,16 @@ protected slots:
 
 private:
 
-    //QProcess, dial and panel
+    //Dial and panel
     QDialog* dial;
     QTextEdit* panel;
     QVBoxLayout* layout;
-    QString _dockerimage;
-    std::unique_ptr<QProcess> process;
+
+    //QProcess
     bool completion;
+    QString _dockerimage;
     bool _useDockerContainers;
+    std::unique_ptr<QProcess> process;
 };
 
 #endif // CemrgCommandLine_h

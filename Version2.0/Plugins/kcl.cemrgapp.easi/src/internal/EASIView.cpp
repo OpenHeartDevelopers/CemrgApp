@@ -501,7 +501,7 @@ void EASIView::CreateMesh() {
                     CemrgCommonUtils::AddToStorage(mitkVtkGrid, "CGALMesh", this->GetDataStorage());
                     this->BusyCursorOff();
 
-                } else if(dialogCode == QDialog::Rejected) {
+                } else if (dialogCode == QDialog::Rejected) {
                     inputs->close();
                     inputs->deleteLater();
                 }//_if

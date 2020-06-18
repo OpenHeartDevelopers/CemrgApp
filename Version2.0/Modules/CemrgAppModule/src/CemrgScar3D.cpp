@@ -342,7 +342,7 @@ void CemrgScar3D::saveNormalisedScalars(double divisor, mitk::Surface::Pointer s
     surface->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
     MITK_INFO << "Finished saving to surface";
 
-    if(!name.contains(".vtk", Qt::CaseSensitive))
+    if (!name.contains(".vtk", Qt::CaseSensitive))
         name = name + ".vtk";
     mitk::IOUtil::Save(surface, name.toStdString());
     MITK_INFO << "Saved!";
@@ -551,7 +551,7 @@ void CemrgScar3D::SaveScarDebugImage(QString name, QString dir) {
 
     typedef itk::Image<short, 3> ImageType;
     using WriterType = itk::ImageFileWriter< ImageType >;
-    if(!name.contains(".nii", Qt::CaseSensitive))
+    if (!name.contains(".nii", Qt::CaseSensitive))
         name = name + ".nii";
     QString debugSCARname = dir + mitk::IOUtil::GetDirectorySeparator() + name;
     MITK_INFO << "Saving to: " + debugSCARname.toStdString();

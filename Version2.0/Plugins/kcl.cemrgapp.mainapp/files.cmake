@@ -11,7 +11,6 @@ set(INTERNAL_CPP_FILES
   perspectives/QmitkCemrgRRPerspective.cpp
   perspectives/QmitkCemrgEasiPerspective.cpp
   perspectives/QmitkCemrgPowertransPerspective.cpp
-  perspectives/QmitkCemrgFestivePerspective.cpp
   perspectives/QmitkCemrgWathcaPerspective.cpp
 )
 
@@ -29,7 +28,6 @@ set(MOC_H_FILES
   src/internal/perspectives/QmitkCemrgRRPerspective.h
   src/internal/perspectives/QmitkCemrgEasiPerspective.h
   src/internal/perspectives/QmitkCemrgPowertransPerspective.h
-  src/internal/perspectives/QmitkCemrgFestivePerspective.h
   src/internal/perspectives/QmitkCemrgWathcaPerspective.h
 )
 

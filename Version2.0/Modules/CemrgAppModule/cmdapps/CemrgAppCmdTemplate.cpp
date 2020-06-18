@@ -34,7 +34,7 @@ in the framework.
 #include <algorithm>
 #include <string>
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
   mitkCommandLineParser parser;
 
   // Set general information about your command-line app
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]){
 
   if (parsedArgs["input"].Empty() ||
       parsedArgs["output"].Empty() ||
-      parsedArgs["offset"].Empty()){
+      parsedArgs["offset"].Empty()) {
     MITK_INFO << parser.helpText();
     return EXIT_FAILURE;
   }
@@ -93,21 +93,21 @@ int main(int argc, char* argv[]){
 
   try{
     // Code the functionality of the cmd app here.
-    if(verbose)
+    if (verbose)
       MITK_INFO << "Verbose mode ON.";
 
     MITK_INFO << "The input filename:" << inFilename;
     MITK_INFO << "The output filename:" << outFilename;
     MITK_INFO << "The offset you chose: " << offset;
 
-    if(verbose)
+    if (verbose)
       MITK_INFO << "Goodbye!";
   }
-  catch (const std::exception &e){
+  catch (const std::exception &e) {
     MITK_ERROR << e.what();
     return EXIT_FAILURE;
   }
-  catch(...){
+  catch(...) {
     MITK_ERROR << "Unexpected error";
     return EXIT_FAILURE;
   }

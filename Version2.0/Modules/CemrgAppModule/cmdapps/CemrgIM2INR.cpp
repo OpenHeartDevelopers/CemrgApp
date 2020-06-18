@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     if (parsedArgs.end() != parsedArgs.find("verbose"))
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
 
-    if(parsedArgs.end() != parsedArgs.find("output"))
+    if (parsedArgs.end() != parsedArgs.find("output"))
         outFilename = us::any_cast<std::string>(parsedArgs["output"]);
 
 
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
         QString inname = QString::fromStdString(inFilename);
         QString outname = QString::fromStdString(outFilename);
 
-        if(!outname.contains(".inr", Qt::CaseSensitive))
+        if (!outname.contains(".inr", Qt::CaseSensitive))
             outname = outname + ".inr";
 
         MITK_INFO(verbose) << "Obtaining input file path and working directory: ";
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
 
         MITK_INFO(verbose) << "Loading Image.";
         mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(inputPath.toStdString());
-        if(image) {
+        if (image) {
             origin = image->GetGeometry()->GetOrigin();
             int dimensions = image->GetDimension(0)*image->GetDimension(1)*image->GetDimension(2);
             try{

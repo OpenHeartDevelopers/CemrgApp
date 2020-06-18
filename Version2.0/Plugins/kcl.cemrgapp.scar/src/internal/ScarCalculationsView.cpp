@@ -109,33 +109,33 @@ bool ScarCalculationsView::CheckForRequiredFiles() {
 
     while(itpre.hasNext()) { // look for .nii LGE and MRA files in pre
         QFileInfo finfo(itpre.next());
-        if(finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if(finfo.fileName().contains("LGE", Qt::CaseSensitive))
+        if (finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
+            if (finfo.fileName().contains("LGE", Qt::CaseSensitive))
                 targetfiles++;
 
-            if(finfo.fileName().contains("MRA", Qt::CaseSensitive))
+            if (finfo.fileName().contains("MRA", Qt::CaseSensitive))
                 targetfiles++;
         }
-        if(finfo.fileName().contains("prodThresholds", Qt::CaseSensitive))
+        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive))
             targetfiles++;
 
-        if(finfo.fileName().contains("MaxScar.vtk", Qt::CaseSensitive))
+        if (finfo.fileName().contains("MaxScar.vtk", Qt::CaseSensitive))
             targetfiles++;
     }
 
     while(itpost.hasNext()) { // look for .nii LGE and MRA files in pre
         QFileInfo finfo(itpost.next());
-        if(finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if(finfo.fileName().contains("LGE", Qt::CaseSensitive))
+        if (finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
+            if (finfo.fileName().contains("LGE", Qt::CaseSensitive))
                 targetfiles++;
 
-            if(finfo.fileName().contains("MRA", Qt::CaseSensitive))
+            if (finfo.fileName().contains("MRA", Qt::CaseSensitive))
                 targetfiles++;
         }
-        if(finfo.fileName().contains("prodThresholds", Qt::CaseSensitive))
+        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive))
             targetfiles++;
 
-        if(finfo.fileName().contains("MaxScar.vtk", Qt::CaseSensitive))
+        if (finfo.fileName().contains("MaxScar.vtk", Qt::CaseSensitive))
             targetfiles++;
     }
 
@@ -157,10 +157,10 @@ QStringList ScarCalculationsView::CheckForAdvancedDirectoryFiles() {
     while(itdir.hasNext()) { // look for .nii LGE and MRA files in pre
         QFileInfo finfo(itdir.next());
 
-        if(finfo.fileName().contains("prodThresholdsPre.txt", Qt::CaseSensitive))
+        if (finfo.fileName().contains("prodThresholdsPre.txt", Qt::CaseSensitive))
             need2load.removeAt(0);
 
-        if(finfo.fileName().contains("prodThresholdsPost.txt", Qt::CaseSensitive)) {
+        if (finfo.fileName().contains("prodThresholdsPost.txt", Qt::CaseSensitive)) {
             int rmat = ((need2load.count()==2) ? 1 : 0);
             need2load.removeAt(rmat);
         }
@@ -176,7 +176,7 @@ void ScarCalculationsView::GetInputsFromFile() {
     QString prodPathOut = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
     QDir advd(ScarCalculationsView::advdir);
 
-    if(advd.mkdir(ScarCalculationsView::advdir)) {
+    if (advd.mkdir(ScarCalculationsView::advdir)) {
         QMessageBox::warning(NULL, "Advanced analysis folder",
                              ("The advanced analysis folder was created in:\n\n"+
                               ScarCalculationsView::advdir.toStdString()).c_str());
@@ -189,13 +189,13 @@ void ScarCalculationsView::GetInputsFromFile() {
     if (need2load.count() == 0) {
         MITK_INFO << "Using thresholds alread in ADVANCED_ANALYSIS folder." ;
     }
-    else{
+    else {
         MITK_INFO << "Loading..." + need2load.join(", ").toStdString();
 
         for (int i = 0; i < need2load.size(); ++i) {
             MITK_INFO << "Loading " + need2load.at(i) + " files";
 
-            if(need2load.at(i).compare("Pre", Qt::CaseSensitive)==0)
+            if (need2load.at(i).compare("Pre", Qt::CaseSensitive)==0)
                 prodPath = ScarCalculationsView::predir + mitk::IOUtil::GetDirectorySeparator();
             else
                 prodPath = ScarCalculationsView::postdir + mitk::IOUtil::GetDirectorySeparator();
@@ -258,7 +258,7 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
     // Initialise
     iniPreSurf();
 
-    if(surface.IsNotNull()) {
+    if (surface.IsNotNull()) {
         QString prodPathOut = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
         pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
         pickedSeedIds->Initialize();
@@ -311,13 +311,13 @@ void ScarCalculationsView::iniPreSurf() {
     QDir postd(ScarCalculationsView::postdir);
     QDir advd(ScarCalculationsView::advdir);
 
-    if(!pred.exists() || !postd.exists()) {
+    if (!pred.exists() || !postd.exists()) {
         QMessageBox::warning(NULL, "Attention - Check folders' names!",
                              "The patient's folder does not seem to have the correct structure!");
         MITK_WARN << "The patient's folder does not seem to have the correct structure!";
         this->GetSite()->GetPage()->ResetPerspective();
         return;
-    } else if(advd.mkdir(ScarCalculationsView::advdir)) {
+    } else if (advd.mkdir(ScarCalculationsView::advdir)) {
         QMessageBox::warning(NULL, "Advanced analysis folder",
                              ("The advanced analysis folder was created in:\n\n"+
                               ScarCalculationsView::advdir.toStdString()).c_str());
@@ -384,11 +384,11 @@ void ScarCalculationsView::KeyCallBackFunc(
     vtkSmartPointer<vtkPolyData> poly_data = vtkSmartPointer<vtkPolyData>::New();
     poly_data = self->surface->GetVtkPolyData();
 
-    if(key == "space") {
+    if (key == "space") {
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed SPACE key.\n";
         self->PickCallBack();
 
-    } else if(key == "Delete") {
+    } else if (key == "Delete") {
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed DELETE key.\n";
         vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
         vtkSmartPointer<vtkPoints> points = self->pickedLineSeeds->GetPoints();
@@ -399,7 +399,7 @@ void ScarCalculationsView::KeyCallBackFunc(
             self->pickedSeedLabels.pop_back();
         self->m_Controls.widget_1->GetRenderWindow()->Render();
 
-    } else if(key == "r" || key == "R") {
+    } else if (key == "r" || key == "R") {
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed R key.\n";
         //Clear renderer
         self->renderer->RemoveAllViewProps();
@@ -546,21 +546,21 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
     QString prodPathAdv = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
     QString shellpath = prodPathAdv;
 
-    if(cb.contains("PRE", Qt::CaseInsensitive)) {
+    if (cb.contains("PRE", Qt::CaseInsensitive)) {
         outprefix = "pre";
-        if(cb.contains("TRANSFORMED", Qt::CaseInsensitive)) {
+        if (cb.contains("TRANSFORMED", Qt::CaseInsensitive)) {
             shellpath = shellpath + "MaxScarPre_OnPost.vtk";
             outprefix = "Tx_" + outprefix;
-        }else
+        } else
             shellpath = shellpath + "MaxScarPre.vtk";
         MITK_INFO << "Changing to PRE-ablation scar map." + shellpath.toStdString();
         prodFileRead.open((prodPathAdv + "prodThresholdsPre.txt").toStdString());
     } else { //POST
         outprefix = "post";
-        if(cb.contains("ALIGN", Qt::CaseInsensitive)) {
+        if (cb.contains("ALIGN", Qt::CaseInsensitive)) {
             shellpath = shellpath + "MaxScarPost_Aligned.vtk";
             outprefix = "Tx_" + outprefix;
-        }else
+        } else
             shellpath = shellpath + "MaxScarPost.vtk";
         MITK_INFO << "Changing to POST-ablation scar map." + shellpath.toStdString();
         prodFileRead.open((prodPathAdv + "prodThresholdsPost.txt").toStdString());
@@ -612,7 +612,7 @@ void ScarCalculationsView::EditThreshold() {
     MITK_INFO << "Edit threshold button...";
 
     if (m_Controls.combo_thres->count()==0) { // sanity checks
-        if(method==2)
+        if (method==2)
             m_Controls.combo_thres->addItems({"1", "2", "2.3", "3.3", "4", "5"});
         else
             m_Controls.combo_thres->addItems({"0.86","0.97", "1.16", "1.2", "1.32"});
@@ -657,7 +657,7 @@ void ScarCalculationsView::SetNewThreshold(const QString& text) {
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
 
-    if(cb.contains("PRE", Qt::CaseInsensitive))
+    if (cb.contains("PRE", Qt::CaseInsensitive))
         outname = outname + "Pre.txt";
     else//POST
         outname = outname + "Post.txt";
@@ -702,22 +702,22 @@ void ScarCalculationsView::SaveNewThreshold() {
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
 
-    if(cb.contains("PRE", Qt::CaseInsensitive)) {
+    if (cb.contains("PRE", Qt::CaseInsensitive)) {
         outname = outname + "Pre.txt";
         outprefix = "pre";
-        if(cb.contains("TRANSFORMED", Qt::CaseInsensitive)) {
+        if (cb.contains("TRANSFORMED", Qt::CaseInsensitive)) {
             shellpath = prodPath + "MaxScarPre_OnPost.vtk";
             outprefix = "Tx_" + outprefix;
-        }else
+        } else
             shellpath = prodPath + "MaxScarPre.vtk";
     }
-    else{//POST
+    else {//POST
         outname = outname + "Post.txt";
         outprefix = "post";
-        if(cb.contains("ALIGN", Qt::CaseInsensitive)) {
+        if (cb.contains("ALIGN", Qt::CaseInsensitive)) {
             shellpath = prodPath + "MaxScarPost_Aligned.vtk";
             outprefix = "Tx_" + outprefix;
-        }else
+        } else
             shellpath = prodPath + "MaxScarPost.vtk";
     }
     csadv->SetOutputPrefix(outprefix.toStdString());
@@ -759,11 +759,11 @@ void ScarCalculationsView::CancelThresholdEdit() {
     m_Controls.button_cancel->setEnabled(false);
     m_Controls.comboBox->setEnabled(true);
 
-    if(m_Controls.fandi_t2_visualise->isEnabled()) {
+    if (m_Controls.fandi_t2_visualise->isEnabled()) {
         m_Controls.fandi_t2_visualise->setEnabled(false);
         m_Controls.fandi_t2_visualise->setVisible(false);
     }
-    if(m_Controls.fandi_t3_visualise->isEnabled()) {
+    if (m_Controls.fandi_t3_visualise->isEnabled()) {
         m_Controls.fandi_t3_visualise->setEnabled(false);
         m_Controls.fandi_t3_visualise->setVisible(false);
     }
@@ -773,22 +773,22 @@ void ScarCalculationsView::CancelThresholdEdit() {
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
 
-    if(cb.contains("PRE", Qt::CaseInsensitive)) {
+    if (cb.contains("PRE", Qt::CaseInsensitive)) {
         outname = outname + "Pre.txt";
         outprefix = "pre";
-        if(cb.contains("TRANSFORMED", Qt::CaseInsensitive)) {
+        if (cb.contains("TRANSFORMED", Qt::CaseInsensitive)) {
             shellpath = prodPath + "MaxScarPre_OnPost.vtk";
             outprefix = "Tx_" + outprefix;
-        }else
+        } else
             shellpath = prodPath + "MaxScarPre.vtk";
     }
-    else{//POST
+    else {//POST
         outname = outname + "Post.txt";
         outprefix = "post";
-        if(cb.contains("ALIGN", Qt::CaseInsensitive)) {
+        if (cb.contains("ALIGN", Qt::CaseInsensitive)) {
             shellpath = prodPath + "MaxScarPost_Aligned.vtk";
             outprefix = "Tx_" + outprefix;
-        }else
+        } else
             shellpath = prodPath + "MaxScarPost.vtk";
     }
     csadv->SetOutputPrefix(outprefix.toStdString());
@@ -866,7 +866,7 @@ void ScarCalculationsView::DoImageProcessing() {
 void ScarCalculationsView::GapMeasurement() {
 
     // F&I T2
-    if(pickedSeedIds->GetNumberOfIds()==0) {
+    if (pickedSeedIds->GetNumberOfIds()==0) {
 
         QMessageBox::warning(NULL, "Attention - No points selected.",
                              "Please select at least five points surrounding a vein.");
@@ -908,7 +908,7 @@ void ScarCalculationsView::GapMeasurement() {
             csadv->SetNeighbourhoodSize(thickness);
             csadv->SetLeftRightPrefix(lrpre);
             csadv->CorridorFromPointList(v);
-            if(m_Controls.fandi_t2_visualise->findText(QString::fromStdString(csadv->GetPrefix())+"exploration_scalars")==-1)
+            if (m_Controls.fandi_t2_visualise->findText(QString::fromStdString(csadv->GetPrefix())+"exploration_scalars")==-1)
                 m_Controls.fandi_t2_visualise->addItem(QString::fromStdString(csadv->GetPrefix())+"exploration_scalars");
             csadv->ClearLeftRightPrefix();
             this->dijkstraActors = csadv->GetPathsMappersAndActors();
@@ -923,7 +923,7 @@ void ScarCalculationsView::GapMeasurement() {
             csadv->ResetValues();
             inputs->deleteLater();
 
-        } else if(dialogCode == QDialog::Rejected) {
+        } else if (dialogCode == QDialog::Rejected) {
             QMessageBox::warning(NULL, "F&I T2 - CALCULATION CANCELLED",
                                  "'Cancel' button pressed, no calculations were made.");
             inputs->close();
@@ -941,14 +941,14 @@ void ScarCalculationsView::GapMeasurementVisualisation(const QString& text) {
     MITK_INFO << "Visualisation of exploiration corridor";
     QString cb = text;
 
-    if(!cb.isEmpty()) {
+    if (!cb.isEmpty()) {
 
         MITK_INFO << ("Current text: " + cb).toStdString();
         QString prodPath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
         QFileInfo fi(prodPath + cb + ".vtk");
         MITK_INFO << ("Changing to file" + fi.absoluteFilePath()).toStdString();
 
-        if(fi.exists()) {
+        if (fi.exists()) {
 
             mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(fi.absoluteFilePath().toStdString());
             surface = shell;
@@ -1012,7 +1012,7 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     csadv->ScarScore(thres);
 
     this->CopyScalarValues();
-    if(m_Controls.comboBox->findText("PRE (TRANSFORMED)", Qt::MatchExactly)==-1)
+    if (m_Controls.comboBox->findText("PRE (TRANSFORMED)", Qt::MatchExactly)==-1)
         m_Controls.comboBox->addItem("PRE (TRANSFORMED)");
 
     QMessageBox::warning(NULL, "F&I T3 - FINISHED CALCULATION",
@@ -1082,7 +1082,7 @@ void ScarCalculationsView::TransformMeshesForComparison() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->ExecuteSimpleTranslation(directory, sourcename, targetname, testTX);
     this->BusyCursorOff();
-    if(cmd->IsOutputSuccessful(testTX)){
+    if (cmd->IsOutputSuccessful(testTX)) {
         MITK_INFO << "[...] DOF file created successfully, attempting transformation.";
         this->BusyCursorOn();
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());

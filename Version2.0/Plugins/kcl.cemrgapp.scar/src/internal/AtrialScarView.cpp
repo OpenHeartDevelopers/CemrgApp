@@ -252,11 +252,11 @@ void AtrialScarView::ConvertNII() {
                 binterp->SetSplineOrder(3);
 
                 bool splinebool = true;
-                if(splinebool) {
+                if (splinebool) {
                     resampler->SetInterpolator(binterp);
                     MITK_INFO << "[ConvertNII] Using Cubic Spline Interpolator";
                 }
-                else{
+                else {
                     resampler->SetInterpolator(interpolator);
                     MITK_INFO << "[ConvertNII] Using Linear Interpolator";
                 }
@@ -337,31 +337,31 @@ void AtrialScarView::AutomaticAnalysis() {
     QString direct, mraPath, lgePath, cnnPath;
     bool debugging=true;
 
-    if(directory.isEmpty()) {
+    if (directory.isEmpty()) {
         direct = QFileDialog::getExistingDirectory(
                     NULL, "Open Project Directory",
                     mitk::IOUtil::GetProgramPath().c_str(),
                     QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
         directory = direct;
-    } else{
+    } else {
         direct=directory;
     }
 
     QDirIterator searchit(direct, QDirIterator::Subdirectories);
 
-    if(debugging)
+    if (debugging)
         MITK_INFO << "[DEBUG] Searching for CEMRGNET output";
 
     while(searchit.hasNext()) {
         QFileInfo searchfinfo(searchit.next());
-        if(searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if(searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
+        if (searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
+            if (searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
                 lgePath = searchfinfo.absoluteFilePath();
 
-            if(searchfinfo.fileName().contains("dcm-MRA", Qt::CaseSensitive))
+            if (searchfinfo.fileName().contains("dcm-MRA", Qt::CaseSensitive))
                 mraPath = searchfinfo.absoluteFilePath();
 
-            if(debugging && searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
+            if (debugging && searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
                 cnnPath = searchfinfo.absoluteFilePath();
         }
     }
@@ -385,8 +385,8 @@ void AtrialScarView::AutomaticAnalysis() {
         bool ok1, ok2;
         minStep_UI = m_UIcemrgnet.minStep_lineEdit->text().toInt(&ok1);
         maxStep_UI = m_UIcemrgnet.maxStep_lineEdit->text().toInt(&ok2);
-        if(!ok1) minStep_UI = -1;
-        if(!ok2) maxStep_UI = 3;
+        if (!ok1) minStep_UI = -1;
+        if (!ok2) maxStep_UI = 3;
 
         methodType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? 2 : 1;
         meType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? "Max" : "Mean";
@@ -405,7 +405,7 @@ void AtrialScarView::AutomaticAnalysis() {
             whichThresh = "IIR";
             thresh_list = m_UIcemrgnet.iir_textEdit->toPlainText();
             separated_thresh_list << "0.97" << "1.16";
-        } else if(m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
+        } else if (m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
             whichThresh = "MEAN+SD";
             thresh_list = m_UIcemrgnet.meanSD_textEdit->toPlainText();
             separated_thresh_list << "2.3" << "3.3";
@@ -416,7 +416,7 @@ void AtrialScarView::AutomaticAnalysis() {
         MITK_INFO << QString::number(thresh_methodType_UI);
 
         thresh_list.remove(" ", Qt::CaseSensitive);
-        if(!thresh_list.isEmpty()) {
+        if (!thresh_list.isEmpty()) {
 
             MITK_INFO << "[UI] Creating list of thresholds";
             separated_thresh_list.removeLast();
@@ -436,7 +436,7 @@ void AtrialScarView::AutomaticAnalysis() {
         for(int ix=0; ix<separated_thresh_list.size(); ix++) {
             MITK_INFO << separated_thresh_list.at(ix);
             tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
-            if(vOK) values_vector.push_back(tryNumber);
+            if (vOK) values_vector.push_back(tryNumber);
         }
 
         inputs->close();
@@ -455,7 +455,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
     MITK_INFO << ("Files to be read: \n\n [LGE]: " + lgePath + "\n [MRA]: " + mraPath).toStdString();
 
-    if(!mraPath.isEmpty()) {
+    if (!mraPath.isEmpty()) {
 
         vtkSmartPointer<vtkTimerLog> timerLog = vtkSmartPointer<vtkTimerLog>::New();
         typedef itk::Image<short, 3> ImageTypeSHRT;
@@ -465,11 +465,11 @@ void AtrialScarView::AutomaticAnalysis() {
         cmd->SetUseDockerContainers(_useDockerInPlugin);
 
         timerLog->StartTimer();
-        if(cnnPath.isEmpty()) {
+        if (cnnPath.isEmpty()) {
             cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
         }
 
-        if(!cnnPath.isEmpty()) {
+        if (!cnnPath.isEmpty()) {
 
             MITK_INFO << ("Successful prediction with file "+cnnPath).toStdString();
             // QString direct = finfo.absolutePath();
@@ -817,10 +817,22 @@ void AtrialScarView::AutomaticAnalysis() {
 
 void AtrialScarView::SegmentIMGS() {
 
-    int reply = QMessageBox::question(
+    //Ask the user for a dir to store data
+    if (directory.isEmpty()) {
+        directory = QFileDialog::getExistingDirectory(
+                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+        if (directory.isEmpty() || directory.simplified().contains(" ")) {
+            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
+            directory = QString();
+            return;
+        }//_if
+    }
+
+    int reply1 = QMessageBox::question(
                 NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
 
-    if (reply == QMessageBox::Yes) {
+    if (reply1 == QMessageBox::Yes) {
 
         QString path = QFileDialog::getOpenFileName(
                     NULL, "Open Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
@@ -833,9 +845,74 @@ void AtrialScarView::SegmentIMGS() {
         fileName = path.mid(path.lastIndexOf(sep) + 1);
 
     } else {
-        //Show the plugin
-        this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentation");
-    }//_if
+
+        int reply2 = QMessageBox::question(
+                    NULL, "Question", "Do you want an automatic segmentation?", QMessageBox::Yes, QMessageBox::No);
+
+        if (reply2 == QMessageBox::Yes) {
+
+            //Check for selection of image
+            QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+            if (nodes.size() != 1) {
+                QMessageBox::warning(NULL, "Attention", "Please select the CEMRA images from the Data Manager to segment!");
+                return;
+            }//_if
+
+            //Test if this data item is an image
+            QString mraPath;
+            mitk::BaseData::Pointer data = nodes.at(0)->GetData();
+            if (data) {
+                mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
+                if (image) {
+
+                    this->BusyCursorOn();
+                    mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
+
+                    //CNN prediction
+                    mraPath = directory + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
+                    mitk::IOUtil::Save(image, mraPath.toStdString());
+                    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                    cmd->SetUseDockerContainers(true);
+                    QString cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
+
+                    //Clean prediction
+                    using ImageTypeCHAR = itk::Image<short, 3>;
+                    using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR>;
+                    using LabelShapeKeepNObjImgFilterType = itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR>;
+                    ImageTypeCHAR::Pointer orgSegImage = ImageTypeCHAR::New();
+                    mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(cnnPath.toStdString()), orgSegImage);
+                    ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
+                    connected->SetInput(orgSegImage);
+                    connected->Update();
+                    LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr = LabelShapeKeepNObjImgFilterType::New();
+                    lblShpKpNObjImgFltr->SetInput(connected->GetOutput());
+                    lblShpKpNObjImgFltr->SetBackgroundValue(0);
+                    lblShpKpNObjImgFltr->SetNumberOfObjects(1);
+                    lblShpKpNObjImgFltr->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+                    lblShpKpNObjImgFltr->Update();
+                    mitk::Image::Pointer segImage = mitk::Image::New();
+                    mitk::CastToMitkImage(lblShpKpNObjImgFltr->GetOutput(), segImage);
+                    cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
+                    mitk::IOUtil::Save(segImage, cnnPath.toStdString());
+                    mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
+                    remove(mraPath.toStdString().c_str());
+
+                    fileName = "LA.nii";
+                    QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
+                    mitk::ProgressBar::GetInstance()->Progress();
+                    this->BusyCursorOff();
+
+                } else
+                    QMessageBox::warning(NULL, "Attention", "Please select a CEMRA to segment!");
+            }//_if_data
+
+        } else {
+
+            //Show the plugin
+            this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentation");
+
+        }//_if_q2
+    }//_if_q1
 }
 
 /**
@@ -1179,10 +1256,10 @@ void AtrialScarView::CreateSurf() {
                 //Set default values
                 if (!ok1 || !ok2 || !ok3 || !ok4)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if(!ok1) iter = 1;
-                if(!ok2) th   = 0.5;
-                if(!ok3) blur = 0;
-                if(!ok4) smth = 10;
+                if (!ok1) iter = 1;
+                if (!ok2) th   = 0.5;
+                if (!ok3) blur = 0;
+                if (!ok4) smth = 10;
                 //_if
 
                 this->BusyCursorOn();
@@ -1202,7 +1279,7 @@ void AtrialScarView::CreateSurf() {
                 inputs->deleteLater();
                 remove(pathTemp.toStdString().c_str());
 
-            } else if(dialogCode == QDialog::Rejected) {
+            } else if (dialogCode == QDialog::Rejected) {
                 inputs->close();
                 inputs->deleteLater();
             }//_if
@@ -1462,8 +1539,8 @@ void AtrialScarView::ScarMap() {
                     //Set default values
                     if (!ok1 || !ok2)
                         QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                    if(!ok1) minStep =-1;
-                    if(!ok2) maxStep = 3;
+                    if (!ok1) minStep =-1;
+                    if (!ok2) maxStep = 3;
                     //_if
 
                     /*
@@ -1561,7 +1638,7 @@ void AtrialScarView::ScarMap() {
                     this->BusyCursorOff();
                     inputs->deleteLater();
 
-                } else if(dialogCode == QDialog::Rejected) {
+                } else if (dialogCode == QDialog::Rejected) {
                     inputs->close();
                     inputs->deleteLater();
                 }//_if
@@ -1727,7 +1804,7 @@ void AtrialScarView::Threshold() {
         this->BusyCursorOff();
         inputs->deleteLater();
 
-    } else if(dialogCode == QDialog::Rejected) {
+    } else if (dialogCode == QDialog::Rejected) {
         inputs->close();
         inputs->deleteLater();
     }//_if

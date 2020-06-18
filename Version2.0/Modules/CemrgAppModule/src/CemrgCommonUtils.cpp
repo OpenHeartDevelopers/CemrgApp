@@ -197,10 +197,10 @@ mitk::Surface::Pointer CemrgCommonUtils::LoadVTKMesh(std::string path) {
     }//_catch
 }
 
-QString CemrgCommonUtils::m3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc){
+QString CemrgCommonUtils::m3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc) {
     QString path2file = dir + mitk::IOUtil::GetDirectorySeparator() + filename;
     QFile fi(path2file);
-    if(thicknessCalc.compare("0", Qt::CaseSensitive)!=0 && thicknessCalc.compare("1", Qt::CaseSensitive)!=0){
+    if (thicknessCalc.compare("0", Qt::CaseSensitive)!=0 && thicknessCalc.compare("1", Qt::CaseSensitive)!=0) {
         MITK_INFO << "Thickness calculation set to default (OFF)";
         thicknessCalc = "0";
     }

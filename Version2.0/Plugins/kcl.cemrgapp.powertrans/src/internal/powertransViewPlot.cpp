@@ -71,7 +71,7 @@ QString powertransViewPlot::directory;
 int powertransViewPlot::ribSpacing = 5;
 const std::string powertransViewPlot::VIEW_ID = "org.mitk.views.powertransplot";
 
-void powertransViewPlot::SetFocus(){
+void powertransViewPlot::SetFocus() {
 }
 
 void powertransViewPlot::CreateQtPartControl(QWidget *parent)
@@ -129,7 +129,7 @@ void powertransViewPlot::SetNoFrames(int frames, int smoothness) {
 }
 
 void powertransViewPlot::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/,
-                                                const QList<mitk::DataNode::Pointer>& /*nodes*/){
+                                                const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void powertransViewPlot::PlotData() {

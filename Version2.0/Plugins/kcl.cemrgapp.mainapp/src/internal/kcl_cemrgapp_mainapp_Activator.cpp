@@ -32,7 +32,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include "perspectives/QmitkCemrgRRPerspective.h"
 #include "perspectives/QmitkCemrgEasiPerspective.h"
 #include "perspectives/QmitkCemrgPowertransPerspective.h"
-#include "perspectives/QmitkCemrgFestivePerspective.h"
 #include "perspectives/QmitkCemrgWathcaPerspective.h"
 #include "QmitkCemrgApplication.h"
 #include "QmitkCemrgAppCommonTools.h"
@@ -70,7 +69,6 @@ void kcl_cemrgapp_mainapp_Activator::start(ctkPluginContext* context) {
     BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgRRPerspective, context);
     BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgEasiPerspective, context);
     BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgPowertransPerspective, context);
-    BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgFestivePerspective, context);
     BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgWathcaPerspective, context);
 
     QString collectionFile = GetQtHelpCollectionFile();

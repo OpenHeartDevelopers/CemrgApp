@@ -5,7 +5,6 @@ set(MITK_PLUGINS
   kcl.cemrgapp.mainapp:ON
   kcl.cemrgapp.easi:ON
   kcl.cemrgapp.powertrans:ON
-  kcl.cemrgapp.festive:ON
   kcl.cemrgapp.mmcwplugin:ON
   kcl.cemrgapp.mmeasurement:ON
   kcl.cemrgapp.scar:ON

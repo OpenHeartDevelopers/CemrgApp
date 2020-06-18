@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
 
     try{
         // Code the functionality of the cmd app here.
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Verbose mode ON.";
 
         // PARSING ARGUMENTS
@@ -151,14 +151,14 @@ int main(int argc, char* argv[]) {
         QString segvtk = QString::fromStdString(segref);
         QString outname = QString::fromStdString(outFilename);
 
-        if(!outname.contains(".vtk", Qt::CaseSensitive))
+        if (!outname.contains(".vtk", Qt::CaseSensitive))
             outname = outname + ".vtk";
 
-        if(!segvtk.contains(".vtk", Qt::CaseSensitive))
+        if (!segvtk.contains(".vtk", Qt::CaseSensitive))
             segvtk = segvtk + ".vtk";
 
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Obtaining input file path and working directory: ";
 
         // OBTAINING directory and lgepath variables
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
         typedef itk::Image<short, 3> ImageTypeSHRT;
 
         //Scar projection
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Performing Scar projection.";
 
         int minStep = -1;
@@ -223,13 +223,13 @@ int main(int argc, char* argv[]) {
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
 
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Performing Scar projection using " + segvtk.toStdString();
 
         QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
         mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Saving new scar map to " + outname.toStdString();
 
         mitk::IOUtil::Save(scarShell, (prodPath + outname).toStdString());
@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
         QFileInfo fi2(prodPath + outname);
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Writing to pordStats file" + prothresfile.toStdString();
 
         int method;
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
         if (!verbose)
             for(int i = 0; i < 5; i++)
                 prodFileRead >> data1[i];
-        else{
+        else {
             MITK_INFO <<  "Data READ:";
             for(int i = 0; i < 5; i++) {
                 prodFileRead >> data1[i];
@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
         percentage = scar->Thresholding(thres);
         prodFile1 << "SCORE:" << percentage << "%" << std::endl;
 
-        if(multithreshold) {
+        if (multithreshold) {
             MITK_INFO << "Scores for multiple thresholds.";
             prodFile1 << "MULTIPLE SCORES:" << std::endl;
             if (method == 2) {
@@ -290,7 +290,7 @@ int main(int argc, char* argv[]) {
                                  ", SCORE:" << thispercentage << "%" << std::endl;
                 }
             } // mean + V*stdv
-            else{
+            else {
                 double manyvalues[5] = {0.86, 0.97, 1.16, 1.2, 1.32};
                 for(int i = 0; i < 5; i++) {
                     double thisthres = mean*manyvalues[i];
@@ -306,7 +306,7 @@ int main(int argc, char* argv[]) {
         MITK_INFO << "Saving debug scar map labels.";
         scar->SaveScarDebugImage("Max", direct);
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Goodbye!";
     }
     catch (const std::exception &e) {

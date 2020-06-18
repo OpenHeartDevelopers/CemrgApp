@@ -35,7 +35,7 @@ in the framework.
 #include <algorithm>
 #include <string>
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
   mitkCommandLineParser parser;
 
   // Set general information about your command-line app
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]){
     return EXIT_FAILURE;
 
   if (parsedArgs["reference"].Empty() ||
-      parsedArgs["otherimage"].Empty()){
+      parsedArgs["otherimage"].Empty()) {
     MITK_INFO << parser.helpText();
     return EXIT_FAILURE;
   }
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]){
 
   try{
     // Code the functionality of the cmd app here.
-    if(verbose){
+    if (verbose) {
       MITK_INFO << "Verbose mode ON. Calculating registration.";
       MITK_INFO << "Input 1:" << input1;
       MITK_INFO << "Input 2:" << input2;
@@ -114,7 +114,7 @@ int main(int argc, char* argv[]){
     QString output = dir + mitk::IOUtil::GetDirectorySeparator() + "rigid.dof";
     QString mirtk  = aPath + mitk::IOUtil::GetDirectorySeparator() + "register";
 
-    if(verbose)
+    if (verbose)
       MITK_INFO << "OUTPUT VALUE: " << output.toStdString();
 
     arguments << INPUT1;
@@ -123,29 +123,29 @@ int main(int argc, char* argv[]){
     arguments << "-model" << "Rigid";
     arguments << "-verbose" << "3";
 
-    if(verbose)
+    if (verbose)
       MITK_INFO << "Running command:" <<
         mirtk.toStdString() << std::endl;
 
     process->start(mirtk, arguments);
-    if(verbose)
+    if (verbose)
       MITK_INFO << "EXIT CODE: " << process->exitCode();
 
-    if(verbose)
+    if (verbose)
       MITK_INFO << "Finished working. Output in file:\n\t" <<
         output.toStdString() << std::endl;
 
-    if(verbose)
+    if (verbose)
       MITK_INFO << "Closing Process" << std::endl;
 
     process->close();
 
   }
-  catch (const std::exception &e){
+  catch (const std::exception &e) {
     MITK_ERROR << e.what();
     return EXIT_FAILURE;
   }
-  catch(...){
+  catch(...) {
     MITK_ERROR << "Unexpected error";
     return EXIT_FAILURE;
   }

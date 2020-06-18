@@ -199,10 +199,10 @@ void AtrialScarClipperView::iniPreSurf() {
                 //Set default values
                 if (!ok1 || !ok2 || !ok3 || !ok4)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if(!ok1) iter = 1;
-                if(!ok2) th   = 0.5;
-                if(!ok3) blur = 0;
-                if(!ok4) smth = 10;
+                if (!ok1) iter = 1;
+                if (!ok2) th   = 0.5;
+                if (!ok3) blur = 0;
+                if (!ok4) smth = 10;
                 //_if
 
                 this->BusyCursorOn();
@@ -228,7 +228,7 @@ void AtrialScarClipperView::iniPreSurf() {
                 remove(path.toStdString().c_str());
                 inputs->deleteLater();
 
-            } else if(dialogCode == QDialog::Rejected) {
+            } else if (dialogCode == QDialog::Rejected) {
                 inputs->close();
                 inputs->deleteLater();
                 this->GetSite()->GetPage()->ResetPerspective();
@@ -639,7 +639,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
                     self->pickedSeedLabels.push_back(21);
                 self->m_Labels.radioButton_0->setChecked(true);
 
-            } else if(dialogCode == QDialog::Rejected) {
+            } else if (dialogCode == QDialog::Rejected) {
                 self->inputs->close();
             }//_if
 

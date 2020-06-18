@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 
     try{
         // Code the functionality of the cmd app here.
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Verbose mode ON.";
 
         // PARSING ARGUMENTS
@@ -143,16 +143,16 @@ int main(int argc, char* argv[]) {
         QString outname = QString::fromStdString(outFilename);
         QString clipname = QString::fromStdString(clipperfile);
 
-        if(!outname.contains(".vtk", Qt::CaseSensitive))
+        if (!outname.contains(".vtk", Qt::CaseSensitive))
             outname = outname + ".vtk";
 
         int whichImplicitFunction;
-        if(clipname.contains(".nii", Qt::CaseSensitive))
+        if (clipname.contains(".nii", Qt::CaseSensitive))
             whichImplicitFunction = 1;
         else
             whichImplicitFunction = 2;
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Obtaining input file path and working directory: ";
 
         // OBTAINING directory and inputPath variables
@@ -167,34 +167,34 @@ int main(int argc, char* argv[]) {
         MITK_INFO << ("OUTPUT: " + outputPath).toStdString();
         MITK_INFO << ("CLIPPER: " + clipPath).toStdString();
 
-        if(verbose) MITK_INFO << "Loading Shell.";
+        if (verbose) MITK_INFO << "Loading Shell.";
         mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(inputPath.toStdString());
         vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
 
-        if(verbose) MITK_INFO << "Creating implicit function.";
+        if (verbose) MITK_INFO << "Creating implicit function.";
 
-        if(whichImplicitFunction==1) {
-            if(verbose) MITK_INFO << "Loading Clipper image.";
+        if (whichImplicitFunction==1) {
+            if (verbose) MITK_INFO << "Loading Clipper image.";
             mitk::Image::Pointer ClipperImage = mitk::IOUtil::Load<mitk::Image>(clipPath.toStdString());
             vtkSmartPointer<vtkImplicitVolume> implicitFn = vtkSmartPointer<vtkImplicitVolume>::New();
             implicitFn->SetVolume(ClipperImage->GetVtkImageData());
             implicitFn->SetOutValue(0.5);
             vtkMTimeType mtime = implicitFn->GetMTime();
-            if(verbose) MITK_INFO << ("[...] MTime:" + QString::number(mtime)).toStdString();
+            if (verbose) MITK_INFO << ("[...] MTime:" + QString::number(mtime)).toStdString();
 
-            if(verbose) MITK_INFO << "Creating ClipPolyData object.";
+            if (verbose) MITK_INFO << "Creating ClipPolyData object.";
             clipper->SetClipFunction(implicitFn);
         }
-        else{
-            if(verbose) MITK_INFO << "Loading Clipper surface.";
+        else {
+            if (verbose) MITK_INFO << "Loading Clipper surface.";
             mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(clipPath.toStdString());
             vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
             implicitFn->SetInput(ClipperSurface->GetVtkPolyData());
             // implicitFn->SetTolerance(0.0001);
             vtkMTimeType mtime = implicitFn->GetMTime();
-            if(verbose) MITK_INFO << ("[...] MTime:" + QString::number(mtime)).toStdString();
+            if (verbose) MITK_INFO << ("[...] MTime:" + QString::number(mtime)).toStdString();
 
-            if(verbose) MITK_INFO << "Creating ClipPolyData object.";
+            if (verbose) MITK_INFO << "Creating ClipPolyData object.";
             clipper->SetClipFunction(implicitFn);
 
         }
@@ -203,40 +203,40 @@ int main(int argc, char* argv[]) {
         clipper->InsideOutOff();
         clipper->Update();
 
-        if(verbose) {
+        if (verbose) {
             MITK_INFO << "[DEBUG] Preliminary output generation.";
             QString vPath = direct + mitk::IOUtil::GetDirectorySeparator() + "prelim.vtk";
             shell->SetVtkPolyData(clipper->GetOutput());
             mitk::IOUtil::Save(shell, vPath.toStdString());
         }
 
-        if(verbose) MITK_INFO << "Extract and clean surface mesh.";
+        if (verbose) MITK_INFO << "Extract and clean surface mesh.";
         vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
         surfer->SetInputData(clipper->GetOutput());
         surfer->Update();
 
 
-        if(verbose) MITK_INFO << "[...] Cleaning...";
+        if (verbose) MITK_INFO << "[...] Cleaning...";
         vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
         cleaner->SetInputConnection(surfer->GetOutputPort());
         cleaner->Update();
 
-        if(verbose) MITK_INFO << "[...] Largest region...";
+        if (verbose) MITK_INFO << "[...] Largest region...";
         vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
         lrgRegion->SetInputConnection(cleaner->GetOutputPort());
         lrgRegion->SetExtractionModeToLargestRegion();
         lrgRegion->Update();
 
-        if(verbose) MITK_INFO << "[...] Cleaning a bit more...";
+        if (verbose) MITK_INFO << "[...] Cleaning a bit more...";
         cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
         cleaner->SetInputConnection(lrgRegion->GetOutputPort());
         cleaner->Update();
 
-        if(verbose) MITK_INFO << ("Saving to file: " + outputPath).toStdString();
+        if (verbose) MITK_INFO << ("Saving to file: " + outputPath).toStdString();
         shell->SetVtkPolyData(cleaner->GetOutput());
         mitk::IOUtil::Save(shell, outputPath.toStdString());
 
-        if(verbose)
+        if (verbose)
             MITK_INFO << "Goodbye!";
     }
     catch (const std::exception &e) {
