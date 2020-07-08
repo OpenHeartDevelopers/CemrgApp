@@ -682,7 +682,7 @@ void AtrialScarView::AutomaticAnalysis() {
             mitk::IOUtil::Save(mitk::ImportItkImage(mvImage), (direct + "/prodMVI.nii").toStdString());
 
             // Make vtk of prodMVI
-            QString mviShellPath = cmd->ExecuteSurf(direct, "prodMVI.nii", "dilate", 1, 0.5, 0, 10);
+            QString mviShellPath = cmd->ExecuteSurf(direct, "prodMVI.nii", "close", 1, 0.5, 0, 10);
             // Implement code from command line tool
             mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(mviShellPath.toStdString());
             vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
