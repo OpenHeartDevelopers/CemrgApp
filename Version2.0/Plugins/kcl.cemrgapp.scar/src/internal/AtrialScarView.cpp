@@ -833,9 +833,9 @@ void AtrialScarView::SegmentIMGS() {
                 NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
 
     if (reply1 == QMessageBox::Yes) {
-
-        QString path = QFileDialog::getOpenFileName(
-                    NULL, "Open Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        std::string searchFolder = directory.isEmpty() ? mitk::IOUtil::GetProgramPath() : directory.toStdString();
+        QString path = QFileDialog::getOpenFileName(NULL, "Open Segmentation file",
+                        searchFolder.c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty()) return;
         mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
