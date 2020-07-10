@@ -379,8 +379,8 @@ void WallThicknessCalculationsView::SegmentIMGS() {
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 
         //Restore image name
-        char sep = mitk::IOUtil::GetDirectorySeparator();
-        fileName = path.mid(path.lastIndexOf(sep) + 1);
+        QFileInfo fullPathInfo(path);
+        fileName = fullPathInfo.fileName();
 
     } else {
         //Show the plugin

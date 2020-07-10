@@ -819,6 +819,7 @@ void AtrialScarView::SegmentIMGS() {
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
+		MITK_INFO << "Directory is empty. Requesting user for directory.";
         directory = QFileDialog::getExistingDirectory(
                     NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
                     QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
@@ -833,16 +834,15 @@ void AtrialScarView::SegmentIMGS() {
                 NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
 
     if (reply1 == QMessageBox::Yes) {
-        std::string searchFolder = directory.isEmpty() ? mitk::IOUtil::GetProgramPath() : directory.toStdString();
         QString path = QFileDialog::getOpenFileName(NULL, "Open Segmentation file",
-                        searchFolder.c_str(), QmitkIOUtil::GetFileOpenFilterString());
+                        directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty()) return;
         mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 
         //Restore image name
-        char sep = mitk::IOUtil::GetDirectorySeparator();
-        fileName = path.mid(path.lastIndexOf(sep) + 1);
+        QFileInfo fullPathInfo(path);
+        fileName = fullPathInfo.fileName();
 
     } else {
 
@@ -1002,6 +1002,7 @@ void AtrialScarView::Register() {
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 2) {
+        MITK_INFO << ("Selection size:" + QString::number(nodes.size())).toStdString();
         QMessageBox::warning(NULL, "Attention", "Please select both LGE and CEMRA images from the Data Manager to register!");
         return;
     }
@@ -1076,8 +1077,9 @@ void AtrialScarView::Transform() {
 
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
-    if (nodes.size() != 1) {
-        QMessageBox::warning(NULL, "Attention", "Please select the loaded or created segmentation to transform!");
+    if (nodes.size() != 1){
+        MITK_WARN << ("[Transform] Problem with selection. Selection size: " + QString::number(nodes.size())).toStdString();
+        QMessageBox::warning(NULL, "Attention", "Please select the corresponding segmentation to transform!");
         return;
     }
 
@@ -1103,7 +1105,11 @@ void AtrialScarView::Transform() {
         if (image) {
 
             //Check seg node name
-            if (segNode->GetName().compare(fileName.left(fileName.length()-4).toStdString()) != 0) {
+            QString segNodeTest = QString::fromStdString(segNode->GetName()) + ".nii";
+            // if (segNode->GetName().compare(fileName.left(fileName.length()-4).toStdString()) != 0) {
+            if (!fileName.contains(segNodeTest, Qt::CaseSensitive)) {
+                MITK_WARN << ("[Transform] Problem with filename: " + fileName).toStdString();
+                MITK_INFO << "[...][warning] segNode: " + segNode->GetName();
                 QMessageBox::warning(NULL, "Attention", "Please select the loaded or created segmentation!");
                 return;
             }//_if
