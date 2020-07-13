@@ -99,6 +99,9 @@ private:
     void AutomaticAnalysis();
     void Reset(bool allItems);
 
+    // helper functions
+    bool RequestProjectDirectoryFromUser();
+
     QString fileName;
     QString directory;
     QString debugSCARname;

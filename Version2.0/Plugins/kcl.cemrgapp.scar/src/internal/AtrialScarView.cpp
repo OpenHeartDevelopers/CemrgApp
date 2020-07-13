@@ -179,17 +179,7 @@ void AtrialScarView::ConvertNII() {
         return;
     }//_if
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Order dicoms based on their type
     std::vector<int> indexNodes;
@@ -349,8 +339,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
     QDirIterator searchit(direct, QDirIterator::Subdirectories);
 
-    if (debugging)
-        MITK_INFO << "[DEBUG] Searching for CEMRGNET output";
+    MITK_INFO(debugging) << "[DEBUG] Searching for CEMRGNET output";
 
     while(searchit.hasNext()) {
         QFileInfo searchfinfo(searchit.next());
@@ -817,18 +806,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
 void AtrialScarView::SegmentIMGS() {
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-		MITK_INFO << "Directory is empty. Requesting user for directory.";
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     int reply1 = QMessageBox::question(
                 NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
@@ -928,17 +906,7 @@ void AtrialScarView::NodeAdded(const mitk::DataNode* node) {
         mitk::DataStorage::SetOfObjects::ConstIterator itSeg = nodes->Begin();
         mitk::DataNode::Pointer segNode = itSeg->Value();
 
-        //Ask the user for a dir to store data
-        if (directory.isEmpty()) {
-            directory = QFileDialog::getExistingDirectory(
-                        NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                        QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-            if (directory.isEmpty() || directory.simplified().contains(" ")) {
-                QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-                directory = QString();
-                return;
-            }//_if
-        }
+        if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
         //Find the selected node
         QString path;
@@ -1007,17 +975,7 @@ void AtrialScarView::Register() {
         return;
     }
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Sort the two images
     QString lge, mra;
@@ -1083,17 +1041,7 @@ void AtrialScarView::Transform() {
         return;
     }
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Find the selected node
     QString path, pathTemp;
@@ -1160,17 +1108,7 @@ void AtrialScarView::Transform() {
 
 void AtrialScarView::ClipPVeins() {
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
@@ -1179,20 +1117,8 @@ void AtrialScarView::ClipPVeins() {
 }
 
 void AtrialScarView::ExtraCalcs() {
-
-    std::cout << "[INFO] Calling view org.mitk.views.scarcalculations" << std::endl;
-
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Patient's directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    MITK_INFO << "[INFO] Calling view org.mitk.views.scarcalculations" << std::endl;
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
@@ -1216,17 +1142,7 @@ void AtrialScarView::CreateSurf() {
         return;
     }
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Find the selected node
     QString path, pathTemp;
@@ -1337,17 +1253,7 @@ void AtrialScarView::SelectLandmarks() {
             return;
         }//_if
 
-        //Ask the user for a dir to store data
-        if (directory.isEmpty()) {
-            directory = QFileDialog::getExistingDirectory(
-                        NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                        QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-            if (directory.isEmpty() || directory.simplified().contains(" ")) {
-                QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-                directory = QString();
-                return;
-            }//_if
-        }
+        if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
         //Reset the button
         m_Controls.button_z_1->setText("Select Landmarks");
@@ -1420,17 +1326,7 @@ void AtrialScarView::ClipMitralValve() {
         return;
     }//_if
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Read in and copy
     QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
@@ -1493,17 +1389,7 @@ void AtrialScarView::ScarMap() {
         return;
     }
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Check for mesh in the project directory
     try {
@@ -1686,17 +1572,7 @@ void AtrialScarView::Threshold() {
         return;
     }
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Find the selected node
     double mean = 0.0, stdv = 0.0;
@@ -1818,17 +1694,7 @@ void AtrialScarView::Threshold() {
 
 void AtrialScarView::Sphericity() {
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Read in the mesh
     QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
@@ -1941,4 +1807,27 @@ void AtrialScarView::Reset(bool allItems) {
     directory.clear();
     m_Controls.button_z_1->setText("Select Landmarks");
     this->GetSite()->GetPage()->ResetPerspective();
+}
+
+// helper functions
+bool AtrialScarView::RequestProjectDirectoryFromUser(){
+    bool succesfulAssignment = true;
+    //Ask the user for a dir to store data
+    if (directory.isEmpty()) {
+		MITK_INFO << "Directory is empty. Requesting user for directory.";
+        directory = QFileDialog::getExistingDirectory(
+                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+        MITK_INFO << ("Directory selected:" + directory).toStdString();
+        if (directory.isEmpty() || directory.simplified().contains(" ")) {
+            MITK_WARN << "Please select a project directory with no spaces in the path!";
+            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
+            directory = QString();
+            bool succesfulAssignment = false;
+        }//_if
+    } else {
+        MITK_INFO << ("Project directory already set: " + directory).toStdString();
+    }
+
+    return succesfulAssignment;
 }
