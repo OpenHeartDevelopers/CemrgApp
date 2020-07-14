@@ -79,6 +79,8 @@ QString ScarCalculationsView::directory;
 QString ScarCalculationsView::predir;
 QString ScarCalculationsView::postdir;
 QString ScarCalculationsView::advdir;
+QString ScarCalculationsView::preScarFile;
+QString ScarCalculationsView::postScarFile;
 
 const std::string ScarCalculationsView::VIEW_ID = "org.mitk.views.scarcalculations";
 
@@ -97,6 +99,8 @@ void ScarCalculationsView::SetCalculationsPaths(const QString directory) {
             mitk::IOUtil::GetDirectorySeparator() + "ANALYSIS";
     ScarCalculationsView::advdir = directory +
             mitk::IOUtil::GetDirectorySeparator() + "ADVANCED_ANALYSIS";
+    ScarCalculationsView::preScarFile = "";
+    ScarCalculationsView::postScarFile = "";
 }
 
 bool ScarCalculationsView::CheckForRequiredFiles() {
@@ -104,47 +108,57 @@ bool ScarCalculationsView::CheckForRequiredFiles() {
     int targetfiles = 0;
     QString searchPre = ScarCalculationsView::predir + mitk::IOUtil::GetDirectorySeparator();
     QString searchPost = ScarCalculationsView::postdir + mitk::IOUtil::GetDirectorySeparator();
-    QDirIterator itpre(searchPre, QDirIterator::Subdirectories);
-    QDirIterator itpost(searchPost, QDirIterator::Subdirectories);
 
-    while(itpre.hasNext()) { // look for .nii LGE and MRA files in pre
-        QFileInfo finfo(itpre.next());
-        if (finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if (finfo.fileName().contains("LGE", Qt::CaseSensitive))
-                targetfiles++;
+    int responsePre = ScarCalculationsView::SearchDirectory(searchPre);
+    int responsePost = ScarCalculationsView::SearchDirectory(searchPost);
 
-            if (finfo.fileName().contains("MRA", Qt::CaseSensitive))
-                targetfiles++;
-        }
-        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive))
-            targetfiles++;
-
-        if (finfo.fileName().contains("MaxScar.vtk", Qt::CaseSensitive))
-            targetfiles++;
-    }
-
-    while(itpost.hasNext()) { // look for .nii LGE and MRA files in pre
-        QFileInfo finfo(itpost.next());
-        if (finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if (finfo.fileName().contains("LGE", Qt::CaseSensitive))
-                targetfiles++;
-
-            if (finfo.fileName().contains("MRA", Qt::CaseSensitive))
-                targetfiles++;
-        }
-        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive))
-            targetfiles++;
-
-        if (finfo.fileName().contains("MaxScar.vtk", Qt::CaseSensitive))
-            targetfiles++;
-    }
-
-    bool ret;
-    if (targetfiles < 8)
-        ret = false;
-    else
+    bool ret = false;
+    if (responsePre + responsePost >= 8){
         ret = true;
+    }
     return ret;
+}
+
+int ScarCalculationsView::SearchDirectory(QString searchDir){
+    MITK_INFO << ("[INFO] Searching files on directory: " + searchDir).toStdString();
+    int response = 0;
+    bool debugVar = true;
+    bool isPre = searchDir.contains("PRE", Qt::CaseSensitive);
+
+    QDirIterator qiter(searchDir, QDirIterator::Subdirectories);
+    while(qiter.hasNext()) { // look for .nii LGE and MRA files in pre
+        QFileInfo finfo(qiter.next());
+        if (finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
+            if (finfo.fileName().contains("LGE", Qt::CaseSensitive)){
+                MITK_INFO(debugVar) << "[DEBUG] found: LGE.";
+                response++;
+            }
+
+            if (finfo.fileName().contains("MRA", Qt::CaseSensitive)){
+                MITK_INFO(debugVar) << "[DEBUG] found: MRA.";
+                response++;
+            }
+        }
+        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive)){
+            MITK_INFO(debugVar) << "[DEBUG] found: Thresholds file.";
+            response++;
+        }
+
+        if (finfo.fileName().contains(".vtk", Qt::CaseSensitive)){
+            if (!finfo.fileName().contains("Normalised", Qt::CaseSensitive)){
+                if (finfo.fileName().contains("MaxScar", Qt::CaseSensitive)){
+                    MITK_INFO(debugVar) << "[DEBUG] found: Scar VTK.";
+                    if(isPre){
+                        preScarFile = finfo.fileName();
+                    } else{
+                        postScarFile = finfo.fileName();
+                    }
+                    response++;
+                }
+            }
+        }
+    }
+    return response;
 }
 
 QStringList ScarCalculationsView::CheckForAdvancedDirectoryFiles() {
@@ -343,7 +357,8 @@ void ScarCalculationsView::iniPreSurf() {
     thres = datainfo[4];
 
     // Convert to point data
-    QString shellPathPre = ScarCalculationsView::predir +  mitk::IOUtil::GetDirectorySeparator() + "MaxScar.vtk";
+    QString prename = ScarCalculationsView::preScarFile.isEmpty() ? "MaxScar.vtk" : ScarCalculationsView::preScarFile;
+    QString shellPathPre = ScarCalculationsView::predir +  mitk::IOUtil::GetDirectorySeparator() + prename;
     MITK_INFO << "Shell PRE: " + shellPathPre.toStdString();
     mitk::Surface::Pointer shellpre = mitk::IOUtil::Load<mitk::Surface>(shellPathPre.toStdString());
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
@@ -353,7 +368,8 @@ void ScarCalculationsView::iniPreSurf() {
     shellpre->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
     mitk::IOUtil::Save(shellpre, (prodPathAdv+"MaxScarPre.vtk").toStdString());
 
-    QString shellPathPost = ScarCalculationsView::postdir +  mitk::IOUtil::GetDirectorySeparator() + "MaxScar.vtk";
+    QString postname = ScarCalculationsView::postScarFile.isEmpty() ? "MaxScar.vtk" : ScarCalculationsView::postScarFile;
+    QString shellPathPost = ScarCalculationsView::postdir +  mitk::IOUtil::GetDirectorySeparator() + postname;
     MITK_INFO << "Shell POST: " + shellPathPost.toStdString();
     mitk::Surface::Pointer shellpost = mitk::IOUtil::Load<mitk::Surface>(shellPathPost.toStdString());
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point2 = vtkSmartPointer<vtkCellDataToPointData>::New();
@@ -878,8 +894,9 @@ void ScarCalculationsView::GapMeasurement() {
         MITK_INFO << "Passing selected IDs to underlying functionalities.";
         int lim = this->pickedSeedIds->GetNumberOfIds();
         std::vector<int> v;
-        for(int i=0; i<lim; i++)
+        for(int i=0; i<lim; i++){
             v.push_back(this->pickedSeedIds->GetId(i));
+        }
 
         MITK_INFO << "Creating shortest path and corridor.";
         // Choose parameters: neighbourhood size, left/right prefix
@@ -913,8 +930,9 @@ void ScarCalculationsView::GapMeasurement() {
             csadv->ClearLeftRightPrefix();
             this->dijkstraActors = csadv->GetPathsMappersAndActors();
 
-            for (int i=0;(unsigned)i<this->dijkstraActors.size();i++)
+            for (int i=0;(unsigned)i<this->dijkstraActors.size();i++){
                 renderer->AddActor(this->dijkstraActors[i]);
+            }
 
             m_Controls.widget_1->GetRenderWindow()->Render();
 

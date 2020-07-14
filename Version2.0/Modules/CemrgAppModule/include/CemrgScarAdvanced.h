@@ -89,6 +89,8 @@ class MITKCEMRGAPPMODULE_EXPORT CemrgScarAdvanced {
 
 public:
 
+    bool _debugScarAdvanced;
+
     int _neighbourhood_size;
     int _run_count;
     double _fill_threshold;
@@ -127,24 +129,36 @@ public:
     std::vector<int> _corridoridarray;
 
     // Getters and setters
-    bool IsWeighted();
-    bool PreScoresExist();
-    bool PostScoresExist();
-    void SetWeightedCorridorBool(bool isw);
-    void SetInputData(vtkSmartPointer<vtkPolyData> mesh);
-    void SetNeighbourhoodSize(int s);
-    void SetFillThreshold(double s);
-    void SetMaxScalar(double s);
-    void SetOutputFileName(std::string filename);
-    void SetOutputPrefix(std::string prefixname);
-    void SetLeftRightPrefix(std::string lrpre);
-    void ClearLeftRightPrefix();
+    inline bool IsDebug(){return _debugScarAdvanced;};
+
+    inline bool IsWeighted() {return _weightedcorridor;};
+    inline bool PreScoresExist(){return (fandi3_preSurfacePercentage>=0 && fandi3_preScarScore>=0);};
+    inline bool PostScoresExist(){return (fandi3_postSurfacePercentage>=0 && fandi3_postScarScore>=0);};
+    inline int GetThresholdValue(){return _fill_threshold;};
+    inline vtkSmartPointer<vtkPolyData> GetSourcePolyData(){return _SourcePolyData;};
+
     QString GetOutputSufix();
-    void SetOutputPath(std::string pathname);
-    void GetConnectedVertices(
-            vtkSmartPointer<vtkPolyData> mesh, int seed, vtkSmartPointer<vtkIdList> connectedVertices);
-    vtkSmartPointer<vtkPolyData> GetSourcePolyData();
-    int GetThresholdValue();
+    void GetConnectedVertices(vtkSmartPointer<vtkPolyData> mesh, int seed, vtkSmartPointer<vtkIdList> connectedVertices);
+
+    inline void SetDebug(bool db){_debugScarAdvanced = db;};
+    inline void SetDebugOn(){SetDebug(true);};
+    inline void SetDebugOff(){SetDebug(false);};
+
+    inline void SetWeightedCorridorBool(bool isw){_weightedcorridor = isw;};
+    inline void SetWeightedCorridorOn(){SetWeightedCorridorBool(true);};
+    inline void SetWeightedCorridorOff(){SetWeightedCorridorBool(false);};
+
+    inline void SetNeighbourhoodSize(int s){_neighbourhood_size = s;};
+    inline void SetFillThreshold(double s){_fill_threshold = s;};
+    inline void SetMaxScalar(double s){_max_scalar = s;};
+    inline void SetInputData(vtkSmartPointer<vtkPolyData> inputmesh){_SourcePolyData->DeepCopy(inputmesh);};
+    inline void SetOutputFileName(std::string filename){_fileOutName = filename;};
+    inline void SetOutputPath(std::string pathname){_outPath = pathname;};
+    inline void SetLeftRightPrefix(std::string lrpre){_leftrightpre = lrpre;};
+    inline void SetOutputPrefix(std::string prefixname){_prefix = _leftrightpre + prefixname;};
+
+    inline void ClearLeftRightPrefix(){_leftrightpre = "";};
+
     void ResetValues();
 
     // Helper functions

@@ -70,6 +70,7 @@ public:
     static void SetCalculationsPaths(const QString directory);
     static void GetInputsFromFile();
     static bool CheckForRequiredFiles();
+    static int SearchDirectory(QString searchDir);
     ~ScarCalculationsView();
 
 protected slots:
@@ -128,6 +129,8 @@ private:
     static QString predir;
     static QString postdir;
     static QString advdir;
+    static QString preScarFile;
+    static QString postScarFile;
     int method;
     double value, mean, stdv, thres;
     double maxScalar, minScalar;

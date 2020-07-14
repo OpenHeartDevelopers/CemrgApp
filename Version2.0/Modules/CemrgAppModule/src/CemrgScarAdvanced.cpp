@@ -86,81 +86,7 @@ CemrgScarAdvanced::CemrgScarAdvanced() {
     fandi3_postSurfacePercentage=-1;
     fandi3_preScarScore=-1;
     fandi3_postScarScore=-1;
-}
-
-bool CemrgScarAdvanced::IsWeighted() {
-
-    return _weightedcorridor;
-}
-
-bool CemrgScarAdvanced::PreScoresExist() {
-
-    return (fandi3_preSurfacePercentage>=0 && fandi3_preScarScore>=0);
-}
-
-bool CemrgScarAdvanced::PostScoresExist() {
-
-    return (fandi3_postSurfacePercentage>=0 && fandi3_postScarScore>=0);
-}
-
-void CemrgScarAdvanced::SetWeightedCorridorBool(bool isw) {
-
-    _weightedcorridor = isw;
-}
-
-void CemrgScarAdvanced::SetNeighbourhoodSize(int s) {
-
-    _neighbourhood_size = s;
-}
-
-void CemrgScarAdvanced::SetFillThreshold(double s) {
-
-    _fill_threshold = s;
-}
-
-void CemrgScarAdvanced::SetMaxScalar(double s) {
-
-    _max_scalar = s;
-}
-
-void CemrgScarAdvanced::SetInputData(vtkSmartPointer<vtkPolyData> inputmesh) {
-
-    _SourcePolyData->DeepCopy(inputmesh);
-}
-
-vtkSmartPointer<vtkPolyData> CemrgScarAdvanced::GetSourcePolyData() {
-
-    return _SourcePolyData;
-}
-
-int CemrgScarAdvanced::GetThresholdValue() {
-
-    return _fill_threshold;
-}
-
-void CemrgScarAdvanced::SetOutputFileName(std::string filename) {
-
-    _fileOutName = filename;
-}
-
-void CemrgScarAdvanced::SetOutputPath(std::string pathname) {
-
-    _outPath = pathname;
-}
-
-void CemrgScarAdvanced::SetLeftRightPrefix(std::string lrpre) {
-
-    _leftrightpre = lrpre;
-}
-
-void CemrgScarAdvanced::ClearLeftRightPrefix() {
-
-    _leftrightpre = "";
-}
-
-void CemrgScarAdvanced::SetOutputPrefix(std::string prefixname) {
-
-    _prefix = _leftrightpre + prefixname;
+    _debugScarAdvanced = false;
 }
 
 QString CemrgScarAdvanced::GetOutputSufix() {
@@ -445,8 +371,7 @@ void CemrgScarAdvanced::ExtractCorridorData(
         }
     }
 
-    std::cout << "[INFO] "  << "There were a total of " << vertex_ids.size()
-              << " vertices in the shortest path you have selected\n" ;
+    MITK_INFO << ("[INFO] There were a total of " + QString::number(vertex_ids.size()) + " vertices in the shortest path you have selected").toStdString();
 
     for (it_type iterator = vertex_ids.begin(); iterator != vertex_ids.end(); iterator++) {
 
@@ -585,9 +510,9 @@ void CemrgScarAdvanced::NeighbourhoodFillingPercentage(std::vector<int> points) 
     // bring al lthe scalars to an array
     vtkFloatArray* scalars = vtkFloatArray::New();
     scalars = vtkFloatArray::SafeDownCast(_SourcePolyData->GetPointData()->GetScalars());
-    std::cout << "[INFO] "  << "Exploring the predeteremined neighbourhood at threshold = "
-              << _fill_threshold << "\n";
-    std::cout << "[INFO] "  << "Number of points: " << total<< "\n";
+    MITK_INFO << ("[INFO] Exploring the predeteremined neighbourhood at threshold = " +
+        QString::number(_fill_threshold)).toStdString();
+    MITK_INFO << ("[INFO] Number of points: " + QString::number(total)).toStdString();
     for (int i=0;(unsigned)i<points.size();i++) {
         if (scalars->GetTuple1(points[i]) > _fill_threshold)
             fillingcounter++;
@@ -595,10 +520,9 @@ void CemrgScarAdvanced::NeighbourhoodFillingPercentage(std::vector<int> points) 
 
     double percentage_in_neighbourhood =  100*(fillingcounter/total);
     this->fandi2_percentage = percentage_in_neighbourhood;
-    std::cout << "[INFO] "  << "% scar in this neighbourhood = " << percentage_in_neighbourhood
-              << ", threshold satisfy? "
-              << (percentage_in_neighbourhood > _neighbourhood_size ? "Yes":"No")
-              <<"\n\n";
+    MITK_INFO << ("[INFO] % scar in this neighbourhood = "
+        + QString::number(percentage_in_neighbourhood) + ", threshold satisfy? "
+        + (percentage_in_neighbourhood > _neighbourhood_size ? "Yes":"No")).toStdString();
 }
 
 int CemrgScarAdvanced::RecursivePointNeighbours(vtkIdType pointId, int order) {
@@ -644,8 +568,9 @@ void CemrgScarAdvanced::GetNeighboursAroundPoint2(
         //pointNeighbours.push_back(_visited_point_list[i]);
         pointNeighbourAndOrder.push_back(std::make_pair(_visited_point_list[i].first,_visited_point_list[i].second));
     }
-    std::cout << "[INFO] "  << "This point has (recursive order n = " <<
-                 max_order << ") = " << pointNeighbourAndOrder.size() << " neighbours\n";
+    MITK_INFO(IsDebug()) << ("[INFO] This point has (recursive order n = " +
+        QString::number(max_order) + ") = " +
+        QString::number(pointNeighbourAndOrder.size()) + " neighbours").toStdString();
 }
 
 void CemrgScarAdvanced::GetConnectedVertices(
@@ -656,12 +581,9 @@ void CemrgScarAdvanced::GetConnectedVertices(
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
     mesh->GetPointCells(seed, cellIdList);
 
-    // std::cout << "[INFO] "  << "There are " << cellIdList->GetNumberOfIds() << " cells that use point " << seed ;
-
     //loop through all the cells that use the seed point
     for (vtkIdType i = 0; i < cellIdList->GetNumberOfIds(); i++) {
         vtkCell* cell = mesh->GetCell(cellIdList->GetId(i));
-        //std::cout << "[INFO] "  << "The cell has " << cell->GetNumberOfEdges() << " edges." ;
 
         //if the cell doesn't have any edges, it is a line
         if (cell->GetNumberOfEdges() <= 0) {
@@ -674,7 +596,6 @@ void CemrgScarAdvanced::GetConnectedVertices(
             vtkCell* edge = cell->GetEdge(e);
 
             vtkIdList* pointIdList = edge->GetPointIds();
-            //std::cout << "[INFO] "  << "This cell uses " << pointIdList->GetNumberOfIds() << " points" ;
 
             if (pointIdList->GetId(0) == seed || pointIdList->GetId(1) == seed) {
                 if (pointIdList->GetId(0) == seed) {
@@ -685,8 +606,8 @@ void CemrgScarAdvanced::GetConnectedVertices(
             }
         }
     }
-    std::cout << "[INFO] "  << "There are " << connectedVertices->GetNumberOfIds() <<
-                 " points connected to point " << seed << "\n";
+    MITK_INFO(IsDebug()) << ("[INFO] There are " + QString::number(connectedVertices->GetNumberOfIds())
+        + " points connected to point " + QString::number(seed)).toStdString();
 }
 
 void CemrgScarAdvanced::getCorridorPoints(
