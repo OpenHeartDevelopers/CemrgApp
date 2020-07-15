@@ -79,7 +79,7 @@
    <item>
     <widget class="QLineEdit" name="txtbox_thick">
      <property name="placeholderText">
-      <string>Thickness [mm] (default = 5)</string>
+      <string>Thickness (default = 3)</string>
      </property>
     </widget>
    </item>

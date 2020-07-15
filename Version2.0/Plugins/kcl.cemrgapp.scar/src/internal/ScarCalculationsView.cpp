@@ -1095,7 +1095,7 @@ void ScarCalculationsView::TransformMeshesForComparison() {
     QString sourcename = outpath + "MaxScarPost.vtk";
     QString targetname = outpath + "MaxScarPre.vtk";
     QString alignedname = outpath + "MaxScarPost_Aligned.vtk";
-    QString testTX = outpath + "docker.dof";
+    QString testTX = outpath + "translation.dof";
     this->BusyCursorOn();
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->ExecuteSimpleTranslation(directory, sourcename, targetname, testTX);
