@@ -635,6 +635,11 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
 
 void ScarCalculationsView::EditThreshold() {
 
+    if (m_Controls.fandi_t2_visualise->isEnabled() || m_Controls.fandi_t3_visualise->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button first.");
+        return;
+    }
+
     MITK_INFO << "Edit threshold button...";
 
     if (m_Controls.combo_thres->count()==0) { // sanity checks
