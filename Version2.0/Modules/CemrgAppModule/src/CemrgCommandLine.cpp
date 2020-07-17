@@ -1029,6 +1029,44 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
     return res;
 }
 
+QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder){
+    MITK_INFO << "[ATTENTION] Attempting alternative DICOM to NIFTI conversion.";
+
+    QDir dicomhome(path2dicomfolder);
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+    QString executablePath = "";
+    QString outPath;
+    bool successful = false;
+
+    MITK_INFO << ("[...] OUTPUT IMAGE: " + outAbsolutePath).toStdString();
+
+    if (_useDockerContainers) {
+        MITK_INFO << "Using docker containers.";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+        outPath = dicomhome.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "NIIs";
+        QStringList arguments;
+
+        QString executableName = executablePath+"docker";
+        arguments << "run" << "--rm"  << "--volume="+dicomhome.absolutePath()+":/Data";
+        arguments << "orodrazeghi/dicom-converter" << ".";
+        arguments << "--gantry" << "--inconsistent";
+        successful = ExecuteCommand(executableName, arguments, outPath);
+
+    } else {
+        MITK_WARN << "Docker must be running for this feature to be used.";
+    }
+
+    if (successful) {
+        MITK_INFO << "Conversion successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with DICOM2NIFTI Docker container.";
+    }
+    return outAbsolutePath;
+}
+
 /***************************************************************************
  *********************** Docker Helper Functions ***************************
  ***************************************************************************/
@@ -1144,8 +1182,9 @@ bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList argume
     }
     mitk::ProgressBar::GetInstance()->Progress();
 
-    if (processStarted)
+    if (processStarted){
         successful = IsOutputSuccessful(outputPath);
+    }
     return successful;
 }
 

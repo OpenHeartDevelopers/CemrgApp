@@ -154,20 +154,84 @@ void AtrialScarView::OnSelectionChanged(
 
 
 void AtrialScarView::LoadDICOM() {
+    MITK_INFO << "Using alternative DICOM converter";
+    int reply1 = QMessageBox::question(NULL, "Question",
+        "Use alternative DICOM converter?", QMessageBox::Yes, QMessageBox::No);
 
-    //Use MITK DICOM editor
-    QString editor_id = "org.mitk.editors.dicomeditor";
-    berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
-    this->GetSite()->GetPage()->OpenEditor(input, editor_id);
+    if (reply1 == QMessageBox::Yes) {
+        QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.",
+                    mitk::IOUtil::GetProgramPath().c_str(),
+                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        QString tmpNiftiFolder = cmd->DockerDicom2Nifti(dicomFolder);
+        if(tmpNiftiFolder.compare("ERROR_IN_PROCESSING") != 0){
+            MITK_INFO << ("Conversion succesful. Intermediate NII folder: " + tmpNiftiFolder).toStdString();
+            QMessageBox::information(NULL, "Information", "Conversion successful, press the Process Images button to continue.");
+            _usingAlternativeDicomReader = true;
+            alternativeNiftiFolder = tmpNiftiFolder;
+        } else{
+            MITK_WARN << "Problem with conversion.";
+            QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK Dicom editor?");
+            return;
+        }
+
+    } else{
+        MITK_INFO << "Using MITK DICOM editor";
+        _usingAlternativeDicomReader = false;
+        QString editor_id = "org.mitk.editors.dicomeditor";
+        berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
+        this->GetSite()->GetPage()->OpenEditor(input, editor_id);
+    }
+
 }
 
 void AtrialScarView::ProcessIMGS() {
 
-    //Toggle visibility of buttons
-    if (m_Controls.button_2_1->isVisible())
+    if (_usingAlternativeDicomReader){
+        MITK_INFO << "Using alternative DICOM converter.";
+
+        QDir niftiFolder(alternativeNiftiFolder);
+        MITK_INFO << ("Reading folder:" + niftiFolder.absolutePath()).toStdString();
+
+        QStringList niftiFiles = niftiFolder.entryList();
+        MITK_INFO << ("Number of .nii files: " + QString::number(niftiFiles.size())).toStdString();
+        if(niftiFiles.size()>0){
+            QString lge, mra;
+            if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+            for(int ix=0; ix<niftiFiles.size(); ix++){
+                // load here files
+                QString thisFile = niftiFiles.at(ix);
+                QString path;
+                if(thisFile.contains(".nii", Qt::CaseSensitive)){
+                    MITK_INFO << ("FILE: " + thisFile.toStdString());
+                    if (thisFile.contains("lge", Qt::CaseInsensitive)){
+                        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-LGE-" + thisFile;
+
+                    }
+                    if(thisFile.contains("mra", Qt::CaseInsensitive)){
+                        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-MRA-" + thisFile;
+                    }
+                    MITK_INFO << ("Copying file to: " + path).toStdString();
+                    QFile fi(niftiFolder.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + thisFile);
+                    fi.copy(path);
+
+                    std::string key = "dicom.series.SeriesDescription";
+                    mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
+                    set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), thisFile.toStdString().c_str());
+                }
+            }
+
+            MITK_INFO << "Loading all items";
+            mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
+        }
+    } else{
+        //Toggle visibility of buttons
+        if (m_Controls.button_2_1->isVisible())
         m_Controls.button_2_1->setVisible(false);
-    else
+        else
         m_Controls.button_2_1->setVisible(true);
+    }
 }
 
 void AtrialScarView::ConvertNII() {
@@ -289,7 +353,7 @@ void AtrialScarView::ConvertNII() {
     nodes.clear();
     this->BusyCursorOff();
 
-    //Load all items
+    MITK_INFO << "Loading all items";
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
 
@@ -1823,7 +1887,7 @@ bool AtrialScarView::RequestProjectDirectoryFromUser(){
             MITK_WARN << "Please select a project directory with no spaces in the path!";
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
-            bool succesfulAssignment = false;
+            succesfulAssignment = false;
         }//_if
     } else {
         MITK_INFO << ("Project directory already set: " + directory).toStdString();
