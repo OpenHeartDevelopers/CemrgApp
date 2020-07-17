@@ -172,26 +172,11 @@ std::string CemrgScarAdvanced::ScarOverlap(
     temp->GetPointData()->SetScalars(exploration_values);
 
     vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-    writer->SetFileName((this->_outPath+"ScarOverlap.vtk").c_str());
+    writer->SetFileName((GetOutputPath()+"ScarOverlap.vtk").c_str());
     writer->SetInputData(temp);
     writer->Update();
 
-    return (this->_outPath+"ScarOverlap.vtk");
-}
-
-std::string CemrgScarAdvanced::PathAndPrefix() {
-
-    return (this->_outPath+ this->_leftrightpre +this->_prefix);
-}
-
-std::string CemrgScarAdvanced::GetPrefix() {
-
-    return (this->_leftrightpre +this->_prefix);
-}
-
-bool CemrgScarAdvanced::isPointIDArrayEmpty() {
-
-    return (_pointidarray.empty());
+    return (GetOutputPath()+"ScarOverlap.vtk");
 }
 
 std::string CemrgScarAdvanced::num2str(double num, int precision) {
@@ -199,6 +184,18 @@ std::string CemrgScarAdvanced::num2str(double num, int precision) {
     std::stringstream stream;
     stream << std::fixed << std::setprecision(precision) << num;
     return stream.str();
+}
+
+void CemrgScarAdvanced::SaveStrToFile(std::string path2file, std::string filename, std::string text){
+    MITK_INFO << "[AdvancedScar] Saving to file: " + path2file+filename;
+    ofstream outst;
+    std::stringstream ss;
+
+    ss << (path2file+filename);
+    outst.open(ss.str().c_str(), std::ios_base::out);
+
+    outst << text;
+    outst.close();
 }
 
 std::string CemrgScarAdvanced::PrintThresholdResults(double mean, double stdv, double val) {
@@ -210,6 +207,9 @@ std::string CemrgScarAdvanced::PrintThresholdResults(double mean, double stdv, d
             "Threshold value: " + num2str(this->_fill_threshold,2) + "\n\n" +
             "Surface Area of Ablation: " + num2str(this->fandi1_largestSurfaceArea,2) + " mm^2 \n" +
             "Scar Score: " + num2str(this->fandi1_scarScore,2) + "%";
+
+    SaveStrToFile(GetOutputPath(), _prefix + "_"+ GetSurfaceAreaFilename(), out);
+
     return out;
 }
 
@@ -226,6 +226,9 @@ std::string CemrgScarAdvanced::PrintAblationGapsResults(double mean, double stdv
             "Area of corridor: " + num2str(this->fandi2_corridorSurfaceArea,0) + " mm^2 \n" ;
     std::string strisweighted = (_weightedcorridor) ? "Weighted path" : "Geodesic";
     out = out + "\nShortest path calculation: " + strisweighted + "\n";
+
+    SaveStrToFile(PathAndPrefix()+"_", GetGapsFilename(), out);
+
     return out;
 }
 std::string CemrgScarAdvanced::PrintScarOverlapResults(double valpre, double valpost) {
@@ -245,6 +248,8 @@ std::string CemrgScarAdvanced::PrintScarOverlapResults(double valpre, double val
                 "(Both at threshold value: " + num2str(valpre,1) +")" + "\n\n";
     }
     out += "Percentage of PRE scar in POST scar: " + num2str(ros*100,3) + "%\n";
+
+    SaveStrToFile(GetOutputPath(), GetComparisonFilename(), out);
 
     return out;
 }
@@ -727,7 +732,7 @@ void CemrgScarAdvanced::TransformSource2Target() {
     Output_Poly->GetPointData()->SetScalars(Output_Poly_Scalar);
 
     vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-    writer->SetFileName((this->_outPath+"MaxScarPre_OnPost.vtk").c_str());
+    writer->SetFileName((GetOutputPath()+"MaxScarPre_OnPost.vtk").c_str());
     writer->SetInputData(Output_Poly);
     writer->Write();
 }
