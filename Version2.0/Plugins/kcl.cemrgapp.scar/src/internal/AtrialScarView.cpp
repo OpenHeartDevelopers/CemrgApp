@@ -1823,7 +1823,7 @@ bool AtrialScarView::RequestProjectDirectoryFromUser(){
             MITK_WARN << "Please select a project directory with no spaces in the path!";
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
-            bool succesfulAssignment = false;
+            succesfulAssignment = false;
         }//_if
     } else {
         MITK_INFO << ("Project directory already set: " + directory).toStdString();

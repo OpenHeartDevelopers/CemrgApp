@@ -105,7 +105,6 @@ void ScarCalculationsView::SetCalculationsPaths(const QString directory) {
 
 bool ScarCalculationsView::CheckForRequiredFiles() {
 
-    int targetfiles = 0;
     QString searchPre = ScarCalculationsView::predir + mitk::IOUtil::GetDirectorySeparator();
     QString searchPost = ScarCalculationsView::postdir + mitk::IOUtil::GetDirectorySeparator();
 
