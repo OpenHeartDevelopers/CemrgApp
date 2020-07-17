@@ -288,6 +288,11 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
 
         csadv->SetOutputFileName((prodPathOut+outprefix+"encirclement.csv").toStdString());
         csadv->SetOutputPath(prodPathOut.toStdString());
+
+        csadv->SetSurfaceAreaFilename("SurfaceAreaResults.txt");
+        csadv->SetGapsFilename("GapsMeasurementsResults.txt");
+        csadv->SetComparisonFilename("ComparisonResults.txt");
+
         csadv->SetOutputPrefix(outprefix.toStdString());
         csadv->SetFillThreshold(thres);
         csadv->SetInputData(surface->GetVtkPolyData());
@@ -453,8 +458,9 @@ void ScarCalculationsView::BinVisualiser() {
         if (s < min_scalar)
             min_scalar = s;
     }
-    if (max_scalar==3)
+    if (max_scalar==3){
         numlabels = 4;
+    }
 
     vtkSmartPointer<vtkPolyDataMapper> surfMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     surfMapper->SetInputData(surface->GetVtkPolyData());
@@ -484,6 +490,7 @@ void ScarCalculationsView::BinVisualiser() {
     surfActor->GetProperty()->SetOpacity(1);
 
     renderer->AddActor(surfActor);
+    renderer->AddActor2D(scalarBar);
 }
 
 void ScarCalculationsView::Visualiser() {
@@ -539,6 +546,10 @@ void ScarCalculationsView::Visualiser() {
     scalarBar->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
     scalarBar->GetPositionCoordinate()->SetValue( 0.9, 0.01 );
     scalarBar->SetNumberOfLabels(5);
+
+    std::string scalarBarTitle = "Raw Signal \n Intensity";
+    scalarBar->SetTitle(scalarBarTitle.c_str());
+    scalarBar->SetVerticalTitleSeparation(15);
 
     surfMapper->SetLookupTable(lut);
     scalarBar->SetLookupTable(lut);
@@ -769,7 +780,6 @@ void ScarCalculationsView::SaveNewThreshold() {
 }
 
 void ScarCalculationsView::CancelThresholdEdit() {
-
     m_Controls.combo_thres->setEnabled(false);
     m_Controls.button_saveth->setEnabled(false);
     m_Controls.button_cancel->setEnabled(false);
@@ -871,6 +881,15 @@ void ScarCalculationsView::PickCallBack() {
 // Button functionalities
 void ScarCalculationsView::DoImageProcessing() {
 
+    if (m_Controls.fandi_t2_visualise->isEnabled() || m_Controls.fandi_t3_visualise->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button first.");
+        return;
+    }
+    if (m_Controls.button_saveth->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button or save your threshold first.");
+        return;
+    }
+
     // F&I T1
     MITK_INFO << "[INFO] F&I Task 1. Comparison of Surface Area.";
     csadv->GetSurfaceAreaFromThreshold(thres, maxScalar);
@@ -880,6 +899,15 @@ void ScarCalculationsView::DoImageProcessing() {
 }
 
 void ScarCalculationsView::GapMeasurement() {
+
+    if (m_Controls.fandi_t2_visualise->isEnabled() || m_Controls.fandi_t3_visualise->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button first.");
+        return;
+    }
+    if (m_Controls.button_saveth->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button or save your threshold first.");
+        return;
+    }
 
     // F&I T2
     if (pickedSeedIds->GetNumberOfIds()==0) {
@@ -993,6 +1021,15 @@ void ScarCalculationsView::GapMeasurementVisualisation(const QString& text) {
 }
 
 void ScarCalculationsView::BeforeAndAfterComp() {
+
+    if (m_Controls.fandi_t2_visualise->isEnabled() || m_Controls.fandi_t3_visualise->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button first.");
+        return;
+    }
+    if (m_Controls.button_saveth->isEnabled()) {
+        QMessageBox::warning(NULL, "ATTENTION", "Press the Cancel button or save your threshold first.");
+        return;
+    }
 
     // F&I T3
     MITK_INFO << "[INFO] F&I Task 3. Measurement of scar overlap.\n";

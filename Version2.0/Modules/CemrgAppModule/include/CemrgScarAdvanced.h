@@ -111,6 +111,7 @@ public:
     double fandi3_postSurfacePercentage;
     double fandi3_preScarScore;
     double fandi3_postScarScore;
+    std::string fandi1_fname, fandi2_fname, fandi3_fname;
 
     std::vector<std::pair<int, int> > _visited_point_list; // stores the neighbours around a point
     std::vector<vtkSmartPointer<vtkPolyData> > _paths; // container to store shortest paths between points
@@ -157,17 +158,28 @@ public:
     inline void SetLeftRightPrefix(std::string lrpre){_leftrightpre = lrpre;};
     inline void SetOutputPrefix(std::string prefixname){_prefix = _leftrightpre + prefixname;};
 
+    inline void SetSurfaceAreaFilename(std::string fn1){fandi1_fname = fn1;};
+    inline void SetGapsFilename(std::string fn2){fandi2_fname = fn2;};
+    inline void SetComparisonFilename(std::string fn3){fandi3_fname = fn3;};
+
+    inline std::string GetOutputPath(){return _outPath;};
+    inline std::string GetSurfaceAreaFilename(){return fandi1_fname;};
+    inline std::string GetGapsFilename(){return fandi2_fname;};
+    inline std::string GetComparisonFilename(){return fandi3_fname;};
+    inline std::string GetPrefix() {return (_leftrightpre + _prefix);};
+    inline std::string PathAndPrefix() {return (GetOutputPath()+ GetPrefix());};
+
+    inline bool isPointIDArrayEmpty() {return (_pointidarray.empty());};
+
     inline void ClearLeftRightPrefix(){_leftrightpre = "";};
 
     void ResetValues();
 
     // Helper functions
+    void SaveStrToFile(std::string path2file, std::string filename, std::string text);
     void PushBackOnPointIDArray(int pointID);
-    bool isPointIDArrayEmpty();
     std::string ThresholdedShell(double thresho);
     std::string ScarOverlap(vtkSmartPointer<vtkPolyData> prepd, double prethresh, vtkSmartPointer<vtkPolyData> postpd, double posttresh);
-    std::string PathAndPrefix();
-    std::string GetPrefix();
     std::vector<vtkSmartPointer<vtkActor> > GetPathsMappersAndActors();
     std::string PrintAblationGapsResults(double mean, double stdv, double val);
     std::string PrintThresholdResults(double mean, double stdv, double val);
