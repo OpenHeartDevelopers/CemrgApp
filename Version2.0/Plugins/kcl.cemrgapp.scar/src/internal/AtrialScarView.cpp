@@ -160,8 +160,8 @@ void AtrialScarView::LoadDICOM() {
 
     if (reply1 == QMessageBox::Yes) {
         QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.",
-                    mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+                mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         QString tmpNiftiFolder = cmd->DockerDicom2Nifti(dicomFolder);
         if(tmpNiftiFolder.compare("ERROR_IN_PROCESSING") != 0){
@@ -199,10 +199,10 @@ void AtrialScarView::ProcessIMGS() {
             QString lge, mra;
             if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
+            QString thisFile, path;
             for(int ix=0; ix<niftiFiles.size(); ix++){
                 // load here files
-                QString thisFile = niftiFiles.at(ix);
-                QString path;
+                thisFile = niftiFiles.at(ix);
                 if(thisFile.contains(".nii", Qt::CaseSensitive)){
                     MITK_INFO << ("FILE: " + thisFile.toStdString());
                     if (thisFile.contains("lge", Qt::CaseInsensitive)){

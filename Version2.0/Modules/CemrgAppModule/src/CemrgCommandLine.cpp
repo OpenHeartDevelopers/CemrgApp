@@ -1046,12 +1046,14 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder){
         executablePath = "/usr/local/bin/";
 #endif
         outPath = dicomhome.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "NIIs";
+        QString executableName = executablePath+"docker";
+
         QStringList arguments;
 
-        QString executableName = executablePath+"docker";
         arguments << "run" << "--rm"  << "--volume="+dicomhome.absolutePath()+":/Data";
         arguments << "orodrazeghi/dicom-converter" << ".";
         arguments << "--gantry" << "--inconsistent";
+
         successful = ExecuteCommand(executableName, arguments, outPath);
 
     } else {
