@@ -50,6 +50,8 @@ public:
 
     //Sampling Utils
     static mitk::Image::Pointer Downsample(mitk::Image::Pointer image, int factor);
+    static mitk::Image::Pointer IsoImageResampling(mitk::Image::Pointer image, bool reorientToRAI=false);
+    static mitk::Image::Pointer IsoImageResampling(QString imPath, bool reorientToRAI=false);
 
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);

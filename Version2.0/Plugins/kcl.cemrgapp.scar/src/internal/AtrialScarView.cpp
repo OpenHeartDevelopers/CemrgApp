@@ -216,13 +216,17 @@ void AtrialScarView::ProcessIMGS() {
                     QFile fi(niftiFolder.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + thisFile);
                     fi.copy(path);
 
+                    bool reorientToRAI = true;
+                    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampling(path, reorientToRAI);
+                    mitk::IOUtil::Save(image, path.toStdString());
+
                     std::string key = "dicom.series.SeriesDescription";
                     mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
                     set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), thisFile.toStdString().c_str());
                 }
             }
 
-            MITK_INFO << "Loading all items";
+            MITK_INFO << "Loading all items onto Data MAnager.";
             mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
         }
     } else{
@@ -293,46 +297,9 @@ void AtrialScarView::ConvertNII() {
             mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
             if (image) {
                 MITK_INFO << "[ConvertNII] Converting DICOMs to nifti";
+
                 //Resample image to be iso
-                typedef itk::Image<short,3> ImageType;
-                typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
-                typedef itk::LinearInterpolateImageFunction<ImageType, double> LinearInterpolatorType;
-                typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
-                ImageType::Pointer itkImage = ImageType::New();
-                mitk::CastToItkImage(image, itkImage);
-                ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
-                LinearInterpolatorType::Pointer interpolator = LinearInterpolatorType::New();
-                BSplineInterpolatorType::Pointer binterp = BSplineInterpolatorType::New();
-                binterp->SetSplineOrder(3);
-
-                bool splinebool = true;
-                if (splinebool) {
-                    resampler->SetInterpolator(binterp);
-                    MITK_INFO << "[ConvertNII] Using Cubic Spline Interpolator";
-                }
-                else {
-                    resampler->SetInterpolator(interpolator);
-                    MITK_INFO << "[ConvertNII] Using Linear Interpolator";
-                }
-
-                resampler->SetInput(itkImage);
-                resampler->SetOutputOrigin(itkImage->GetOrigin());
-                ImageType::SizeType input_size = itkImage->GetLargestPossibleRegion().GetSize();
-                ImageType::SpacingType input_spacing = itkImage->GetSpacing();
-                ImageType::SizeType output_size;
-                ImageType::SpacingType output_spacing;
-                output_size[0] = input_size[0] * (input_spacing[0] / 1.0);
-                output_size[1] = input_size[1] * (input_spacing[1] / 1.0);
-                output_size[2] = input_size[2] * (input_spacing[2] / 1.0);
-                output_spacing [0] = 1.0;
-                output_spacing [1] = 1.0;
-                output_spacing [2] = 1.0;
-                resampler->SetSize(output_size);
-                resampler->SetOutputSpacing(output_spacing);
-                resampler->SetOutputDirection(itkImage->GetDirection());
-                resampler->UpdateLargestPossibleRegion();
-                ImageType::Pointer resampledImage = resampler->GetOutput();
-                image = mitk::ImportItkImage(resampledImage)->Clone();
+                image = CemrgCommonUtils::IsoImageResampling(image);
 
                 type = (ctr==0) ? "LGE":"MRA";
                 path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
