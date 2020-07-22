@@ -152,11 +152,13 @@ void AtrialScarView::OnSelectionChanged(
 }
 
 
-
 void AtrialScarView::LoadDICOM() {
-    MITK_INFO << "Using alternative DICOM converter";
-    int reply1 = QMessageBox::question(NULL, "Question",
-        "Use alternative DICOM converter?", QMessageBox::Yes, QMessageBox::No);
+    int reply1 = QMessageBox::No;
+    #if defined(__APPLE__)
+        MITK_INFO << "Ask user about alternative DICOM converter";
+        reply1 = QMessageBox::question(NULL, "Question",
+            "Use alternative DICOM converter?", QMessageBox::Yes, QMessageBox::No);
+    #endif
 
     if (reply1 == QMessageBox::Yes) {
         QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.",
