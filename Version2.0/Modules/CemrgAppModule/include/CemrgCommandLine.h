@@ -66,6 +66,7 @@ public:
 
     //Execute Docker Specific Functions
     QString DockerCemrgNetPrediction(QString mra);
+    QString DockerDicom2Nifti(QString path2dicomfolder);
 
     //Docker Helper Functions
     void SetUseDockerContainers(bool dockerContainersOnOff);

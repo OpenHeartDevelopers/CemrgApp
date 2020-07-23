@@ -152,22 +152,66 @@ void AtrialScarView::OnSelectionChanged(
 }
 
 
-
 void AtrialScarView::LoadDICOM() {
+    int reply1 = QMessageBox::No;
+    #if defined(__APPLE__)
+        MITK_INFO << "Ask user about alternative DICOM reader";
+        reply1 = QMessageBox::question(NULL, "Question",
+            "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
+    #endif
+    if(reply1 == QMessageBox::Yes){
+        QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
 
-    //Use MITK DICOM editor
-    QString editor_id = "org.mitk.editors.dicomeditor";
-    berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
-    this->GetSite()->GetPage()->OpenEditor(input, editor_id);
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        QString tmpNiftiFolder = cmd->DockerDicom2Nifti(dicomFolder);
+        if(tmpNiftiFolder.compare("ERROR_IN_PROCESSING") != 0){
+            // add results in NIIs folder to Data Manager
+            MITK_INFO << ("Conversion succesful. Intermediate NII folder: " + tmpNiftiFolder).toStdString();
+            QMessageBox::information(NULL, "Information", "Conversion successful, press the Process Images button to continue.");
+
+            QDir niftiFolder(tmpNiftiFolder);
+            QStringList niftiFiles = niftiFolder.entryList();
+
+            if(niftiFiles.size()>0){
+                QString thisFile, path;
+                for(int ix=0; ix<niftiFiles.size(); ix++){
+                    // load here files
+                    thisFile = niftiFiles.at(ix);
+                    if(thisFile.contains(".nii", Qt::CaseSensitive)){
+                        if(thisFile.contains("lge", Qt::CaseInsensitive) ||  thisFile.contains("mra", Qt::CaseInsensitive)){
+                            path = niftiFolder.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + thisFile;
+
+                            mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
+
+                            std::string key = "dicom.series.SeriesDescription";
+                            mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
+                            set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), thisFile.left(thisFile.length()-4).toStdString().c_str());
+                        }
+
+                    }
+                }
+            } else{
+                MITK_WARN << "Problem with conversion.";
+                QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK Dicom editor?");
+                return;
+            }
+        }
+    } else {
+        MITK_INFO << "Using MITK DICOM editor";
+        QString editor_id = "org.mitk.editors.dicomeditor";
+        berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
+        this->GetSite()->GetPage()->OpenEditor(input, editor_id);
+    }
 }
 
 void AtrialScarView::ProcessIMGS() {
-
     //Toggle visibility of buttons
-    if (m_Controls.button_2_1->isVisible())
+    if (m_Controls.button_2_1->isVisible()){
         m_Controls.button_2_1->setVisible(false);
-    else
+    }
+    else{
         m_Controls.button_2_1->setVisible(true);
+    }
 }
 
 void AtrialScarView::ConvertNII() {
@@ -209,8 +253,7 @@ void AtrialScarView::ConvertNII() {
     size_t length2 = indexNodes.size();
     bool test = std::adjacent_find(indexNodes.begin(), indexNodes.end(), std::not_equal_to<int>()) == indexNodes.end();
     if (length1 != length2 || test) {
-        QMessageBox::warning(
-                    NULL, "Attention",
+        QMessageBox::warning(NULL, "Attention",
                     "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
         index.resize(nodes.size());
         std::iota(index.begin(), index.end(), 0);
@@ -229,46 +272,9 @@ void AtrialScarView::ConvertNII() {
             mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
             if (image) {
                 MITK_INFO << "[ConvertNII] Converting DICOMs to nifti";
+
                 //Resample image to be iso
-                typedef itk::Image<short,3> ImageType;
-                typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
-                typedef itk::LinearInterpolateImageFunction<ImageType, double> LinearInterpolatorType;
-                typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
-                ImageType::Pointer itkImage = ImageType::New();
-                mitk::CastToItkImage(image, itkImage);
-                ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
-                LinearInterpolatorType::Pointer interpolator = LinearInterpolatorType::New();
-                BSplineInterpolatorType::Pointer binterp = BSplineInterpolatorType::New();
-                binterp->SetSplineOrder(3);
-
-                bool splinebool = true;
-                if (splinebool) {
-                    resampler->SetInterpolator(binterp);
-                    MITK_INFO << "[ConvertNII] Using Cubic Spline Interpolator";
-                }
-                else {
-                    resampler->SetInterpolator(interpolator);
-                    MITK_INFO << "[ConvertNII] Using Linear Interpolator";
-                }
-
-                resampler->SetInput(itkImage);
-                resampler->SetOutputOrigin(itkImage->GetOrigin());
-                ImageType::SizeType input_size = itkImage->GetLargestPossibleRegion().GetSize();
-                ImageType::SpacingType input_spacing = itkImage->GetSpacing();
-                ImageType::SizeType output_size;
-                ImageType::SpacingType output_spacing;
-                output_size[0] = input_size[0] * (input_spacing[0] / 1.0);
-                output_size[1] = input_size[1] * (input_spacing[1] / 1.0);
-                output_size[2] = input_size[2] * (input_spacing[2] / 1.0);
-                output_spacing [0] = 1.0;
-                output_spacing [1] = 1.0;
-                output_spacing [2] = 1.0;
-                resampler->SetSize(output_size);
-                resampler->SetOutputSpacing(output_spacing);
-                resampler->SetOutputDirection(itkImage->GetDirection());
-                resampler->UpdateLargestPossibleRegion();
-                ImageType::Pointer resampledImage = resampler->GetOutput();
-                image = mitk::ImportItkImage(resampledImage)->Clone();
+                image = CemrgCommonUtils::IsoImageResampling(image);
 
                 type = (ctr==0) ? "LGE":"MRA";
                 path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
@@ -289,7 +295,7 @@ void AtrialScarView::ConvertNII() {
     nodes.clear();
     this->BusyCursorOff();
 
-    //Load all items
+    MITK_INFO << "Loading all items";
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
 

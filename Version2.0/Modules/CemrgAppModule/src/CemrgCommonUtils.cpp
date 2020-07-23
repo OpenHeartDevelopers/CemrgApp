@@ -28,7 +28,9 @@ PURPOSE.  See the above copyright notices for more information.
 
 //ITK
 #include <itkNearestNeighborInterpolateImageFunction.h>
+#include <itkBSplineInterpolateImageFunction.h>
 #include <itkResampleImageFilter.h>
+#include <itkOrientImageFilter.h>
 
 //VTK
 #include <vtkPolyData.h>
@@ -155,6 +157,61 @@ mitk::Image::Pointer CemrgCommonUtils::Downsample(mitk::Image::Pointer image, in
     mitk::ProgressBar::GetInstance()->Progress();
     return image;
 }
+
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampling(mitk::Image::Pointer image, bool reorientToRAI){
+    MITK_INFO << "Resampling image to be isometric.";
+    MITK_INFO(reorientToRAI) << "Doing a reorientation to RAI.";
+
+    typedef itk::Image<short,3> ImageType;
+    typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
+    typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
+    ImageType::Pointer itkImage = ImageType::New();
+    mitk::CastToItkImage(image, itkImage);
+
+    ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
+    BSplineInterpolatorType::Pointer binterp = BSplineInterpolatorType::New();
+    binterp->SetSplineOrder(3);
+    resampler->SetInterpolator(binterp);
+
+    resampler->SetInput(itkImage);
+    resampler->SetOutputOrigin(itkImage->GetOrigin());
+    ImageType::SizeType input_size = itkImage->GetLargestPossibleRegion().GetSize();
+    ImageType::SpacingType input_spacing = itkImage->GetSpacing();
+    ImageType::SizeType output_size;
+    ImageType::SpacingType output_spacing;
+    output_size[0] = input_size[0] * (input_spacing[0] / 1.0);
+    output_size[1] = input_size[1] * (input_spacing[1] / 1.0);
+    output_size[2] = input_size[2] * (input_spacing[2] / 1.0);
+    output_spacing [0] = 1.0;
+    output_spacing [1] = 1.0;
+    output_spacing [2] = 1.0;
+    resampler->SetSize(output_size);
+    resampler->SetOutputSpacing(output_spacing);
+    resampler->SetOutputDirection(itkImage->GetDirection());
+    resampler->UpdateLargestPossibleRegion();
+    ImageType::Pointer outputImage = ImageType::New();
+
+    if(reorientToRAI){
+        typedef itk::OrientImageFilter<ImageType,ImageType> OrientImageFilterType;
+        OrientImageFilterType::Pointer orienter = OrientImageFilterType::New();
+        orienter->UseImageDirectionOn();
+        orienter->SetDesiredCoordinateOrientationToAxial(); // RAI
+        orienter->SetInput(resampler->GetOutput());
+        orienter->Update();
+        outputImage = orienter->GetOutput();
+    } else{
+        outputImage = resampler->GetOutput();
+    }
+
+    image = mitk::ImportItkImage(outputImage)->Clone();
+    mitk::ProgressBar::GetInstance()->Progress();
+    return image;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampling(QString imPath, bool reorientToRAI){
+    return CemrgCommonUtils::IsoImageResampling(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), reorientToRAI);
+};
+
 
 mitk::Surface::Pointer CemrgCommonUtils::LoadVTKMesh(std::string path) {
 
