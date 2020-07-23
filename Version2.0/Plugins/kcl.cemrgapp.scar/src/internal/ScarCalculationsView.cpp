@@ -121,7 +121,7 @@ bool ScarCalculationsView::CheckForRequiredFiles() {
 int ScarCalculationsView::SearchDirectory(QString searchDir){
     MITK_INFO << ("[INFO] Searching files on directory: " + searchDir).toStdString();
     int response = 0;
-    bool debugVar = true;
+    bool debugVar = false;
     bool isPre = searchDir.contains("PRE", Qt::CaseSensitive);
 
     QDirIterator qiter(searchDir, QDirIterator::Subdirectories);
