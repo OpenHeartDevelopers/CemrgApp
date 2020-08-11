@@ -85,6 +85,7 @@ void CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
      * Producibility Test
      **/
     try {
+        MITK_INFO << "Producibility test. "
         QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
         ofstream prodFile1;
@@ -187,19 +188,26 @@ void CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
         //Slope calculations
         areaMeter = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
         for (pointID = 1; pointID<areaMeter->GetNumberOfTuples(); pointID++) {
-            if (areaMeter->GetValue(pointID-1) == 0) continue;
+            if (areaMeter->GetValue(pointID-1) == 0){
+                continue;
+            }
             slope = areaMeter->GetValue(pointID) - areaMeter->GetValue(pointID-1);
             slope > highSlope ? highCount += 1 : highCount = 0;
-            if (slope > maxiSlope) break;
-            else if (slope > highSlope && highCount == noBumpCriterion) break;
+            if (slope > maxiSlope){
+                break;
+            } else if (slope > highSlope && highCount == noBumpCriterion){
+                break;
+            }
         }//_for
         clipPointID = (highCount == 0) ? pointID - 1 : pointID - highCount;
+        MITK_INFO << ("").toStdString();
 
         //Create a circle
         vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
         polygonSource->SetNumberOfSides(50);
         CalcParamsOfPlane(polygonSource, i, clipPointID);
         polygonSource->Update();
+        
         centreLinePolyPlanes.push_back(polygonSource);
         mitk::ProgressBar::GetInstance()->Progress();
 
@@ -630,41 +638,6 @@ void CemrgAtriaClipper::VTKWriter(vtkSmartPointer<vtkPolyData> PD, QString path)
     writer->Write();
 }
 
-mitk::Image::Pointer CemrgAtriaClipper::GetClippedSegImage() const {
-
-    return clippedSegImage;
-}
-
-mitk::Surface::Pointer CemrgAtriaClipper::GetClippedSurface() const {
-
-    return clippedSurface;
-}
-
-std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> CemrgAtriaClipper::GetCentreLines() const {
-
-    return centreLines;
-}
-
-std::vector<vtkSmartPointer<vtkRegularPolygonSource>> CemrgAtriaClipper::GetCentreLinePolyPlanes() const {
-
-    return centreLinePolyPlanes;
-}
-
-std::vector<int> CemrgAtriaClipper::GetManualType() const {
-
-    return manuals;
-}
-
-std::vector<std::vector<double>> CemrgAtriaClipper::GetMClipperAngles() {
-
-    return normalPlAngles;
-}
-
-void CemrgAtriaClipper::SetToAutomaticClipperMode(int clippersIndex) {
-
-    manuals[clippersIndex] = 0;
-}
-
 void CemrgAtriaClipper::SetMClipperAngles(double* value, int clippersIndex) {
 
     manuals[clippersIndex] = 1;
@@ -676,9 +649,4 @@ void CemrgAtriaClipper::SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutt
 
     manuals[clippersIndex] = 2;
     centreLinePointPlanes.at(clippersIndex) = pickedCutterSeeds->GetPoints();
-}
-
-void CemrgAtriaClipper::SetRadiusAdjustment(double value) {
-
-    radiusAdj = value;
 }

@@ -262,33 +262,25 @@ void AtrialScarView::ConvertNII() {
     //Convert to Nifti
     int ctr = 0;
     QString path, type;
+    bool successfulNitfi, resampleImage, reorientToRAI;
+    resampleImage = true;
+    reorientToRAI = true;
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
 
     foreach (int idx, index) {
-        mitk::BaseData::Pointer data = nodes.at(idx)->GetData();
-        if (data) {
-            //Test if this data item is an image
-            mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
-            if (image) {
-                MITK_INFO << "[ConvertNII] Converting DICOMs to nifti";
-
-                //Resample image to be iso
-                image = CemrgCommonUtils::IsoImageResampling(image);
-
-                type = (ctr==0) ? "LGE":"MRA";
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
-                mitk::IOUtil::Save(image, path.toStdString());
-                this->GetDataStorage()->Remove(nodes.at(idx));
-
-                std::string key = "dicom.series.SeriesDescription";
-                mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
-                set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), seriesDscrps.at(idx).c_str());
-                ctr++;
-            } else
-                return;
-        } else
+        type = (ctr==0) ? "LGE":"MRA";
+        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
+        successfulNitfi = CemrgCommonUtils::Convert2Nifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
+        if(successfulNitfi){
+            this->GetDataStorage()->Remove(nodes.at(idx));
+            std::string key = "dicom.series.SeriesDescription";
+            mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
+            set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), seriesDscrps.at(idx).c_str());
+            ctr++;
+        } else{
             return;
+        }
         mitk::ProgressBar::GetInstance()->Progress();
     }//for
 

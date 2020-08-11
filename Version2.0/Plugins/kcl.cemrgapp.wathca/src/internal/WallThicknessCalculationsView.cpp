@@ -180,21 +180,17 @@ void WallThicknessCalculationsView::ConvertNII() {
     //Generic Conversion to nii
     int ctr = 0;
     QString path;
+    bool successfulNitfi;
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(nodes.size());
     foreach (mitk::DataNode::Pointer node, nodes) {
-        mitk::BaseData::Pointer data = node->GetData();
-        if (data) {
-            //Test if this data item is an image
-            mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
-            if (image) {
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-                mitk::IOUtil::Save(image, path.toStdString());
-                this->GetDataStorage()->Remove(node);
-            } else
-                return;
-        } else
+        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
+        successfulNitfi = CemrgCommonUtils::Convert2Nifti(node->GetData(), path);
+        if(successfulNitfi){
+            this->GetDataStorage()->Remove(node);
+        } else{
             return;
+        }
         mitk::ProgressBar::GetInstance()->Progress();
     }//_for
     nodes.clear();
