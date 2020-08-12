@@ -473,7 +473,7 @@ void EASIView::CreateMesh() {
 
                     //Checking input files
                     if (templatePath.isEmpty()) {
-                        templatePath = CemrgCommonUtils::m3dlibParamFileGenerator(directory);
+                        templatePath = CemrgCommonUtils::M3dlibParamFileGenerator(directory);
                     }//_if
 
                     //Run Mesh3DTool

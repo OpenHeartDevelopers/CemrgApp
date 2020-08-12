@@ -795,7 +795,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     if (templatePath.isEmpty()) {
                         QString paramFileName = "param-template.par";
                         QString thicknessCalc = "1";
-                        templatePath = CemrgCommonUtils::m3dlibParamFileGenerator(directory,paramFileName,thicknessCalc);
+                        templatePath = CemrgCommonUtils::M3dlibParamFileGenerator(directory,paramFileName,thicknessCalc);
                     }//_if
 
                     //FileName checks

@@ -34,6 +34,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkBoundingObject.h>
 #include <mitkDataNode.h>
 #include <mitkDataStorage.h>
+#include <QString>
 
 class MITKCEMRGAPPMODULE_EXPORT CemrgCommonUtils {
 
@@ -55,7 +56,8 @@ public:
 
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
-    static QString m3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
+    static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
+    static void ConvertToCarto(std::string vtkPath);
 
     //Generic
     static mitk::DataNode::Pointer AddToStorage(

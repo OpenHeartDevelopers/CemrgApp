@@ -34,6 +34,11 @@ PURPOSE.  See the above copyright notices for more information.
 
 //VTK
 #include <vtkPolyData.h>
+#include <vtkPolyDataReader.h>
+#include <vtkPointData.h>
+#include <vtkCellData.h>
+#include <vtkFloatArray.h>
+#include <vtkCell.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -51,6 +56,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFile>
 #include <QTextStream>
 #include "CemrgCommonUtils.h"
+
 
 mitk::DataNode::Pointer CemrgCommonUtils::imageNode;
 mitk::DataNode::Pointer CemrgCommonUtils::cuttingNode;
@@ -254,9 +260,11 @@ mitk::Surface::Pointer CemrgCommonUtils::LoadVTKMesh(std::string path) {
     }//_catch
 }
 
-QString CemrgCommonUtils::m3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc) {
+QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc) {
+
     QString path2file = dir + mitk::IOUtil::GetDirectorySeparator() + filename;
     QFile fi(path2file);
+
     if (thicknessCalc.compare("0", Qt::CaseSensitive)!=0 && thicknessCalc.compare("1", Qt::CaseSensitive)!=0) {
         MITK_INFO << "Thickness calculation set to default (OFF)";
         thicknessCalc = "0";
@@ -309,11 +317,142 @@ QString CemrgCommonUtils::m3dlibParamFileGenerator(QString dir, QString filename
         out << "verbose" << "=" << "0" << "\n";
 
         return path2file;
+
     } else {
         MITK_WARN << ("File " + path2file + "not created.").toStdString();
         return "ERROR_IN_PROCESSING";
     }
+}
 
+void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
+
+    //Read vtk from the file
+    vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
+    reader->SetFileName(vtkPath.c_str());
+    reader->Update();
+    vtkSmartPointer<vtkPolyData> pd = reader->GetOutput();
+
+    //Output path
+    std::string outputPath = vtkPath.substr(0, vtkPath.size()-4);
+    outputPath = outputPath + "-carto.vtk";
+
+    //File
+    ofstream cartoFile;
+    cartoFile.open(outputPath);
+
+    //Header
+    cartoFile << "# vtk DataFile Version 3.0\n";
+    cartoFile << "vtk output\n";
+    cartoFile << "ASCII\n";
+    cartoFile << "DATASET POLYDATA\n";
+
+    //Points
+    cartoFile << "POINTS\t" << pd->GetNumberOfPoints() << "\tfloat\n";
+    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+        double* point = pd->GetPoint(i);
+        cartoFile << point[0] << " " << point[1] << " " << point[2] << "\n";
+    }
+    cartoFile << "\n";
+
+    //Cells
+    cartoFile << "POLYGONS\t";
+    cartoFile << pd->GetNumberOfCells() << "\t";
+    cartoFile << pd->GetNumberOfCells()*4 << "\n";
+    for (int i=0; i<pd->GetNumberOfCells(); i++) {
+        vtkCell* cell = pd->GetCell(i);
+        vtkIdList* list = cell->GetPointIds();
+        cartoFile << "3";
+        for (int j=0; j<list->GetNumberOfIds(); j++)
+            cartoFile << " " << list->GetId(j);
+        cartoFile << "\n";
+    }
+
+    //Point data
+    vtkSmartPointer<vtkFloatArray> pointData = vtkSmartPointer<vtkFloatArray>::New();
+    try {
+
+        pointData = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
+
+    } catch (...) {
+        MITK_WARN << "Storing point data failed! Check your input";
+        return;
+    }//_try
+
+    float min = pointData->GetRange()[0];
+    float max = pointData->GetRange()[1];
+
+    MITK_INFO << "Storing point data, number of tuples: " << pointData->GetNumberOfTuples();
+    MITK_INFO << "Storing point data, number of components: " << pointData->GetNumberOfComponents();
+
+    if (pointData->GetNumberOfTuples() != 0) {
+
+        cartoFile << "\nPOINT_DATA\t";
+        cartoFile << pointData->GetNumberOfTuples() << "\n";
+
+        if (pointData->GetNumberOfComponents() == 1) {
+
+            cartoFile << "SCALARS scalars float\n";
+            cartoFile << "LOOKUP_TABLE lookup_table\n";
+            for (int i=0; i<pointData->GetNumberOfTuples(); i++) {
+                double value = static_cast<double>(pointData->GetTuple1(i));
+                value = (value - min) / (max - min);
+                std::stringstream stream;
+                stream << std::fixed << std::setprecision(2) << value;
+                cartoFile << stream.str() << "\n";
+            }
+            cartoFile << "\n";
+
+        } else {
+
+            for (int i=0; pointData->GetNumberOfComponents(); i++) {
+
+                cartoFile << "SCALARS " << "scalars" << i << " float\n";
+                cartoFile << "LOOKUP_TABLE default\n";
+                for (int j=0; j<pointData->GetNumberOfTuples(); j++)
+                    cartoFile << pointData->GetTuple(j)[i] << " ";
+                cartoFile << "\n";
+
+            }
+        }
+    }//_point_data
+
+    MITK_INFO << "Storing lookup table, min/max scalar values: " << min << " " << max;
+
+    cartoFile << "LOOKUP_TABLE lookup_table 3\n";
+    cartoFile << "0.0 0.0 1.0 1.0" << "\n";
+    cartoFile << "1.0 1.0 1.0 1.0" << "\n";
+    cartoFile << "0.0 1.0 0.0 1.0" << "\n";
+
+    //Cell data
+    vtkSmartPointer<vtkFloatArray> cellData = vtkSmartPointer<vtkFloatArray>::New();
+    try {
+
+        cellData = vtkFloatArray::SafeDownCast(pd->GetCellData()->GetScalars());
+
+    } catch (...) {
+        MITK_WARN << "Storing cell data failed! Check your input";
+        return;
+    }//_try
+
+    MITK_INFO << "Storing cell data, number of tuples: " << cellData->GetNumberOfTuples();
+
+    if (cellData->GetNumberOfTuples() != 0) {
+
+        cartoFile << "\nCELL_DATA\t";
+        cartoFile << cellData->GetNumberOfTuples() << "\n";
+
+        for (int i=0; i<cellData->GetNumberOfComponents(); i++) {
+
+            cartoFile << "SCALARS " << "scalars" << i << " float\n";
+            cartoFile << "LOOKUP_TABLE default\n";
+            for (int j=0; j<cellData->GetNumberOfTuples(); j++)
+                cartoFile << cellData->GetTuple(j)[i] << " ";
+            cartoFile << "\n";
+
+        }
+    }//_cell_data
+
+    cartoFile.close();
 }
 
 mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(

@@ -53,6 +53,7 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
     connect(m_Controls.button_1, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
+    connect(m_Controls.button_2, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
 }
 
 void QmitkCemrgAppCommonTools::SetFocus() {
@@ -69,4 +70,19 @@ void QmitkCemrgAppCommonTools::LoadMesh() {
                 NULL, "Open Mesh Data File", QmitkIOUtil::GetFileOpenFilterString());
     CemrgCommonUtils::AddToStorage(
                 CemrgCommonUtils::LoadVTKMesh(path.toStdString()), "Mesh", this->GetDataStorage());
+}
+
+void QmitkCemrgAppCommonTools::ConvertToCarto() {
+
+    QString path = "";
+    path = QFileDialog::getOpenFileName(
+                NULL, "Open Mesh Data File", QmitkIOUtil::GetFileOpenFilterString());
+
+    if (path.isEmpty() || !path.endsWith(".vtk")) {
+        QMessageBox::warning(NULL, "Attention", "Select Correct Input File!");
+        return;
+    }
+
+    CemrgCommonUtils::ConvertToCarto(path.toStdString());
+    QMessageBox::information(NULL, "Attention", "Conversion Completed!");
 }

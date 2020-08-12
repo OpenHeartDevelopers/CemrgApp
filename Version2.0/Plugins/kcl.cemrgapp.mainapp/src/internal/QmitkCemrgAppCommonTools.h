@@ -60,6 +60,8 @@ protected:
 
     /// \brief Called when the user clicks the GUI button
     void LoadMesh();
+    void ConvertToCarto();
+
 };
 
 #endif // QmitkCemrgAppCommonTools_h

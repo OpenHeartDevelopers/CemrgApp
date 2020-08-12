@@ -44,6 +44,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_2">
+     <property name="toolTip">
+      <string>Do image processing</string>
+     </property>
+     <property name="text">
+      <string>Convert to CARTO</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="spacer1">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
