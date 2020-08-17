@@ -79,12 +79,10 @@ CemrgAtriaClipper::CemrgAtriaClipper(QString directory, mitk::Surface::Pointer s
     this->clippedSegImage = mitk::Image::New();
 }
 
-void CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
+bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
 
-    /*
-     * Producibility Test
-     **/
     try {
+
         QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
         ofstream prodFile1;
@@ -101,54 +99,59 @@ void CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
         prodFile3.open((prodPath + "prodLineFlip.txt").toStdString());
         prodFile3 << flip << "\n";
         prodFile3.close();
-    } catch(...) {};
-    /*
-     * End Test
-     **/
 
-    if (centreLines.size() == 0) {
+        if (centreLines.size() == 0) {
 
-        //Prepare source and target seeds
-        vtkSmartPointer<vtkIdList> inletSeedIds = vtkSmartPointer<vtkIdList>::New();
-        vtkSmartPointer<vtkIdList> outletSeedIds = vtkSmartPointer<vtkIdList>::New();
-        inletSeedIds->InsertNextId(CentreOfMass(surface));
+            //Prepare source and target seeds
+            vtkSmartPointer<vtkIdList> inletSeedIds = vtkSmartPointer<vtkIdList>::New();
+            vtkSmartPointer<vtkIdList> outletSeedIds = vtkSmartPointer<vtkIdList>::New();
+            inletSeedIds->InsertNextId(CentreOfMass(surface));
 
-        MITK_INFO << "Number of pickedSeedLabels: ";
-        MITK_INFO << pickedSeedLabels.size();
+            MITK_INFO << "Number of pickedSeedLabels: ";
+            MITK_INFO << pickedSeedLabels.size();
 
-        for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+            for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
 
-            //Compute Centre Lines
-            outletSeedIds->InsertNextId(pickedSeedIds->GetId(i));
-            vtkSmartPointer<vtkvmtkPolyDataCenterlines> centreLineFilter = vtkSmartPointer<vtkvmtkPolyDataCenterlines>::New();
-            centreLineFilter->SetInputData(surface->GetVtkPolyData());
-            centreLineFilter->SetSourceSeedIds(inletSeedIds);
-            centreLineFilter->SetTargetSeedIds(outletSeedIds);
-            centreLineFilter->SetRadiusArrayName("MaximumInscribedSphereRadius");
-            centreLineFilter->SetCostFunction("1/R");
-            centreLineFilter->SetFlipNormals(flip);
-            centreLineFilter->SetAppendEndPointsToCenterlines(0);
-            centreLineFilter->SetSimplifyVoronoi(0);
-            centreLineFilter->SetCenterlineResampling(1);
-            centreLineFilter->SetResamplingStepLength(clSpacing);
-            centreLineFilter->Update();
-            outletSeedIds->DeleteId(pickedSeedIds->GetId(i));
+                //Compute Centre Lines
+                outletSeedIds->InsertNextId(pickedSeedIds->GetId(i));
+                vtkSmartPointer<vtkvmtkPolyDataCenterlines> centreLineFilter = vtkSmartPointer<vtkvmtkPolyDataCenterlines>::New();
+                centreLineFilter->SetInputData(surface->GetVtkPolyData());
+                centreLineFilter->SetSourceSeedIds(inletSeedIds);
+                centreLineFilter->SetTargetSeedIds(outletSeedIds);
+                centreLineFilter->SetRadiusArrayName("MaximumInscribedSphereRadius");
+                centreLineFilter->SetCostFunction("1/R");
+                centreLineFilter->SetFlipNormals(flip);
+                centreLineFilter->SetAppendEndPointsToCenterlines(0);
+                centreLineFilter->SetSimplifyVoronoi(0);
+                centreLineFilter->SetCenterlineResampling(1);
+                centreLineFilter->SetResamplingStepLength(clSpacing);
+                centreLineFilter->Update();
+                outletSeedIds->DeleteId(pickedSeedIds->GetId(i));
 
-            //Centrelines labels
-            vtkSmartPointer<vtkIntArray> label = vtkSmartPointer<vtkIntArray>::New();
-            label->SetNumberOfComponents(1);
-            label->SetName("PickedSeedLabels");
-            label->InsertNextValue(pickedSeedLabels.at(i));
-            centreLineFilter->GetOutput()->GetFieldData()->AddArray(label);
+                //Centrelines labels
+                vtkSmartPointer<vtkIntArray> label = vtkSmartPointer<vtkIntArray>::New();
+                label->SetNumberOfComponents(1);
+                label->SetName("PickedSeedLabels");
+                label->InsertNextValue(pickedSeedLabels.at(i));
+                centreLineFilter->GetOutput()->GetFieldData()->AddArray(label);
 
-            centreLines.push_back(centreLineFilter);
-            mitk::ProgressBar::GetInstance()->Progress();
-        }//_for
-    } else
+                centreLines.push_back(centreLineFilter);
+                mitk::ProgressBar::GetInstance()->Progress();
+            }//_for
+        } else
+            mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
+
+    } catch(...) {
+
         mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
+        return false;
+
+    }//_try
+
+    return true;
 }
 
-void CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels) {
+bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels) {
 
     //Compute centreline cut points
     manuals.clear();
@@ -158,54 +161,65 @@ void CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
     centreLinePointPlanes.clear();
     vtkSmartPointer<vtkDoubleArray> areaMeter = vtkSmartPointer<vtkDoubleArray>::New();
 
-    for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+    try {
 
-        int pointID;
-        double slope;
-        int clipPointID;
-        int highCount = 0;
-        vtkSmartPointer<vtkPolyData> line = centreLines.at(i)->GetOutput();
-        int noBumpCriterion = round(criterion * line->GetNumberOfPoints());
+        for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
 
-        //Initialisation
-        manuals.push_back(0);
-        std::vector<double> tempVec = {0.0,0.0};
-        normalPlAngles.push_back(tempVec);
+            int pointID;
+            double slope;
+            int clipPointID;
+            int highCount = 0;
+            vtkSmartPointer<vtkPolyData> line = centreLines.at(i)->GetOutput();
+            int noBumpCriterion = round(criterion * line->GetNumberOfPoints());
 
-        //Diameters and area changes
-        vtkSmartPointer<vtkvmtkPolyDataCenterlineSections> ctrLineSects = vtkSmartPointer<vtkvmtkPolyDataCenterlineSections>::New();
-        ctrLineSects->SetInputData(surface->GetVtkPolyData());
-        ctrLineSects->SetCenterlines(line);
-        ctrLineSects->SetCenterlineSectionAreaArrayName("CentrelineSectionAreaArrayName");
-        ctrLineSects->SetCenterlineSectionMinSizeArrayName("CenterlineSectionMinSizeArrayName");
-        ctrLineSects->SetCenterlineSectionMaxSizeArrayName("CenterlineSectionMaxSizeArrayName");
-        ctrLineSects->SetCenterlineSectionShapeArrayName("CenterlineSectionShapeArrayName");
-        ctrLineSects->SetCenterlineSectionClosedArrayName("CenterlineSectionClosedArrayName");
-        ctrLineSects->Update();
-        centreLineVeinPlanes.push_back(ctrLineSects->GetOutput());
+            //Initialisation
+            manuals.push_back(0);
+            std::vector<double> tempVec = {0.0,0.0};
+            normalPlAngles.push_back(tempVec);
 
-        //Slope calculations
-        areaMeter = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
-        for (pointID = 1; pointID<areaMeter->GetNumberOfTuples(); pointID++) {
-            if (areaMeter->GetValue(pointID-1) == 0) continue;
-            slope = areaMeter->GetValue(pointID) - areaMeter->GetValue(pointID-1);
-            slope > highSlope ? highCount += 1 : highCount = 0;
-            if (slope > maxiSlope) break;
-            else if (slope > highSlope && highCount == noBumpCriterion) break;
+            //Diameters and area changes
+            vtkSmartPointer<vtkvmtkPolyDataCenterlineSections> ctrLineSects = vtkSmartPointer<vtkvmtkPolyDataCenterlineSections>::New();
+            ctrLineSects->SetInputData(surface->GetVtkPolyData());
+            ctrLineSects->SetCenterlines(line);
+            ctrLineSects->SetCenterlineSectionAreaArrayName("CentrelineSectionAreaArrayName");
+            ctrLineSects->SetCenterlineSectionMinSizeArrayName("CenterlineSectionMinSizeArrayName");
+            ctrLineSects->SetCenterlineSectionMaxSizeArrayName("CenterlineSectionMaxSizeArrayName");
+            ctrLineSects->SetCenterlineSectionShapeArrayName("CenterlineSectionShapeArrayName");
+            ctrLineSects->SetCenterlineSectionClosedArrayName("CenterlineSectionClosedArrayName");
+            ctrLineSects->Update();
+            centreLineVeinPlanes.push_back(ctrLineSects->GetOutput());
+
+            //Slope calculations
+            areaMeter = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
+            for (pointID = 1; pointID<areaMeter->GetNumberOfTuples(); pointID++) {
+                if (areaMeter->GetValue(pointID-1) == 0) continue;
+                slope = areaMeter->GetValue(pointID) - areaMeter->GetValue(pointID-1);
+                slope > highSlope ? highCount += 1 : highCount = 0;
+                if (slope > maxiSlope) break;
+                else if (slope > highSlope && highCount == noBumpCriterion) break;
+            }//_for
+            clipPointID = (highCount == 0) ? pointID - 1 : pointID - highCount;
+
+            //Create a circle
+            vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
+            polygonSource->SetNumberOfSides(50);
+            CalcParamsOfPlane(polygonSource, i, clipPointID);
+            polygonSource->Update();
+            centreLinePolyPlanes.push_back(polygonSource);
+            mitk::ProgressBar::GetInstance()->Progress();
+
+            //Fill in manual cutter
+            centreLinePointPlanes.push_back(vtkSmartPointer<vtkPoints>::New());
         }//_for
-        clipPointID = (highCount == 0) ? pointID - 1 : pointID - highCount;
 
-        //Create a circle
-        vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
-        polygonSource->SetNumberOfSides(50);
-        CalcParamsOfPlane(polygonSource, i, clipPointID);
-        polygonSource->Update();
-        centreLinePolyPlanes.push_back(polygonSource);
-        mitk::ProgressBar::GetInstance()->Progress();
+    } catch(...) {
 
-        //Fill in manual cutter
-        centreLinePointPlanes.push_back(vtkSmartPointer<vtkPoints>::New());
-    }//_for
+        mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
+        return false;
+
+    }//_try
+
+    return true;
 }
 
 void CemrgAtriaClipper::ClipVeinsMesh(std::vector<int> pickedSeedLabels) {

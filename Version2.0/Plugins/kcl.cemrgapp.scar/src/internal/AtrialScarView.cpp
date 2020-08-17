@@ -154,11 +154,11 @@ void AtrialScarView::OnSelectionChanged(
 
 void AtrialScarView::LoadDICOM() {
     int reply1 = QMessageBox::No;
-    #if defined(__APPLE__)
-        MITK_INFO << "Ask user about alternative DICOM reader";
-        reply1 = QMessageBox::question(NULL, "Question",
-            "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
-    #endif
+#if defined(__APPLE__)
+    MITK_INFO << "Ask user about alternative DICOM reader";
+    reply1 = QMessageBox::question(NULL, "Question",
+                                   "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
+#endif
     if(reply1 == QMessageBox::Yes){
         QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
 
@@ -254,7 +254,7 @@ void AtrialScarView::ConvertNII() {
     bool test = std::adjacent_find(indexNodes.begin(), indexNodes.end(), std::not_equal_to<int>()) == indexNodes.end();
     if (length1 != length2 || test) {
         QMessageBox::warning(NULL, "Attention",
-                    "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
+                             "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
         index.resize(nodes.size());
         std::iota(index.begin(), index.end(), 0);
     }//_if
@@ -331,7 +331,7 @@ void AtrialScarView::AutomaticAnalysis() {
     MITK_INFO << "============= Automatic segmentation module ====================";
 
     QString direct, mraPath, lgePath, cnnPath;
-    bool debugging=true;
+    bool debugging = true;
 
     if (directory.isEmpty()) {
         direct = QFileDialog::getExistingDirectory(
@@ -340,8 +340,8 @@ void AtrialScarView::AutomaticAnalysis() {
                     QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
         directory = direct;
     } else {
-        direct=directory;
-    }
+        direct = directory;
+    }//_dir
 
     QDirIterator searchit(direct, QDirIterator::Subdirectories);
 
@@ -359,7 +359,7 @@ void AtrialScarView::AutomaticAnalysis() {
             if (debugging && searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
                 cnnPath = searchfinfo.absoluteFilePath();
         }
-    }
+    }//_while
 
     QDialog* inputs = new QDialog(0,0);
     m_UIcemrgnet.setupUi(inputs);
@@ -424,7 +424,8 @@ void AtrialScarView::AutomaticAnalysis() {
                 MITK_INFO << ("[UI][DEBUG] Spaces: " + QString::number(listspaces)).toStdString();
                 MITK_INFO << ("[UI][DEBUG] Duplicates: " + QString::number(listduplicates)).toStdString();
             }
-        }
+
+        }//_if
 
         double tryNumber;
         bool vOK;
@@ -446,6 +447,7 @@ void AtrialScarView::AutomaticAnalysis() {
         inputs->close();
         inputs->deleteLater();
         return;
+
     }//_if
 
     MITK_INFO << ("Files to be read: \n\n [LGE]: " + lgePath + "\n [MRA]: " + mraPath).toStdString();
@@ -623,7 +625,7 @@ void AtrialScarView::AutomaticAnalysis() {
                 veinLandmark[1] /= ctrVeinsVoxels;
                 veinLandmark[2] /= ctrVeinsVoxels;
                 veinsCentre.push_back(veinLandmark);
-            }
+            }//_nveins
             for (int j=0; j<nveins; j++) {
                 double veinLandmark[3];
                 veinLandmark[0] = veinsCentre.at(j)[0];
@@ -631,17 +633,28 @@ void AtrialScarView::AutomaticAnalysis() {
                 veinLandmark[2] = veinsCentre.at(j)[2];
                 vtkIdType id = pointLocator->FindClosestPoint(veinLandmark);
                 pickedSeedIds->InsertNextId(id);
-            }
+            }//_nveins
             std::vector<int> pickedSeedLabels;
             for (int j=0; j<nveins; j++)
                 pickedSeedLabels.push_back(21);
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
+
             std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(direct, shell));
-            clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, false);
+            bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, false);
+            if (!successful) {
+                QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
+                return;
+            }//_Check for failure
             MITK_INFO << "[...][7.1] ComputeCtrLines finished .";
-            clipper->ComputeCtrLinesClippers(pickedSeedLabels);
+
+            successful = clipper->ComputeCtrLinesClippers(pickedSeedLabels);
+            if (!successful) {
+                QMessageBox::critical(NULL, "Attention", "Computation of Clipper Planes Failed!");
+                return;
+            }//_if
             MITK_INFO << "[...][7.2] ComputeCtrLinesClippers finished .";
+
             clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(duplicator->GetOutput()), false);
             MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
 
@@ -807,7 +820,7 @@ void AtrialScarView::AutomaticAnalysis() {
         } else
             QMessageBox::warning(NULL, "Attention", "Error with automatic segmentation! Check the LOG file.");
     } else
-        QMessageBox::information(NULL, "Attention", "Operation cancelled");
+        QMessageBox::information(NULL, "Attention", "Operation Cancelled!");
 }
 
 void AtrialScarView::SegmentIMGS() {
@@ -819,7 +832,7 @@ void AtrialScarView::SegmentIMGS() {
 
     if (reply1 == QMessageBox::Yes) {
         QString path = QFileDialog::getOpenFileName(NULL, "Open Segmentation file",
-                        directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+                                                    directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty()) return;
         mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
@@ -1820,7 +1833,7 @@ bool AtrialScarView::RequestProjectDirectoryFromUser(){
     bool succesfulAssignment = true;
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
-		MITK_INFO << "Directory is empty. Requesting user for directory.";
+        MITK_INFO << "Directory is empty. Requesting user for directory.";
         directory = QFileDialog::getExistingDirectory(
                     NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
                     QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);

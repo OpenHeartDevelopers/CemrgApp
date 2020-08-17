@@ -346,6 +346,9 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
     cartoFile << "ASCII\n";
     cartoFile << "DATASET POLYDATA\n";
 
+    //answer = inputdlg({'firstname', 'surname', 'ID'});
+    //vtktitle = ['PatientData ' answer{1} ' ' answer{2} ' ' answer{3}];
+
     //Points
     cartoFile << "POINTS\t" << pd->GetNumberOfPoints() << "\tfloat\n";
     for (int i=0; i<pd->GetNumberOfPoints(); i++) {
@@ -392,7 +395,7 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
         if (pointData->GetNumberOfComponents() == 1) {
 
             cartoFile << "SCALARS scalars float\n";
-            cartoFile << "LOOKUP_TABLE lookup_table\n";
+            cartoFile << "LOOKUP_TABLE default\n";
             for (int i=0; i<pointData->GetNumberOfTuples(); i++) {
                 double value = static_cast<double>(pointData->GetTuple1(i));
                 value = (value - min) / (max - min);
@@ -418,10 +421,10 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
 
     MITK_INFO << "Storing lookup table, min/max scalar values: " << min << " " << max;
 
-    cartoFile << "LOOKUP_TABLE lookup_table 3\n";
-    cartoFile << "0.0 0.0 1.0 1.0" << "\n";
-    cartoFile << "1.0 1.0 1.0 1.0" << "\n";
-    cartoFile << "0.0 1.0 0.0 1.0" << "\n";
+    //cartoFile << "LOOKUP_TABLE lookup_table 3\n";
+    //cartoFile << "0.0 0.0 1.0 1.0" << "\n";
+    //cartoFile << "1.0 1.0 1.0 1.0" << "\n";
+    //cartoFile << "0.0 1.0 0.0 1.0" << "\n";
 
     //Cell data
     vtkSmartPointer<vtkFloatArray> cellData = vtkSmartPointer<vtkFloatArray>::New();

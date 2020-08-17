@@ -49,8 +49,8 @@ public:
 
     CemrgAtriaClipper(QString directory, mitk::Surface::Pointer surface);
 
-    void ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip);
-    void ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels);
+    bool ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip);
+    bool ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels);
     void ClipVeinsMesh(std::vector<int> pickedSeedLabels);
     void ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::Image::Pointer segImage, bool morphAnalysis);
     void CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position);

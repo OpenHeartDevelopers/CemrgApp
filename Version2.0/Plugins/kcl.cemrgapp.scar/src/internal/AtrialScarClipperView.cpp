@@ -250,8 +250,10 @@ void AtrialScarClipperView::iniPreSurf() {
 void AtrialScarClipperView::CtrLines() {
 
     if (clipper->GetCentreLines().size() == 0 && pickedSeedLabels.size() == 0) {
+
         QMessageBox::warning(NULL, "Attention", "Please maske sure you have selected seeds!");
         return;
+
     } else {
 
         //Retrieve centrelines and labels
@@ -265,8 +267,15 @@ void AtrialScarClipperView::CtrLines() {
             pickedSeedLabels.push_back(lb->GetValue(0));
         }//_for
         mitk::ProgressBar::GetInstance()->AddStepsToDo(pickedSeedLabels.size());
-        clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, m_Controls.checkBox->isChecked());
+        bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, m_Controls.checkBox->isChecked());
         this->BusyCursorOff();
+
+        //Check for failure
+        if (!successful) {
+            QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
+            return;
+        }//_if
+
     }//_if
 
     //Set surface opacity
@@ -310,14 +319,23 @@ void AtrialScarClipperView::CtrLines() {
 void AtrialScarClipperView::CtrPlanes() {
 
     if (clipper->GetCentreLines().size() == 0 || pickedSeedLabels.size() == 0) {
+
         QMessageBox::warning(NULL, "Attention", "Please maske sure you have computed centre lines!");
         return;
+
     } else {
 
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(pickedSeedLabels.size());
-        clipper->ComputeCtrLinesClippers(pickedSeedLabels);
+        bool successful = clipper->ComputeCtrLinesClippers(pickedSeedLabels);
         this->BusyCursorOff();
+
+        //Check for failure
+        if (!successful) {
+            QMessageBox::critical(NULL, "Attention", "Computation of Clipper Planes Failed!");
+            return;
+        }//_if
+
     }//_if
 
     std::vector<vtkSmartPointer<vtkRegularPolygonSource>> ctrPlanes = clipper->GetCentreLinePolyPlanes();
