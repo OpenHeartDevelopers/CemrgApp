@@ -85,7 +85,7 @@ void CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
      * Producibility Test
      **/
     try {
-        MITK_INFO << "Producibility test. "
+		MITK_INFO << "Producibility test. ";
         QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
         ofstream prodFile1;
@@ -200,7 +200,6 @@ void CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
             }
         }//_for
         clipPointID = (highCount == 0) ? pointID - 1 : pointID - highCount;
-        MITK_INFO << ("").toStdString();
 
         //Create a circle
         vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();

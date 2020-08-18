@@ -65,8 +65,8 @@ public:
 
     inline void SetToAutomaticClipperMode(int clippersIndex){manuals[clippersIndex] = 0;};
     inline void SetRadiusAdjustment(double value){radiusAdj = value;};
-    
-    void SetMClipperAngles(double* value, int clippersIndex){};
+
+    void SetMClipperAngles(double* value, int clippersIndex);
     void SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutterSeeds, int clippersIndex);
 
 private:
