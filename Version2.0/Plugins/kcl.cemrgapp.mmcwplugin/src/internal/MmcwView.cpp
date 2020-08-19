@@ -220,7 +220,7 @@ void MmcwView::ConvertNII() {
     foreach (int idx, index) {
         mitk::BaseData::Pointer data = nodes.at(idx)->GetData();
         path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::Convert2Nifti(nodes.at(idx)->GetData(), path);
+        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if(successfulNitfi){
             this->GetDataStorage()->Remove(nodes.at(idx));
         } else{

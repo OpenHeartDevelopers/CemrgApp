@@ -225,7 +225,7 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, 
     return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI);
 };
 
-bool CemrgCommonUtils::Convert2Nifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient){
+bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient){
     bool successful = false;
     if (oneNode) {
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(oneNode.GetPointer());

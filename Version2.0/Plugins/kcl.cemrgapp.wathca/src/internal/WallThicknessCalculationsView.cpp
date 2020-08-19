@@ -185,7 +185,7 @@ void WallThicknessCalculationsView::ConvertNII() {
     mitk::ProgressBar::GetInstance()->AddStepsToDo(nodes.size());
     foreach (mitk::DataNode::Pointer node, nodes) {
         path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::Convert2Nifti(node->GetData(), path);
+        successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path);
         if(successfulNitfi){
             this->GetDataStorage()->Remove(node);
         } else{

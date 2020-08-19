@@ -271,7 +271,7 @@ void AtrialScarView::ConvertNII() {
     foreach (int idx, index) {
         type = (ctr==0) ? "LGE":"MRA";
         path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
-        successfulNitfi = CemrgCommonUtils::Convert2Nifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
+        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
         if(successfulNitfi){
             this->GetDataStorage()->Remove(nodes.at(idx));
             std::string key = "dicom.series.SeriesDescription";
