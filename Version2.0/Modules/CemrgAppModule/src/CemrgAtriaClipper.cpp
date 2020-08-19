@@ -82,7 +82,7 @@ CemrgAtriaClipper::CemrgAtriaClipper(QString directory, mitk::Surface::Pointer s
 bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
 
     try {
-
+		MITK_INFO << "Producibility test. ";
         QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
         ofstream prodFile1;
@@ -644,41 +644,6 @@ void CemrgAtriaClipper::VTKWriter(vtkSmartPointer<vtkPolyData> PD, QString path)
     writer->Write();
 }
 
-mitk::Image::Pointer CemrgAtriaClipper::GetClippedSegImage() const {
-
-    return clippedSegImage;
-}
-
-mitk::Surface::Pointer CemrgAtriaClipper::GetClippedSurface() const {
-
-    return clippedSurface;
-}
-
-std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> CemrgAtriaClipper::GetCentreLines() const {
-
-    return centreLines;
-}
-
-std::vector<vtkSmartPointer<vtkRegularPolygonSource>> CemrgAtriaClipper::GetCentreLinePolyPlanes() const {
-
-    return centreLinePolyPlanes;
-}
-
-std::vector<int> CemrgAtriaClipper::GetManualType() const {
-
-    return manuals;
-}
-
-std::vector<std::vector<double>> CemrgAtriaClipper::GetMClipperAngles() {
-
-    return normalPlAngles;
-}
-
-void CemrgAtriaClipper::SetToAutomaticClipperMode(int clippersIndex) {
-
-    manuals[clippersIndex] = 0;
-}
-
 void CemrgAtriaClipper::SetMClipperAngles(double* value, int clippersIndex) {
 
     manuals[clippersIndex] = 1;
@@ -690,9 +655,4 @@ void CemrgAtriaClipper::SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutt
 
     manuals[clippersIndex] = 2;
     centreLinePointPlanes.at(clippersIndex) = pickedCutterSeeds->GetPoints();
-}
-
-void CemrgAtriaClipper::SetRadiusAdjustment(double value) {
-
-    radiusAdj = value;
 }
