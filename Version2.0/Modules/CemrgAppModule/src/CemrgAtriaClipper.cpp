@@ -101,11 +101,30 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
         prodFile3.close();
 
         if (centreLines.size() == 0) {
-
             //Prepare source and target seeds
             vtkSmartPointer<vtkIdList> inletSeedIds = vtkSmartPointer<vtkIdList>::New();
             vtkSmartPointer<vtkIdList> outletSeedIds = vtkSmartPointer<vtkIdList>::New();
-            inletSeedIds->InsertNextId(CentreOfMass(surface));
+
+            MITK_INFO << "Determining centre lines' orientation.";
+
+            bool ctrlnOrientation = false;
+            vtkIdType surfaceCofMassId = CentreOfMass(surface);
+            double centre = surface->GetVtkPolyData()->GetPoints()->GetPoint(surfaceCofMassId);
+            double pt1 = surface->GetVtkPolyData()->GetPoints()->GetPoint(1);
+            double xProduct = 0;
+            double mvPt[3] = {0};
+            mvPt[0] = pt1[0] - centre[0];
+            mvPt[1] = pt1[1] - centre[1];
+            mvPt[2] = pt1[2] - centre[2];
+            for (int i = 0; i < 3; i++){
+                xProduct += (mvPt[i])*(nrm[i]);
+            }
+
+            if (xProduct>0){
+                ctrlnOrientation = true;
+            }
+
+            inletSeedIds->InsertNextId(surfaceCofMassId);
 
             MITK_INFO << "Number of pickedSeedLabels: ";
             MITK_INFO << pickedSeedLabels.size();
@@ -138,8 +157,9 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
                 centreLines.push_back(centreLineFilter);
                 mitk::ProgressBar::GetInstance()->Progress();
             }//_for
-        } else
+        } else{
             mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
+        }
 
     } catch(...) {
 
