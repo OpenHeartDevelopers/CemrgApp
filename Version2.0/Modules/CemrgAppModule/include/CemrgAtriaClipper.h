@@ -66,6 +66,13 @@ public:
     inline void SetToAutomaticClipperMode(int clippersIndex){manuals[clippersIndex] = 0;};
     inline void SetRadiusAdjustment(double value){radiusAdj = value;};
 
+    // getter for orientation boolean - add to plugin (view)
+    inline bool GetCentreLinesOrientation(){return ctrlnOrientation;};
+    inline bool IsManualCentrelines(){return manualCtrLnOrient;};
+    inline void ManualCentreLineOrientation(bool clo){ctrlnOrientation=clo; manualCtrLnOrient = true;};
+    inline void SetManualCentreLineOrientationOn(){ManualCentreLineOrientation(true);};
+    inline void SetManualCentreLineOrientationOff(){ManualCentreLineOrientation(false);};
+
     void SetMClipperAngles(double* value, int clippersIndex);
     void SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutterSeeds, int clippersIndex);
 
@@ -90,7 +97,8 @@ private:
     double clSpacing = 2.000; //Resample the centerline with this spacing
     double radiusAdj = 2.000; //Adjustment for cutter planes radii
 
-    bool ctrlnOrientation; 
+    bool ctrlnOrientation;
+    bool manualCtrLnOrient;
 
     //Cutters properties
     std::vector<int> manuals; //Cutter's tilt manual or automatic

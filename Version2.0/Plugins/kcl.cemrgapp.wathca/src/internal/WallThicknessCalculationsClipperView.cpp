@@ -276,6 +276,7 @@ void WallThicknessCalculationsClipperView::CtrLines() {
         }//_for
         mitk::ProgressBar::GetInstance()->AddStepsToDo(pickedSeedLabels.size());
         bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, m_Controls.checkBox->isChecked());
+        m_Controls.checkBox->setChecked(clipper->GetCentreLinesOrientation());
         this->BusyCursorOff();
 
         //Check for failure

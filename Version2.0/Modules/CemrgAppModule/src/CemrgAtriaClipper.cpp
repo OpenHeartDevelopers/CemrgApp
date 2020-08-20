@@ -39,6 +39,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkDoubleArray.h>
 #include <vtkClipPolyData.h>
 #include <vtkImplicitBoolean.h>
+#include <vtkCenterOfMass.h>
 #include <vtkPlane.h>
 #include <vtkSphere.h>
 #include <vtkDataSetSurfaceFilter.h>
@@ -80,6 +81,9 @@ CemrgAtriaClipper::CemrgAtriaClipper(QString directory, mitk::Surface::Pointer s
     this->surface = surface;
     this->clippedSurface = surface;
     this->clippedSegImage = mitk::Image::New();
+
+    ctrlnOrientation = false;
+    manualCtrLnOrient = false;
 }
 
 bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
@@ -109,14 +113,16 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
             vtkSmartPointer<vtkIdList> outletSeedIds = vtkSmartPointer<vtkIdList>::New();
 
             MITK_INFO << "Determining centre lines' orientation.";
-            ctrlnOrientation = false;
             vtkIdType centreOfMassId = CentreOfMass(surface);
             inletSeedIds->InsertNextId(centreOfMassId);
 
             MITK_INFO << "Number of pickedSeedLabels: ";
             MITK_INFO << pickedSeedLabels.size();
 
-            MITK_INFO(ctrlnOrientation) << "Flipping orientation of centre lines";
+            MITK_INFO(manualCtrLnOrient) << "Centre lines orientation set manually.";
+            MITK_INFO(!manualCtrLnOrient) << "Centre lines orientation set automatically.";
+
+            bool orientFlip = manualCtrLnOrient ? flip : ctrlnOrientation;
 
             for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
 
@@ -128,7 +134,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
                 centreLineFilter->SetTargetSeedIds(outletSeedIds);
                 centreLineFilter->SetRadiusArrayName("MaximumInscribedSphereRadius");
                 centreLineFilter->SetCostFunction("1/R");
-                centreLineFilter->SetFlipNormals(ctrlnOrientation);
+                centreLineFilter->SetFlipNormals(orientFlip);
                 centreLineFilter->SetAppendEndPointsToCenterlines(0);
                 centreLineFilter->SetSimplifyVoronoi(0);
                 centreLineFilter->SetCenterlineResampling(1);
@@ -625,21 +631,15 @@ vtkIdType CemrgAtriaClipper::CentreOfMass(mitk::Surface::Pointer surface) {
     //Polydata of surface
     vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
     CemrgCommonUtils::CalculatePolyDataNormals(pd, false);
-    vtkSmartPointer<vtkFloatArray> pdNormals = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetNormals());
-    ctrlnOrientation = false;
 
-    double x_s = 0;
-    double y_s = 0;
-    double z_s = 0;
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
-        x_s = x_s + pd->GetPoints()->GetPoint(i)[0];
-        y_s = y_s + pd->GetPoints()->GetPoint(i)[1];
-        z_s = z_s + pd->GetPoints()->GetPoint(i)[2];
-    }//_for
-    x_s /= pd->GetNumberOfPoints();
-    y_s /= pd->GetNumberOfPoints();
-    z_s /= pd->GetNumberOfPoints();
-    double centreInSurface[3] = {x_s, y_s, z_s};
+    vtkSmartPointer<vtkFloatArray> pdNormals = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetNormals());
+    vtkSmartPointer<vtkCenterOfMass> centre = vtkSmartPointer<vtkCenterOfMass>::New();
+    double centreInSurface[3];
+
+    centre->SetInputData(pd);
+    centre->SetUseScalarsAsWeights(false);
+    centre->Update();
+    centre->GetCenter(centreInSurface);
 
     vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
     pointLocator->SetDataSet(pd);
@@ -651,7 +651,7 @@ vtkIdType CemrgAtriaClipper::CentreOfMass(mitk::Surface::Pointer surface) {
     double * pointInSurface = pd->GetPoints()->GetPoint(id);
 
     double xProduct = 0;
-    double mitralValvePlane[3] = {0};
+    double mitralValvePlane[3] = {0}; //change name
     mitralValvePlane[0] = pointInSurface[0] - centreInSurface[0];
     mitralValvePlane[1] = pointInSurface[1] - centreInSurface[1];
     mitralValvePlane[2] = pointInSurface[2] - centreInSurface[2];
@@ -659,7 +659,7 @@ vtkIdType CemrgAtriaClipper::CentreOfMass(mitk::Surface::Pointer surface) {
         xProduct += (mitralValvePlane[i])*(pointNormal[i]);
     }
 
-    if(xProduct>0){ // orientation of centrelines
+    if(xProduct < 0){ // orientation of centrelines
         ctrlnOrientation = true;
     }
 
