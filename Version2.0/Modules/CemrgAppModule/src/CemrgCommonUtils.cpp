@@ -35,6 +35,7 @@ PURPOSE.  See the above copyright notices for more information.
 //VTK
 #include <vtkPolyData.h>
 #include <vtkPolyDataReader.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkPointData.h>
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
@@ -480,6 +481,23 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
     }//_cell_data
 
     cartoFile.close();
+}
+
+void CemrgCommonUtils::CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata){
+    vtkSmartPointer<vtkPolyDataNormals> normals = vtkSmartPointer<vtkPolyDataNormals>::New();
+    vtkSmartPointer<vtkPolyData> tempPD = vtkSmartPointer<vtkPolyData>::New();
+    tempPD->DeepCopy(pd);
+
+    if(celldata){
+        normals->ComputeCellNormalsOn();
+    } else{ // pointdata
+        normals->ComputePointNormalsOn();
+    }
+
+    normals->SetInputData(tempPD);
+    normals->SplittingOff();
+    normals->Update();
+    pd = normals->GetOutput();
 }
 
 mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(

@@ -90,6 +90,8 @@ private:
     double clSpacing = 2.000; //Resample the centerline with this spacing
     double radiusAdj = 2.000; //Adjustment for cutter planes radii
 
+    bool ctrlnOrientation; 
+
     //Cutters properties
     std::vector<int> manuals; //Cutter's tilt manual or automatic
     std::vector<std::vector<double>> normalPlAngles; //Cutter's tilt adjustments
