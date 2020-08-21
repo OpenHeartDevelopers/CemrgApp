@@ -51,8 +51,11 @@ public:
 
     //Sampling Utils
     static mitk::Image::Pointer Downsample(mitk::Image::Pointer image, int factor);
-    static mitk::Image::Pointer IsoImageResampling(mitk::Image::Pointer image, bool reorientToRAI=true);
-    static mitk::Image::Pointer IsoImageResampling(QString imPath, bool reorientToRAI=true);
+    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=true, bool reorientToRAI=true);
+    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=true, bool reorientToRAI=true);
+
+    // convert2nifti
+    static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
 
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
