@@ -342,12 +342,9 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
 
     //Header
     cartoFile << "# vtk DataFile Version 3.0\n";
-    cartoFile << "vtk output\n";
+    cartoFile << "PatientData Anon Anon 00000000\n";
     cartoFile << "ASCII\n";
     cartoFile << "DATASET POLYDATA\n";
-
-    //answer = inputdlg({'firstname', 'surname', 'ID'});
-    //vtktitle = ['PatientData ' answer{1} ' ' answer{2} ' ' answer{3}];
 
     //Points
     cartoFile << "POINTS\t" << pd->GetNumberOfPoints() << "\tfloat\n";
@@ -373,9 +370,7 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
     //Point data
     vtkSmartPointer<vtkFloatArray> pointData = vtkSmartPointer<vtkFloatArray>::New();
     try {
-
         pointData = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
-
     } catch (...) {
         MITK_WARN << "Storing point data failed! Check your input";
         return;
@@ -421,40 +416,10 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
 
     MITK_INFO << "Storing lookup table, min/max scalar values: " << min << " " << max;
 
-    //cartoFile << "LOOKUP_TABLE lookup_table 3\n";
-    //cartoFile << "0.0 0.0 1.0 1.0" << "\n";
-    //cartoFile << "1.0 1.0 1.0 1.0" << "\n";
-    //cartoFile << "0.0 1.0 0.0 1.0" << "\n";
-
-    //Cell data
-    vtkSmartPointer<vtkFloatArray> cellData = vtkSmartPointer<vtkFloatArray>::New();
-    try {
-
-        cellData = vtkFloatArray::SafeDownCast(pd->GetCellData()->GetScalars());
-
-    } catch (...) {
-        MITK_WARN << "Storing cell data failed! Check your input";
-        return;
-    }//_try
-
-    MITK_INFO << "Storing cell data, number of tuples: " << cellData->GetNumberOfTuples();
-
-    if (cellData->GetNumberOfTuples() != 0) {
-
-        cartoFile << "\nCELL_DATA\t";
-        cartoFile << cellData->GetNumberOfTuples() << "\n";
-
-        for (int i=0; i<cellData->GetNumberOfComponents(); i++) {
-
-            cartoFile << "SCALARS " << "scalars" << i << " float\n";
-            cartoFile << "LOOKUP_TABLE default\n";
-            for (int j=0; j<cellData->GetNumberOfTuples(); j++)
-                cartoFile << cellData->GetTuple(j)[i] << " ";
-            cartoFile << "\n";
-
-        }
-    }//_cell_data
-
+    cartoFile << "LOOKUP_TABLE lookup_table 3\n";
+    cartoFile << "0.0 0.0 1.0 1.0" << "\n";
+    cartoFile << "1.0 1.0 1.0 1.0" << "\n";
+    cartoFile << "0.0 1.0 0.0 1.0" << "\n";
     cartoFile.close();
 }
 
