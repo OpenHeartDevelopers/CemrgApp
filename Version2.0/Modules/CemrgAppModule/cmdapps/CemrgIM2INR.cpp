@@ -100,9 +100,12 @@ int main(int argc, char* argv[]) {
     parser.addArgument(
                 "output", "o", mitkCommandLineParser::String,
                 "Output file", "Where to save the output (e.g output.inr).");
+    parser.addArgument(
+                "uint8", "u", mitkCommandLineParser::Bool,
+                "Convert to UINT8", "Convert image type to UINT8 (default=false).");
     parser.addArgument( // optional
-                        "verbose", "v", mitkCommandLineParser::Bool,
-                        "Verbose Output", "Whether to produce verbose output");
+                "verbose", "v", mitkCommandLineParser::Bool,
+                "Verbose Output", "Whether to produce verbose output");
 
     // Parse arguments.
     // This method returns a mapping of long argument names to their values.
@@ -122,11 +125,15 @@ int main(int argc, char* argv[]) {
 
     // Default values for optional arguments
     auto verbose = false;
+    auto convert2uint = false;
     std::string outFilename = "convert.inr";
 
     // Parse, cast and set optional arguments
     if (parsedArgs.end() != parsedArgs.find("verbose"))
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
+
+    if (parsedArgs.end() != parsedArgs.find("uint8"))
+        convert2uint = us::any_cast<bool>(parsedArgs["uint8"]);
 
     if (parsedArgs.end() != parsedArgs.find("output"))
         outFilename = us::any_cast<std::string>(parsedArgs["output"]);
@@ -163,16 +170,18 @@ int main(int argc, char* argv[]) {
             origin = image->GetGeometry()->GetOrigin();
             int dimensions = image->GetDimension(0)*image->GetDimension(1)*image->GetDimension(2);
             try{
-                //Convert image to right type
-                itk::Image<uint8_t,3>::Pointer itkImage = itk::Image<uint8_t,3>::New();
-                mitk::CastToItkImage(image, itkImage);
-                mitk::CastToMitkImage(itkImage, image);
+                if(convert2uint){
+                    MITK_INFO(verbose) << "Convert image to right type";
+                    itk::Image<uint8_t,3>::Pointer itkImage = itk::Image<uint8_t,3>::New();
+                    mitk::CastToItkImage(image, itkImage);
+                    mitk::CastToMitkImage(itkImage, image);
+                }
 
-                //Access image volume
+                MITK_INFO(verbose) << "Access image volume";
                 mitk::ImagePixelReadAccessor<uint8_t,3> readAccess(image);
                 uint8_t* pv = (uint8_t*)readAccess.GetData();
 
-                //Prepare header of inr file (BUGS IN RELEASE MODE DUE TO NULL TERMINATOR \0)
+                MITK_INFO(verbose) << "Prepare header of inr file (BUGS IN RELEASE MODE DUE TO NULL TERMINATOR \0)";
                 char header[256] = {};
                 int bitlength = 8;
                 const char* btype = "unsigned fixed";
@@ -186,7 +195,7 @@ int main(int argc, char* argv[]) {
                 header[254] = '}';
                 header[255] = '\n';
 
-                //Write to binary file
+                MITK_INFO(verbose) << "Write to binary file";
                 std::string path = outputPath.toStdString();
                 ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
@@ -197,6 +206,9 @@ int main(int argc, char* argv[]) {
                 MITK_ERROR << "Problems creating the file";
                 return EXIT_FAILURE;
             }
+        }
+        else{
+            MITK_INFO << "Problem loading image.";
         }
 
         MITK_INFO(verbose) << "Goodbye!";
