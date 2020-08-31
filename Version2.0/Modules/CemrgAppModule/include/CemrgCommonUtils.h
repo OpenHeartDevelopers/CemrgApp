@@ -51,8 +51,8 @@ public:
 
     //Sampling Utils
     static mitk::Image::Pointer Downsample(mitk::Image::Pointer image, int factor);
-    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=true, bool reorientToRAI=true);
-    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=true, bool reorientToRAI=true);
+    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=false, bool reorientToRAI=false);
+    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=false, bool reorientToRAI=false);
 
     // convert2nifti
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
