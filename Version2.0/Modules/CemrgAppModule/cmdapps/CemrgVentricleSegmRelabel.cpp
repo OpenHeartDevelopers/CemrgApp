@@ -79,6 +79,21 @@ in the framework.
 #include <algorithm>
 #include <string>
 
+typedef itk::Image<uint8_t,3> ImageType;
+typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
+typedef itk::NearestNeighborInterpolateImageFunction<ImageType> NNInterpolatorType;
+typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
+typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
+typedef itk::BinaryDilateImageFilter<ImageType, ImageType, StrElType> ImFilterType;
+typedef itk::MultiplyImageFilter<ImageType, ImageType, ImageType> ImMultiplyType;
+typedef itk::ImageRegionIterator<ImageType> IteratorType;
+
+// ResampleImageFilterType::Pointer & imresize(ImageType::Pointer imToResize, ImageType::Pointer imTarget);
+ThresholdType::Pointer thresholdImage(ImageType::Pointer input, uint8_t thresholdVal, QString debugPrefix, bool debugging);
+ImFilterType::Pointer imdilate(ImageType::Pointer input, uint8_t radius, QString debugPrefix, bool debugging);
+ImMultiplyType::Pointer immultiply(ImageType::Pointer input1, ImageType::Pointer input2, QString debugPrefix, bool debugging);
+void relabel(ImageType::Pointer & imageToRelabel, ImageType::Pointer imageFragment, uint8_t fromLabel, uint8_t toLabel);
+
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
 
@@ -106,8 +121,11 @@ int main(int argc, char* argv[]) {
                 "Input image bloodpool seg", "Full path of bloodpool file.",
                 us::Any(), false);
     parser.addArgument( // optional
-                "bp-label", "l", mitkCommandLineParser::String,
-                "Bloodpool segmentation label", "RV segmentation label (default=30)");
+                "bp-rv", "rv", mitkCommandLineParser::String,
+                "Bloodpool segmentation label (RV)", "RV segmentation label (default=30)");
+    parser.addArgument( // optional
+                "bp-lv", "lv", mitkCommandLineParser::String,
+                "Bloodpool segmentation label (LV)", "LV segmentation label (default=10)");
     parser.addArgument( // optional
                 "swap-labels", "sl", mitkCommandLineParser::String,
                 "Swap levels code", "Code to swap labels (syntax: 'N,M' , default:1,5)");
@@ -141,7 +159,8 @@ int main(int argc, char* argv[]) {
     // Default values for optional arguments
     auto verbose = false;
     auto debug = false;
-    std::string bp_label = "30";
+    std::string bp_rv = "30";
+    std::string bp_lv = "10";
     std::string swaplabels = "1,5";
     std::string outFilename = "output.nii";
 
@@ -150,12 +169,16 @@ int main(int argc, char* argv[]) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
 
-    if (parsedArgs.end() != parsedArgs.find("bp-label")){
-        swaplabels = us::any_cast<std::string>(parsedArgs["bp-label"]);
+    if (parsedArgs.end() != parsedArgs.find("bp-rv")){
+        bp_rv = us::any_cast<std::string>(parsedArgs["bp-rv"]);
+    }
+
+    if (parsedArgs.end() != parsedArgs.find("bp-lv")){
+        bp_lv = us::any_cast<std::string>(parsedArgs["bp-lv"]);
     }
 
     if (parsedArgs.end() != parsedArgs.find("swap-labels")){
-        bp_label = us::any_cast<std::string>(parsedArgs["swap-labels"]);
+        swaplabels  = us::any_cast<std::string>(parsedArgs["swap-labels"]);
     }
 
     if (parsedArgs.end() != parsedArgs.find("output")){
@@ -198,10 +221,6 @@ int main(int argc, char* argv[]) {
         MITK_INFO(debug) << ("DEBUG PREFIX: " + debugPrefix).toStdString();
 
         MITK_INFO(verbose) << "Loading Image.";
-        typedef itk::Image<uint8_t,3> ImageType;
-        typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
-        typedef itk::NearestNeighborInterpolateImageFunction<ImageType> NNInterpolatorType;
-
         mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(inputPath.toStdString());
         mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(bpPath.toStdString());
 
@@ -233,78 +252,40 @@ int main(int argc, char* argv[]) {
                 mitk::IOUtil::Save(mitk::ImportItkImage(resampler->GetOutput()), step1.toStdString());
             }
 
-            MITK_INFO << "Select ventricle with bloodpool-label";
+            MITK_INFO << "Select left ventricle with bloodpool-label";
             // threshold
-            typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
-            uint8_t bplabel = uint8_t(std::stoi(bp_label));
+            uint8_t bpLeftV = uint8_t(std::stoi(bp_lv));
+            QString step2 = debugPrefix + "S2-1_thresholdedLV.nii";
+            ThresholdType::Pointer thresLV = thresholdImage(resampler->GetOutput(), bpLeftV, step2, debug);
 
-            ThresholdType::Pointer thres = ThresholdType::New();
-            thres->SetInput(resampler->GetOutput());
-            thres->SetLowerThreshold(bplabel);
-            thres->SetUpperThreshold(bplabel);
-            thres->SetInsideValue(1);
-            thres->SetOutsideValue(0);
-            thres->Update();
-
-            if(debug){
-                QString step2 = debugPrefix + "S2_thresholdedBpRv.nii";
-                mitk::IOUtil::Save(mitk::ImportItkImage(thres->GetOutput()), step2.toStdString());
-            }
+            MITK_INFO << "Select right ventricle with bloodpool-label";
+            // threshold
+            uint8_t bpRightV = uint8_t(std::stoi(bp_rv));
+            step2 = debugPrefix + "S2-2_thresholdedRV.nii";
+            ThresholdType::Pointer thresRV = thresholdImage(resampler->GetOutput(), bpRightV, step2, debug);
 
             MITK_INFO << "Dilating selected blooodpool.";
             // Image dilation on thresholded image
-            typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
-            typedef itk::BinaryDilateImageFilter<ImageType, ImageType, StrElType> ImFilterType;
-
-            StrElType structuringElement;
-            structuringElement.SetRadius(static_cast<unsigned long>(2.0));
-            structuringElement.CreateStructuringElement();
-
-            ImFilterType::Pointer dilateFilter = ImFilterType::New();
-            dilateFilter->SetInput(thres->GetOutput());
-            dilateFilter->SetKernel(structuringElement);
-            dilateFilter->SetDilateValue(1); // same as threshold's insideValue
-            // dilateFilter->UpdateLargestPossibleRegion();
-
-            if(debug){
-                QString step3 = debugPrefix + "S3_dilatedBpRv.nii";
-                mitk::IOUtil::Save(mitk::ImportItkImage(dilateFilter->GetOutput()), step3.toStdString());
-            }
+            QString step3 = debugPrefix + "S3_dilatedRV.nii";
+            ImFilterType::Pointer dilateFilter = imdilate(thresRV->GetOutput(), 1.0, step3, debug);
 
             MITK_INFO << "Extracting bloodpool from input image";
-            // Multiply input image to thresholed bloodpool (Vfragment)
-            typedef itk::MultiplyImageFilter<ImageType, ImageType, ImageType> ImMultiplyType;
-            ImMultiplyType::Pointer imMult = ImMultiplyType::New();
-            imMult->SetInput1(itkInput);
-            imMult->SetInput2(dilateFilter->GetOutput());
+            // Multiply input image to thresholed bloodpool (imageFragment)
+            QString step4 = debugPrefix + "S4-1_extractedSegmentLV.nii";
+            ImMultiplyType::Pointer imMultLV = immultiply(itkInput, thresLV->GetOutput(), step4, debug);
 
-            if (debug){
-                QString step4 = debugPrefix + "S4_extractedBloodPool.nii";
-                mitk::IOUtil::Save(mitk::ImportItkImage(imMult->GetOutput()), step4.toStdString());
-            }
+            step4 = debugPrefix + "S4-2_extractedSegmentRV.nii";
+            ImMultiplyType::Pointer imMultRV = immultiply(itkInput, dilateFilter->GetOutput(), step4, debug);
 
-            MITK_INFO << "Relabel specific area in original.";
-            // Threshold Vfragment
-            // change values on input image where vfragment is 1.
-            typedef itk::ImageRegionIterator<ImageType> IteratorType;
+            MITK_INFO << "Relabel specific volume in original.";
             QString swapLabelsStr = QString::fromStdString(swaplabels);
             QStringList swapLabelsList = swapLabelsStr.split(QLatin1Char(','));
 
             uint8_t fromLabel = uint8_t(swapLabelsList.at(0).toInt());
             uint8_t toLabel = uint8_t(swapLabelsList.at(1).toInt());
 
-            ImageType::Pointer imageFragment = imMult->GetOutput();
-
-            IteratorType relabelIter(itkInput, itkInput->GetLargestPossibleRegion());
-            IteratorType condIter(imageFragment, imageFragment->GetLargestPossibleRegion());
-
-            while(!relabelIter.IsAtEnd()){
-                if(condIter.Get() == fromLabel){ //label LV=1, change for RV=5
-                    relabelIter.Set(toLabel);
-                }
-                ++relabelIter;
-                ++condIter;
-            }
+            relabel(itkInput, imMultLV->GetOutput(), toLabel, fromLabel);
+            relabel(itkInput, imMultRV->GetOutput(), fromLabel, toLabel);
 
             mitk::IOUtil::Save(mitk::ImportItkImage(itkInput), outputPath.toStdString());
 
@@ -321,5 +302,83 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-
 }
+
+ThresholdType::Pointer thresholdImage(ImageType::Pointer input, uint8_t thresholdVal, QString debugOutput, bool debugging){
+    ThresholdType::Pointer thresholdOutput = ThresholdType::New();
+    thresholdOutput->SetInput(input);
+    thresholdOutput->SetLowerThreshold(thresholdVal);
+    thresholdOutput->SetUpperThreshold(thresholdVal);
+    thresholdOutput->SetInsideValue(1);
+    thresholdOutput->SetOutsideValue(0);
+    thresholdOutput->Update();
+
+    if(debugging){
+        mitk::IOUtil::Save(mitk::ImportItkImage(thresholdOutput->GetOutput()), debugOutput.toStdString());
+    }
+
+    return thresholdOutput;
+}
+
+ImFilterType::Pointer imdilate(ImageType::Pointer input, uint8_t radius, QString debugOutput,  bool debugging){
+    StrElType structuringElement;
+    structuringElement.SetRadius(static_cast<unsigned long>(radius));
+    structuringElement.CreateStructuringElement();
+
+    ImFilterType::Pointer imDilateFilter = ImFilterType::New();
+    imDilateFilter->SetInput(input);
+    imDilateFilter->SetKernel(structuringElement);
+    imDilateFilter->SetDilateValue(1); // same as threshold's insideValue
+
+    if(debugging){
+        mitk::IOUtil::Save(mitk::ImportItkImage(imDilateFilter->GetOutput()), debugOutput.toStdString());
+    }
+
+    return imDilateFilter;
+}
+
+ImMultiplyType::Pointer immultiply(ImageType::Pointer input1, ImageType::Pointer input2, QString debugOutput, bool debugging){
+    ImMultiplyType::Pointer imMultiplication = ImMultiplyType::New();
+    imMultiplication->SetInput1(input1);
+    imMultiplication->SetInput2(input2);
+
+    if (debugging){
+        mitk::IOUtil::Save(mitk::ImportItkImage(imMultiplication->GetOutput()), debugOutput.toStdString());
+    }
+
+    return imMultiplication;
+}
+
+void relabel(ImageType::Pointer & imageToRelabel, ImageType::Pointer imageFragment, uint8_t fromLabel, uint8_t toLabel){
+    IteratorType relabelIter(imageToRelabel, imageToRelabel->GetLargestPossibleRegion());
+    IteratorType condIter(imageFragment, imageFragment->GetLargestPossibleRegion());
+
+    while(!relabelIter.IsAtEnd()){
+        if(condIter.Get() == fromLabel){ //label LV=1, change for RV=5
+            relabelIter.Set(toLabel);
+        }
+        ++relabelIter;
+        ++condIter;
+    }
+}
+
+// ResampleImageFilterType::Pointer & imresize(ImageType::Pointer imToResize, ImageType::Pointer imTarget){
+//     ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
+//     NNInterpolatorType::Pointer nninterp = NNInterpolatorType::New();
+//
+//     resampler->SetInput(imToResize);
+//     resampler->SetInterpolator(nninterp);
+//     resampler->SetOutputOrigin(imTarget->GetOrigin());
+//     ImageType::SizeType input_size = imTarget->GetLargestPossibleRegion().GetSize();
+//     ImageType::SpacingType input_spacing = imTarget->GetSpacing();
+//
+//     resampler->SetSize(input_size);
+//     resampler->SetOutputSpacing(input_spacing);
+//     resampler->SetOutputDirection(imTarget->GetDirection());
+//     resampler->UpdateLargestPossibleRegion();
+//
+//     if(debug){
+//         QString step1 = debugPrefix + "S1_resizedBloodPool.nii";
+//         mitk::IOUtil::Save(mitk::ImportItkImage(resampler->GetOutput()), step1.toStdString());
+//     }
+// }
