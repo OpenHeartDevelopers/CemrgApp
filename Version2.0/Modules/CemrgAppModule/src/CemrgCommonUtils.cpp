@@ -39,6 +39,23 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCellData.h>
 #include <vtkFloatArray.h>
 #include <vtkCell.h>
+#include <vtkImageMapper.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor2D.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
+#include <vtkCenterOfMass.h>
+#include <vtkImageActor.h>
+#include <vtkImageMapper3D.h>
+#include <vtkExtractVOI.h>
+#include <vtkPlane.h>
+#include <vtkProperty.h>
+#include <vtkCutter.h>
+#include <vtkCamera.h>
+#include <vtkTransformPolyDataFilter.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -445,6 +462,109 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
     cartoFile << "1.0 1.0 1.0 1.0" << "\n";
     cartoFile << "0.0 1.0 0.0 1.0" << "\n";
     cartoFile.close();
+}
+
+void CemrgCommonUtils::MotionTrackingReport(QString directory, int timePoints) {
+
+    for (int tS=0; tS<timePoints; tS++) {
+
+        //Image
+        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(tS) + ".nii";
+        mitk::Image::Pointer img3D = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
+        int* extent = img3D->GetVtkImageData()->GetExtent();
+        mitk::Vector3D spacing = img3D->GetGeometry()->GetSpacing();
+        vtkSmartPointer<vtkMatrix4x4> direction = img3D->GetGeometry()->GetVtkMatrix();
+
+        //Mesh
+        path = directory + mitk::IOUtil::GetDirectorySeparator() + "Model-" + QString::number(tS) + ".vtk";
+        mitk::Surface::Pointer sur3D = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+
+        //Window
+        int xSliceMin = extent[0];
+        int xSliceMax = extent[1];
+        int ySliceMin = extent[2];
+        int ySliceMax = extent[3];
+        //int zSliceMin = extent[4];
+        int zSliceMax = extent[5];
+        double xmins[8] = {0.00,0.25,0.50,0.75,0.00,0.25,0.50,0.75};
+        double xmaxs[8] = {0.25,0.50,0.75,1.00,0.25,0.50,0.75,1.00};
+        double ymins[8] = {0.00,0.00,0.00,0.00,0.50,0.50,0.50,0.50};
+        double ymaxs[8] = {0.50,0.50,0.50,0.50,1.00,1.00,1.00,1.00};
+        vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+        renderWindow->SetAlphaBitPlanes(1);
+        renderWindow->SetSize(500,500);
+
+        for (int view=0; view<8; view++) {
+
+            //Setup views
+            int zSlice = zSliceMax - view * floor(zSliceMax/8);
+            double zPlane = zSlice * spacing[2];
+
+            //Image mapper
+            vtkSmartPointer<vtkExtractVOI> extractSlice = vtkSmartPointer<vtkExtractVOI>::New();
+            extractSlice->SetInputData(img3D->GetVtkImageData());
+            extractSlice->SetVOI(xSliceMin, xSliceMax, ySliceMin, ySliceMax, zSlice, zSlice);
+            extractSlice->Update();
+            vtkSmartPointer<vtkImageData> slice = extractSlice->GetOutput();
+            vtkSmartPointer<vtkImageActor> imgActor = vtkSmartPointer<vtkImageActor>::New();
+            imgActor->GetMapper()->SetInputData(slice);
+
+            //Mesh mapper
+            vtkSmartPointer<vtkPolyData> pd = sur3D->GetVtkPolyData();
+            vtkSmartPointer<vtkTransform> scaling = vtkSmartPointer<vtkTransform>::New();
+            scaling->Scale(spacing[0], spacing[1], spacing[2]);
+            vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+            transform->SetMatrix(direction);
+            transform->Inverse();
+            transform->PostMultiply();
+            transform->Concatenate(scaling);
+            vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+            transformFilter->SetInputData(pd);
+            transformFilter->SetTransform(transform);
+            transformFilter->Update();
+            pd = transformFilter->GetOutput();
+            vtkSmartPointer<vtkPlane> plane = vtkSmartPointer<vtkPlane>::New();
+            plane->SetOrigin(0,0,zPlane);
+            plane->SetNormal(0,0,1);
+            vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
+            cutter->SetCutFunction(plane);
+            cutter->SetInputData(pd);
+            cutter->Update();
+            vtkSmartPointer<vtkPolyDataMapper> mapMesh = vtkSmartPointer<vtkPolyDataMapper>::New();
+            mapMesh->SetInputConnection(cutter->GetOutputPort());
+            mapMesh->SetScalarModeToUsePointData();
+            mapMesh->SetScalarVisibility(1);
+            mapMesh->SetScalarRange(1,4);
+            vtkSmartPointer<vtkActor> mshActor = vtkSmartPointer<vtkActor>::New();
+            mshActor->GetProperty()->SetRepresentationToPoints();
+            mshActor->GetProperty()->SetPointSize(3);
+            mshActor->SetMapper(mapMesh);
+
+            //Image renderer
+            vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+            renderer->AddActor(imgActor);
+            renderer->AddActor(mshActor);
+            renderer->ResetCamera();
+            renderer->GetActiveCamera()->ParallelProjectionOn();
+            renderer->GetActiveCamera()->SetParallelScale(.5*imgActor->GetBounds()[1]);
+            renderWindow->AddRenderer(renderer);
+            renderer->SetViewport(xmins[view],ymins[view],xmaxs[view],ymaxs[view]);
+            renderWindow->Render();
+
+        }//_for
+
+        //Screenshot
+        vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+        windowToImageFilter->SetInput(renderWindow);
+        windowToImageFilter->SetInputBufferTypeToRGBA();
+        windowToImageFilter->ReadFrontBufferOff();
+        windowToImageFilter->FixBoundaryOn();
+        windowToImageFilter->Update();
+        vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+        writer->SetFileName((directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(tS).toStdString() + ".png").c_str());
+        writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+        writer->Write();
+    }
 }
 
 mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(

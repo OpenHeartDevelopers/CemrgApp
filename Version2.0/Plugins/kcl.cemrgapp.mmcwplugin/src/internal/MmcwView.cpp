@@ -917,6 +917,9 @@ void MmcwView::Demoings() {
 
     //Show the plugin
     this->GetSite()->GetPage()->ShowView("org.mitk.views.imagenavigator");
+
+    //Report generation
+    CemrgCommonUtils::MotionTrackingReport(directory, timePoints);
 }
 
 void MmcwView::LandmarkSelection() {

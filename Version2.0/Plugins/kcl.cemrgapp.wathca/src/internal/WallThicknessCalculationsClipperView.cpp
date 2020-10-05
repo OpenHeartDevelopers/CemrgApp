@@ -55,6 +55,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkDecimatePro.h>
+#include <vtkCleanPolyData.h>
+#include <vtkPolyDataNormals.h>
 
 //ITK
 #include <itkAddImageFilter.h>
@@ -228,8 +230,21 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
                 deci->SetInputData(shell->GetVtkPolyData());
                 deci->SetTargetReduction(ds);
                 deci->PreserveTopologyOn();
-                deci->Update();
-                shell->SetVtkPolyData(deci->GetOutput());
+                deci->Update();      
+                vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+                cleaner->SetInputConnection(deci->GetOutputPort());
+                cleaner->PieceInvariantOn();
+                cleaner->ConvertLinesToPointsOn();
+                cleaner->ConvertStripsToPolysOn();
+                cleaner->PointMergingOn();
+                cleaner->Update();
+                vtkSmartPointer<vtkPolyDataNormals> computeNormals = vtkSmartPointer<vtkPolyDataNormals>::New();
+                computeNormals->SetInputConnection(cleaner->GetOutputPort());
+                computeNormals->SetFeatureAngle(360.0f);
+                computeNormals->AutoOrientNormalsOn();
+                computeNormals->FlipNormalsOff();
+                computeNormals->Update();
+                shell->SetVtkPolyData(computeNormals->GetOutput());
                 surface = shell;
 
                 //Tidy up data
