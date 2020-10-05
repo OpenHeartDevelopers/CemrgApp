@@ -39,9 +39,12 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkDoubleArray.h>
 #include <vtkClipPolyData.h>
 #include <vtkImplicitBoolean.h>
+#include <vtkCenterOfMass.h>
 #include <vtkPlane.h>
 #include <vtkSphere.h>
 #include <vtkDataSetSurfaceFilter.h>
+#include <vtkFloatArray.h>
+#include <vtkSmartPointer.h>
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkPolyDataToImageStencil.h>
@@ -68,6 +71,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QString>
 
 //CemrgAppModule
+#include "CemrgCommonUtils.h"
 #include "CemrgMeasure.h"
 
 
@@ -77,6 +81,9 @@ CemrgAtriaClipper::CemrgAtriaClipper(QString directory, mitk::Surface::Pointer s
     this->surface = surface;
     this->clippedSurface = surface;
     this->clippedSegImage = mitk::Image::New();
+
+    ctrlnOrientation = false;
+    manualCtrLnOrient = false;
 }
 
 bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
@@ -101,14 +108,21 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
         prodFile3.close();
 
         if (centreLines.size() == 0) {
-
             //Prepare source and target seeds
             vtkSmartPointer<vtkIdList> inletSeedIds = vtkSmartPointer<vtkIdList>::New();
             vtkSmartPointer<vtkIdList> outletSeedIds = vtkSmartPointer<vtkIdList>::New();
-            inletSeedIds->InsertNextId(CentreOfMass(surface));
+
+            MITK_INFO << "Determining centre lines' orientation.";
+            vtkIdType centreOfMassId = CentreOfMass(surface);
+            inletSeedIds->InsertNextId(centreOfMassId);
 
             MITK_INFO << "Number of pickedSeedLabels: ";
             MITK_INFO << pickedSeedLabels.size();
+
+            MITK_INFO(manualCtrLnOrient) << "Centre lines orientation set manually.";
+            MITK_INFO(!manualCtrLnOrient) << "Centre lines orientation set automatically.";
+
+            bool orientFlip = manualCtrLnOrient ? flip : ctrlnOrientation;
 
             for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
 
@@ -120,7 +134,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
                 centreLineFilter->SetTargetSeedIds(outletSeedIds);
                 centreLineFilter->SetRadiusArrayName("MaximumInscribedSphereRadius");
                 centreLineFilter->SetCostFunction("1/R");
-                centreLineFilter->SetFlipNormals(flip);
+                centreLineFilter->SetFlipNormals(orientFlip);
                 centreLineFilter->SetAppendEndPointsToCenterlines(0);
                 centreLineFilter->SetSimplifyVoronoi(0);
                 centreLineFilter->SetCenterlineResampling(1);
@@ -138,8 +152,9 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
                 centreLines.push_back(centreLineFilter);
                 mitk::ProgressBar::GetInstance()->Progress();
             }//_for
-        } else
+        } else{
             mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
+        }
 
     } catch(...) {
 
@@ -615,24 +630,39 @@ vtkIdType CemrgAtriaClipper::CentreOfMass(mitk::Surface::Pointer surface) {
 
     //Polydata of surface
     vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
+    CemrgCommonUtils::CalculatePolyDataNormals(pd, false);
 
-    double x_s = 0;
-    double y_s = 0;
-    double z_s = 0;
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
-        x_s = x_s + pd->GetPoints()->GetPoint(i)[0];
-        y_s = y_s + pd->GetPoints()->GetPoint(i)[1];
-        z_s = z_s + pd->GetPoints()->GetPoint(i)[2];
-    }//_for
-    x_s /= pd->GetNumberOfPoints();
-    y_s /= pd->GetNumberOfPoints();
-    z_s /= pd->GetNumberOfPoints();
-    double point[3] = {x_s, y_s, z_s};
+    vtkSmartPointer<vtkFloatArray> pdNormals = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetNormals());
+    vtkSmartPointer<vtkCenterOfMass> centre = vtkSmartPointer<vtkCenterOfMass>::New();
+    double centreInSurface[3];
+
+    centre->SetInputData(pd);
+    centre->SetUseScalarsAsWeights(false);
+    centre->Update();
+    centre->GetCenter(centreInSurface);
 
     vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
     pointLocator->SetDataSet(pd);
     pointLocator->BuildLocator();
-    vtkIdType id = pointLocator->FindClosestPoint(point);
+
+    vtkIdType id = pointLocator->FindClosestPoint(centreInSurface); // output of method
+
+    double * pointNormal = pdNormals->GetTuple(id);
+    double * pointInSurface = pd->GetPoints()->GetPoint(id);
+
+    double xProduct = 0;
+    double mitralValvePlane[3] = {0}; //change name
+    mitralValvePlane[0] = pointInSurface[0] - centreInSurface[0];
+    mitralValvePlane[1] = pointInSurface[1] - centreInSurface[1];
+    mitralValvePlane[2] = pointInSurface[2] - centreInSurface[2];
+    for (int i = 0; i < 3; i++){
+        xProduct += (mitralValvePlane[i])*(pointNormal[i]);
+    }
+
+    if(xProduct < 0){ // orientation of centrelines
+        ctrlnOrientation = true;
+    }
+
     return id;
 }
 
