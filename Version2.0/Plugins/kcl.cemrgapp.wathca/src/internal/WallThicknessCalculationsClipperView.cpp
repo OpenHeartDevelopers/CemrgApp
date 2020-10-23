@@ -218,7 +218,7 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
                 this->BusyCursorOn();
                 path = directory + mitk::IOUtil::GetDirectorySeparator() + "temp.nii";
                 mitk::IOUtil::Save(image, path.toStdString());
-                mitk::ProgressBar::GetInstance()->AddStepsToDo(4);
+                mitk::ProgressBar::GetInstance()->AddStepsToDo(3);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
                 QString output = cmd->ExecuteSurf(directory, path, "close", iter, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
@@ -282,6 +282,7 @@ void WallThicknessCalculationsClipperView::CtrLines() {
         //Retrieve centrelines and labels
         if (clipper->GetCentreLines().size() != 0)
             QMessageBox::information(NULL, "Attention", "You are using precomputed centrelines!");
+
         this->BusyCursorOn();
         for (unsigned int i=0; i<clipper->GetCentreLines().size(); i++) {
             if (i == 0) pickedSeedLabels.clear();
@@ -289,7 +290,6 @@ void WallThicknessCalculationsClipperView::CtrLines() {
             vtkSmartPointer<vtkIntArray> lb = vtkIntArray::SafeDownCast(pd->GetFieldData()->GetAbstractArray("PickedSeedLabels"));
             pickedSeedLabels.push_back(lb->GetValue(0));
         }//_for
-        mitk::ProgressBar::GetInstance()->AddStepsToDo(pickedSeedLabels.size());
         bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, m_Controls.checkBox->isChecked());
         m_Controls.checkBox->setChecked(clipper->GetCentreLinesOrientation());
         this->BusyCursorOff();
@@ -299,7 +299,6 @@ void WallThicknessCalculationsClipperView::CtrLines() {
             QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
             return;
         }//_if
-
     }//_if
 
     //Set surface opacity
@@ -349,7 +348,6 @@ void WallThicknessCalculationsClipperView::CtrPlanes() {
     } else {
 
         this->BusyCursorOn();
-        mitk::ProgressBar::GetInstance()->AddStepsToDo(pickedSeedLabels.size());
         bool successful = clipper->ComputeCtrLinesClippers(pickedSeedLabels);
         this->BusyCursorOff();
 
@@ -358,7 +356,6 @@ void WallThicknessCalculationsClipperView::CtrPlanes() {
             QMessageBox::critical(NULL, "Attention", "Computation of Clipper Planes Failed!");
             return;
         }//_if
-
     }//_if
 
     std::vector<vtkSmartPointer<vtkRegularPolygonSource>> ctrPlanes = clipper->GetCentreLinePolyPlanes();
@@ -435,7 +432,6 @@ void WallThicknessCalculationsClipperView::ClipperImage() {
 
                 this->BusyCursorOn();
                 this->GetDataStorage()->Remove(segNode);
-                mitk::ProgressBar::GetInstance()->AddStepsToDo(pickedSeedLabels.size());
                 clipper->ClipVeinsImage(pickedSeedLabels, image, morphAnalysis ? true : false);
                 this->BusyCursorOff();
                 QMessageBox::information(NULL, "Attention", "Segmentation is now clipped!");
@@ -444,7 +440,6 @@ void WallThicknessCalculationsClipperView::ClipperImage() {
                 QMessageBox::warning(NULL, "Attention", "Please select the loaded or created segmentation!");
                 return;
             }//_image
-
         } else {
             QMessageBox::warning(NULL, "Attention", "Please select the loaded or created segmentation!");
             return;
