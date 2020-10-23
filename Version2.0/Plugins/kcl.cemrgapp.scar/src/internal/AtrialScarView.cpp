@@ -715,21 +715,21 @@ void AtrialScarView::AutomaticAnalysis() {
             surfer->Update();
 
             MITK_INFO << "[...][9.2] Cleaning...";
-            vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-            cleaner->SetInputConnection(surfer->GetOutputPort());
-            cleaner->Update();
+            vtkSmartPointer<vtkCleanPolyData> clean = vtkSmartPointer<vtkCleanPolyData>::New();
+            clean->SetInputConnection(surfer->GetOutputPort());
+            clean->Update();
 
             MITK_INFO << "[...][9.3] Largest region...";
             vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
-            lrgRegion->SetInputConnection(cleaner->GetOutputPort());
+            lrgRegion->SetInputConnection(clean->GetOutputPort());
             lrgRegion->SetExtractionModeToLargestRegion();
             lrgRegion->Update();
-            cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-            cleaner->SetInputConnection(lrgRegion->GetOutputPort());
-            cleaner->Update();
+            clean = vtkSmartPointer<vtkCleanPolyData>::New();
+            clean->SetInputConnection(lrgRegion->GetOutputPort());
+            clean->Update();
 
             MITK_INFO << ("[...][9.4] Saving to file: " + output2).toStdString();
-            LAShell->SetVtkPolyData(cleaner->GetOutput());
+            LAShell->SetVtkPolyData(clean->GetOutput());
             mitk::IOUtil::Save(LAShell, output2.toStdString());
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][10] Scar projection";
