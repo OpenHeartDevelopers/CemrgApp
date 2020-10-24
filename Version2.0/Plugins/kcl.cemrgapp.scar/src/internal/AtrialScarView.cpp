@@ -537,20 +537,7 @@ void AtrialScarView::AutomaticAnalysis() {
             deci->SetTargetReduction(0.1);
             deci->PreserveTopologyOn();
             deci->Update();
-            vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-            cleaner->SetInputConnection(deci->GetOutputPort());
-            cleaner->PieceInvariantOn();
-            cleaner->ConvertLinesToPointsOn();
-            cleaner->ConvertStripsToPolysOn();
-            cleaner->PointMergingOn();
-            cleaner->Update();
-            vtkSmartPointer<vtkPolyDataNormals> computeNormals = vtkSmartPointer<vtkPolyDataNormals>::New();
-            computeNormals->SetInputConnection(cleaner->GetOutputPort());
-            computeNormals->SetFeatureAngle(360.0f);
-            computeNormals->AutoOrientNormalsOn();
-            computeNormals->FlipNormalsOff();
-            computeNormals->Update();
-            shell->SetVtkPolyData(computeNormals->GetOutput());
+            shell->SetVtkPolyData(deci->GetOutput());
 
             vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
             vtkSmartPointer<vtkPolyData> pd = shell->Clone()->GetVtkPolyData();

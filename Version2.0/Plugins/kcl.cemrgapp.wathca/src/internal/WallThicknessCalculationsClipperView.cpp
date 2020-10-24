@@ -57,6 +57,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkDecimatePro.h>
 #include <vtkCleanPolyData.h>
 #include <vtkPolyDataNormals.h>
+#include <vtkWindowedSincPolyDataFilter.h>
+#include <vtkPolyDataConnectivityFilter.h>
 
 //ITK
 #include <itkAddImageFilter.h>
@@ -230,9 +232,24 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
                 deci->SetInputData(shell->GetVtkPolyData());
                 deci->SetTargetReduction(ds);
                 deci->PreserveTopologyOn();
-                deci->Update();      
+                deci->Update();
+                vtkSmartPointer<vtkPolyDataConnectivityFilter> connectivityFilter = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+                connectivityFilter->SetInputConnection(deci->GetOutputPort());
+                connectivityFilter->ColorRegionsOff();
+                connectivityFilter->SetExtractionModeToLargestRegion();
+                connectivityFilter->Update();
+                vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother = vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
+                smoother->SetInputConnection(connectivityFilter->GetOutputPort());
+                smoother->SetNumberOfIterations(30);
+                smoother->BoundarySmoothingOff();
+                smoother->FeatureEdgeSmoothingOff();
+                smoother->SetFeatureAngle(120.0);
+                smoother->SetPassBand(.01);
+                smoother->NonManifoldSmoothingOn();
+                smoother->NormalizeCoordinatesOn();
+                smoother->Update();
                 vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-                cleaner->SetInputConnection(deci->GetOutputPort());
+                cleaner->SetInputConnection(smoother->GetOutputPort());
                 cleaner->PieceInvariantOn();
                 cleaner->ConvertLinesToPointsOn();
                 cleaner->ConvertStripsToPolysOn();

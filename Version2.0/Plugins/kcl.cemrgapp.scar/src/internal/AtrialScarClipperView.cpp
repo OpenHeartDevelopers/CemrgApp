@@ -223,20 +223,7 @@ void AtrialScarClipperView::iniPreSurf() {
                 deci->SetTargetReduction(ds);
                 deci->PreserveTopologyOn();
                 deci->Update();
-                vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-                cleaner->SetInputConnection(deci->GetOutputPort());
-                cleaner->PieceInvariantOn();
-                cleaner->ConvertLinesToPointsOn();
-                cleaner->ConvertStripsToPolysOn();
-                cleaner->PointMergingOn();
-                cleaner->Update();
-                vtkSmartPointer<vtkPolyDataNormals> computeNormals = vtkSmartPointer<vtkPolyDataNormals>::New();
-                computeNormals->SetInputConnection(cleaner->GetOutputPort());
-                computeNormals->SetFeatureAngle(360.0f);
-                computeNormals->AutoOrientNormalsOn();
-                computeNormals->FlipNormalsOff();
-                computeNormals->Update();
-                shell->SetVtkPolyData(computeNormals->GetOutput());
+                shell->SetVtkPolyData(deci->GetOutput());
                 surface = shell;
 
                 //Tidy up data
