@@ -590,10 +590,14 @@ void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSourc
     double clipRadius = radii->GetValue(position) * radiusAdj;
 
     //Normal calculations
-    double x_s = 0, y_s = 0, z_s = 0;
-    x_s = line->GetPoint(position+1)[0] - line->GetPoint(position)[0];
-    y_s = line->GetPoint(position+1)[1] - line->GetPoint(position)[1];
-    z_s = line->GetPoint(position+1)[2] - line->GetPoint(position)[2];
+    double x_s = 0.0, y_s = 0.0, z_s = 0.0;
+    double pointAtPosition[3], pointAtNextPosition[3];
+    line->GetPoint(position+1, pointAtNextPosition);
+    line->GetPoint(position, pointAtPosition);
+
+    x_s = pointAtNextPosition[0] - pointAtPosition[0];
+    y_s = pointAtNextPosition[1] - pointAtPosition[1];
+    z_s = pointAtNextPosition[2] - pointAtPosition[2];
     if (manuals[ctrLineNo] == 1) {
         double x, y, z;
         double lng = sqrt(pow(x_s,2) + pow(y_s,2) + pow(z_s,2));
