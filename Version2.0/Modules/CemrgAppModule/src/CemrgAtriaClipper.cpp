@@ -89,6 +89,7 @@ CemrgAtriaClipper::CemrgAtriaClipper(QString directory, mitk::Surface::Pointer s
 bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
 
     try {
+
 		MITK_INFO << "Producibility test. ";
         QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
@@ -108,6 +109,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
         prodFile3.close();
 
         if (centreLines.size() == 0) {
+
             //Prepare source and target seeds
             vtkSmartPointer<vtkIdList> inletSeedIds = vtkSmartPointer<vtkIdList>::New();
             vtkSmartPointer<vtkIdList> outletSeedIds = vtkSmartPointer<vtkIdList>::New();
@@ -115,10 +117,8 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
             MITK_INFO << "Determining centre lines' orientation.";
             vtkIdType centreOfMassId = CentreOfMass(surface);
             inletSeedIds->InsertNextId(centreOfMassId);
-
             MITK_INFO << "Number of pickedSeedLabels: ";
             MITK_INFO << pickedSeedLabels.size();
-
             MITK_INFO(manualCtrLnOrient) << "Centre lines orientation set manually.";
             MITK_INFO(!manualCtrLnOrient) << "Centre lines orientation set automatically.";
 
@@ -148,21 +148,14 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
                 label->SetName("PickedSeedLabels");
                 label->InsertNextValue(pickedSeedLabels.at(i));
                 centreLineFilter->GetOutput()->GetFieldData()->AddArray(label);
-
                 centreLines.push_back(centreLineFilter);
-                mitk::ProgressBar::GetInstance()->Progress();
+
             }//_for
-        } else{
-            mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
-        }
+        }//_if
 
     } catch(...) {
-
-        mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
         return false;
-
     }//_try
-
     return true;
 }
 
@@ -221,19 +214,14 @@ bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
             CalcParamsOfPlane(polygonSource, i, clipPointID);
             polygonSource->Update();
             centreLinePolyPlanes.push_back(polygonSource);
-            mitk::ProgressBar::GetInstance()->Progress();
 
             //Fill in manual cutter
             centreLinePointPlanes.push_back(vtkSmartPointer<vtkPoints>::New());
         }//_for
 
     } catch(...) {
-
-        mitk::ProgressBar::GetInstance()->Progress(pickedSeedLabels.size());
         return false;
-
     }//_try
-
     return true;
 }
 
@@ -276,8 +264,8 @@ void CemrgAtriaClipper::ClipVeinsMesh(std::vector<int> pickedSeedLabels) {
             cleaner->SetInputConnection(lrgRegion->GetOutputPort());
             cleaner->Update();
             clippedSurface->SetVtkPolyData(cleaner->GetOutput());
+
         }//_if
-        mitk::ProgressBar::GetInstance()->Progress();
     }//_for
 
     //Save clipped mesh
@@ -511,9 +499,8 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         lblShpKpNObjImgFltr->SetNumberOfObjects(1);
         lblShpKpNObjImgFltr->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
         lblShpKpNObjImgFltr->Update();
-
         segItkImage = lblShpKpNObjImgFltr->GetOutput();
-        mitk::ProgressBar::GetInstance()->Progress();
+
     }//_for
 
     //Label individual veins
@@ -570,6 +557,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         path = directory + mitk::IOUtil::GetDirectorySeparator() + "AnalyticBloodpool.nii";
         mitk::IOUtil::Save(pvLabelled, path.toStdString());
     }//_if
+
     //Save clipped image
     path = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
     mitk::Image::Pointer pvCropped = mitk::ImportItkImage(segItkImage)->Clone();

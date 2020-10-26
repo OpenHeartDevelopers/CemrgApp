@@ -84,8 +84,9 @@ mitk::BoundingObject::Pointer CemrgCommonUtils::cuttingCube;
 mitk::Image::Pointer CemrgCommonUtils::CropImage() {
 
     //Test input objects
-    if (imageToCut.IsNull() || cuttingCube.IsNull())
+    if (imageToCut.IsNull() || cuttingCube.IsNull()) {
         return NULL;
+    }
 
     //Prepare the cutter
     mitk::BoundingObjectCutter::Pointer cutter = mitk::BoundingObjectCutter::New();
@@ -96,7 +97,6 @@ mitk::Image::Pointer CemrgCommonUtils::CropImage() {
     //Actual cutting
     try {
         cutter->Update();
-        mitk::ProgressBar::GetInstance()->Progress();
     } catch (const itk::ExceptionObject& e) {
         std::string message = std::string("The Cropping filter could not process because of: \n ") + e.GetDescription();
         QMessageBox::warning(
@@ -109,7 +109,6 @@ mitk::Image::Pointer CemrgCommonUtils::CropImage() {
     mitk::Image::Pointer resultImage = cutter->GetOutput();
     resultImage->DisconnectPipeline();
     resultImage->SetPropertyList(imageToCut->GetPropertyList()->Clone());
-    mitk::ProgressBar::GetInstance()->Progress();
 
     return resultImage;
 }
@@ -154,35 +153,30 @@ mitk::Image::Pointer CemrgCommonUtils::Downsample(mitk::Image::Pointer image, in
     ImageType::Pointer itkImage = ImageType::New();
     mitk::CastToItkImage(image, itkImage);
 
+    //Downsampler
     ResampleImageFilterType::Pointer downsampler = ResampleImageFilterType::New();
     downsampler->SetInput(itkImage);
-
     NearestInterpolatorType::Pointer interpolator = NearestInterpolatorType::New();
     downsampler->SetInterpolator(interpolator);
-
     downsampler->SetDefaultPixelValue(0);
-
     ResampleImageFilterType::SpacingType spacing = itkImage->GetSpacing();
     spacing *= (double) factor;
     downsampler->SetOutputSpacing(spacing);
-
     downsampler->SetOutputOrigin(itkImage->GetOrigin());
     downsampler->SetOutputDirection(itkImage->GetDirection());
-
     ResampleImageFilterType::SizeType size = itkImage->GetLargestPossibleRegion().GetSize();
     for (int i=0; i<3; ++i)
         size[i] /= factor;
-
     downsampler->SetSize(size);
     downsampler->UpdateLargestPossibleRegion();
 
     //Save downsampled image
     image = mitk::ImportItkImage(downsampler->GetOutput())->Clone();
-    mitk::ProgressBar::GetInstance()->Progress();
     return image;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Pointer image, bool resample, bool reorientToRAI){
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Pointer image, bool resample, bool reorientToRAI) {
+
     MITK_INFO(resample) << "Resampling image to be isometric.";
     MITK_INFO(reorientToRAI) << "Doing a reorientation to RAI.";
 
@@ -194,12 +188,12 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
     ImageType::Pointer outputImage = ImageType::New();
     mitk::CastToItkImage(image, itkInputImage);
 
-    if(resample){
+    if (resample) {
+
         ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
         BSplineInterpolatorType::Pointer binterp = BSplineInterpolatorType::New();
         binterp->SetSplineOrder(3);
         resampler->SetInterpolator(binterp);
-
         resampler->SetInput(itkInputImage);
         resampler->SetOutputOrigin(itkInputImage->GetOrigin());
         ImageType::SizeType input_size = itkInputImage->GetLargestPossibleRegion().GetSize();
@@ -216,13 +210,14 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
         resampler->SetOutputSpacing(output_spacing);
         resampler->SetOutputDirection(itkInputImage->GetDirection());
         resampler->UpdateLargestPossibleRegion();
-
         resampleOutput = resampler->GetOutput();
-    } else{
-        resampleOutput = itkInputImage;
-    }
 
-    if(reorientToRAI){
+    } else {
+        resampleOutput = itkInputImage;
+    }//_if
+
+    if (reorientToRAI) {
+
         typedef itk::OrientImageFilter<ImageType,ImageType> OrientImageFilterType;
         OrientImageFilterType::Pointer orienter = OrientImageFilterType::New();
         orienter->UseImageDirectionOn();
@@ -230,12 +225,12 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
         orienter->SetInput(resampleOutput);
         orienter->Update();
         outputImage = orienter->GetOutput();
-    } else{
+
+    } else {
         outputImage = resampleOutput;
-    }
+    }//_if
 
     image = mitk::ImportItkImage(outputImage)->Clone();
-    mitk::ProgressBar::GetInstance()->Progress();
     return image;
 }
 
