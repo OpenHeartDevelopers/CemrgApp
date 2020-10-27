@@ -215,6 +215,7 @@ void MmcwView::ConvertNII() {
     int ctr = 0;
     QString path;
     bool successfulNitfi;
+
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {

@@ -152,60 +152,64 @@ void AtrialScarView::OnSelectionChanged(
         berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
-
 void AtrialScarView::LoadDICOM() {
+
     int reply1 = QMessageBox::No;
 #if defined(__APPLE__)
     MITK_INFO << "Ask user about alternative DICOM reader";
     reply1 = QMessageBox::question(NULL, "Question",
                                    "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
 #endif
-    if(reply1 == QMessageBox::Yes){
-        QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
 
+    if(reply1 == QMessageBox::Yes) {
+
+        QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         QString tmpNiftiFolder = cmd->DockerDicom2Nifti(dicomFolder);
-        if(tmpNiftiFolder.compare("ERROR_IN_PROCESSING") != 0){
+
+        if (tmpNiftiFolder.compare("ERROR_IN_PROCESSING") != 0) {
+
             // add results in NIIs folder to Data Manager
             MITK_INFO << ("Conversion succesful. Intermediate NII folder: " + tmpNiftiFolder).toStdString();
             QMessageBox::information(NULL, "Information", "Conversion successful, press the Process Images button to continue.");
-
             QDir niftiFolder(tmpNiftiFolder);
             QStringList niftiFiles = niftiFolder.entryList();
 
-            if(niftiFiles.size()>0){
+            if (niftiFiles.size()>0) {
+
                 QString thisFile, path;
-                for(int ix=0; ix<niftiFiles.size(); ix++){
+                for(int ix=0; ix<niftiFiles.size(); ix++) {
+
                     // load here files
                     thisFile = niftiFiles.at(ix);
-                    if(thisFile.contains(".nii", Qt::CaseSensitive)){
-                        if(thisFile.contains("lge", Qt::CaseInsensitive) ||  thisFile.contains("mra", Qt::CaseInsensitive)){
+                    if (thisFile.contains(".nii", Qt::CaseSensitive)) {
+                        if (thisFile.contains("lge", Qt::CaseInsensitive) ||  thisFile.contains("mra", Qt::CaseInsensitive)) {
                             path = niftiFolder.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + thisFile;
-
                             mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
-
                             std::string key = "dicom.series.SeriesDescription";
                             mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
                             set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), thisFile.left(thisFile.length()-4).toStdString().c_str());
-                        }
+                        }//_if
+                    }//_if
 
-                    }
-                }
-            } else{
+                }//_for
+
+            } else {
                 MITK_WARN << "Problem with conversion.";
                 QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK Dicom editor?");
                 return;
             }
-        }
+        }//_if
     } else {
         MITK_INFO << "Using MITK DICOM editor";
         QString editor_id = "org.mitk.editors.dicomeditor";
         berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
         this->GetSite()->GetPage()->OpenEditor(input, editor_id);
-    }
+    }//_if
 }
 
 void AtrialScarView::ProcessIMGS() {
+
     //Toggle visibility of buttons
     if (m_Controls.button_2_1->isVisible()){
         m_Controls.button_2_1->setVisible(false);
@@ -1822,11 +1826,13 @@ void AtrialScarView::Reset(bool allItems) {
     this->GetSite()->GetPage()->ResetPerspective();
 }
 
-// helper functions
-bool AtrialScarView::RequestProjectDirectoryFromUser(){
+bool AtrialScarView::RequestProjectDirectoryFromUser() {
+
     bool succesfulAssignment = true;
+
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
+
         MITK_INFO << "Directory is empty. Requesting user for directory.";
         directory = QFileDialog::getExistingDirectory(
                     NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
@@ -1838,9 +1844,10 @@ bool AtrialScarView::RequestProjectDirectoryFromUser(){
             directory = QString();
             succesfulAssignment = false;
         }//_if
+
     } else {
         MITK_INFO << ("Project directory already set: " + directory).toStdString();
-    }
+    }//_if
 
     return succesfulAssignment;
 }

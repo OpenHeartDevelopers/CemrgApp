@@ -182,12 +182,15 @@ void WallThicknessCalculationsView::ConvertNII() {
     //Generic Conversion to nii
     int ctr = 0;
     QString path;
-    bool successfulNitfi;
+    bool successfulNitfi, resampleImage, reorientToRAI;
+    resampleImage = false;
+    reorientToRAI = true;
+
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(nodes.size());
     foreach (mitk::DataNode::Pointer node, nodes) {
         path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path);
+        successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(node);
         } else {

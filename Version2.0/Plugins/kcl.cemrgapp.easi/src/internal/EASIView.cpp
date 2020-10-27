@@ -188,9 +188,9 @@ void EASIView::ConvertNII() {
     int ctr = 0;
     QString path;
     bool successfulNitfi;
+
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
-
     foreach (int idx, index) {
         path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
@@ -202,7 +202,6 @@ void EASIView::ConvertNII() {
         }//_if
         mitk::ProgressBar::GetInstance()->Progress();
     }//for
-
     nodes.clear();
     this->BusyCursorOff();
 

@@ -234,13 +234,17 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
     return image;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, bool resample,  bool reorientToRAI){
-    return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI);
-};
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, bool resample,  bool reorientToRAI) {
 
-bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient){
+    return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI);
+}
+
+bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient) {
+
     bool successful = false;
+
     if (oneNode) {
+
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(oneNode.GetPointer());
         if (image) { //Test if this data item is an image
             image = CemrgCommonUtils::IsoImageResampleReorient(image, resample, reorient);
@@ -248,10 +252,12 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
             successful = true;
         } else{
             MITK_INFO << "[...] Problem casting node data to image";
-        }
+        }//_if
+
     } else{
         MITK_INFO << "[...] Problem with node";
-    }
+    }//_if
+
     return successful;
 }
 
@@ -427,7 +433,7 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
         if (pointData->GetNumberOfComponents() == 1) {
 
             cartoFile << "SCALARS scalars float\n";
-            cartoFile << "LOOKUP_TABLE default\n";
+            cartoFile << "LOOKUP_TABLE lookup_table\n";
             for (int i=0; i<pointData->GetNumberOfTuples(); i++) {
                 double value = static_cast<double>(pointData->GetTuple1(i));
                 value = (value - min) / (max - min);
@@ -442,7 +448,7 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
             for (int i=0; pointData->GetNumberOfComponents(); i++) {
 
                 cartoFile << "SCALARS " << "scalars" << i << " float\n";
-                cartoFile << "LOOKUP_TABLE default\n";
+                cartoFile << "LOOKUP_TABLE lookup_table\n";
                 for (int j=0; j<pointData->GetNumberOfTuples(); j++)
                     cartoFile << pointData->GetTuple(j)[i] << " ";
                 cartoFile << "\n";
@@ -454,9 +460,9 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
     MITK_INFO << "Storing lookup table, min/max scalar values: " << min << " " << max;
 
     cartoFile << "LOOKUP_TABLE lookup_table 3\n";
-    cartoFile << "0.0 0.0 1.0 1.0" << "\n";
-    cartoFile << "1.0 1.0 1.0 1.0" << "\n";
-    cartoFile << "0.0 1.0 0.0 1.0" << "\n";
+    cartoFile << "11.0 55.0 65.0 1.0"    << "\n";
+    cartoFile << "241.0 122.0 33.0 1.0"  << "\n";
+    cartoFile << "231.0 29.0 37.0 1.0"   << "\n";
     cartoFile.close();
 }
 
