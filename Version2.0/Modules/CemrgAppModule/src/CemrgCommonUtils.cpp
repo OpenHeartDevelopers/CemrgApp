@@ -57,6 +57,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCutter.h>
 #include <vtkCamera.h>
 #include <vtkTransformPolyDataFilter.h>
+#include <vtkColorTransferFunction.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -459,10 +460,22 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
 
     MITK_INFO << "Storing lookup table, min/max scalar values: " << min << " " << max;
 
-    cartoFile << "LOOKUP_TABLE lookup_table 3\n";
-    cartoFile << "11.0 55.0 65.0 1.0"    << "\n";
-    cartoFile << "241.0 122.0 33.0 1.0"  << "\n";
-    cartoFile << "231.0 29.0 37.0 1.0"   << "\n";
+    //LUT
+    int numCols = 256;
+    cartoFile << "LOOKUP_TABLE lookup_table " << numCols << "\n";
+    vtkSmartPointer<vtkColorTransferFunction> lut = vtkSmartPointer<vtkColorTransferFunction>::New();
+    lut->SetColorSpaceToRGB();
+    lut->AddRGBPoint(0.0, 0.04, 0.21, 0.25);
+    lut->AddRGBPoint(numCols/2.0, 0.94, 0.47, 0.12);
+    lut->AddRGBPoint(numCols-1.0, 0.90, 0.11, 0.14);
+    lut->SetScaleToLinear();
+    for (int i=0; i<numCols; i++) {
+        cartoFile << lut->GetColor(i)[0] << " ";
+        cartoFile << lut->GetColor(i)[1] << " ";
+        cartoFile << lut->GetColor(i)[2] << " ";
+        cartoFile << "1.0" <<"\n";
+    }//_for
+
     cartoFile.close();
 }
 
