@@ -17,6 +17,11 @@ Instructions
 ------------
 Refer to Wiki pages at https://github.com/CemrgAppDevelopers/CemrgApp/wiki
 
+Citation
+--------
+Please cite the following article, if you use CemrgApp in your project:
+Razeghi O, Solís-Lemus J, Lee A et al. CemrgApp: An interactive medical imaging application with image processing, computer vision, and machine learning toolkits for cardiovascular research. SoftwareX. 2020;12:100570. doi:10.1016/j.softx.2020.100570
+
 Contacts
 --------
 - http://www.cemrgapp.com/
