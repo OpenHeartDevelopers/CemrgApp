@@ -75,7 +75,7 @@
       <string/>
      </property>
      <property name="placeholderText">
-      <string>Smooth (default = 0)</string>
+      <string>Smooth (default = 10)</string>
      </property>
     </widget>
    </item>

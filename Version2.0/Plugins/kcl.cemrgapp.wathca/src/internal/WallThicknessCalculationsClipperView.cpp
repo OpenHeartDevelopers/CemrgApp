@@ -213,7 +213,7 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
                 if (!ok1) iter = 1;
                 if (!ok2) th   = 0.5;
                 if (!ok3) blur = 0;
-                if (!ok4) smth = 0;
+                if (!ok4) smth = 10;
                 if (!ok5) ds   = 0.99;
                 //_if
 
