@@ -533,7 +533,6 @@ void AtrialScarView::AutomaticAnalysis() {
             MITK_INFO << ("[...][3.1] Saved file: "+segCleanPath).toStdString();
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][4] Vein clipping mesh";
-            cmd->ExecuteTouch(direct+mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk");
             QString output1 = cmd->ExecuteSurf(direct, segCleanPath, "close", 1, .5, 0, 10);
             mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
             vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();

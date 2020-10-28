@@ -102,6 +102,7 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, QString morp
     mitk::ProgressBar::GetInstance()->Progress();
     if (QString::compare(closeOutputPath, "ERROR_IN_PROCESSING")!=0) {
 
+        ExecuteTouch(dir + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk");
         surfOutputPath = ExecuteExtractSurface(dir, closeOutputPath, "segmentation.vtk", th, blur);
         mitk::ProgressBar::GetInstance()->Progress();
 
