@@ -573,7 +573,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 if (!ok2) th   = 0.5;
                 if (!ok3) blur = 0;
                 if (!ok4) smth = 10;
-                if (!ok5) ds   = 0.99;
+                if (!ok5) ds   = 0.9;
                 //_if
 
                 this->BusyCursorOn();
@@ -602,7 +602,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 smoother1->BoundarySmoothingOff();
                 smoother1->FeatureEdgeSmoothingOff();
                 smoother1->SetFeatureAngle(120.0);
-                smoother1->SetPassBand(.01);
+                smoother1->SetPassBand(.1);
                 smoother1->NonManifoldSmoothingOn();
                 smoother1->NormalizeCoordinatesOn();
                 smoother1->Update();
@@ -646,7 +646,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 smoother2->BoundarySmoothingOff();
                 smoother2->FeatureEdgeSmoothingOff();
                 smoother2->SetFeatureAngle(120.0);
-                smoother2->SetPassBand(.01);
+                smoother2->SetPassBand(.1);
                 smoother2->NonManifoldSmoothingOn();
                 smoother2->NormalizeCoordinatesOn();
                 smoother2->Update();

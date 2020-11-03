@@ -60,7 +60,7 @@ public:
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
     static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
-    static void ConvertToCarto(std::string vtkPath);
+    static void ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
 
     //Tracking Utils
@@ -68,7 +68,7 @@ public:
 
     //Generic
     static mitk::DataNode::Pointer AddToStorage(
-            mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds);
+            mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init=true);
 
 private:
 

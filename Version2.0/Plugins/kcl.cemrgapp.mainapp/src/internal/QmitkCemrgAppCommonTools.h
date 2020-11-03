@@ -31,6 +31,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
+#include "ui_QmitkCemrgAppCartoExport.h"
 #include "ui_QmitkCemrgAppCommonToolsControls.h"
 
 /**
@@ -49,6 +50,14 @@ public:
 
     static const std::string VIEW_ID;
 
+protected slots:
+
+    /// \brief Called when the user clicks the GUI button
+    void LoadMesh();
+    void ConvertToCarto();
+    void ConvertToCartoUIUpdate();
+    void ConvertToCartoUITextUpdate();
+
 protected:
 
     virtual void CreateQtPartControl(QWidget *parent) override;
@@ -57,11 +66,7 @@ protected:
             berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
     Ui::QmitkCemrgAppCommonToolsControls m_Controls;
-
-    /// \brief Called when the user clicks the GUI button
-    void LoadMesh();
-    void ConvertToCarto();
-
+    Ui::QmitkCemrgAppCartoExport m_CartoUIThresholding;
 };
 
 #endif // QmitkCemrgAppCommonTools_h

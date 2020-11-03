@@ -368,7 +368,8 @@ QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename
     }
 }
 
-void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
+void CemrgCommonUtils::ConvertToCarto(
+        std::string vtkPath, std::vector<double> thresholds, double meanBP, double stdvBP, int methodType, bool discreteScheme) {
 
     //Read vtk from the file
     vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
@@ -377,7 +378,8 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
     vtkSmartPointer<vtkPolyData> pd = reader->GetOutput();
 
     //Output path
-    std::string outputPath = vtkPath.substr(0, vtkPath.size()-4);
+    QString qoutputPath = QString::fromStdString(vtkPath);
+    std::string outputPath = qoutputPath.left(qoutputPath.lastIndexOf(QChar('.'))).toStdString();
     outputPath = outputPath + "-carto.vtk";
 
     //File
@@ -436,12 +438,30 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
             cartoFile << "SCALARS scalars float\n";
             cartoFile << "LOOKUP_TABLE lookup_table\n";
             for (int i=0; i<pointData->GetNumberOfTuples(); i++) {
+
+                //Get scalar raw value
                 double value = static_cast<double>(pointData->GetTuple1(i));
-                value = (value - min) / (max - min);
+
+                //Colouring
+                if (discreteScheme) {
+                    if (methodType == 1) {
+                        if (value < (meanBP * thresholds.at(0))) value = 0.0;
+                        else if (thresholds.size() == 2 && value < (meanBP * thresholds.at(1))) value = 0.5;
+                        else value = 1.0;
+                    } else {
+                        if (value < (meanBP + thresholds.at(0)*stdvBP)) value = 0.0;
+                        else if (thresholds.size() == 2 && value < (meanBP + thresholds.at(1)*stdvBP)) value = 0.5;
+                        else value = 1.0;
+                    }//_if
+                } else {
+                    value = (value - min) / (max - min);
+                }//_if
+
                 std::stringstream stream;
                 stream << std::fixed << std::setprecision(2) << value;
                 cartoFile << stream.str() << "\n";
-            }
+
+            }//_for
             cartoFile << "\n";
 
         } else {
@@ -454,20 +474,20 @@ void CemrgCommonUtils::ConvertToCarto(std::string vtkPath) {
                     cartoFile << pointData->GetTuple(j)[i] << " ";
                 cartoFile << "\n";
 
-            }
-        }
+            }//_for
+        }//_if
     }//_point_data
 
     MITK_INFO << "Storing lookup table, min/max scalar values: " << min << " " << max;
 
     //LUT
-    int numCols = 256;
+    int numCols = discreteScheme ? 3 : 256;
     cartoFile << "LOOKUP_TABLE lookup_table " << numCols << "\n";
     vtkSmartPointer<vtkColorTransferFunction> lut = vtkSmartPointer<vtkColorTransferFunction>::New();
     lut->SetColorSpaceToRGB();
     lut->AddRGBPoint(0.0, 0.04, 0.21, 0.25);
-    lut->AddRGBPoint(numCols/2.0, 0.94, 0.47, 0.12);
-    lut->AddRGBPoint(numCols-1.0, 0.90, 0.11, 0.14);
+    lut->AddRGBPoint((numCols-1.0)/2.0, 0.94, 0.47, 0.12);
+    lut->AddRGBPoint((numCols-1.0), 0.90, 0.11, 0.14);
     lut->SetScaleToLinear();
     for (int i=0; i<numCols; i++) {
         cartoFile << lut->GetColor(i)[0] << " ";
@@ -599,15 +619,19 @@ void CemrgCommonUtils::CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd
 }
 
 mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(
-        mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds) {
+        mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init) {
 
-    if (!data) return mitk::DataNode::New();
+    if (!data)
+        return mitk::DataNode::New();
 
+    //DS node creation
     mitk::DataNode::Pointer node = mitk::DataNode::New();
     node->SetData(data);
     node->SetName(nodeName);
     ds->Add(node);
 
-    mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(ds);
+    if (init)
+        mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(ds);
+
     return node;
 }
