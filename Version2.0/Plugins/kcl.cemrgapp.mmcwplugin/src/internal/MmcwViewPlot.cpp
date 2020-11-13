@@ -627,7 +627,7 @@ void MmcwViewPlot::WritePlotToCSV(QString dir) {
 
         bool ok;
         QString fileName = "Plot.csv";
-        if (m_Controls.comboBox->currentText().startsWith("S"))
+        if (m_Controls.comboBox->currentText().startsWith("A"))
             fileName = "SQZ.csv";
         else if (m_Controls.comboBox->currentText().startsWith("C"))
             fileName = "CRC.csv";
