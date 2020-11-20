@@ -1139,7 +1139,17 @@ void CemrgCommandLine::ExecuteTouch(QString filepath) {
     QStringList arguments;
     commandName = "touch"; // touch filepath
     arguments << filepath;
-    ExecuteCommand(commandName, arguments, filepath);
+
+    completion = false;
+    process->start(executableName, arguments);
+
+    bool processStarted = CheckForStartedProcess();
+    while (!completion) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    }
+
+    MITK_INFO(!processStarted) << "[ATTENTION] TOUCH Process never started.";
 #endif
 }
 
@@ -1148,8 +1158,21 @@ bool CemrgCommandLine::IsOutputSuccessful(QString outputFullPath) {
     MITK_INFO << "[ATTENTION] Checking for successful output on path:";
     MITK_INFO << outputFullPath.toStdString();
     QFileInfo finfo(outputFullPath);
-    bool res = finfo.exists();
-    MITK_INFO << (res ? "Successful output" : "Output file not found.");
+    bool fileExists = finfo.exists();
+    bool fileSizeTest = false;
+    bool res = false;
+
+    MITK_INFO << (fileExists ? "File exists." : "Output file not found.");
+    if(fileExists){
+        fileSizeTest = finfo.size() > 0;
+        if (fileSizeTest){
+            MITK_INFO << ("File size: " + QString::number(finfo.size())).toStdString();
+            res = true;
+        } else{
+            MITK_INFO << "File empty. Output unsuccessful";
+        }
+    }
+
     return res;
 }
 
@@ -1175,6 +1198,9 @@ std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList argu
 bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList arguments, QString outputPath) {
 
     MITK_INFO << PrintFullCommand(executableName, arguments);
+
+    MITK_INFO << ("[ExecuteCommand] Creating empty file at output:" + outputPath).toStdString();
+    ExecuteTouch(outputPath);
 
     completion = false;
     process->start(executableName, arguments);
