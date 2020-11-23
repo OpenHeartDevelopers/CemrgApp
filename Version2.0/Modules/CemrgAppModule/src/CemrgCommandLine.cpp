@@ -1135,8 +1135,9 @@ bool CemrgCommandLine::CheckForStartedProcess() {
 void CemrgCommandLine::ExecuteTouch(QString filepath) {
 
 #ifdef _WIN32
-    MITK_INFO << "[ATTENTION] touch command only necessary on macOS systems. Step ignored.";
+    MITK_INFO << "[ATTENTION] touch command is not necessary on Windows systems. Step ignored.";
 #else
+
     QString commandName;
     QStringList arguments;
     commandName = "touch"; // touch filepath
@@ -1144,14 +1145,13 @@ void CemrgCommandLine::ExecuteTouch(QString filepath) {
 
     completion = false;
     process->start(commandName, arguments);
-
     bool processStarted = CheckForStartedProcess();
     while (!completion) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     }
-
     MITK_INFO(!processStarted) << "[ATTENTION] TOUCH Process never started.";
+
 #endif
 }
 
@@ -1163,20 +1163,21 @@ bool CemrgCommandLine::IsOutputSuccessful(QString outputFullPath) {
     QFileInfo finfo(outputFullPath);
     bool fileExists = finfo.exists();
     bool fileSizeTest = false;
-    bool res = false;
+    bool result = false;
 
     MITK_INFO << (fileExists ? "File exists." : "Output file not found.");
-    if(fileExists){
+
+    if (fileExists) {
         fileSizeTest = finfo.size() > 0;
-        if (fileSizeTest){
+        if (fileSizeTest) {
             MITK_INFO << ("File size: " + QString::number(finfo.size())).toStdString();
-            res = true;
-        } else{
+            result = true;
+        } else {
             MITK_INFO << "File empty. Output unsuccessful";
         }
-    }
+    }//_if
 
-    return res;
+    return result;
 }
 
 std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList arguments) {
@@ -1217,15 +1218,6 @@ bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList argume
 
     if (processStarted)
         successful = IsOutputSuccessful(outputPath);
-#ifdef _WIN32
-    MITK_INFO << "[ATTENTION] command not necessary on Windows systems. Step ignored.";
-#else
-    if (successful) {
-        QFile(outputPath).copy(outputPath + "copy");
-        QFile(outputPath).remove();
-        QFile(outputPath + "copy").rename(outputPath);
-    }//_if
-#endif
 
     return successful;
 }
