@@ -49,7 +49,7 @@ public:
 
     CemrgAtriaClipper(QString directory, mitk::Surface::Pointer surface);
 
-    bool ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip);
+    bool ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool autoLines);
     bool ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels);
     void ClipVeinsMesh(std::vector<int> pickedSeedLabels);
     void ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::Image::Pointer segImage, bool morphAnalysis);
@@ -62,16 +62,9 @@ public:
     inline std::vector<vtkSmartPointer<vtkRegularPolygonSource>> GetCentreLinePolyPlanes() const{return centreLinePolyPlanes;};
     inline std::vector<std::vector<double>> GetMClipperAngles(){return normalPlAngles;};
     inline std::vector<int> GetManualType() const{return manuals;};
-
     inline void SetToAutomaticClipperMode(int clippersIndex){manuals[clippersIndex] = 0;};
     inline void SetRadiusAdjustment(double value){radiusAdj = value;};
-
-    // getter for orientation boolean - add to plugin (view)
     inline bool GetCentreLinesOrientation(){return ctrlnOrientation;};
-    inline bool IsManualCentrelines(){return manualCtrLnOrient;};
-    inline void ManualCentreLineOrientation(bool clo){ctrlnOrientation=clo; manualCtrLnOrient = true;};
-    inline void SetManualCentreLineOrientationOn(){ManualCentreLineOrientation(true);};
-    inline void SetManualCentreLineOrientationOff(){ManualCentreLineOrientation(false);};
 
     void SetMClipperAngles(double* value, int clippersIndex);
     void SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutterSeeds, int clippersIndex);
@@ -82,6 +75,7 @@ private:
     void VTKWriter(vtkSmartPointer<vtkPolyData> PD, QString path);
 
     QString directory;
+    bool ctrlnOrientation;
     mitk::Surface::Pointer surface;
     mitk::Surface::Pointer clippedSurface;
     mitk::Image::Pointer clippedSegImage;
@@ -96,10 +90,6 @@ private:
     double criterion = 0.025; //Ostium if slope higher than highslope and above bump criterion
     double clSpacing = 2.000; //Resample the centerline with this spacing
     double radiusAdj = 2.000; //Adjustment for cutter planes radii
-
-    //Centrelines variables
-    bool ctrlnOrientation;
-    bool manualCtrLnOrient = false;
 
     //Cutters properties
     std::vector<int> manuals; //Cutter's tilt manual or automatic

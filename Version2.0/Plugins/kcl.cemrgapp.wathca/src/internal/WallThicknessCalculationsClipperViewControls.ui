@@ -99,7 +99,7 @@ background-color: yellow;</string>
      <item>
       <widget class="QCheckBox" name="checkBox">
        <property name="text">
-        <string>Flip Lines</string>
+        <string>Auto Lines</string>
        </property>
        <property name="checked">
         <bool>true</bool>
@@ -113,9 +113,9 @@ background-color: yellow;</string>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-    <class>QVTKOpenGLWidget</class>
-    <extends>QWidget</extends>
-    <header>QVTKOpenGLWidget.h</header>
+   <class>QVTKOpenGLWidget</class>
+   <extends>QWidget</extends>
+   <header>QVTKOpenGLWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

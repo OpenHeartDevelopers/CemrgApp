@@ -99,7 +99,10 @@ background-color: yellow;</string>
      <item>
       <widget class="QCheckBox" name="checkBox">
        <property name="text">
-        <string>Flip Lines</string>
+        <string>Auto Lines</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

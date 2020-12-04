@@ -299,7 +299,6 @@ void WallThicknessCalculationsClipperView::CtrLines() {
             pickedSeedLabels.push_back(lb->GetValue(0));
         }//_for
         bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, m_Controls.checkBox->isChecked());
-        m_Controls.checkBox->setChecked(clipper->GetCentreLinesOrientation());
         this->BusyCursorOff();
 
         //Check for failure

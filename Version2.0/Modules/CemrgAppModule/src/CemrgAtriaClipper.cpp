@@ -81,10 +81,10 @@ CemrgAtriaClipper::CemrgAtriaClipper(QString directory, mitk::Surface::Pointer s
     this->surface = surface;
     this->clippedSurface = surface;
     this->clippedSegImage = mitk::Image::New();
-    ctrlnOrientation = false;
+    this->ctrlnOrientation = false;
 }
 
-bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool flip) {
+bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSmartPointer<vtkIdList> pickedSeedIds, bool autoLines) {
 
     try {
 
@@ -103,7 +103,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
         prodFile2.close();
         ofstream prodFile3;
         prodFile3.open((prodPath + "prodLineFlip.txt").toStdString());
-        prodFile3 << flip << "\n";
+        prodFile3 << autoLines << "\n";
         prodFile3.close();
 
         if (centreLines.size() == 0) {
@@ -117,10 +117,8 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
             inletSeedIds->InsertNextId(centreOfMassId);
             MITK_INFO << "Number of pickedSeedLabels: ";
             MITK_INFO << pickedSeedLabels.size();
-            MITK_INFO(manualCtrLnOrient) << "Centre lines orientation set manually.";
-            MITK_INFO(!manualCtrLnOrient) << "Centre lines orientation set automatically.";
-
-            bool orientFlip = manualCtrLnOrient ? flip : ctrlnOrientation;
+            MITK_INFO(!autoLines) << "Centre lines orientation set manually.";
+            MITK_INFO(autoLines)  << "Centre lines orientation set automatically.";
 
             for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
 
@@ -132,7 +130,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
                 centreLineFilter->SetTargetSeedIds(outletSeedIds);
                 centreLineFilter->SetRadiusArrayName("MaximumInscribedSphereRadius");
                 centreLineFilter->SetCostFunction("1/R");
-                centreLineFilter->SetFlipNormals(orientFlip);
+                centreLineFilter->SetFlipNormals(autoLines ? ctrlnOrientation : !ctrlnOrientation);
                 centreLineFilter->SetAppendEndPointsToCenterlines(0);
                 centreLineFilter->SetSimplifyVoronoi(0);
                 centreLineFilter->SetCenterlineResampling(1);

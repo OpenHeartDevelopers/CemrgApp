@@ -387,6 +387,7 @@ void WallThicknessCalculationsView::SegmentIMGS() {
         //Restore image name
         QFileInfo fullPathInfo(path);
         fileName = fullPathInfo.fileName();
+        directory = fullPathInfo.dir().absolutePath();
 
     } else {
         //Show the plugin

@@ -270,7 +270,6 @@ void AtrialScarClipperView::CtrLines() {
             pickedSeedLabels.push_back(lb->GetValue(0));
         }//_for
         bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, m_Controls.checkBox->isChecked());
-        m_Controls.checkBox->setChecked(clipper->GetCentreLinesOrientation());
         this->BusyCursorOff();
 
         //Check for failure
@@ -278,7 +277,6 @@ void AtrialScarClipperView::CtrLines() {
             QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
             return;
         }//_if
-
     }//_if
 
     //Set surface opacity
