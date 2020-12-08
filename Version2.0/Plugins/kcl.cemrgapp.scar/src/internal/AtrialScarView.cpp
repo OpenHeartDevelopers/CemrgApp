@@ -643,7 +643,7 @@ void AtrialScarView::AutomaticAnalysis() {
             MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
 
             std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(direct, shell));
-            bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, false);
+            bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, true);
             if (!successful) {
                 QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
                 return;
