@@ -3,6 +3,7 @@ option(BUILD_CEMRG_FIXSHELL "Build fixing shell values command line app. " ON)
 option(BUILD_CEMRG_CLIPPINGTOOL "Build clipping valve command line app. " ON)
 option(BUILD_CEMRG_PROJECTLGE "Build lge projection command line app. " ON)
 option(BUILD_CEMRG_IM2INR "Build image to inr command line app. " ON)
+option(BUILD_CEMRG_COLOURSURF "Build colour surface command line app. " ON)
 option(BUILD_CEMRG_VENTRICLE_SEGMENTATION_RELABEL "Build ventricle segmentation relabelling command line app" ON)
 
 if(BUILD_CemrgCMDApps)
@@ -42,6 +43,14 @@ if(BUILD_CEMRG_IM2INR)
     NAME CemrgIM2INR
     DEPENDS MitkCemrgAppModule
     CPP_FILES CemrgIM2INR.cpp
+  )
+endif()
+
+if(BUILD_CEMRG_COLOURSURF)
+  mitkFunctionCreateCommandLineApp(
+    NAME CemrgColourSurface
+    DEPENDS MitkCemrgAppModule
+    CPP_FILES CemrgColourSurface.cpp
   )
 endif()
 
