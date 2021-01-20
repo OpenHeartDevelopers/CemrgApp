@@ -29,7 +29,8 @@ in the framework.
 #include <mitkITKImageImport.h>
 #include <mitkCommandLineParser.h>
 #include <mitkImagePixelReadAccessor.h>
-#include <mitkImageToSurfaceFilter.h>
+// #include <mitkImageToSurfaceFilter.h>
+#include "mitkManualSegmentationToSurfaceFilter.h"
 
 // VTK
 #include <vtkImplicitBoolean.h>
@@ -88,7 +89,6 @@ typedef itk::Image<uint8_t,3> ImageType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
 typedef itk::BinaryDilateImageFilter<ImageType, ImageType, StrElType> ImFilterType;
-typedef itk::AddImageFilter<ImageType, ImageType, ImageType> ImAddType;
 typedef itk::ImageRegionIterator<ImageType> IteratorType;
 
 typedef itk::ConnectedComponentImageFilter<ImageType, ImageType> ConnectedComponentImageFilterType;
@@ -263,16 +263,35 @@ int main(int argc, char* argv[]) {
                 OutputImage(segImage, path, "4_RelabelledVeins.nii");
 
                 MITK_INFO(verbose) << "Extract surface";
-                mitk::ImageToSurfaceFilter::Pointer im2surf = mitk::ImageToSurfaceFilter::New();
+                double th   = 0.5;
+                double bl   = 0.8;
+                double smth = 3;
+                double ds   = 0.5;
+
                 mitk::Image::Pointer veinsRelabeledImg = mitk::Image::New();
                 mitk::CastToMitkImage(segImage, veinsRelabeledImg);
+                auto im2surf = mitk::ManualSegmentationToSurfaceFilter::New();
+
                 im2surf->SetInput(veinsRelabeledImg);
-                im2surf->SetThreshold(0.5);
-                im2surf->SmoothOn();
-                im2surf->SetSmoothIteration(10);
-                im2surf->SetDecimate(mitk::ImageToSurfaceFilter::DecimatePro);
-                im2surf->SetTargetReduction(0.1);
-                im2surf->Update();
+                im2surf->SetThreshold(th);
+                im2surf->SetUseGaussianImageSmooth(true);
+                im2surf->SetSmooth(true);
+                im2surf->SetMedianFilter3D(true);
+                im2surf->InterpolationOn();
+                im2surf->SetGaussianStandardDeviation(bl);
+                im2surf->SetMedianKernelSize(smth, smth, smth);
+                im2surf->SetDecimate(mitk::ImageToSurfaceFilter::QuadricDecimation);
+                im2surf->SetTargetReduction(ds);
+                im2surf->UpdateLargestPossibleRegion();
+
+                // mitk::ImageToSurfaceFilter::Pointer im2surf = mitk::ImageToSurfaceFilter::New();
+                // im2surf->SetInput(veinsRelabeledImg);
+                // im2surf->SetThreshold(0.5);
+                // im2surf->SmoothOn();
+                // im2surf->SetSmoothIteration(10);
+                // im2surf->SetDecimate(mitk::ImageToSurfaceFilter::DecimatePro);
+                // im2surf->SetTargetReduction(0.1);
+                // im2surf->Update();
 
                 mitk::Surface::Pointer shell = im2surf->GetOutput();
                 // shell->SetVtkPolyData(im2surf->GetOutput());
@@ -281,8 +300,6 @@ int main(int argc, char* argv[]) {
                 MITK_INFO(verbose) << "Add scalars into surface";
                 scar->SetScarSegImage(veinsRelabeledImg);
                 mitk::Surface::Pointer scarShell = scar->Scar3D(dir.toStdString(), veinsRelabeledImg);
-
-                // clip mitral valve
 
                 MITK_INFO(verbose) << ("Saving output shell to " + outputPath).toStdString();
                 mitk::IOUtil::Save(scarShell, outputPath.toStdString());

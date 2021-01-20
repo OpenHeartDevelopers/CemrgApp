@@ -36,6 +36,7 @@ if(MITK_BUILD_APP_CemrgApp)
     kcl.cemrgapp.mainapp
     kcl.cemrgapp.easi
     kcl.cemrgapp.powertrans
+    kcl.cemrgapp.atrialfibres
     kcl.cemrgapp.mmcwplugin
     kcl.cemrgapp.mmeasurement
     kcl.cemrgapp.scar
