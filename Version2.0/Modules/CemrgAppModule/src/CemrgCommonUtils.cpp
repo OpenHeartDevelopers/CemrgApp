@@ -67,6 +67,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkITKImageImport.h>
 #include <mitkIOUtil.h>
 #include <mitkDataStorage.h>
+#include <mitkImagePixelReadAccessor.h>
+#include <mitkImageToSurfaceFilter.h>
+#include <mitkManualSegmentationToSurfaceFilter.h>
 #include <mitkRenderingManager.h>
 
 //Qt
@@ -302,6 +305,43 @@ mitk::Surface::Pointer CemrgCommonUtils::LoadVTKMesh(std::string path) {
     } catch (...) {
         return mitk::Surface::New();
     }//_catch
+}
+
+mitk::Surface::Pointer CemrgCommonUtils::ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh, double blur, double smooth, double decimation){
+    auto im2surf = mitk::ManualSegmentationToSurfaceFilter::New();
+
+    im2surf->SetInput(image);
+    im2surf->SetThreshold(thresh);
+    im2surf->SetUseGaussianImageSmooth(true);
+    im2surf->SetSmooth(true);
+    im2surf->SetMedianFilter3D(true);
+    im2surf->InterpolationOn();
+    im2surf->SetGaussianStandardDeviation(blur);
+    im2surf->SetMedianKernelSize(smooth, smooth, smooth);
+    im2surf->SetDecimate(mitk::ImageToSurfaceFilter::QuadricDecimation);
+    im2surf->SetTargetReduction(decimation);
+    im2surf->UpdateLargestPossibleRegion();
+
+    mitk::Surface::Pointer shell = im2surf->GetOutput();
+    return shell;
+}
+
+void CemrgCommonUtils::FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname){
+
+    //Prepare points for MITK visualisation - (CemrgCommonUtils::LoadVTKMesh)
+    vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
+    for (int ix=0; ix<pd->GetNumberOfPoints(); ix++) {
+        double* point = pd->GetPoint(ix);
+        point[0] = -point[0];
+        point[1] = -point[1];
+        pd->GetPoints()->SetPoint(ix, point);
+    }
+
+    if(!vtkname.isEmpty()){
+        vtkname += (!vtkname.contains(".vtk")) ? ".vtk" : "";
+        QString path = dir + mitk::IOUtil::GetDirectorySeparator()+vtkname;
+        mitk::IOUtil::Save(surf, path.toStdString());
+    }
 }
 
 QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc) {
