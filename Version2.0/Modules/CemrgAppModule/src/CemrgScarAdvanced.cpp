@@ -643,7 +643,7 @@ void CemrgScarAdvanced::getCorridorPoints(
     this->_corridoridarray = pointIDsInCorridor;
 }
 
-void CemrgScarAdvanced::CorridorFromPointList(std::vector<int> points) {
+void CemrgScarAdvanced::CorridorFromPointList(std::vector<int> points, bool circleToStart) {
 
     vtkSmartPointer<vtkPolyData> poly_data = vtkSmartPointer<vtkPolyData>::New();
     poly_data = this->GetSourcePolyData();
@@ -654,8 +654,9 @@ void CemrgScarAdvanced::CorridorFromPointList(std::vector<int> points) {
         vtkSmartPointer<vtkDijkstraGraphGeodesicPath> dijkstra = vtkSmartPointer<vtkDijkstraGraphGeodesicPath>::New();
         dijkstra->SetInputData(poly_data);
 
-        if (this->IsWeighted())
+        if (this->IsWeighted()){
             dijkstra->UseScalarWeightsOn();
+        }
 
         dijkstra->Update();
 
@@ -663,7 +664,7 @@ void CemrgScarAdvanced::CorridorFromPointList(std::vector<int> points) {
             dijkstra->SetStartVertex(this->_pointidarray[i]);
             dijkstra->SetEndVertex(this->_pointidarray[i+1]);
         }
-        else {
+        else if(circleToStart){
             dijkstra->SetStartVertex(this->_pointidarray[i]);
             dijkstra->SetEndVertex(this->_pointidarray[0]);
         }

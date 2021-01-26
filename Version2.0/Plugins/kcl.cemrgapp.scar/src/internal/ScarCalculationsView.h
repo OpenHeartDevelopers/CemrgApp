@@ -110,6 +110,9 @@ private:
     void Visualiser();
     void BinVisualiser();
     void PickCallBack();
+
+    void InitialisePickerObjects();
+
     static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
     static QStringList CheckForAdvancedDirectoryFiles();
 

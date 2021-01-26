@@ -198,7 +198,7 @@ public:
     void GetNeighboursAroundPoint2(int pointID, std::vector<std::pair<int, int>>& pointNeighbourAndOrder, int max_order);
     void getCorridorPoints(std::vector<vtkSmartPointer<vtkDijkstraGraphGeodesicPath>> allShortestPaths);
     bool InsertPointIntoVisitedList2(vtkIdType id, int order);
-    void CorridorFromPointList(std::vector<int> points);
+    void CorridorFromPointList(std::vector<int> points, bool circleToStart=true);
 
     // F&I T3
     void SetSourceAndTarget(vtkSmartPointer<vtkPolyData> sc, vtkSmartPointer<vtkPolyData> tg);
