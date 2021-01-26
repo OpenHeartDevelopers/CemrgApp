@@ -768,3 +768,59 @@ void StrainsTests() {
         //qDebug() << "Difference in %:" << (areaR*100.0)/areaM;
     }
 }
+
+void curvesCalculator() {
+
+    for (int i=0; i<10; i++) {
+
+        QString directory = "/home/or15/Work/Strain/LR/case0" + QString::number(i);
+        mitk::DataNode::Pointer lmNode = mitk::IOUtil::Load<mitk::DataNode>((directory + "/PointSet.mps").toStdString());
+
+        int segRatios[3] = {40, 40, 20};
+        std::unique_ptr<CemrgStrains> strain;
+        strain = std::unique_ptr<CemrgStrains>(new CemrgStrains(directory, 0));
+        strain->ReferenceAHA(lmNode, segRatios, false);
+        std::vector<std::vector<double>> plotValueVectorsSQZ;
+        std::vector<std::vector<double>> plotValueVectorsCRC;
+        std::vector<std::vector<double>> plotValueVectorsLNG;
+
+        for (int j=0; j<10; j++) {
+            plotValueVectorsSQZ.push_back(strain->CalculateSqzPlot(j));
+            plotValueVectorsCRC.push_back(strain->CalculateStrainsPlot(j, lmNode, 3));
+            plotValueVectorsLNG.push_back(strain->CalculateStrainsPlot(j, lmNode, 4));
+        }
+
+        for (int j=0; j<3; j++) {
+
+            QString fileName;
+            std::vector<std::vector<double>> plotValueVectors;
+            if (j==0) {
+                fileName = "SQZ.csv";
+                plotValueVectors = plotValueVectorsSQZ;
+            } else if (j==1) {
+                fileName = "CRC.csv";
+                plotValueVectors = plotValueVectorsCRC;
+            } else {
+                fileName = "LNG.csv";
+                plotValueVectors = plotValueVectorsLNG;
+            }//_if
+            ofstream file;
+            file.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+
+            std::vector<double> values;
+            for (int s=0; s<16; s++) {
+                for (int f=0; f<10; f++)
+                    values.push_back(plotValueVectors[f][s]);
+                //Append the curve to the file
+                for (size_t z=0; z<values.size(); z++) {
+                    file << values.at(z);
+                    if (z == values.size()-1) file << endl;
+                    else file << ",";
+                }
+                values.clear();
+            }//_for
+            file.close();
+        }
+        qDebug() << "CASE" << i << "done!";
+    }
+}
