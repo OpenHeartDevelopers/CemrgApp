@@ -88,6 +88,8 @@ private:
     void ManualCutterCallBack();
     static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
 
+    void InitialisePickerObjects();
+
     static QString fileName;
     static QString directory;
     static bool isAutomatic;

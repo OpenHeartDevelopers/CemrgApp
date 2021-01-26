@@ -137,14 +137,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     //Initialisation
     iniPreSurf();
     if (surface.IsNotNull()) {
-        pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-        pickedSeedIds->Initialize();
-        pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-        pickedLineSeeds->Initialize();
-        pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-        pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-        pickedCutterSeeds->Initialize();
-        pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+        InitialisePickerObjects();
         clipper = std::unique_ptr<CemrgAtriaClipper>(new CemrgAtriaClipper(directory, surface));
         Visualiser();
     }
@@ -817,14 +810,7 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
             self->renderer->RemoveAllViewProps();
             self->clipperActors.clear();
             self->pickedSeedLabels.clear();
-            self->pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-            self->pickedSeedIds->Initialize();
-            self->pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-            self->pickedLineSeeds->Initialize();
-            self->pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-            self->pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-            self->pickedCutterSeeds->Initialize();
-            self->pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+            self->InitialisePickerObjects();
             self->Visualiser();
 
             //Reset clipper
@@ -866,4 +852,16 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
 
         }//_if
     }//_if_main
+}
+
+// helper functions
+void AtrialFibresClipperView::InitialisePickerObjects(){
+    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
+    pickedSeedIds->Initialize();
+    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
+    pickedLineSeeds->Initialize();
+    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
+    pickedCutterSeeds->Initialize();
+    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
 }

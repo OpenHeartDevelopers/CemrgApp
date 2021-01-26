@@ -125,8 +125,11 @@
    </item>
    <item>
     <widget class="QPushButton" name="button_6_mvclipper">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
      <property name="text">
-      <string>Step6: Clip Mitral Valve</string>
+      <string>    Step6: Clip Mitral Valve</string>
      </property>
     </widget>
    </item>
