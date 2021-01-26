@@ -101,17 +101,12 @@ public:
     std::string _prefix;
     std::string _leftrightpre;
 
-    double fandi1_largestSurfaceArea;
-    double fandi1_scarScore;
-    double fandi2_percentage;
-    double fandi2_largestSurfaceArea;
-    double fandi2_corridorSurfaceArea;
-    int fandi2_connectedAreasTotal;
-    double fandi3_preSurfacePercentage;
-    double fandi3_postSurfacePercentage;
-    double fandi3_preScarScore;
-    double fandi3_postScarScore;
-    std::string fandi1_fname, fandi2_fname, fandi3_fname;
+    double fi1_largestSurfaceArea, fi1_scarScore;
+    double fi2_percentage, fi2_largestSurfaceArea, fi2_corridorSurfaceArea;
+    int fi2_connectedAreasTotal;
+    double fi3_preScarScoreSimple, fi3_postScarScoreSimple;
+    double fi3_totalPoints, fi3_emptyPoints, fi3_healthy, fi3_preScar, fi3_postScar, fi3_overlapScar;
+    std::string fi1_fname, fi2_fname, fi3_fname;
 
     std::vector<std::pair<int, int> > _visited_point_list; // stores the neighbours around a point
     std::vector<vtkSmartPointer<vtkPolyData> > _paths; // container to store shortest paths between points
@@ -133,8 +128,8 @@ public:
     inline bool IsDebug(){return _debugScarAdvanced;};
 
     inline bool IsWeighted() {return _weightedcorridor;};
-    inline bool PreScoresExist(){return (fandi3_preSurfacePercentage>=0 && fandi3_preScarScore>=0);};
-    inline bool PostScoresExist(){return (fandi3_postSurfacePercentage>=0 && fandi3_postScarScore>=0);};
+    inline bool PreScoresExist(){return (fi3_preScarScoreSimple>=0);};
+    inline bool PostScoresExist(){return (fi3_postScarScoreSimple>=0);};
     inline int GetThresholdValue(){return _fill_threshold;};
     inline vtkSmartPointer<vtkPolyData> GetSourcePolyData(){return _SourcePolyData;};
 
@@ -158,14 +153,14 @@ public:
     inline void SetLeftRightPrefix(std::string lrpre){_leftrightpre = lrpre;};
     inline void SetOutputPrefix(std::string prefixname){_prefix = _leftrightpre + prefixname;};
 
-    inline void SetSurfaceAreaFilename(std::string fn1){fandi1_fname = fn1;};
-    inline void SetGapsFilename(std::string fn2){fandi2_fname = fn2;};
-    inline void SetComparisonFilename(std::string fn3){fandi3_fname = fn3;};
+    inline void SetSurfaceAreaFilename(std::string fn1){fi1_fname = fn1;};
+    inline void SetGapsFilename(std::string fn2){fi2_fname = fn2;};
+    inline void SetComparisonFilename(std::string fn3){fi3_fname = fn3;};
 
     inline std::string GetOutputPath(){return _outPath;};
-    inline std::string GetSurfaceAreaFilename(){return fandi1_fname;};
-    inline std::string GetGapsFilename(){return fandi2_fname;};
-    inline std::string GetComparisonFilename(){return fandi3_fname;};
+    inline std::string GetSurfaceAreaFilename(){return fi1_fname;};
+    inline std::string GetGapsFilename(){return fi2_fname;};
+    inline std::string GetComparisonFilename(){return fi3_fname;};
     inline std::string GetPrefix() {return (_leftrightpre + _prefix);};
     inline std::string PathAndPrefix() {return (GetOutputPath()+ GetPrefix());};
 
@@ -184,7 +179,7 @@ public:
     std::string PrintAblationGapsResults(double mean, double stdv, double val);
     std::string PrintThresholdResults(double mean, double stdv, double val);
     std::string PrintScarOverlapResults(double valpre, double valpost);
-    std::string num2str(double num, int precision);
+    std::string num2str(double num, int precision=2);
 
     // F&I T1
     //void GetSurfaceAreaFromThreshold();

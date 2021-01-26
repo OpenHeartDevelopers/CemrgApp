@@ -77,15 +77,19 @@ CemrgScarAdvanced::CemrgScarAdvanced() {
     _fill_threshold = 0.5;
     _max_scalar = -1;
     _run_count = 0;
-    fandi1_largestSurfaceArea=-1;
-    fandi2_percentage=-1;
-    fandi2_largestSurfaceArea=-1;
-    fandi2_corridorSurfaceArea=-1;
-    fandi2_connectedAreasTotal=-1;
-    fandi3_preSurfacePercentage=-1;
-    fandi3_postSurfacePercentage=-1;
-    fandi3_preScarScore=-1;
-    fandi3_postScarScore=-1;
+    fi1_largestSurfaceArea=-1;
+    fi2_percentage=-1;
+    fi2_largestSurfaceArea=-1;
+    fi2_corridorSurfaceArea=-1;
+    fi2_connectedAreasTotal=-1;
+    fi3_preScarScoreSimple=-1;
+    fi3_postScarScoreSimple=-1;
+    fi3_totalPoints=-1;
+    fi3_emptyPoints=-1;
+    fi3_healthy = -1;
+    fi3_preScar = -1;
+    fi3_postScar = -1;
+    fi3_overlapScar = -1;
     _debugScarAdvanced = false;
 }
 
@@ -158,12 +162,34 @@ std::string CemrgScarAdvanced::ScarOverlap(
     temp->DeepCopy(prepd);
 
     int valueassigned = 0;
+    fi3_totalPoints = (double) prepd->GetNumberOfPoints();
+    fi3_emptyPoints=0.0;
+    fi3_healthy=0.0;
+    fi3_preScar=0.0;
+    fi3_postScar=0.0;
+    fi3_overlapScar=0.0;
     for (int i=0;i<prepd->GetNumberOfPoints();i++) {
-        if (scalars_pre->GetTuple1(i)>=prethresh)
-            valueassigned +=1;
+        if(scalars_post->GetTuple1(i)==0){ // Veins were clipped here, no value
+            valueassigned=-1;
+            fi3_emptyPoints++;
+        } else{
+            if (scalars_pre->GetTuple1(i)>=prethresh){
+                valueassigned +=1;
+            }
+            if (scalars_post->GetTuple1(i)>=postthresh){
+                valueassigned +=2;
+            }
 
-        if (scalars_post->GetTuple1(i)>=postthresh)
-            valueassigned +=2;
+            if(valueassigned==0){
+                fi3_healthy++;
+            } else if(valueassigned==1){
+                fi3_preScar++;
+            } else if(valueassigned==2){
+                fi3_postScar++;
+            } else if(valueassigned==3){
+                fi3_overlapScar++;
+            }
+        }
 
         exploration_values->InsertNextTuple1(valueassigned);
         valueassigned = 0;
@@ -205,8 +231,8 @@ std::string CemrgScarAdvanced::PrintThresholdResults(double mean, double stdv, d
             "\t STDev: " + num2str(stdv, 2) +
             "\n\n Value chosen: " + num2str(val,1) + "\n"
             "Threshold value: " + num2str(this->_fill_threshold,2) + "\n\n" +
-            "Surface Area of Ablation: " + num2str(this->fandi1_largestSurfaceArea,2) + " mm^2 \n" +
-            "Scar Score: " + num2str(this->fandi1_scarScore,2) + "%";
+            "Surface Area of Ablation: " + num2str(this->fi1_largestSurfaceArea,2) + " mm^2 \n" +
+            "Scar Score: " + num2str(this->fi1_scarScore,2) + "%";
 
     SaveStrToFile(GetOutputPath(), _prefix + "_"+ GetSurfaceAreaFilename(), out);
 
@@ -220,10 +246,10 @@ std::string CemrgScarAdvanced::PrintAblationGapsResults(double mean, double stdv
             "\t STDev: " + num2str(stdv, 2) +
             "\n\n Value chosen: " + num2str(val,1) + "\n"
             "Threshold value: " + num2str(this->_fill_threshold,2) + "\n\n" +
-            "Num connected sections: " + num2str(this->fandi2_connectedAreasTotal,0) + "\n" +
-            "Percentage of scar in corridor : " + num2str(this->fandi2_percentage,2) + "%\t\n" +
-            "Largest thresholded area in corridor: " + num2str(this->fandi2_largestSurfaceArea,0) + "mm^2 \n" +
-            "Area of corridor: " + num2str(this->fandi2_corridorSurfaceArea,0) + " mm^2 \n" ;
+            "Num connected sections: " + num2str(this->fi2_connectedAreasTotal,0) + "\n" +
+            "Percentage of scar in corridor : " + num2str(this->fi2_percentage,2) + "%\t\n" +
+            "Largest thresholded area in corridor: " + num2str(this->fi2_largestSurfaceArea,0) + "mm^2 \n" +
+            "Area of corridor: " + num2str(this->fi2_corridorSurfaceArea,0) + " mm^2 \n" ;
     std::string strisweighted = (_weightedcorridor) ? "Weighted path" : "Geodesic";
     out = out + "\nShortest path calculation: " + strisweighted + "\n";
 
@@ -233,24 +259,31 @@ std::string CemrgScarAdvanced::PrintAblationGapsResults(double mean, double stdv
 }
 std::string CemrgScarAdvanced::PrintScarOverlapResults(double valpre, double valpost) {
 
-    double ros = this->fandi3_preScarScore / this->fandi3_postScarScore;
-    std::string out = "RESULTS:\n\n Scar Score in PRE-ablation: ";
+    std::string out = "RESULTS:\n\n Simple Scar Score in PRE-ablation: ";
     if (valpre != valpost) {
-        out += num2str(this->fandi3_preScarScore,2) + "% \t(" +
+        out += num2str(this->fi3_preScarScoreSimple,2) + "% \t(" +
                 "Threshold value: " + num2str(valpre,1) + ")\n" +
-                "Scar Score in POST-ablation: " +
-                num2str(this->fandi3_postScarScore,2) + "% \t(" +
+                "Simple Scar Score in POST-ablation: " +
+                num2str(this->fi3_postScarScoreSimple,2) + "% \t(" +
                 "Threshold value: " + num2str(valpost,1) + ")\n\n";
     } else {
-        out += num2str(this->fandi3_preScarScore,2) + "% \n" +
-                "Scar Score in POST-ablation: " +
-                num2str(this->fandi3_postScarScore,2) + "% \n " +
+        out += num2str(this->fi3_preScarScoreSimple,2) + "% \n" +
+                "Simple Scar Score in POST-ablation: " +
+                num2str(this->fi3_postScarScoreSimple,2) + "% \n " +
                 "(Both at threshold value: " + num2str(valpre,1) +")" + "\n\n";
     }
-    out += "Percentage of PRE scar in POST scar: " + num2str(ros*100,3) + "%\n";
 
+    double total = fi3_totalPoints - fi3_emptyPoints;
+    if(total>0){
+        out += "\nOVERLAP RESULTS:\n\nHEALTHY %  : " +
+        num2str(100*(fi3_healthy/total)) +
+        "\nPRE-SCAR % : " + num2str(100*(fi3_preScar/total)) +
+        "\nPOST-SCAR %: " + num2str(100*(fi3_postScar/total)) +
+        "\nOVERLAP %  : " + num2str(100*(fi3_overlapScar/total));
+    } else{
+        MITK_WARN << ("Points: " + QString::number(total)).toStdString();
+    }
     SaveStrToFile(GetOutputPath(), GetComparisonFilename(), out);
-
     return out;
 }
 
@@ -290,12 +323,8 @@ void CemrgScarAdvanced::GetSurfaceAreaFromThreshold(double thres, double maxscal
     MITK_INFO << "MASS PROPERTIES (threshold):";
     MITK_INFO << mp->GetSurfaceArea();
 
-    this->fandi1_largestSurfaceArea = mp->GetSurfaceArea();
+    this->fi1_largestSurfaceArea = mp->GetSurfaceArea();
 
-    if (QString::fromStdString(_prefix).compare("pre", Qt::CaseInsensitive)==0)
-        this->fandi3_preSurfacePercentage = mp->GetSurfaceArea();
-    else
-        this->fandi3_postSurfacePercentage = mp->GetSurfaceArea();
 }
 
 void CemrgScarAdvanced::ScarScore(double thres) {
@@ -315,14 +344,14 @@ void CemrgScarAdvanced::ScarScore(double thres) {
     }
     double percentage = (ctr2*100.0) / (scalars->GetNumberOfTuples() - ctr1);
 
-    fandi1_scarScore = percentage;
+    fi1_scarScore = percentage;
 
     if (QString::fromStdString(_prefix).compare("pre", Qt::CaseInsensitive)==0) {
-        this->fandi3_preScarScore = percentage;
+        this->fi3_preScarScoreSimple = percentage;
         MITK_INFO << "PRE SCAR SCORE (" + _prefix + "): " + num2str(percentage,2);
     }
     else {
-        this->fandi3_postScarScore = percentage;
+        this->fi3_postScarScoreSimple = percentage;
         MITK_INFO << "POST SCAR SCORE (" + _prefix + "): " + num2str(percentage,2);
     }
 }
@@ -464,7 +493,7 @@ void CemrgScarAdvanced::ExtractCorridorData(
     MITK_INFO << connectivityFilter->GetNumberOfExtractedRegions();
     connectivityFilter->SetExtractionModeToLargestRegion();
     connectivityFilter->Update();
-    fandi2_connectedAreasTotal = connectivityFilter->GetNumberOfExtractedRegions();
+    fi2_connectedAreasTotal = connectivityFilter->GetNumberOfExtractedRegions();
 
     vtkSmartPointer<vtkPolyDataConnectivityFilter> cf =
             vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
@@ -490,13 +519,13 @@ void CemrgScarAdvanced::ExtractCorridorData(
     mp->SetInputConnection(cf->GetOutputPort());
     MITK_INFO << "SURFACE AREA IN CORRIDOR (threshold):";
     MITK_INFO << mp->GetSurfaceArea();
-    fandi2_largestSurfaceArea = mp->GetSurfaceArea();
+    fi2_largestSurfaceArea = mp->GetSurfaceArea();
 
     vtkSmartPointer<vtkMassProperties> mp2 = vtkSmartPointer<vtkMassProperties>::New();
     mp2->SetInputConnection(cf2->GetOutputPort());
     MITK_INFO << "SURFACE AREA IN CORRIDOR (full):";
     MITK_INFO << mp2->GetSurfaceArea();
-    fandi2_corridorSurfaceArea = mp2->GetSurfaceArea();
+    fi2_corridorSurfaceArea = mp2->GetSurfaceArea();
 
     vtkSmartPointer<vtkPolyDataWriter> writercf =
             vtkSmartPointer<vtkPolyDataWriter>::New();
@@ -524,7 +553,7 @@ void CemrgScarAdvanced::NeighbourhoodFillingPercentage(std::vector<int> points) 
     }
 
     double percentage_in_neighbourhood =  100*(fillingcounter/total);
-    this->fandi2_percentage = percentage_in_neighbourhood;
+    this->fi2_percentage = percentage_in_neighbourhood;
     MITK_INFO << ("[INFO] % scar in this neighbourhood = "
         + QString::number(percentage_in_neighbourhood) + ", threshold satisfy? "
         + (percentage_in_neighbourhood > _neighbourhood_size ? "Yes":"No")).toStdString();
