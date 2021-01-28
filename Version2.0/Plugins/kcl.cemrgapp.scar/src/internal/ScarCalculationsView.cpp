@@ -272,14 +272,7 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
 
     if (surface.IsNotNull()) {
         QString prodPathOut = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
-        pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-        pickedSeedIds->Initialize();
-        pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-        pickedLineSeeds->Initialize();
-        pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-        pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-        pickedCutterSeeds->Initialize();
-        pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+        InitialisePickerObjects();
 
         csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
         outprefix = "pre";
@@ -414,8 +407,6 @@ void ScarCalculationsView::KeyCallBackFunc(
         for (int i=0; i<points->GetNumberOfPoints()-1; i++)
             newPoints->InsertNextPoint(points->GetPoint(i));
         self->pickedLineSeeds->SetPoints(newPoints);
-        if (self->pickedSeedLabels.empty() == false)
-            self->pickedSeedLabels.pop_back();
         self->m_Controls.widget_1->GetRenderWindow()->Render();
 
     } else if (key == "r" || key == "R") {
@@ -423,15 +414,7 @@ void ScarCalculationsView::KeyCallBackFunc(
         //Clear renderer
         self->renderer->RemoveAllViewProps();
         self->dijkstraActors.clear();
-        self->pickedSeedLabels.clear();
-        self->pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-        self->pickedSeedIds->Initialize();
-        self->pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-        self->pickedLineSeeds->Initialize();
-        self->pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-        self->pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-        self->pickedCutterSeeds->Initialize();
-        self->pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+        self->InitialisePickerObjects();
 
         self->csadv->ResetValues();
         self->Visualiser();
@@ -443,7 +426,7 @@ void ScarCalculationsView::KeyCallBackFunc(
 void ScarCalculationsView::BinVisualiser() {
 
     MITK_INFO << "Binary Visualiser";
-    double max_scalar=-1, min_scalar=1e9, s;
+    double max_scalar=-2, min_scalar=0, s;
     int numlabels=2;
     vtkIntArray *scalars = vtkIntArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -457,7 +440,7 @@ void ScarCalculationsView::BinVisualiser() {
             min_scalar = s;
     }
     if (max_scalar==3){
-        numlabels = 4;
+        numlabels = 5;
     }
 
     vtkSmartPointer<vtkPolyDataMapper> surfMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -467,7 +450,7 @@ void ScarCalculationsView::BinVisualiser() {
     surfMapper->ScalarVisibilityOn();
     lut->SetNumberOfTableValues(numlabels);
     lut->SetTableRange(min_scalar, max_scalar);
-    lut->SetHueRange(0.6, 0.0);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
+    lut->SetHueRange(0.8, 0.0);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
     lut->Build();     // this is important
 
     vtkSmartPointer<vtkScalarBarActor> scalarBar =
@@ -610,15 +593,7 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
     //Clear renderer
     renderer->RemoveAllViewProps();
     dijkstraActors.clear();
-    pickedSeedLabels.clear();
-    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-    pickedSeedIds->Initialize();
-    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedLineSeeds->Initialize();
-    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedCutterSeeds->Initialize();
-    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    InitialisePickerObjects();
 
     csadv->ResetValues();
     csadv->SetFillThreshold(thres);
@@ -662,15 +637,7 @@ void ScarCalculationsView::EditThreshold() {
     //Clear renderer
     renderer->RemoveAllViewProps();
     dijkstraActors.clear();
-    pickedSeedLabels.clear();
-    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-    pickedSeedIds->Initialize();
-    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedLineSeeds->Initialize();
-    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedCutterSeeds->Initialize();
-    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    InitialisePickerObjects();
 
     csadv->ResetValues();
     BinVisualiser();
@@ -705,15 +672,7 @@ void ScarCalculationsView::SetNewThreshold(const QString& text) {
     //Clear renderer
     renderer->RemoveAllViewProps();
     dijkstraActors.clear();
-    pickedSeedLabels.clear();
-    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-    pickedSeedIds->Initialize();
-    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedLineSeeds->Initialize();
-    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedCutterSeeds->Initialize();
-    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    InitialisePickerObjects();
 
     csadv->ResetValues();
     BinVisualiser();
@@ -762,15 +721,7 @@ void ScarCalculationsView::SaveNewThreshold() {
     //Clear renderer
     renderer->RemoveAllViewProps();
     dijkstraActors.clear();
-    pickedSeedLabels.clear();
-    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-    pickedSeedIds->Initialize();
-    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedLineSeeds->Initialize();
-    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedCutterSeeds->Initialize();
-    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    InitialisePickerObjects();
 
     csadv->ResetValues();
     csadv->SetFillThreshold(thres);
@@ -830,15 +781,7 @@ void ScarCalculationsView::CancelThresholdEdit() {
     //Clear renderer
     renderer->RemoveAllViewProps();
     dijkstraActors.clear();
-    pickedSeedLabels.clear();
-    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-    pickedSeedIds->Initialize();
-    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedLineSeeds->Initialize();
-    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedCutterSeeds->Initialize();
-    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    InitialisePickerObjects();
 
     csadv->ResetValues();
     csadv->SetFillThreshold(thres);
@@ -1005,15 +948,7 @@ void ScarCalculationsView::GapMeasurementVisualisation(const QString& text) {
             //Clear renderer
             renderer->RemoveAllViewProps();
             dijkstraActors.clear();
-            pickedSeedLabels.clear();
-            pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-            pickedSeedIds->Initialize();
-            pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-            pickedLineSeeds->Initialize();
-            pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-            pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-            pickedCutterSeeds->Initialize();
-            pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+            InitialisePickerObjects();
 
             csadv->ResetValues();
             BinVisualiser();
@@ -1051,6 +986,7 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     QString preShellPath = outpath + "MaxScarPre.vtk";
     QString preThresPath = outpath + "prodThresholdsPre.txt";
     mitk::Surface::Pointer shellpre = mitk::IOUtil::Load<mitk::Surface>(preShellPath.toStdString());
+    double prethresh, postthresh;
 
     GetThresholdValuesFromFile(preThresPath);
     valpre = value;
@@ -1058,6 +994,7 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     csadv->SetOutputPrefix("pre");
     csadv->GetSurfaceAreaFromThreshold(thres, maxScalar);
     csadv->ScarScore(thres);
+    prethresh = thres;
 
     QString postThresPath = outpath + "prodThresholdsPost.txt";
     mitk::Surface::Pointer shellpost = mitk::IOUtil::Load<mitk::Surface>(outScarMap.toStdString());
@@ -1068,13 +1005,18 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     csadv->SetOutputPrefix("post");
     csadv->GetSurfaceAreaFromThreshold(thres, maxScalar);
     csadv->ScarScore(thres);
+    postthresh = thres;
 
     this->CopyScalarValues();
-    if (m_Controls.comboBox->findText("PRE (TRANSFORMED)", Qt::MatchExactly)==-1)
+    if (m_Controls.comboBox->findText("PRE (TRANSFORMED)", Qt::MatchExactly)==-1){
         m_Controls.comboBox->addItem("PRE (TRANSFORMED)");
+    }
 
-    QMessageBox::warning(NULL, "F&I T3 - FINISHED CALCULATION",
-                         (csadv->PrintScarOverlapResults(valpre, valpost)).c_str());
+    // build ScarOverlap.vtk
+    QString preMap = outpath + "MaxScarPre_OnPost.vtk";
+    mitk::Surface::Pointer presh = mitk::IOUtil::Load<mitk::Surface>(preMap.toStdString());
+    std::string overlapShellPath = csadv->ScarOverlap(presh->GetVtkPolyData(), prethresh, shellpost->GetVtkPolyData(), postthresh);
+    QMessageBox::warning(NULL, "F&I T3 - FINISHED CALCULATION", (csadv->PrintScarOverlapResults(valpre, valpost)).c_str());
     // back to normal
     this->CtrlPrePostSelection(current);
     m_Controls.fandi_t3_visualise->setEnabled(true);
@@ -1108,15 +1050,7 @@ void ScarCalculationsView::BeforeAndAfterCompVisualisation() {
     //Clear renderer
     renderer->RemoveAllViewProps();
     dijkstraActors.clear();
-    pickedSeedLabels.clear();
-    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-    pickedSeedIds->Initialize();
-    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedLineSeeds->Initialize();
-    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
-    pickedCutterSeeds->Initialize();
-    pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    InitialisePickerObjects();
 
     csadv->ResetValues();
     BinVisualiser();
@@ -1225,4 +1159,12 @@ void ScarCalculationsView::CopyScalarValues() {
     MITK_INFO << "[ATTENTION] Copying scalar values from MaxScarPre into MaxScarPost_Aligned";
     csadv->SetSourceAndTarget(_source->GetVtkPolyData(), _target->GetVtkPolyData());
     csadv->TransformSource2Target();
+}
+
+void ScarCalculationsView::InitialisePickerObjects(){
+    pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
+    pickedSeedIds->Initialize();
+    pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
+    pickedLineSeeds->Initialize();
+    pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
 }
