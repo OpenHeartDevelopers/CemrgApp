@@ -110,15 +110,16 @@ private:
     void Visualiser();
     void BinVisualiser();
     void PickCallBack();
+
+    void InitialisePickerObjects();
+
     static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
     static QStringList CheckForAdvancedDirectoryFiles();
 
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;
-    std::vector<int> pickedSeedLabels;
     vtkSmartPointer<vtkIdList> pickedSeedIds;
     vtkSmartPointer<vtkPolyData> pickedLineSeeds;
-    vtkSmartPointer<vtkPolyData> pickedCutterSeeds;
     std::unique_ptr<CemrgScarAdvanced> csadv;
     std::vector<vtkSmartPointer<vtkActor> > dijkstraActors;
 
