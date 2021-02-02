@@ -29,6 +29,7 @@ PURPOSE.  See the above copyright notices for more information.
 //ITK
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkBSplineInterpolateImageFunction.h>
+#include <itkImageRegionIteratorWithIndex.h>
 #include <itkResampleImageFilter.h>
 #include <itkOrientImageFilter.h>
 
@@ -76,6 +77,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QMessageBox>
 #include <QString>
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include "CemrgCommonUtils.h"
 
@@ -263,6 +265,38 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
     }//_if
 
     return successful;
+}
+
+void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath){
+    QFileInfo fi(pathToImage);
+    if(fi.exists()){
+        using ImageType = itk::Image<double, 3>;
+        using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+        ImageType::Pointer im = ImageType::New();
+        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(pathToImage.toStdString()), im);
+
+        IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+        imIter.GoToBegin();
+        while(!imIter.IsAtEnd()){
+            double pixelValue = imIter.Get();
+            imIter.Set(std::round(pixelValue));
+
+            ++imIter;
+        }
+
+        QString writingPath = (outputPath.isEmpty()) ? pathToImage : outputPath;
+
+        mitk::Image::Pointer outputImg = mitk::Image::New();
+        mitk::CastToMitkImage(im, outputImg);
+
+        MITK_INFO(outputPath.isEmpty()) << ("Overwriting: " + pathToImage).toStdString();
+        mitk::IOUtil::Save(outputImg, writingPath.toStdString());
+
+    } else{
+        MITK_WARN << ("Path: " + pathToImage + " does not exist.").toStdString();
+    }
 }
 
 
