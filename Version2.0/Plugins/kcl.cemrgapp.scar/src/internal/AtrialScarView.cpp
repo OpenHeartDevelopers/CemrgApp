@@ -466,8 +466,12 @@ void AtrialScarView::AutomaticAnalysis() {
 
         timerLog->StartTimer();
         if (cnnPath.isEmpty()) {
+            MITK_INFO << "[AUTOMATIC_ANALYSIS] Computing automatic segmentation step.";
             cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
         }
+
+        MITK_INFO << "Round pixel values from automatic segmentation.";
+        CemrgCommonUtils::RoundPixelValues(cnnPath);
 
         if (!cnnPath.isEmpty()) {
 
@@ -867,20 +871,27 @@ void AtrialScarView::SegmentIMGS() {
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
 
-                    //CNN prediction
+                    MITK_INFO << "CNN prediction";
                     mraPath = directory + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
                     mitk::IOUtil::Save(image, mraPath.toStdString());
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+
                     cmd->SetUseDockerContainers(true);
                     QString cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
+
+                    MITK_INFO << "Round pixel values from automatic segmentation.";
+                    CemrgCommonUtils::RoundPixelValues(cnnPath);
                     mitk::ProgressBar::GetInstance()->Progress();
 
                     //Clean prediction
                     using ImageTypeCHAR = itk::Image<short, 3>;
                     using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR>;
                     using LabelShapeKeepNObjImgFilterType = itk::LabelShapeKeepNObjectsImageFilter<ImageTypeCHAR>;
+
                     ImageTypeCHAR::Pointer orgSegImage = ImageTypeCHAR::New();
                     mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(cnnPath.toStdString()), orgSegImage);
+
+
                     ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
                     connected->SetInput(orgSegImage);
                     connected->Update();
