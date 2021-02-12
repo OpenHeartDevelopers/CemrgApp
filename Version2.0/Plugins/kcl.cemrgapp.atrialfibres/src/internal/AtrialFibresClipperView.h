@@ -35,9 +35,12 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkIdList.h>
 #include <vtkActor.h>
 #include <CemrgAtriaClipper.h>
+#include <CemrgScarAdvanced.h>
+
 #include "ui_AtrialFibresClipperViewControls.h"
 #include "ui_AtrialFibresClipperViewLabels.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
+#include "ui_AtrialFibresClipperViewUIRadius.h"
 
 /**
   \brief AtrialFibresClipperView
@@ -59,14 +62,36 @@ public:
     static void SetDirectoryFile(const QString directory, const QString fileName, const bool isAuto);
     ~AtrialFibresClipperView();
 
+    // helper functions
+    void SetManualModeButtons(bool b);
+    void SetAutomaticModeButtons(bool b);
+
+    // helper functions
+    std::string GetShortcuts();
+    bool IsPointSelectionControlsAvailable();
+    bool IsClipperManualControlsAvailable();
+    void UserSelectPvLabel();
+    void PrintCorridorIds();
+
+    void IgnoreLabel(std::vector<int> ignoredIds);
+    void DiscardUnwantedLabel(std::vector<int> discardedIds);
+
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
+    // Manual Pipeline
     void CtrLines();
     void CtrPlanes();
     void ClipperImage();
+
     void CtrPlanesPlacer();
     void CtrLinesSelector(int);
+
+    // Automatic Pipeline
+    void SaveLabels();
+    void ClipperBalls();
+    void InterPvSpacing();
+
 
 protected:
 
@@ -79,12 +104,15 @@ protected:
     Ui::AtrialFibresClipperViewControls m_Controls;
     Ui::AtrialFibresClipperViewLabels m_Labels;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
+    Ui::AtrialFibresClipperViewUIRadius m_UIRadius;
 
 private:
 
     void iniPreSurf();
     void Visualiser(double opacity=1.0);
-    void PickCallBack();
+    void VisualiseSphere(vtkSmartPointer<vtkPolyData> pd);
+    void SphereSourceVisualiser(vtkSmartPointer<vtkPolyData> pointSources, QString colour="1.0,0.0,0.0", double scaleFactor=0.01);
+    void PickCallBack(bool pvCorridor=false);
     void ManualCutterCallBack();
     static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
 
@@ -94,16 +122,24 @@ private:
     static QString directory;
     static bool isAutomatic;
 
+    bool automaticPipeline;
+
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;
     std::vector<int> pickedSeedLabels;
     vtkSmartPointer<vtkIdList> pickedSeedIds;
     vtkSmartPointer<vtkPolyData> pickedLineSeeds;
     vtkSmartPointer<vtkPolyData> pickedCutterSeeds;
+    vtkSmartPointer<vtkIdList> corridorSeedIds;
+    vtkSmartPointer<vtkPolyData> corridorLineSeeds;
+
     std::unique_ptr<CemrgAtriaClipper> clipper;
+    std::unique_ptr<CemrgScarAdvanced> csadv;
+
     std::vector<vtkSmartPointer<vtkActor>> clipperActors;
     QDialog* inputs;
     double maxScalar, minScalar;
+    int corridorMax, corridorCount;
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkCallbackCommand> callBack;
     vtkSmartPointer<vtkRenderWindowInteractor> interactor;

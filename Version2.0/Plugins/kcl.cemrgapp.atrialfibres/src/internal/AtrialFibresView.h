@@ -52,7 +52,7 @@ PURPOSE.  See the above copyright notices for more information.
   \ingroup ${plugin_target}_internal
 */
 
-typedef itk::Image<uint8_t,3> ImageType;
+typedef itk::Image<uint16_t,3> ImageType;
 
 class AtrialFibresView : public QmitkAbstractView {
 
@@ -67,17 +67,36 @@ public:
 
     inline void SetAutomaticPipeline(bool isAuto){automaticPipeline=isAuto;};
 
+    void AutomaticAnalysis();
+    bool GetUserMeshingInputs();
+
+    // helper
+    void SetManualModeButtons(bool b);
+    void SetAutomaticModeButtons(bool b);
+
+    inline void SetManualModeButtonsOn(){SetManualModeButtons(true);};
+    inline void SetManualModeButtonsOff(){SetManualModeButtons(false);};
+    inline void SetAutomaticModeButtonsOn(){SetAutomaticModeButtons(true);};
+    inline void SetAutomaticModeButtonsOff(){SetAutomaticModeButtons(false);};
+
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
     void LoadDICOM();
     void ProcessIMGS();
     void ConvertNII();
-    // Segmentation to Labelled Mesh pipeline
+    void AnalysisChoice(); // btn3
+    // Automatic Pipeline
+    void SelectLandmarks();
+    // Manual pipeline
     void SegmentIMGS();
+    void IdentifyPV();
     void CreateLabelledMesh();
-    void SelectLandmarks(); // pv clipper
     void ClipperMV();
+    void ClipperPV();
+
+    void MeshFix();
+    
     // Labelled Mesh to UAC
     void MeshingOptions();
     void UacCalculation();
@@ -100,6 +119,7 @@ private:
     QString directory, tagName;
     std::unique_ptr<CemrgAtrialTools> atrium;
     bool automaticPipeline, askedAboutAutoPipeline;
+    double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

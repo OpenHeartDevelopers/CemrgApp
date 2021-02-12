@@ -88,7 +88,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_3_segmentation">
+    <widget class="QPushButton" name="button_3_imanalysis">
      <property name="toolTip">
       <string>Do image processing</string>
      </property>
@@ -96,22 +96,32 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step3: Segment Images</string>
+      <string>   Step3: Image Analysis</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_4_labelmesh">
+    <widget class="QPushButton" name="button_auto4_landmarks">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step4: Create Labelled Mesh</string>
+      <string>   Step4: Select Landmarks</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_5_pvclipper">
+    <widget class="QPushButton" name="button_man4_segmentation">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step4: Segment Image</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_man5_idPV">
      <property name="toolTip">
       <string>Do image processing</string>
      </property>
@@ -119,17 +129,47 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step5: Landmarks Selection</string>
+      <string>   Step5: Identify PVs</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_6_mvclipper">
+    <widget class="QPushButton" name="button_man6_labelmesh">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    Step6: Clip Mitral Valve</string>
+      <string>    Step6: Create Labelled Mesh</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_man7_clipMV">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step7: Clip Mitral Valve</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_man8_clipPV">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step8: Clip PV</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_w_meshfix">
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <property name="text">
+      <string>  Do mesh fixings </string>
      </property>
     </widget>
    </item>
@@ -149,22 +189,31 @@
        <strikeout>false</strikeout>
       </font>
      </property>
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
      <property name="text">
-      <string>StepX: Mesh improvement</string>
+      <string>    StepX: Mesh improvement</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="button_y_calculateUac">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
      <property name="text">
-      <string>StepY: Calculate UAC</string>
+      <string>    StepY: Calculate UAC</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="button_z_refineUac">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
      <property name="text">
-      <string>StepZ: Refine UAC</string>
+      <string>    StepZ: Refine UAC</string>
      </property>
     </widget>
    </item>

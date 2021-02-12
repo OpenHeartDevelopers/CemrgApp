@@ -102,10 +102,15 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_1, SIGNAL(clicked()), this, SLOT(LoadDICOM()));
     connect(m_Controls.button_2, SIGNAL(clicked()), this, SLOT(ProcessIMGS()));
     // Segmentation to Labelled Mesh pipeline
-    connect(m_Controls.button_3_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
-    connect(m_Controls.button_4_labelmesh, SIGNAL(clicked()), this, SLOT(CreateLabelledMesh()));
-    connect(m_Controls.button_5_pvclipper, SIGNAL(clicked()), this, SLOT(SelectLandmarks())); // pv clipper
-    connect(m_Controls.button_6_mvclipper, SIGNAL(clicked()), this, SLOT(ClipperMV()));
+    connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
+    connect(m_Controls.button_auto4_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
+    connect(m_Controls.button_man4_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
+    connect(m_Controls.button_man5_idPV, SIGNAL(clicked()), this, SLOT(IdentifyPV())); // pv clipper
+    connect(m_Controls.button_man6_labelmesh, SIGNAL(clicked()), this, SLOT(CreateLabelledMesh()));
+    connect(m_Controls.button_man7_clipMV, SIGNAL(clicked()), this, SLOT(ClipperMV()));
+    connect(m_Controls.button_man8_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
+    connect(m_Controls.button_w_meshfix, SIGNAL(clicked()), this, SLOT(MeshFix()));
+
     // Labelled Mesh to UAC
     connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
     connect(m_Controls.button_y_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
@@ -115,11 +120,17 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     //Set visibility of buttons
     m_Controls.button_2_1->setVisible(false);
+    m_Controls.button_w_meshfix->setVisible(false);
     connect(m_Controls.button_2_1, SIGNAL(clicked()), this, SLOT(ConvertNII()));
 
     // Set default variables
     tagName = "tag-segmentation";
     askedAboutAutoPipeline = false;
+    atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
+    atrium->SetDebugModeOn();
+
+    SetManualModeButtonsOff();
+    SetAutomaticModeButtonsOff();
 }
 
 void AtrialFibresView::SetFocus() {
@@ -252,8 +263,151 @@ void AtrialFibresView::ConvertNII() {
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
 
+void AtrialFibresView::AnalysisChoice(){
+    int reply1 = QMessageBox::question(NULL, "Question",
+        "Do you want to use the automatic pipeline?", QMessageBox::Yes, QMessageBox::No);
 
-// Segmentation to Labelled Mesh pipeline
+    SetAutomaticPipeline(reply1==QMessageBox::Yes);
+    askedAboutAutoPipeline = true;
+
+    if(reply1==QMessageBox::Yes){
+        MITK_INFO<<"Automatic pipeline";
+        if (!RequestProjectDirectoryFromUser()) return; // checks if the directory has been set
+        SetAutomaticModeButtonsOn();
+
+        int reply = QMessageBox::question(NULL, "Check for previous output!",
+                "Do you want to skip steps 1 to 3?", QMessageBox::Yes, QMessageBox::No);
+        if(reply==QMessageBox::No){
+            MITK_INFO << "Performing Automatic analysis on CemrgNet prediction.";
+            AutomaticAnalysis();
+        } else if(reply==QMessageBox::Yes){
+            MITK_INFO << "Skipping Neural network prediction. Checking for vtk file.";
+            if(!QFile::exists(directory+mitk::IOUtil::GetDirectorySeparator()+tagName+".vtk")){
+                std::string msg = "Labelled mesh not found. Perform Step 3 again.";
+                QMessageBox::warning(NULL, "File not found", msg.c_str());
+                MITK_INFO << msg;
+                return;
+            }
+        }
+    } else{
+        MITK_INFO << "Setting up manual analysis.";
+        SetManualModeButtonsOn();
+    }
+}
+
+// Automatic pipeline
+void AtrialFibresView::AutomaticAnalysis(){
+    if(cnnPath.isEmpty()){
+        int reply = QMessageBox::question(NULL, "Question",
+        "Do you have a previous automatic segmentation?", QMessageBox::Yes, QMessageBox::No);
+
+        if(reply==QMessageBox::Yes){
+            cnnPath = QFileDialog::getOpenFileName(NULL, "Open Automatic Segmentation file",
+            directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+            MITK_INFO << ("Loaded file: " + cnnPath).toStdString();
+        } else{
+            QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+            if (nodes.size() > 1) {
+                QMessageBox::warning(NULL, "Attention",
+                "Please select the CEMRA image from the Data Manager to segment!");
+                return;
+            }
+
+            QString mraPath = directory + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
+            if(nodes.size() == 0){
+                MITK_INFO << "Searching MRA files";
+
+                QString imagePath = QFileDialog::getOpenFileName(NULL, "Open MRA image file",
+                directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+
+                if(!QFile::exists(mraPath)){
+                    if(!QFile::copy(imagePath, mraPath)){
+                        MITK_ERROR << "MRA could not be prepared for automatic segmentation.";
+                        return;
+                    }
+                }
+            } else if(nodes.size() == 1){
+                mitk::BaseData::Pointer data = nodes.at(0)->GetData();
+                bool successfulImageLoading = false;
+                if (data) {
+                    mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
+                    if (image) {
+                        mitk::IOUtil::Save(image, mraPath.toStdString());
+                        successfulImageLoading = true;
+                    }
+                }
+
+                if(!successfulImageLoading){
+                    MITK_ERROR << "MRA image could not be loaded";
+                    return;
+                }
+            }
+
+            MITK_INFO << "[AUTOMATIC_PIPELINE] CemrgNet (auto segmentation)";
+            std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+            cmd->SetUseDockerContainers(true);
+            cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
+            remove(mraPath.toStdString().c_str());
+        }
+    }
+    CemrgCommonUtils::RoundPixelValues(cnnPath);
+    QFileInfo fi(cnnPath);
+    if(directory.compare(fi.absolutePath())==0){
+        MITK_INFO << ("[ATTENTION] Changing working directory to: " + fi.absolutePath());
+        directory = fi.absolutePath();
+    }
+    MITK_INFO << ("Directory: "+ directory + " segmentation name: " + fi.baseName()).toStdString();
+
+    MITK_INFO << "[AUTOMATIC_PIPELINE] Clean Segmentation";
+    ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory, (fi.baseName()+".nii"));
+    cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
+
+    mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
+    mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
+
+    MITK_INFO << "[AUTOMATIC_PIPELINE] Automatic PV labels";
+    ImageType::Pointer tagAtriumAuto = atrium->AssignAutomaticLabels(segImage, directory);
+
+    MITK_INFO << "[AUTOMATIC_PIPELINE] Create Mesh";
+    //Ask for user input to set the parameters
+    bool userInputsAccepted = GetUserMeshingInputs();
+    if(userInputsAccepted){
+        atrium->GetSurfaceWithTags(tagAtriumAuto, directory, tagName+".vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
+
+        MITK_INFO << "[AUTOMATIC_PIPELINE] Add the mesh to storage";
+        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+
+        std::cout << "Path to load: " << path.toStdString() <<'\n';
+        std::cout << "tagName: " << tagName.toStdString() << '\n';
+        mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
+        // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+        // CemrgCommonUtils::FlipXYPlane(surface, "");
+
+        std::string meshName = tagName.toStdString() + "-Mesh";
+        CemrgCommonUtils::AddToStorage(surface, meshName, this->GetDataStorage());
+    }
+
+    MITK_INFO << "[AUTOMATIC_PIPELINE] Clip MV";
+    bool oldDebug = atrium->Debugging();
+    atrium->SetDebugModeOn();
+    atrium->ClipMitralValveAuto(directory, "prodMVI.nii", tagName+".vtk");
+    atrium->SetDebugMode(oldDebug);
+
+}
+
+void AtrialFibresView::SelectLandmarks(){
+    MITK_INFO << "[SelectLandmarks] ";
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+    //Show the plugin
+    this->GetSite()->GetPage()->ResetPerspective();
+    AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", automaticPipeline);
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
+
+    m_Controls.button_w_meshfix->setVisible(true);
+}
+
+// Manual pipeline
 void AtrialFibresView::SegmentIMGS() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
@@ -284,28 +438,20 @@ void AtrialFibresView::SegmentIMGS() {
                 mitk::IOUtil::Save(image, mraPath.toStdString());
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
                 cmd->SetUseDockerContainers(true);
-                cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
+                if(cnnPath.isEmpty()){
+                    cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
+                }
+                CemrgCommonUtils::RoundPixelValues(cnnPath);
                 mitk::ProgressBar::GetInstance()->Progress();
 
                 //Clean prediction
-                ImageType::Pointer orgSegImage = ImageType::New();
-                mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(cnnPath.toStdString()), orgSegImage);
-                ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
-                connected->SetInput(orgSegImage);
-                connected->Update();
-                LabelShapeKeepNObjImgFilterType::Pointer lblShpKpNObjImgFltr = LabelShapeKeepNObjImgFilterType::New();
-                lblShpKpNObjImgFltr->SetInput(connected->GetOutput());
-                lblShpKpNObjImgFltr->SetBackgroundValue(0);
-                lblShpKpNObjImgFltr->SetNumberOfObjects(1);
-                lblShpKpNObjImgFltr->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
-                lblShpKpNObjImgFltr->Update();
-                mitk::Image::Pointer segImage = mitk::Image::New();
-                mitk::CastToMitkImage(lblShpKpNObjImgFltr->GetOutput(), segImage);
+                ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory);
                 cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
-                mitk::IOUtil::Save(segImage, cnnPath.toStdString());
+
+                mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
                 mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
                 remove(mraPath.toStdString().c_str());
-                fileName = "LA.nii";
+
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -319,14 +465,15 @@ void AtrialFibresView::SegmentIMGS() {
 
         if (replyLoad == QMessageBox::Yes) {
             QString path = QFileDialog::getOpenFileName(NULL, "Open Segmentation file",
-                                                        directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+                            directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+
             if (path.isEmpty()) return;
+
             mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
             mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 
             //Restore image name
             QFileInfo fullPathInfo(path);
-            fileName = fullPathInfo.fileName();
         } else {
             //Show segmentation plugin
             this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentation");
@@ -334,55 +481,103 @@ void AtrialFibresView::SegmentIMGS() {
     }//_if_q_automatic
 }
 
-void AtrialFibresView::CreateLabelledMesh(){
-    if(cnnPath.isEmpty()){
-        if (!RequestProjectDirectoryFromUser()) return; // checks if the directory has been set
+void AtrialFibresView::IdentifyPV(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    QString path =  directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
 
-        QString cnnPath = QFileDialog::getOpenFileName(NULL, "Open Automatic Segmentation file",
-                        directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+    if(!QFileInfo::exists(path)){
+        // Select segmentation from data manager
+        QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+        if (nodes.size() != 1) {
+            QMessageBox::warning(NULL, "Attention",
+                "Please select the loaded or created segmentation to create a surface!");
+            return;
+        }
 
-        QFileInfo fi(cnnPath);
-        if(directory.compare(fi.absolutePath())==0){
-            MITK_INFO << ("[ATTENTION] Changing working directory to: " + fi.absolutePath());
-            directory = fi.absolutePath();
+        //Find the selected node
+        mitk::DataNode::Pointer segNode = nodes.at(0);
+        mitk::BaseData::Pointer data = segNode->GetData();
+        if (data) {
+            mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
+            if (image) {
+
+                MITK_INFO << "Mesh and save as 'segmentation.vtk'";
+                ImageType::Pointer segImage = ImageType::New();
+                mitk::CastToItkImage(image, segImage);
+                bool userInputsAccepted = GetUserMeshingInputs();
+                if(userInputsAccepted){
+                    atrium->GetSurfaceWithTags(segImage, directory, "segmentation.vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
+
+                    //Add the mesh to storage
+                    std::string meshName = segNode->GetName() + "-Mesh";
+                    CemrgCommonUtils::AddToStorage(
+                        CemrgCommonUtils::LoadVTKMesh(path.toStdString()), meshName, this->GetDataStorage());
+                }
+            }
         }
     }
 
-    atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());;
-    atrium->SetDebugModeOn();
-    atrium->SetWorkingDirectory(directory);
-    ImageType::Pointer tagAtrium = atrium->CleanAutomaticSegmentation(directory);
-    ImageType::Pointer tagAtriumAuto = atrium->AssignAutomaticLabels(tagAtrium, directory);
-
-    double th=0.5;
-    double bl=1;
-    double smth=3;
-    double ds=0.5;
-    atrium->GetSurfaceWithTags(tagAtriumAuto, directory, tagName+".vtk", th, bl, smth, ds);
-}
-
-// pv clipper
-void AtrialFibresView::SelectLandmarks(){
-    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
-
-    //Show the plugin
+    MITK_INFO << "Loading org.mitk.views.atrialfibresclipperview";
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", automaticPipeline);
+    AtrialFibresClipperView::SetDirectoryFile(directory, "segmentation.vtk", automaticPipeline);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
 }
 
-// mv clipper
-void AtrialFibresView::ClipperMV(){
-    MITK_INFO << "Clipping Mitral Valve";
-    if(automaticPipeline){
-        bool oldDebug = atrium->Debugging();
-        atrium->SetDebugModeOn();
-        atrium->ClipMitralValveAuto(directory, "prodMVI.nii", tagName+".vtk");
-        atrium->SetDebugMode(oldDebug);
-    } else{
+void AtrialFibresView::CreateLabelledMesh(){
 
-    }
 }
+
+void AtrialFibresView::ClipperMV(){
+
+}
+
+void AtrialFibresView::ClipperPV(){
+
+}
+
+bool AtrialFibresView::GetUserMeshingInputs(){
+    QDialog* inputs = new QDialog(0,0);
+    bool userInputAccepted=false;
+    m_UIMeshing.setupUi(inputs);
+    connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+
+        bool ok1, ok2, ok3, ok4;
+        uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
+        uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
+        uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
+        uiMesh_ds= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
+
+        //Set default values
+        if (!ok1 || !ok2 || !ok3 || !ok4)
+            QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
+        if (!ok1) uiMesh_th=0.5;
+        if (!ok2) uiMesh_bl=1.0;
+        if (!ok3) uiMesh_smth=3;
+        if (!ok4) uiMesh_ds=0.5;
+
+        inputs->deleteLater();
+        userInputAccepted=true;
+
+    } else if (dialogCode == QDialog::Rejected) {
+        inputs->close();
+        inputs->deleteLater();
+    }//_if
+
+    return userInputAccepted;
+}
+
+void AtrialFibresView::MeshFix(){
+    // prodDiscardSeedIds.txt - get labels, threshold tag-segmentation.nii
+    // prodIgnoredIds.txt - get labels on shell and change to BODY label.
+    // prodSeedsIds.txt - change labels to corresponding RS, RI, LS, LI, LAA
+    // prodSeedsIds.txt + prodRadii.txt
+}
+
 
 // Labelled Mesh to UAC
 void AtrialFibresView::MeshingOptions(){
@@ -460,6 +655,8 @@ void AtrialFibresView::Reset() {
     this->GetSite()->GetPage()->ResetPerspective();
 }
 
+
+
 // helper functions
 bool AtrialFibresView::RequestProjectDirectoryFromUser() {
 
@@ -469,10 +666,12 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
     if (directory.isEmpty()) {
 
         MITK_INFO << "Directory is empty. Requesting user for directory.";
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+        directory = QFileDialog::getExistingDirectory( NULL, "Open Project Directory",
+            mitk::IOUtil::GetProgramPath().c_str(),QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+
         MITK_INFO << ("Directory selected:" + directory).toStdString();
+        atrium->SetWorkingDirectory(directory);
+
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             MITK_WARN << "Please select a project directory with no spaces in the path!";
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
@@ -484,13 +683,19 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
         MITK_INFO << ("Project directory already set: " + directory).toStdString();
     }//_if
 
-    if(!askedAboutAutoPipeline){
-        int reply1 = QMessageBox::question(NULL, "Question",
-        "Automatic Pipeline?",
-        QMessageBox::Yes, QMessageBox::No);
-        SetAutomaticPipeline(reply1==QMessageBox::Yes);
-        askedAboutAutoPipeline = true;
-    }
-
     return succesfulAssignment;
+}
+
+void AtrialFibresView::SetManualModeButtons(bool b){
+    //Set visibility of buttons
+    m_Controls.button_man4_segmentation->setVisible(b);
+    m_Controls.button_man5_idPV->setVisible(b);
+    m_Controls.button_man6_labelmesh->setVisible(b);
+    m_Controls.button_man7_clipMV->setVisible(b);
+    m_Controls.button_man8_clipPV->setVisible(b);
+}
+
+
+void AtrialFibresView::SetAutomaticModeButtons(bool b){
+    m_Controls.button_auto4_landmarks->setVisible(b);
 }

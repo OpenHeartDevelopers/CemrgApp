@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AtrialFibresViewUIMeshing</class>
- <widget class="QWidget" name="AtrialFibresViewUIMeshing">
+ <class>AtrialFibresClipperViewUIRadius</class>
+ <widget class="QWidget" name="AtrialFibresClipperViewUIRadius">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -46,26 +46,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEdit_1">
-     <property name="placeholderText">
-      <string>Threshold (default = 0.5)</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="lineEdit_2">
-     <property name="placeholderText">
-      <string>Blur (default = 1.0)</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="lineEdit_3">
+    <widget class="QLabel" name="label">
      <property name="text">
-      <string/>
-     </property>
-     <property name="placeholderText">
-      <string>Smooth (default = 3)</string>
+      <string>Choose an appropriate radius for the PV clipper.
+
+ Default = 9
+ Common ranges 8-12</string>
      </property>
     </widget>
    </item>

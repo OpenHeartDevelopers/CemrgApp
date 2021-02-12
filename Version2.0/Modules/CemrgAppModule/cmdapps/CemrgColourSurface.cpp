@@ -85,7 +85,7 @@ in the framework.
 #include <algorithm>
 #include <string>
 
-typedef itk::Image<uint8_t,3> ImageType;
+typedef itk::Image<uint16_t,3> ImageType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
 typedef itk::BinaryDilateImageFilter<ImageType, ImageType, StrElType> ImFilterType;
@@ -94,7 +94,7 @@ typedef itk::ImageRegionIterator<ImageType> IteratorType;
 typedef itk::ConnectedComponentImageFilter<ImageType, ImageType> ConnectedComponentImageFilterType;
 typedef itk::LabelShapeKeepNObjectsImageFilter<ImageType> LabelShapeKeepNObjImgFilterType;
 
-ThresholdType::Pointer thresholdImage(ImageType::Pointer input, uint8_t thresholdVal, QString debugOutput, bool debugging);
+ThresholdType::Pointer thresholdImage(ImageType::Pointer input, uint16_t thresholdVal, QString debugOutput, bool debugging);
 void OutputImage(ImageType::Pointer im, QString dir, QString imName);
 
 int main(int argc, char* argv[]) {
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
                 OutputImage(segImage, path, "2_SegmentationWithVeins.nii");
 
                 MITK_INFO(verbose) << "Thresholding veins from clean segmentation";
-                uint8_t veinsthresh = 2;
+                uint16_t veinsthresh = 2;
                 QString thesOutput = path + "2_ThresholdVeins.nii";
                 ThresholdType::Pointer thresVeins = thresholdImage(segImage, veinsthresh, thesOutput, debug);
 
@@ -328,7 +328,7 @@ void OutputImage(ImageType::Pointer im, QString dir, QString imName){
     mitk::IOUtil::Save(outputImg, impath.toStdString());
 }
 
-ThresholdType::Pointer thresholdImage(ImageType::Pointer input, uint8_t thresholdVal, QString debugOutput, bool debugging){
+ThresholdType::Pointer thresholdImage(ImageType::Pointer input, uint16_t thresholdVal, QString debugOutput, bool debugging){
     ThresholdType::Pointer thresholdOutput = ThresholdType::New();
     thresholdOutput->SetInput(input);
     thresholdOutput->SetLowerThreshold(thresholdVal);

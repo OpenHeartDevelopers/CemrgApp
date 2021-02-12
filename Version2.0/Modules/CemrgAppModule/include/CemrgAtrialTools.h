@@ -64,7 +64,7 @@ PURPOSE.  See the above copyright notices for more information.
 // that you want to be part of the public interface of your module.
 #include <MitkCemrgAppModuleExports.h>
 
-typedef itk::Image<uint8_t,3> ImageType;
+typedef itk::Image<uint16_t,3> ImageType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
 typedef itk::BinaryMorphologicalOpeningImageFilter<ImageType, ImageType, StrElType> ImFilterType;
@@ -106,10 +106,10 @@ public:
     void ClipMitralValveAuto(QString dir, QString mvName, QString outName);
 
     // helper functions
-    ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint8_t label, uint8_t filterRadius=1.0);
+    ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0);
     ImageType::Pointer AddImage(ImageType::Pointer im1, ImageType::Pointer im2);
-    ThresholdType::Pointer ThresholdImage(ImageType::Pointer input, uint8_t thresholdVal);
-    ImFilterType::Pointer ImOpen(ImageType::Pointer input, uint8_t radius);
+    ThresholdType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal);
+    ImFilterType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
     mitk::Surface::Pointer FlipSegmentation(mitk::Surface::Pointer surf);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);
 

@@ -153,15 +153,15 @@ ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QSt
     }
 
     MITK_INFO << "Extracting and cleaning atrium body";
-    uint8_t bodythresh = 1;
+    uint16_t bodythresh = 1;
     ImageType::Pointer body = ExtractLabel("LA-body", atriumCoarse, bodythresh, 1.0);
 
     MITK_INFO << "Extracting and cleaning pulmonary veins";
-    uint8_t veinsthresh = 2;
+    uint16_t veinsthresh = 2;
     ImageType::Pointer veins = ExtractLabel("Veins", atriumCoarse, veinsthresh, 2.0);
 
     MITK_INFO << "Extracting and cleaning Mitral Valve";
-    uint8_t mvthresh = mv;
+    uint16_t mvthresh = mv;
     ImageType::Pointer mitralvalve = ExtractLabel("MitralValve", atriumCoarse, mvthresh, 1.0);
 
     ConnectedComponentImageFilterType::Pointer conn2 = ConnectedComponentImageFilterType::New();
@@ -201,7 +201,7 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
 
     MITK_INFO << "Extracting and cleaning pulmonary veins";
 
-    uint8_t veinsthresh = 2;
+    uint16_t veinsthresh = 2;
     ImageType::Pointer veins = ExtractLabel("Veins", im, veinsthresh, 2.0);
     SaveImageToDisk(veins, dir, "3_ThresholdedVeins.nii");
 
@@ -252,11 +252,13 @@ void CemrgAtrialTools::GetSurfaceWithTags(ImageType::Pointer im, QString dir, QS
     scar->SetMethodType(2);
     scar->SetScarSegImage(veinsRelabeledImg);
 
+    MITK_INFO << "Projection of image labels onto surface";
     surface = scar->Scar3D(dir.toStdString(), veinsRelabeledImg);
 
     QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
-    MITK_INFO << ("Saving output shell to " + outputPath).toStdString();
     mitk::IOUtil::Save(surface, outputPath.toStdString());
+    MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
+
 }
 
 void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvName, QString outName){
@@ -321,7 +323,7 @@ void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvName, QString 
 }
 
 //helper functions
-ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint8_t label, uint8_t filterRadius){
+ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius){
     MITK_INFO << ("Thresholding " + tag + " from clean segmentation").toStdString();
     ThresholdType::Pointer thresVeins = ThresholdImage(im, label);
 
@@ -347,7 +349,7 @@ ImageType::Pointer CemrgAtrialTools::AddImage(ImageType::Pointer im1, ImageType:
     return sum->GetOutput();
 }
 
-ThresholdType::Pointer CemrgAtrialTools::ThresholdImage(ImageType::Pointer input, uint8_t thresholdVal){
+ThresholdType::Pointer CemrgAtrialTools::ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal){
     ThresholdType::Pointer thresholdOutput = ThresholdType::New();
     thresholdOutput->SetInput(input);
     thresholdOutput->SetLowerThreshold(thresholdVal);
@@ -359,7 +361,7 @@ ThresholdType::Pointer CemrgAtrialTools::ThresholdImage(ImageType::Pointer input
     return thresholdOutput;
 }
 
-ImFilterType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint8_t radius){
+ImFilterType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint16_t radius){
     StrElType structuringElement;
     structuringElement.SetRadius(static_cast<unsigned long>(radius));
     structuringElement.CreateStructuringElement();

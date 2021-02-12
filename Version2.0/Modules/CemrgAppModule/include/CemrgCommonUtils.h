@@ -58,6 +58,8 @@ public:
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
     static void RoundPixelValues(QString pathToImage, QString outputPath="");
 
+    // static void RoundPointDataValues(vtkSmartPointer<vtkPolyData> pd);
+
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
     static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh=0.5, double blur=0.8, double smoothIterations=3, double decimation=0.5);
