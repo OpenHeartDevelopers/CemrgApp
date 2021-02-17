@@ -523,10 +523,11 @@ void AtrialFibresClipperView::ClipperBalls(){
         MITK_WARN << "[ClipperBalls] showing clippers error";
         return;
     }
-    // Create spheres centered at each relevant pickedSeedId and display them
-    vtkSmartPointer<vtkPolyData> pickedClipperBalls = vtkSmartPointer<vtkPolyData>::New();
-    pickedClipperBalls->Initialize();
-    pickedClipperBalls->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    // output file:
+    QString outp = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator() +
+    outp += "clipper_radius.txt";
+
+    std::ofstream fo(outp.toStdString());
 
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
         if(pickedSeedLabels.at(i)!=14 && pickedSeedLabels.at(i)!=18 && pickedSeedLabels.at(i)!=19){
@@ -543,6 +544,7 @@ void AtrialFibresClipperView::ClipperBalls(){
                 sphereSource->Update();
 
                 VisualiseSphere(sphereSource->GetOutput());
+                m_Controls.widget_1->GetRenderWindow()->Render();
 
                 QDialog* inputs = new QDialog(0,0);
                 m_UIRadius.setupUi(inputs);
@@ -556,15 +558,14 @@ void AtrialFibresClipperView::ClipperBalls(){
                     radius = m_UIRadius.lineEdit_radius->text().toDouble(&ok1);
                     if(!ok1) radius = 9;
 
-                    int reply = QMessageBox::question(NULL, "Is this radius OK?", QMessageBox::Yes, QMessageBox::No);
+                    int reply = QMessageBox::question(NULL, "Question", "Is this radius OK?", QMessageBox::Yes, QMessageBox::No);
                     radiusAccepted = (reply == QMessageBox::Yes);
                 }
             }
-
+            fo << pickedSeedIds->GetId(i) << ", " << radius << std::endl;
         }
     }
 
-    m_Controls.widget_1->GetRenderWindow()->Render();
 
 }
 

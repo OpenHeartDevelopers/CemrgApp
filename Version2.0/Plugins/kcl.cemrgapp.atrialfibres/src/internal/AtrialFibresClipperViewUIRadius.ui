@@ -46,7 +46,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="label_radius">
      <property name="text">
       <string>Choose an appropriate radius for the PV clipper.
 
@@ -56,9 +56,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEdit_4">
+    <widget class="QLineEdit" name="lineEdit_radius">
      <property name="placeholderText">
-      <string>Decimate (default = 0.5)</string>
+      <string>Radius (default = 9)</string>
      </property>
     </widget>
    </item>
