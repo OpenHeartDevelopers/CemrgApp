@@ -100,11 +100,15 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_man2_clippers, SIGNAL(clicked()), this, SLOT(CtrPlanes()));
     connect(m_Controls.button_man3_clipseg, SIGNAL(clicked()), this, SLOT(ClipperImage()));
     connect(m_Controls.button_auto1_savelabels, SIGNAL(clicked()), this, SLOT(SaveLabels()));
-    connect(m_Controls.button_auto2_clippers, SIGNAL(clicked()), this, SLOT(ClipperBalls()));
+    connect(m_Controls.button_auto2_clippers, SIGNAL(clicked()), this, SLOT(ShowPvClippers()));
     connect(m_Controls.button_auto3_spacing, SIGNAL(clicked()), this, SLOT(InterPvSpacing()));
     connect(m_Controls.slider, SIGNAL(valueChanged(int)), this, SLOT(CtrPlanesPlacer()));
     connect(m_Controls.spinBox, SIGNAL(valueChanged(double)), this, SLOT(CtrPlanesPlacer()));
     connect(m_Controls.comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(CtrLinesSelector(int)));
+    connect(m_Controls.slider_auto, SIGNAL(valueChanged(int)), this, SLOT(PvClipperRadius()));
+    connect(m_Controls.comboBox_auto, SIGNAL(currentIndexChanged(int)), this, SLOT(PvClipperSelector(int)));
+    connect(m_Controls.button_auto4_clipPv, SIGNAL(clicked()), this, SLOT(ClipPVs()));
+
 
     // Display correct buttons
     automaticPipeline = AtrialFibresClipperView::isAutomatic;
@@ -155,9 +159,15 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
         clipper = std::unique_ptr<CemrgAtriaClipper>(new CemrgAtriaClipper(directory, surface));
         Visualiser();
     }
-    m_Controls.slider->setEnabled(false);
-    m_Controls.spinBox->setEnabled(false);
-    m_Controls.comboBox->setEnabled(false);
+    if(automaticPipeline){
+        m_Controls.slider->setEnabled(false);
+        m_Controls.spinBox->setEnabled(false);
+        m_Controls.comboBox->setEnabled(false);
+    } else{
+        m_Controls.slider_auto->setEnabled(false);
+        m_Controls.comboBox_auto->setEnabled(false);
+        m_Controls.button_auto4_clipPv->setEnabled(false);
+    }
 }
 
 void AtrialFibresClipperView::SetFocus() {
@@ -320,24 +330,18 @@ void AtrialFibresClipperView::CtrPlanes() {
         QString comboText = "DEFAULT";
         if (pickedSeedLabels.at(i) == 11)
             comboText = "LEFT SUPERIOR PV";
-        else if (pickedSeedLabels.at(i) == 12)
-            comboText = "LEFT MIDDLE PV";
         else if (pickedSeedLabels.at(i) == 13)
             comboText = "LEFT INFERIOR PV";
         else if (pickedSeedLabels.at(i) == 14)
             comboText = "LEFT COMMON PV";
         else if (pickedSeedLabels.at(i) == 15)
             comboText = "RIGHT SUPERIOR PV";
-        else if (pickedSeedLabels.at(i) == 16)
-            comboText = "RIGHT MIDDLE PV";
         else if (pickedSeedLabels.at(i) == 17)
             comboText = "RIGHT INFERIOR PV";
         else if (pickedSeedLabels.at(i) == 18)
             comboText = "RIGHT COMMON PV";
         else if (pickedSeedLabels.at(i) == 19)
             comboText = "APPENDAGE CUT";
-        else if (pickedSeedLabels.at(i) == 20)
-            comboText = "APPENDAGE UNCUT";
         m_Controls.comboBox->insertItem(i, comboText);
     }//_for
     m_Controls.widget_1->GetRenderWindow()->Render();
@@ -483,6 +487,43 @@ void AtrialFibresClipperView::CtrLinesSelector(int index) {
     m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
+void AtrialFibresClipperView::PvClipperRadius(){
+    if (m_Controls.comboBox_auto->count() == 0){
+        return;
+    }
+
+    renderer->RemoveAllViewProps();
+    Visualiser(0.5);
+
+    int index = m_Controls.comboBox_auto->currentIndex();
+
+    vtkIdType seedId = pvClipperSeedIdx->GetId(index);
+    double radiusAtId = pvClipperRadii.at(index);
+    double newRadius = (double) m_Controls.slider_auto->value();
+
+    VisualiseSphereAtPoint(index, newRadius);
+
+    pvClipperRadii.at(index) = newRadius;
+
+}
+
+void AtrialFibresClipperView::PvClipperSelector(int index){
+    if (m_Controls.comboBox_auto->count() == 0){
+        return;
+    }
+
+    MITK_INFO << "[PvClipperSelector]";
+    renderer->RemoveAllViewProps();
+    Visualiser(0.5);
+
+    double radiusAtId = pvClipperRadii.at(index);
+    VisualiseSphereAtPoint(index, radiusAtId);
+
+    m_Controls.slider_auto->setValue(radiusAtId);
+
+}
+
+
 // Automatic pipeline
 void AtrialFibresClipperView::SaveLabels(){
     if (pickedSeedIds->GetNumberOfIds()==0) {
@@ -518,55 +559,47 @@ void AtrialFibresClipperView::SaveLabels(){
 
 }
 
-void AtrialFibresClipperView::ClipperBalls(){
+void AtrialFibresClipperView::ShowPvClippers(){
     if(pickedSeedLabels.size()==0){
-        MITK_WARN << "[ClipperBalls] showing clippers error";
+        MITK_WARN << "[ShowPvClippers] showing clippers error";
         return;
     }
-    // output file:
-    QString outp = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator() +
-    outp += "clipper_radius.txt";
 
-    std::ofstream fo(outp.toStdString());
-
+    MITK_INFO << "[ShowPvClippers] Filling Combo box from picked seeds";
+    int cboxIndx=0;
+    double defaultRadius = 9;
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
         if(pickedSeedLabels.at(i)!=14 && pickedSeedLabels.at(i)!=18 && pickedSeedLabels.at(i)!=19){
-            double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedIds->GetId(i));
-            double radius = 9;
-            bool radiusAccepted=false;
+            pvClipperSeedIdx->InsertNextId(pickedSeedIds->GetId(i));
+            pvClipperRadii.push_back(defaultRadius);
 
-            while(!radiusAccepted){
-                vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
-                sphereSource->SetCenter(point[0], point[1], point[2]);
-                sphereSource->SetRadius(radius);
-                sphereSource->SetPhiResolution(40);
-                sphereSource->SetThetaResolution(40);
-                sphereSource->Update();
+            VisualiseSphereAtPoint(cboxIndx, defaultRadius);
 
-                VisualiseSphere(sphereSource->GetOutput());
-                m_Controls.widget_1->GetRenderWindow()->Render();
-
-                QDialog* inputs = new QDialog(0,0);
-                m_UIRadius.setupUi(inputs);
-                connect(m_UIRadius.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
-                connect(m_UIRadius.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-                int dialogCode = inputs->exec();
-
-                //Act on dialog return code
-                if (dialogCode == QDialog::Accepted) {
-                    bool ok1;
-                    radius = m_UIRadius.lineEdit_radius->text().toDouble(&ok1);
-                    if(!ok1) radius = 9;
-
-                    int reply = QMessageBox::question(NULL, "Question", "Is this radius OK?", QMessageBox::Yes, QMessageBox::No);
-                    radiusAccepted = (reply == QMessageBox::Yes);
-                }
+            QString comboText = "DEFAULT";
+            if (pickedSeedLabels.at(i) == 11){
+                comboText = "LSPV";
+            } else if (pickedSeedLabels.at(i) == 13){
+                comboText = "LIPV";
+            } else if (pickedSeedLabels.at(i) == 15){
+                comboText = "RSPV";
+            } else if (pickedSeedLabels.at(i) == 17){
+                comboText = "RIPV";
             }
-            fo << pickedSeedIds->GetId(i) << ", " << radius << std::endl;
+
+            m_Controls.comboBox_auto->insertItem(cboxIndx, comboText);
+            cboxIndx++;
         }
     }
 
+    m_Controls.widget_1->GetRenderWindow()->Render();
 
+    m_Controls.slider_auto->setEnabled(true);
+    m_Controls.slider_auto->setRange(6, 13);
+    m_Controls.slider_auto->setValue(defaultRadius);
+
+    m_Controls.comboBox_auto->setEnabled(true);
+
+    m_Controls.button_auto4_clipPv->setEnabled(true);
 }
 
 void AtrialFibresClipperView::InterPvSpacing(){
@@ -605,6 +638,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
     std::ifstream fi(path2corridor.toStdString());
     MITK_INFO << ("[InterPvSpacing] Opened file :" + path2corridor).toStdString();
 
+    MITK_INFO << "[InterPvSpacing] Update shell and save it";
     vtkFloatArray *pointScalars = vtkFloatArray::New();
     vtkFloatArray *cellScalars = vtkFloatArray::New();
     pointScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
@@ -641,13 +675,35 @@ void AtrialFibresClipperView::InterPvSpacing(){
     mitk::IOUtil::Save(surface, (prodPathOut+AtrialFibresClipperView::fileName).toStdString());
     MITK_INFO << "[InterPvSpacing] Saved surface";
 
+    ResetCorridorObjects();
     Visualiser();
+
+}
+
+void AtrialFibresClipperView::ClipPVs(){
+    if(m_Controls.comboBox_auto->count() == 0 ){
+        return;
+    }
+
+    int reply = QMessageBox::question(NULL, "Question", "Do want to save the current clipper radii?",
+        QMessageBox::Yes, QMessageBox::No);
+    if (reply==QMessageBox::Yes){
+        QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+        path += "prodClipperIDsAndRadii.txt";
+        std::ofstream fo(path.toStdString());
+        for (size_t ix = 0; ix < pvClipperRadii.size() ; ix++) {
+            /* code for clipping everything */
+            std::cout << pvClipperSeedIdx->GetId(ix) << ", " << pvClipperRadii.at(ix) << '\n';
+            fo << pvClipperSeedIdx->GetId(ix) << ", " << pvClipperRadii.at(ix) << std::endl;
+        }
+        fo.close();
+    }
 
 }
 
 void AtrialFibresClipperView::Visualiser(double opacity) {
 
-    MITK_INFO << "Visualiser";
+    MITK_INFO << "[Visualiser]";
     double max_scalar=-1, min_scalar=1e9,s;
     vtkFloatArray *scalars = vtkFloatArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -672,7 +728,7 @@ void AtrialFibresClipperView::Visualiser(double opacity) {
     surfMapper->SetScalarModeToUseCellData();
     surfMapper->ScalarVisibilityOn();
     lut->SetTableRange(min_scalar, max_scalar);
-    lut->SetHueRange(0.3, 0.0);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
+    lut->SetHueRange(0.5, 0.2);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
     lut->Build();     // this is important
 
     vtkSmartPointer<vtkScalarBarActor> scalarBar =
@@ -699,7 +755,21 @@ void AtrialFibresClipperView::Visualiser(double opacity) {
     renderer->AddActor2D(scalarBar);
 }
 
-void AtrialFibresClipperView::VisualiseSphere(vtkSmartPointer<vtkPolyData> pd){
+void AtrialFibresClipperView::VisualiseSphereAtPoint(int ptId, double radius){
+    vtkIdType seedId = pvClipperSeedIdx->GetId(ptId);
+    double* point = surface->GetVtkPolyData()->GetPoint(seedId);
+
+    vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+    sphereSource->SetCenter(point[0], point[1], point[2]);
+    sphereSource->SetRadius(radius);
+    sphereSource->SetPhiResolution(40);
+    sphereSource->SetThetaResolution(40);
+    sphereSource->Update();
+
+    VisualisePolyData(sphereSource->GetOutput());
+}
+
+void AtrialFibresClipperView::VisualisePolyData(vtkSmartPointer<vtkPolyData> pd){
     vtkSmartPointer<vtkPolyDataMapper> surfMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     vtkSmartPointer<vtkActor> surfActor = vtkSmartPointer<vtkActor>::New();
 
@@ -899,16 +969,11 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                 self->corridorCount--;
             }
         } else if(key == "V"){ // new veins
-                if(self->automaticPipeline){
-                    int reply1 = QMessageBox::question(NULL, "Question - different PV",
-                        "Do you want to fix another pair of veins?", QMessageBox::Yes, QMessageBox::No);
-                    if(reply1==QMessageBox::Yes){
-                    self->corridorCount=0;
-                    self->corridorSeedIds = vtkSmartPointer<vtkIdList>::New();
-                    self->corridorSeedIds->Initialize();
-                    self->corridorLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-                    self->corridorLineSeeds->Initialize();
-                    self->corridorLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+            if(self->automaticPipeline){
+                int reply1 = QMessageBox::question(NULL, "Question - different PV",
+                    "Do you want to fix another pair of veins?", QMessageBox::Yes, QMessageBox::No);
+                if(reply1==QMessageBox::Yes){
+                    self->ResetCorridorObjects();
                 }
             }
         } //_if_space
@@ -1067,17 +1132,25 @@ void AtrialFibresClipperView::InitialisePickerObjects(){
     pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();
     pickedLineSeeds->Initialize();
     pickedLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    if(automaticPipeline){
-        corridorCount=0;
-        corridorSeedIds = vtkSmartPointer<vtkIdList>::New();
-        corridorSeedIds->Initialize();
-        corridorLineSeeds = vtkSmartPointer<vtkPolyData>::New();
-        corridorLineSeeds->Initialize();
-        corridorLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    }
     pickedCutterSeeds = vtkSmartPointer<vtkPolyData>::New();
     pickedCutterSeeds->Initialize();
     pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+
+    pvClipperSeedIdx = vtkSmartPointer<vtkIdList>::New();
+    pvClipperSeedIdx->Initialize();
+
+    if(automaticPipeline){
+        ResetCorridorObjects();
+    }
+}
+
+void AtrialFibresClipperView::ResetCorridorObjects(){
+    corridorCount=0;
+    corridorSeedIds = vtkSmartPointer<vtkIdList>::New();
+    corridorSeedIds->Initialize();
+    corridorLineSeeds = vtkSmartPointer<vtkPolyData>::New();
+    corridorLineSeeds->Initialize();
+    corridorLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
 }
 
 bool AtrialFibresClipperView::IsPointSelectionControlsAvailable(){
@@ -1114,6 +1187,13 @@ void AtrialFibresClipperView::SetManualModeButtons(bool b){
     m_Controls.button_man2_clippers->setVisible(b);
     m_Controls.button_man3_clipseg->setVisible(b);
     m_Controls.label_man->setVisible(b);
+
+    m_Controls.label->setVisible(b);
+    m_Controls.slider->setVisible(b);
+    m_Controls.comboBox->setVisible(b);
+    m_Controls.spinBox->setVisible(b);
+    m_Controls.checkBox->setVisible(b);
+
 }
 
 void AtrialFibresClipperView::SetAutomaticModeButtons(bool b){
@@ -1121,6 +1201,11 @@ void AtrialFibresClipperView::SetAutomaticModeButtons(bool b){
     m_Controls.button_auto2_clippers->setVisible(b);
     m_Controls.button_auto3_spacing->setVisible(b);
     m_Controls.label_auto->setVisible(b);
+
+    m_Controls.label_auto_slider->setVisible(b);
+    m_Controls.slider_auto->setVisible(b);
+    m_Controls.comboBox_auto->setVisible(b);
+    m_Controls.button_auto4_clipPv->setVisible(b);
 }
 
 void AtrialFibresClipperView::UserSelectPvLabel(){

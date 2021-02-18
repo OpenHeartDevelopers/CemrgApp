@@ -50,6 +50,7 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
+typedef std::pair<vtkIdType, double> SeedRadiusPairType;
 class AtrialFibresClipperView : public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
@@ -89,8 +90,13 @@ protected slots:
 
     // Automatic Pipeline
     void SaveLabels();
-    void ClipperBalls();
+    void ShowPvClippers();
     void InterPvSpacing();
+
+    void PvClipperRadius();
+    void PvClipperSelector(int);
+
+    void ClipPVs();
 
 
 protected:
@@ -110,13 +116,15 @@ private:
 
     void iniPreSurf();
     void Visualiser(double opacity=1.0);
-    void VisualiseSphere(vtkSmartPointer<vtkPolyData> pd);
+    void VisualisePolyData(vtkSmartPointer<vtkPolyData> pd);
+    void VisualiseSphereAtPoint(int ptId, double radius);
     void SphereSourceVisualiser(vtkSmartPointer<vtkPolyData> pointSources, QString colour="1.0,0.0,0.0", double scaleFactor=0.01);
     void PickCallBack(bool pvCorridor=false);
     void ManualCutterCallBack();
     static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
 
     void InitialisePickerObjects();
+    void ResetCorridorObjects();
 
     static QString fileName;
     static QString directory;
@@ -136,7 +144,11 @@ private:
     std::unique_ptr<CemrgAtriaClipper> clipper;
     std::unique_ptr<CemrgScarAdvanced> csadv;
 
+    vtkSmartPointer<vtkIdList> pvClipperSeedIdx;
+    std::vector<double> pvClipperRadii;
+
     std::vector<vtkSmartPointer<vtkActor>> clipperActors;
+
     QDialog* inputs;
     double maxScalar, minScalar;
     int corridorMax, corridorCount;
