@@ -81,7 +81,7 @@ public:
     void ExecuteTouch(QString filepath);
     bool IsOutputSuccessful(QString outputFullPath);
     std::string PrintFullCommand(QString command, QStringList arguments);
-    bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath);
+    bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath, bool isOutputFile=true);
 
 protected slots:
 
