@@ -1055,7 +1055,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
         arguments << "orodrazeghi/dicom-converter" << ".";
         arguments << "--gantry" << "--inconsistent";
 
-        successful = ExecuteCommand(executableName, arguments, outPath);
+        successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     } else {
         MITK_WARN << "Docker must be running for this feature to be used.";
@@ -1199,12 +1199,14 @@ std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList argu
     return (command + " " + argumentList).toStdString();
 }
 
-bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList arguments, QString outputPath) {
+bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList arguments, QString outputPath, bool isOutputFile) {
 
     MITK_INFO << PrintFullCommand(executableName, arguments);
 
-    MITK_INFO << ("[ExecuteCommand] Creating empty file at output:" + outputPath).toStdString();
-    ExecuteTouch(outputPath);
+    if(isOutputFile){ // if false, the output is a folder and does not need touch
+        MITK_INFO << ("[ExecuteCommand] Creating empty file at output:" + outputPath).toStdString();
+        ExecuteTouch(outputPath);
+    }
 
     completion = false;
     process->start(executableName, arguments);
