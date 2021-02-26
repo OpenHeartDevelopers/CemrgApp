@@ -581,58 +581,98 @@ void EASIView::ConfrmSITE() {
 #include "CemrgStrains.h"
 void EASIView::Simulation() {
 
-    for (int i=0; i<10; i++) {
+    std::string line;
+    ifstream file("/home/or15/Work/Strain/ResolutionStudy/paths.txt");
 
-        QString directory = "/home/or15/Work/Strain/LR/case0" + QString::number(i);
-        mitk::DataNode::Pointer lmNode = mitk::IOUtil::Load<mitk::DataNode>((directory + "/PointSet.mps").toStdString());
+    if (file.is_open()) {
+        while (getline(file,line)) {
 
-        int segRatios[3] = {40, 40, 20};
-        std::unique_ptr<CemrgStrains> strain;
-        strain = std::unique_ptr<CemrgStrains>(new CemrgStrains(directory, 0));
-        strain->ReferenceAHA(lmNode, segRatios, false);
-        std::vector<std::vector<double>> plotValueVectorsSQZ;
-        std::vector<std::vector<double>> plotValueVectorsCRC;
-        std::vector<std::vector<double>> plotValueVectorsLNG;
+            QString directory = QString::fromStdString(line);
+            QString chamber = directory.mid(54,2);
+            MITK_INFO << directory;
 
-        for (int j=0; j<10; j++) {
-            plotValueVectorsSQZ.push_back(strain->CalculateSqzPlot(j));
-            plotValueVectorsCRC.push_back(strain->CalculateStrainsPlot(j, lmNode, 3));
-            plotValueVectorsLNG.push_back(strain->CalculateStrainsPlot(j, lmNode, 4));
-        }
+            if (chamber=="LV") {
 
-        for (int j=0; j<3; j++) {
+                QString lmPaths = "/home/or15/Work/Strain/ResolutionStudy/Dataset/" + directory.mid(50,3) + "/PointSet.mps";
+                mitk::DataNode::Pointer lmNode = mitk::DataNode::New();
+                lmNode->SetData(mitk::IOUtil::Load<mitk::PointSet>(lmPaths.toStdString()));
 
-            QString fileName;
-            std::vector<std::vector<double>> plotValueVectors;
-            if (j==0) {
-                fileName = "SQZ.csv";
-                plotValueVectors = plotValueVectorsSQZ;
-            } else if (j==1) {
-                fileName = "CRC.csv";
-                plotValueVectors = plotValueVectorsCRC;
-            } else {
-                fileName = "LNG.csv";
-                plotValueVectors = plotValueVectorsLNG;
-            }//_if
-            ofstream file;
-            file.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+                int segRatios[3] = {40, 40, 20};
+                std::unique_ptr<CemrgStrains> strain1;
+                strain1 = std::unique_ptr<CemrgStrains>(new CemrgStrains(directory, 0));
+                strain1->ReferenceAHA(lmNode, segRatios, false);
+                std::vector<std::vector<double>> plotValueVectorsSQZ;
+                std::vector<std::vector<double>> plotValueVectorsCRC;
+                std::vector<std::vector<double>> plotValueVectorsLNG;
 
-            std::vector<double> values;
-            for (int s=0; s<16; s++) {
+                for (int j=0; j<10; j++) {
+                    plotValueVectorsSQZ.push_back(strain1->CalculateSqzPlot(j));
+                    plotValueVectorsCRC.push_back(strain1->CalculateStrainsPlot(j, lmNode, 3));
+                    plotValueVectorsLNG.push_back(strain1->CalculateStrainsPlot(j, lmNode, 4));
+                }
+
+                for (int j=0; j<3; j++) {
+                    QString fileName;
+                    std::vector<std::vector<double>> plotValueVectors;
+                    if (j==0) {
+                        fileName = "LV-SQZ.csv";
+                        plotValueVectors = plotValueVectorsSQZ;
+                    } else if (j==1) {
+                        fileName = "LV-CRC.csv";
+                        plotValueVectors = plotValueVectorsCRC;
+                    } else {
+                        fileName = "LV-LNG.csv";
+                        plotValueVectors = plotValueVectorsLNG;
+                    }//_if
+                    ofstream fileLV;
+                    fileLV.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+                    std::vector<double> values;
+                    for (int s=0; s<16; s++) {
+                        for (int f=0; f<10; f++)
+                            values.push_back(plotValueVectors[f][s]);
+                        //Append the curve to the file
+                        for (size_t z=0; z<values.size(); z++) {
+                            fileLV << values.at(z);
+                            if (z == values.size()-1) fileLV << endl;
+                            else fileLV << ",";
+                        }
+                        values.clear();
+                    }//_for
+                    fileLV.close();
+                }//_csv
+
+            } else if (chamber=="LA") {
+
+                std::unique_ptr<CemrgStrains> strain2;
+                strain2 = std::unique_ptr<CemrgStrains>(new CemrgStrains(directory, 0));
+                std::vector<double> plotValueVectorsGlobalSQZ;
+
+                for (int j=0; j<10; j++)
+                    plotValueVectorsGlobalSQZ.push_back(strain2->CalculateGlobalSqzPlot(j));
+
+                QString fileName;
+                fileName = "LA-SQZ.csv";
+
+                ofstream fileLA;
+                fileLA.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+                std::vector<double> values;
                 for (int f=0; f<10; f++)
-                    values.push_back(plotValueVectors[f][s]);
+                    values.push_back(plotValueVectorsGlobalSQZ[f]);
                 //Append the curve to the file
                 for (size_t z=0; z<values.size(); z++) {
-                    file << values.at(z);
-                    if (z == values.size()-1) file << endl;
-                    else file << ",";
+                    fileLA << values.at(z);
+                    if (z == values.size()-1) fileLA << endl;
+                    else fileLA << ",";
                 }
                 values.clear();
-            }//_for
-            file.close();
-        }
-        qDebug() << "CASE" << i << "done!";
-    }
+                fileLA.close();
+
+            }//_chamber
+
+            qDebug() << QString::fromStdString(line) << "done!";
+        }//_while_direc
+        file.close();
+    }//_if
 }
 
 void EASIView::LoadMesh() {

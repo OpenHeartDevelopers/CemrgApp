@@ -31,20 +31,25 @@ PURPOSE.  See the above copyright notices for more information.
 
 // Qmitk
 #include <mitkImage.h>
+#include <mitkSurface.h>
 #include <mitkPointSet.h>
 #include <vtkFloatArray.h>
 #include <MitkCemrgAppModuleExports.h>
+#include <QString>
 
 class MITKCEMRGAPPMODULE_EXPORT CemrgScar3D {
 
 public:
 
     CemrgScar3D();
+    mitk::Surface::Pointer Scar3D(
+            std::string directory, mitk::Image::Pointer lgeImage, std::string segname="segmentation.vtk");
 
     mitk::Surface::Pointer ClipMesh3D(mitk::Surface::Pointer surface, mitk::PointSet::Pointer landmarks);
-    mitk::Surface::Pointer Scar3D(std::string directory, mitk::Image::Pointer lgeImage,std::string segname="segmentation.vtk");
     bool CalculateMeanStd(mitk::Image::Pointer lgeImage, mitk::Image::Pointer roiImage, double& mean, double& stdv);
     double Thresholding(double thresh);
+    void SaveScarDebugImage(QString name, QString dir);
+    void SaveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name);
 
     double GetMinScalar() const;
     double GetMaxScalar() const;
@@ -52,15 +57,16 @@ public:
     void SetMaxStep(int value);
     void SetMethodType(int value);
     void SetScarSegImage(const mitk::Image::Pointer image);
-    void SaveScarDebugImage(QString name, QString dir);
-    void saveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name);
+    void SetVoxelBasedProjection(bool value);
 
 private:
 
     int methodType;
     int minStep, maxStep;
+    bool voxelBasedProjection;
     double minScalar, maxScalar;
     vtkSmartPointer<vtkFloatArray> scalars;
+
     typedef itk::Image<short,3> itkImageType;
     itkImageType::Pointer scarSegImage;
     itk::Image<short,3>::Pointer scarDebugLabel;
