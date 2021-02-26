@@ -42,6 +42,7 @@ public:
     CemrgStrains(QString dir, int refMeshNo);
     ~CemrgStrains();
 
+    double CalculateGlobalSqzPlot(int meshNo);
     std::vector<double> CalculateSqzPlot(int meshNo);
     std::vector<double> CalculateStrainsPlot(int meshNo, mitk::DataNode::Pointer lmNode, int flag);
     double CalculateSDI(std::vector<std::vector<double>> valueVectors, int cycleLengths, int noFrames);

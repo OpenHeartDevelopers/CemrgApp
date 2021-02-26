@@ -193,6 +193,7 @@ int main(int argc, char* argv[]) {
             double volumeLA = morphAnal->calcVolumeMesh(surfLA);
             double surfceAP = morphAnal->calcSurfaceMesh(surfAP);
             double volumeAP = morphAnal->calcVolumeMesh(surfAP);
+            double sphereLA = morphAnal->GetSphericity(surfLA->GetVtkPolyData());
 
             //Store in text file
             ofstream morphResult;
@@ -202,6 +203,7 @@ int main(int argc, char* argv[]) {
             morphResult << "VA" << " " << volumeLA << "\n";
             morphResult << "SP" << " " << surfceAP << "\n";
             morphResult << "VP" << " " << volumeAP << "\n";
+            morphResult << "SF" << " " << sphereLA << "\n";
             morphResult.close();
         }//_if
     } catch (...) {

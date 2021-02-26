@@ -82,6 +82,32 @@ CemrgStrains::~CemrgStrains() {
     this->refPointLabels.clear();
 }
 
+double CemrgStrains::CalculateGlobalSqzPlot(int meshNo) {
+
+    //We want to load the mesh and then calculate the area
+    mitk::Surface::Pointer refSurf = ReadVTKMesh(0);
+    vtkSmartPointer<vtkPolyData> refPD = refSurf->GetVtkPolyData();
+    mitk::Surface::Pointer surf = ReadVTKMesh(meshNo);
+    vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
+
+    //Calculate squeeze
+    double sqzValues = 0.0;
+    for (vtkIdType cellID = 0; cellID < pd->GetNumberOfCells(); cellID++) {
+
+        double refArea = GetCellArea(refPD, cellID);
+        double area = GetCellArea(pd, cellID);
+        double sqze = (area - refArea) / refArea;
+        double wsqz = area * sqze;
+        sqzValues += wsqz;
+
+    }//_for
+
+    //Average over entire mesh
+    double avgSqzValues = sqzValues / pd->GetNumberOfCells();
+
+    return avgSqzValues;
+}
+
 std::vector<double> CemrgStrains::CalculateSqzPlot(int meshNo) {
 
     if (refCellLabels.empty())
