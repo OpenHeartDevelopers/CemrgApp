@@ -68,64 +68,11 @@ CemrgScar3D::CemrgScar3D() {
     this->methodType = 2;
     this->minStep = -3, this->maxStep = 3;
     this->minScalar = 1E10, this->maxScalar = -1;
+    this->voxelBasedProjection = false;
     this->scalars = vtkSmartPointer<vtkFloatArray>::New();
 }
 
-mitk::Surface::Pointer CemrgScar3D::ClipMesh3D(mitk::Surface::Pointer surface, mitk::PointSet::Pointer landmarks) {
-
-    //Retrieve mean and distance of 3 points
-    double x_c = 0;
-    double y_c = 0;
-    double z_c = 0;
-    for(int i=0; i<landmarks->GetSize(); i++) {
-        x_c = x_c + landmarks->GetPoint(i).GetElement(0);
-        y_c = y_c + landmarks->GetPoint(i).GetElement(1);
-        z_c = z_c + landmarks->GetPoint(i).GetElement(2);
-    }//_for
-    x_c /= landmarks->GetSize();
-    y_c /= landmarks->GetSize();
-    z_c /= landmarks->GetSize();
-    double * distance = new double [landmarks->GetSize()];
-    for(int i=0; i<landmarks->GetSize(); i++) {
-        double x_d = landmarks->GetPoint(i).GetElement(0) - x_c;
-        double y_d = landmarks->GetPoint(i).GetElement(1) - y_c;
-        double z_d = landmarks->GetPoint(i).GetElement(2) - z_c;
-        distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
-    }//_for
-    double radius = *std::max_element(distance, distance + landmarks->GetSize());
-    double centre[3] = {x_c, y_c, z_c};
-
-    //Clipper
-    vtkSmartPointer<vtkSphere> sphere = vtkSmartPointer<vtkSphere>::New();
-    sphere->SetCenter(centre);
-    sphere->SetRadius(radius);
-    vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
-    clipper->SetClipFunction(sphere);
-    clipper->SetInputData(surface->GetVtkPolyData());
-    clipper->InsideOutOff();
-    clipper->Update();
-
-    //Extract and clean surface mesh
-    vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
-    surfer->SetInputData(clipper->GetOutput());
-    surfer->Update();
-    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-    cleaner->SetInputConnection(surfer->GetOutputPort());
-    cleaner->Update();
-    vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
-    lrgRegion->SetInputConnection(cleaner->GetOutputPort());
-    lrgRegion->SetExtractionModeToLargestRegion();
-    lrgRegion->Update();
-    cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-    cleaner->SetInputConnection(lrgRegion->GetOutputPort());
-    cleaner->Update();
-
-    //Return the clipped mesh
-    surface->SetVtkPolyData(cleaner->GetOutput());
-    return surface;
-}
-
-mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::Pointer lgeImage,std::string segname) {
+mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::Pointer lgeImage, std::string segname) {
 
     //Convert to itk image
     itkImageType::Pointer scarImage;
@@ -265,6 +212,60 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     return surface;
 }
 
+mitk::Surface::Pointer CemrgScar3D::ClipMesh3D(mitk::Surface::Pointer surface, mitk::PointSet::Pointer landmarks) {
+
+    //Retrieve mean and distance of 3 points
+    double x_c = 0;
+    double y_c = 0;
+    double z_c = 0;
+    for(int i=0; i<landmarks->GetSize(); i++) {
+        x_c = x_c + landmarks->GetPoint(i).GetElement(0);
+        y_c = y_c + landmarks->GetPoint(i).GetElement(1);
+        z_c = z_c + landmarks->GetPoint(i).GetElement(2);
+    }//_for
+    x_c /= landmarks->GetSize();
+    y_c /= landmarks->GetSize();
+    z_c /= landmarks->GetSize();
+    double * distance = new double [landmarks->GetSize()];
+    for(int i=0; i<landmarks->GetSize(); i++) {
+        double x_d = landmarks->GetPoint(i).GetElement(0) - x_c;
+        double y_d = landmarks->GetPoint(i).GetElement(1) - y_c;
+        double z_d = landmarks->GetPoint(i).GetElement(2) - z_c;
+        distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+    }//_for
+    double radius = *std::max_element(distance, distance + landmarks->GetSize());
+    double centre[3] = {x_c, y_c, z_c};
+
+    //Clipper
+    vtkSmartPointer<vtkSphere> sphere = vtkSmartPointer<vtkSphere>::New();
+    sphere->SetCenter(centre);
+    sphere->SetRadius(radius);
+    vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
+    clipper->SetClipFunction(sphere);
+    clipper->SetInputData(surface->GetVtkPolyData());
+    clipper->InsideOutOff();
+    clipper->Update();
+
+    //Extract and clean surface mesh
+    vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+    surfer->SetInputData(clipper->GetOutput());
+    surfer->Update();
+    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputConnection(surfer->GetOutputPort());
+    cleaner->Update();
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    lrgRegion->SetInputConnection(cleaner->GetOutputPort());
+    lrgRegion->SetExtractionModeToLargestRegion();
+    lrgRegion->Update();
+    cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputConnection(lrgRegion->GetOutputPort());
+    cleaner->Update();
+
+    //Return the clipped mesh
+    surface->SetVtkPolyData(cleaner->GetOutput());
+    return surface;
+}
+
 bool CemrgScar3D::CalculateMeanStd(mitk::Image::Pointer lgeImage, mitk::Image::Pointer roiImage, double& mean, double& stdv) {
 
     //Access image volumes
@@ -315,7 +316,8 @@ double CemrgScar3D::Thresholding(double thresh) {
     return percentage;
 }
 
-void CemrgScar3D::saveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name) {
+void CemrgScar3D::SaveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name) {
+
     MITK_INFO << "Dividing by the mean value of the bloodpool.";
     MITK_ERROR(divisor == 0) << "Can't divide by 0.";
 
@@ -380,6 +382,11 @@ void CemrgScar3D::SetScarSegImage(const mitk::Image::Pointer image) {
     itkImageType::Pointer itkImage = itkImageType::New();
     mitk::CastToItkImage(image, itkImage);
     this->scarSegImage = itkImage;
+}
+
+void CemrgScar3D::SetVoxelBasedProjection(bool value) {
+
+    voxelBasedProjection = value;
 }
 
 double CemrgScar3D::GetIntensityAlongNormal(
@@ -465,7 +472,7 @@ double CemrgScar3D::GetStatisticalMeasure(
     //Declarations
     itkImageType::IndexType pixel_xyz;
     int size = pointsOnAndAroundNormal.size(), maxIndex = 0;
-    double sum = 0, max = -1, greyVal, returnVal = 0; //, visitedStatus;
+    double sum = 0, max = -1, greyVal, returnVal = 0, visitedStatus;
 
     //Filter out cut regions
     for (int i=0; i<size; i++) {
@@ -473,7 +480,6 @@ double CemrgScar3D::GetStatisticalMeasure(
         pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
         pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
         double val = scarSegImage->GetPixel(pixel_xyz);
-        visitedImage->SetPixel(pixel_xyz, 1);
         if (std::abs(val - 3.0) < 1E-10)
             return -1;
     }//_for
@@ -498,8 +504,11 @@ double CemrgScar3D::GetStatisticalMeasure(
             pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
             greyVal = scarImage->GetPixel(pixel_xyz);
-            // visitedStatus = visitedImage->GetPixel(pixel_xyz);
-            if (greyVal > max) { // && visitedStatus < 1) {
+            visitedStatus = visitedImage->GetPixel(pixel_xyz);
+            bool maxIntensity = greyVal > max;
+            if (voxelBasedProjection)
+                maxIntensity = (greyVal > max) && (visitedStatus < 1);
+            if (maxIntensity) {
                 max = greyVal;
                 maxIndex = i;
             }
@@ -512,7 +521,7 @@ double CemrgScar3D::GetStatisticalMeasure(
             pixel_xyz[0] = pointsOnAndAroundNormal.at(maxIndex).GetElement(0);
             pixel_xyz[1] = pointsOnAndAroundNormal.at(maxIndex).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(maxIndex).GetElement(2);
-            visitedImage->SetPixel(pixel_xyz, 2);
+            visitedImage->SetPixel(pixel_xyz, 1);
         }
     }//_if_max
 

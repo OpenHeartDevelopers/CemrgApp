@@ -787,7 +787,7 @@ void AtrialScarView::AutomaticAnalysis() {
             scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
             MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
             QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
-            scar->saveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
+            scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
             MITK_INFO << "[...][11.2] Saving to files.";
             double thisThresh, thisPercentage, thisValue;
             ofstream prodFile1, prodFileExplanation;
@@ -1461,6 +1461,7 @@ void AtrialScarView::ScarMap() {
                     int maxStep = m_UIScar.lineEdit_2->text().toInt(&ok2);
                     int methodType = m_UIScar.radioButton_1->isChecked() ? 2 : 1;
                     QString meType = m_UIScar.radioButton_1->isChecked() ? "Max" : "Mean";
+                    bool voxelBasedProjection = m_UIScar.checkBox->isChecked();
 
                     //Set default values
                     if (!ok1 || !ok2)
@@ -1489,6 +1490,7 @@ void AtrialScarView::ScarMap() {
                     scar->SetMinStep(minStep);
                     scar->SetMaxStep(maxStep);
                     scar->SetMethodType(methodType);
+                    scar->SetVoxelBasedProjection(voxelBasedProjection);
                     mitk::Image::Pointer scarSegImg;
                     try {
                         QString path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;

@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
             MITK_INFO << "Saving new scar map to " + outname.toStdString();
 
         mitk::IOUtil::Save(scarShell, (prodPath + outname).toStdString());
-        scar->saveNormalisedScalars(mean, scarShell, prodPath + "Normalised_" + outname);
+        scar->SaveNormalisedScalars(mean, scarShell, prodPath + "Normalised_" + outname);
 
         QFileInfo fi2(prodPath + outname);
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
