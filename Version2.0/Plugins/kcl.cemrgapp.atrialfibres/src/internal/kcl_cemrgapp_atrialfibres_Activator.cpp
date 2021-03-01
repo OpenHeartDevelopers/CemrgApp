@@ -29,6 +29,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "kcl_cemrgapp_atrialfibres_Activator.h"
 #include "AtrialFibresView.h"
 #include "AtrialFibresClipperView.h"
+#include "AtrialFibresLandmarksView.h"
 
 namespace mitk{
 
@@ -38,6 +39,7 @@ void kcl_cemrgapp_atrialfibres_Activator::start(ctkPluginContext *context) {
 
     BERRY_REGISTER_EXTENSION_CLASS(AtrialFibresView, context);
     BERRY_REGISTER_EXTENSION_CLASS(AtrialFibresClipperView, context);
+    BERRY_REGISTER_EXTENSION_CLASS(AtrialFibresLandmarksView, context);
     pluginContext = context;
 }
 

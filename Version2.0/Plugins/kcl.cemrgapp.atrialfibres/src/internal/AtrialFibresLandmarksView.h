@@ -26,8 +26,8 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-#ifndef AtrialFibresClipperView_h
-#define AtrialFibresClipperView_h
+#ifndef AtrialFibresLandmarksView_h
+#define AtrialFibresLandmarksView_h
 
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
@@ -37,13 +37,12 @@ PURPOSE.  See the above copyright notices for more information.
 #include <CemrgAtriaClipper.h>
 #include <CemrgScarAdvanced.h>
 
-#include "ui_AtrialFibresClipperViewControls.h"
-#include "ui_AtrialFibresClipperViewLabels.h"
-#include "ui_AtrialFibresViewUIMeshing.h"
-#include "ui_AtrialFibresClipperViewUIRadius.h"
+#include "ui_AtrialFibresLandmarksViewControls.h"
+#include "ui_AtrialFibresLandmarksViewRough.h"
+#include "ui_AtrialFibresLandmarksViewRefined.h"
 
 /**
-  \brief AtrialFibresClipperView
+  \brief AtrialFibresLandmarksView
 
   \warning  This class is not yet documented. Use "git blame" and ask the author to provide basic documentation.
 
@@ -51,7 +50,7 @@ PURPOSE.  See the above copyright notices for more information.
   \ingroup ${plugin_target}_internal
 */
 typedef std::pair<vtkIdType, double> SeedRadiusPairType;
-class AtrialFibresClipperView : public QmitkAbstractView {
+class AtrialFibresLandmarksView : public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -60,44 +59,20 @@ class AtrialFibresClipperView : public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
-    static void SetDirectoryFile(const QString directory, const QString fileName, const bool isAuto);
-    ~AtrialFibresClipperView();
-
-    // helper functions
-    void SetManualModeButtons(bool b);
-    void SetAutomaticModeButtons(bool b);
+    static void SetDirectoryFile(const QString directory, const QString fileName);
+    ~AtrialFibresLandmarksView();
 
     // helper functions
     std::string GetShortcuts();
-    bool IsPointSelectionControlsAvailable();
-    bool IsClipperManualControlsAvailable();
-    void UserSelectPvLabel();
-    void PrintCorridorIds();
-
-    void IgnoreLabel(std::vector<int> ignoredIds);
-    void DiscardUnwantedLabel(std::vector<int> discardedIds);
+    std::string GetRoughPointsGuide();
+    std::string GetRefinedPointsGiude();
 
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
-    // Manual Pipeline
-    void CtrLines();
-    void CtrPlanes();
-    void ClipperImage();
-
-    void CtrPlanesPlacer();
-    void CtrLinesSelector(int);
-
-    // Automatic Pipeline
-    void SaveLabels();
-    void ShowPvClippers();
-    void InterPvSpacing();
-
-    void PvClipperRadius();
-    void PvClipperSelector(int);
-
-    void ClipPVs();
-
+    void Help();
+    void SaveRoughPoints();
+    void SaveRefinedPoints();
 
 protected:
 
@@ -107,10 +82,9 @@ protected:
     virtual void OnSelectionChanged(
             berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
-    Ui::AtrialFibresClipperViewControls m_Controls;
-    Ui::AtrialFibresClipperViewLabels m_Labels;
-    Ui::AtrialFibresViewUIMeshing m_UIMeshing;
-    Ui::AtrialFibresClipperViewUIRadius m_UIRadius;
+    Ui::AtrialFibresLandmarksViewControls m_Controls;
+    Ui::AtrialFibresLandmarksViewRough m_Rough;
+    Ui::AtrialFibresLandmarksViewRefined m_Refined;
 
 private:
 
@@ -118,46 +92,39 @@ private:
     void Visualiser(double opacity=1.0);
     void VisualiserAuto(double opacity);
     void VisualiserManual(double opacity);
-    void VisualisePolyData(vtkSmartPointer<vtkPolyData> pd);
-    void VisualiseSphereAtPoint(int ptId, double radius);
+
     void SphereSourceVisualiser(vtkSmartPointer<vtkPolyData> pointSources, QString colour="1.0,0.0,0.0", double scaleFactor=0.01);
-    void PickCallBack(bool pvCorridor=false);
-    void ManualCutterCallBack();
+    void PickCallBack(bool refinedLandmarks=false);
     static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
 
     void InitialisePickerObjects();
-    void ResetCorridorObjects();
+
+    void UserSelectPvLabel(bool refinedLandmarks=false);
+    void UserSelectPvRoughLabel();
+    void UserSelectPvRefinedLabel();
 
     static QString fileName;
     static QString directory;
-    static bool isAutomatic;
-
-    bool automaticPipeline;
 
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;
-    std::vector<int> pickedSeedLabels;
-    vtkSmartPointer<vtkIdList> pickedSeedIds;
-    vtkSmartPointer<vtkPolyData> pickedLineSeeds;
-    vtkSmartPointer<vtkPolyData> pickedCutterSeeds;
-    vtkSmartPointer<vtkIdList> corridorSeedIds;
-    vtkSmartPointer<vtkPolyData> corridorLineSeeds;
 
-    std::unique_ptr<CemrgAtriaClipper> clipper;
-    std::unique_ptr<CemrgScarAdvanced> csadv;
+    std::vector<int> roughSeedLabels;
+    vtkSmartPointer<vtkIdList> roughSeedIds;
+    vtkSmartPointer<vtkPolyData> roughLineSeeds;
 
-    vtkSmartPointer<vtkIdList> pvClipperSeedIdx;
-    std::vector<double> pvClipperRadii;
+    std::vector<int> refinedSeedLabels;
+    vtkSmartPointer<vtkIdList> refinedSeedIds;
+    vtkSmartPointer<vtkPolyData> refinedLineSeeds;
 
-    std::vector<vtkSmartPointer<vtkActor>> clipperActors;
-
-    QDialog* inputs;
+    QDialog* inputsRough;
+    QDialog* inputsRefined;
     double maxScalar, minScalar;
-    int corridorMax, corridorCount;
+
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkCallbackCommand> callBack;
     vtkSmartPointer<vtkRenderWindowInteractor> interactor;
 
 };
 
-#endif // AtrialFibresClipperView_h
+#endif // AtrialFibresLandmarksView_h

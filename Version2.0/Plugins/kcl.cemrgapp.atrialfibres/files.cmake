@@ -6,6 +6,7 @@ set(INTERNAL_CPP_FILES
   kcl_cemrgapp_atrialfibres_Activator.cpp
   AtrialFibresView.cpp
   AtrialFibresClipperView.cpp
+  AtrialFibresLandmarksView.cpp
 )
 
 set(UI_FILES
@@ -14,12 +15,16 @@ set(UI_FILES
   src/internal/AtrialFibresClipperViewControls.ui
   src/internal/AtrialFibresClipperViewLabels.ui
   src/internal/AtrialFibresClipperViewUIRadius.ui
+  src/internal/AtrialFibresLandmarksViewControls.ui
+  src/internal/AtrialFibresLandmarksViewRough.ui
+  src/internal/AtrialFibresLandmarksViewRefined.ui
 )
 
 set(MOC_H_FILES
   src/internal/kcl_cemrgapp_atrialfibres_Activator.h
   src/internal/AtrialFibresView.h
   src/internal/AtrialFibresClipperView.h
+  src/internal/AtrialFibresLandmarksView.h
 )
 
 # list of resource files which can be used by the plug-in

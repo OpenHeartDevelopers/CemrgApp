@@ -79,6 +79,8 @@ public:
     inline void SetAutomaticModeButtonsOn(){SetAutomaticModeButtons(true);};
     inline void SetAutomaticModeButtonsOff(){SetAutomaticModeButtons(false);};
 
+    QString LandmarkFilesCreated(QString defaultName, QString type);
+
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
@@ -87,7 +89,7 @@ protected slots:
     void ConvertNII();
     void AnalysisChoice(); // btn3
     // Automatic Pipeline
-    void SelectLandmarks();
+    void MeshPreprocessing();
     // Manual pipeline
     void SegmentIMGS();
     void IdentifyPV();
@@ -95,8 +97,8 @@ protected slots:
     void ClipperMV();
     void ClipperPV();
 
-    void MeshFix();
-    
+    void SelectLandmarks();
+
     // Labelled Mesh to UAC
     void MeshingOptions();
     void UacCalculation();

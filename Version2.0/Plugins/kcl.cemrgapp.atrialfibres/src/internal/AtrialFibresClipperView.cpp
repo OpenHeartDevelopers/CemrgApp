@@ -191,38 +191,41 @@ void AtrialFibresClipperView::SetDirectoryFile(const QString directory, const QS
 void AtrialFibresClipperView::iniPreSurf() {
     //Find the selected node
     QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator() + AtrialFibresClipperView::fileName;
-    mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
-    // mitk::Surface::Pointer shell = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
-    // CemrgCommonUtils::FlipXYPlane(shell, "", "");
+    // mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
+    mitk::Surface::Pointer shell = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
 
-    vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
-    cell_to_point->SetInputData(shell->GetVtkPolyData());
-    cell_to_point->PassCellDataOn();
-    cell_to_point->Update();
-    shell->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
+    if(automaticPipeline){
+        CemrgCommonUtils::FlipXYPlane(shell, "", "");
+        vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
+        cell_to_point->SetInputData(shell->GetVtkPolyData());
+        cell_to_point->PassCellDataOn();
+        cell_to_point->Update();
+        shell->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
 
-    vtkSmartPointer<vtkPolyData> pd = cell_to_point->GetPolyDataOutput();
-    vtkFloatArray *pointScalars = vtkFloatArray::New();
-    vtkFloatArray *cellScalars = vtkFloatArray::New();
+        vtkSmartPointer<vtkPolyData> pd = cell_to_point->GetPolyDataOutput();
+        vtkFloatArray *pointScalars = vtkFloatArray::New();
+        vtkFloatArray *cellScalars = vtkFloatArray::New();
 
-    pointScalars = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
-    cellScalars = vtkFloatArray::SafeDownCast(pd->GetCellData()->GetScalars());
-    double s;
-    for (vtkIdType vId = 0; vId < pd->GetNumberOfPoints() ; vId++) {
-        s = pointScalars->GetTuple1(vId);
+        pointScalars = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
+        cellScalars = vtkFloatArray::SafeDownCast(pd->GetCellData()->GetScalars());
+        double s;
+        int countpts=0;
+        for (vtkIdType vId = 0; vId < pd->GetNumberOfPoints() ; vId++) {
+            s = pointScalars->GetTuple1(vId);
 
-        if (std::floor(s)!=s){ // scalar value is not a category
-            int s2;
-            vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-            cellIds->Initialize();
+            if (std::floor(s)!=s){ // scalar value is not a category
+                int s2;
+                vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+                cellIds->Initialize();
 
-            pd->GetPointCells(vId, cellIds);
-            s2 = cellScalars->GetTuple1(cellIds->GetId(0));
-            pointScalars->SetTuple1(vId, s2);
+                pd->GetPointCells(vId, cellIds);
+                s2 = cellScalars->GetTuple1(cellIds->GetId(0));
+                pointScalars->SetTuple1(vId, s2);
+            }
         }
+        shell->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
+        mitk::IOUtil::Save(shell, path.toStdString());
     }
-    shell->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
-    mitk::IOUtil::Save(shell, path.toStdString());
     surface = shell;
 
 }
@@ -536,6 +539,7 @@ void AtrialFibresClipperView::SaveLabels(){
 
     MITK_INFO << "[SaveLabels] Saving labels to file.";
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    std::vector<int> ignoredIds;
     ofstream fileLabels, fileIds, fileIgnoreIds, fileDiscardIds;
 
     fileLabels.open((prodPath + "prodSeedLabels.txt").toStdString());
@@ -546,6 +550,7 @@ void AtrialFibresClipperView::SaveLabels(){
     // 14=ignore, 18=discard
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
         if(pickedSeedLabels.at(i)==14){ //ignore
+            ignoredIds.push_back(pickedSeedIds->GetId(i));
             fileIgnoreIds << pickedSeedIds->GetId(i) << "\n";
         } else if(pickedSeedLabels.at(i)==18){ // discard
             fileDiscardIds << pickedSeedIds->GetId(i) << "\n";
@@ -556,6 +561,10 @@ void AtrialFibresClipperView::SaveLabels(){
     }
     fileLabels.close();
     fileIds.close();
+    fileIgnoreIds.close();
+    fileDiscardIds.close();
+
+    IgnoreLabel(ignoredIds);
 
 }
 
@@ -701,9 +710,18 @@ void AtrialFibresClipperView::ClipPVs(){
 
 }
 
-void AtrialFibresClipperView::Visualiser(double opacity) {
-
+void AtrialFibresClipperView::Visualiser(double opacity){
     MITK_INFO << "[Visualiser]";
+
+    if(automaticPipeline){
+        VisualiserAuto(opacity);
+    } else{
+        VisualiserManual(opacity);
+    }
+}
+
+void AtrialFibresClipperView::VisualiserAuto(double opacity) {
+
     double max_scalar=-1, min_scalar=1e9,s;
     vtkFloatArray *scalars = vtkFloatArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -728,7 +746,7 @@ void AtrialFibresClipperView::Visualiser(double opacity) {
     surfMapper->SetScalarModeToUseCellData();
     surfMapper->ScalarVisibilityOn();
     lut->SetTableRange(min_scalar, max_scalar);
-    lut->SetHueRange(0.5, 0.2);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
+    lut->SetHueRange(0.5, 0.0);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
     lut->Build();     // this is important
 
     vtkSmartPointer<vtkScalarBarActor> scalarBar =
@@ -753,6 +771,21 @@ void AtrialFibresClipperView::Visualiser(double opacity) {
     surfActor->GetProperty()->SetOpacity(opacity);
     renderer->AddActor(surfActor);
     renderer->AddActor2D(scalarBar);
+}
+
+void AtrialFibresClipperView::VisualiserManual(double opacity) {
+
+    MITK_INFO << "[Visualiser]";
+    SphereSourceVisualiser(pickedLineSeeds);
+
+    //Create a mapper and actor for surface
+    vtkSmartPointer<vtkPolyDataMapper> surfMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    surfMapper->SetInputData(surface->GetVtkPolyData());
+
+    vtkSmartPointer<vtkActor> surfActor = vtkSmartPointer<vtkActor>::New();
+    surfActor->SetMapper(surfMapper);
+    surfActor->GetProperty()->SetOpacity(opacity);
+    renderer->AddActor(surfActor);
 }
 
 void AtrialFibresClipperView::VisualiseSphereAtPoint(int ptId, double radius){
@@ -1259,7 +1292,7 @@ void AtrialFibresClipperView::IgnoreLabel(std::vector<int> ignoredIds){
     std::cout << "Ignoring: ";
     for (vtkIdType labelIdx = 0; labelIdx < ignoredIds.size(); labelIdx++) {
         ptLabel = pointScalars->GetTuple1(labelIdx);
-        std::cout << ptLabel << "," ;
+        std::cout << ptLabel << std::endl;
         double s;
         for (vtkIdType vId = 0; vId < surface->GetVtkPolyData()->GetNumberOfPoints(); vId++) {
             s = pointScalars->GetTuple1(vId);

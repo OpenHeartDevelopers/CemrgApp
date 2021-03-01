@@ -101,7 +101,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_auto4_landmarks">
+    <widget class="QPushButton" name="button_auto4_meshpreproc">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
@@ -163,16 +163,6 @@
      </property>
     </widget>
    </item>
-   <item alignment="Qt::AlignHCenter">
-    <widget class="QPushButton" name="button_w_meshfix">
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-     <property name="text">
-      <string>  Do mesh fixings </string>
-     </property>
-    </widget>
-   </item>
    <item>
     <widget class="Line" name="line">
      <property name="orientation">
@@ -181,7 +171,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_x_meshtools">
+    <widget class="QPushButton" name="button_w_meshtools">
      <property name="font">
       <font>
        <weight>50</weight>
@@ -193,7 +183,17 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepX: Mesh improvement</string>
+      <string>    StepW: Mesh improvement</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_x_landmarks">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    StepX: Select Landmarks</string>
      </property>
     </widget>
    </item>

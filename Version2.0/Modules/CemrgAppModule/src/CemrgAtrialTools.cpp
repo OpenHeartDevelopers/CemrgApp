@@ -117,7 +117,7 @@ ImageType::Pointer CemrgAtrialTools::LoadImage(QString imagePath){
     return itkImage;
 }
 
-ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName){
+ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName){
     QString inputPath = dir + mitk::IOUtil::GetDirectorySeparator() + segName;
     ImageType::Pointer orgSegImage = LoadImage(inputPath);
 
@@ -133,7 +133,14 @@ ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QSt
     keepObjs->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
     keepObjs->Update();
 
-    ImageType::Pointer atriumCoarse = keepObjs->GetOutput();
+    return keepObjs->GetOutput();
+}
+
+ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName){
+    QString inputPath = dir + mitk::IOUtil::GetDirectorySeparator() + segName;
+    ImageType::Pointer orgSegImage = LoadImage(inputPath);
+
+    ImageType::Pointer atriumCoarse = RemoveNoiseFromAutomaticSegmentation(dir, segName);
 
     SaveImageToDisk(atriumCoarse, dir, "1_CleanSegmentation.nii");
 
@@ -237,7 +244,7 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
     return im;
 }
 
-void CemrgAtrialTools::GetSurfaceWithTags(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds){
+void CemrgAtrialTools::GetSurfaceWithTags(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds, bool tagsOnSurface){
     MITK_INFO << "Extracting Surface";
     mitk::Image::Pointer veinsRelabeledImg = mitk::Image::New();
     mitk::CastToMitkImage(im, veinsRelabeledImg);
@@ -246,18 +253,26 @@ void CemrgAtrialTools::GetSurfaceWithTags(ImageType::Pointer im, QString dir, QS
     mitk::Surface::Pointer segSurface = CemrgCommonUtils::ExtractSurfaceFromSegmentation(veinsRelabeledImg, th, bl, smth, ds);
     CemrgCommonUtils::FlipXYPlane(segSurface, dir, "segmentation.vtk");
 
-    std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
-    scar->SetMinStep(-1);
-    scar->SetMaxStep(3);
-    scar->SetMethodType(2);
-    scar->SetScarSegImage(veinsRelabeledImg);
+    if(tagsOnSurface){
 
-    MITK_INFO << "Projection of image labels onto surface";
-    surface = scar->Scar3D(dir.toStdString(), veinsRelabeledImg);
+        std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
+        scar->SetMinStep(-1);
+        scar->SetMaxStep(3);
+        scar->SetMethodType(2);
+        scar->SetScarSegImage(veinsRelabeledImg);
 
-    QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
-    mitk::IOUtil::Save(surface, outputPath.toStdString());
-    MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
+        MITK_INFO << "Projection of image labels onto surface";
+        surface = scar->Scar3D(dir.toStdString(), veinsRelabeledImg);
+
+        QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
+        mitk::IOUtil::Save(surface, outputPath.toStdString());
+        MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
+    } else {
+        QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
+        mitk::IOUtil::Save(segSurface, outputPath.toStdString());
+        MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
+    }
+
 
 }
 

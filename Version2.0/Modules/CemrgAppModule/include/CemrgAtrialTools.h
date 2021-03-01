@@ -100,10 +100,13 @@ public:
 
     void SetNaiveSegmentationTags();
 
+    ImageType::Pointer RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="tag-segmentation.nii");
-    void GetSurfaceWithTags(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5);
+    void GetSurfaceWithTags(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool tagsOnSurface=true);
     void ClipMitralValveAuto(QString dir, QString mvName, QString outName);
+
+    void SetSurfaceLabels(int ap_InSurf, int li_InSurf, int ls_InSurf, int rs_InSurf, int ri_InSurf);
 
     // helper functions
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0);

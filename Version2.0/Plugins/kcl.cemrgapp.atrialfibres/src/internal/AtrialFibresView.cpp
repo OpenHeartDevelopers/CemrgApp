@@ -51,6 +51,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "kcl_cemrgapp_atrialfibres_Activator.h"
 #include "AtrialFibresView.h"
 #include "AtrialFibresClipperView.h"
+#include "AtrialFibresLandmarksView.h"
 
 //Micro services
 #include <usModuleRegistry.h>
@@ -103,16 +104,16 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_2, SIGNAL(clicked()), this, SLOT(ProcessIMGS()));
     // Segmentation to Labelled Mesh pipeline
     connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
-    connect(m_Controls.button_auto4_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
+    connect(m_Controls.button_auto4_meshpreproc, SIGNAL(clicked()), this, SLOT(MeshPreprocessing()));
     connect(m_Controls.button_man4_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
     connect(m_Controls.button_man5_idPV, SIGNAL(clicked()), this, SLOT(IdentifyPV())); // pv clipper
     connect(m_Controls.button_man6_labelmesh, SIGNAL(clicked()), this, SLOT(CreateLabelledMesh()));
     connect(m_Controls.button_man7_clipMV, SIGNAL(clicked()), this, SLOT(ClipperMV()));
     connect(m_Controls.button_man8_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
-    connect(m_Controls.button_w_meshfix, SIGNAL(clicked()), this, SLOT(MeshFix()));
+    connect(m_Controls.button_x_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
 
     // Labelled Mesh to UAC
-    connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
+    connect(m_Controls.button_w_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
     connect(m_Controls.button_y_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
     connect(m_Controls.button_z_refineUac, SIGNAL(clicked()), this, SLOT(UacMeshRefinement()));
 
@@ -120,7 +121,6 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     //Set visibility of buttons
     m_Controls.button_2_1->setVisible(false);
-    m_Controls.button_w_meshfix->setVisible(false);
     connect(m_Controls.button_2_1, SIGNAL(clicked()), this, SLOT(ConvertNII()));
 
     // Set default variables
@@ -395,8 +395,8 @@ void AtrialFibresView::AutomaticAnalysis(){
 
 }
 
-void AtrialFibresView::SelectLandmarks(){
-    MITK_INFO << "[SelectLandmarks] ";
+void AtrialFibresView::MeshPreprocessing(){
+    MITK_INFO << "[MeshPreprocessing] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Show the plugin
@@ -404,7 +404,6 @@ void AtrialFibresView::SelectLandmarks(){
     AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", automaticPipeline);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
 
-    m_Controls.button_w_meshfix->setVisible(true);
 }
 
 // Manual pipeline
@@ -445,7 +444,7 @@ void AtrialFibresView::SegmentIMGS() {
                 mitk::ProgressBar::GetInstance()->Progress();
 
                 //Clean prediction
-                ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory);
+                ImageType::Pointer segImage = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
                 cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
 
                 mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
@@ -506,7 +505,7 @@ void AtrialFibresView::IdentifyPV(){
                 mitk::CastToItkImage(image, segImage);
                 bool userInputsAccepted = GetUserMeshingInputs();
                 if(userInputsAccepted){
-                    atrium->GetSurfaceWithTags(segImage, directory, "segmentation.vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
+                    atrium->GetSurfaceWithTags(segImage, directory, "segmentation.vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, false);
 
                     //Add the mesh to storage
                     std::string meshName = segNode->GetName() + "-Mesh";
@@ -571,20 +570,30 @@ bool AtrialFibresView::GetUserMeshingInputs(){
     return userInputAccepted;
 }
 
-void AtrialFibresView::MeshFix(){
-    // prodDiscardSeedIds.txt - get labels, threshold tag-segmentation.nii
-    // prodIgnoredIds.txt - get labels on shell and change to BODY label.
-    // prodSeedsIds.txt - change labels to corresponding RS, RI, LS, LI, LAA
-    // prodSeedsIds.txt + prodRadii.txt
-}
-
-
 // Labelled Mesh to UAC
 void AtrialFibresView::MeshingOptions(){
 
 }
 
+void AtrialFibresView::SelectLandmarks(){
+    MITK_INFO << "[MeshPreprocessing] ";
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+    //Show the plugin
+    this->GetSite()->GetPage()->ResetPerspective();
+    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk");
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibreslandmarksview");
+}
+
 void AtrialFibresView::UacCalculation(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+    QString pathRoughLandmark = LandmarkFilesCreated("prodRoughLandmarks", "ROUGH");
+    QString pathRefinedLandmark = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+
+    if(pathRoughLandmark.compare("FILE_NOT_FOUND")==0 || pathRefinedLandmark.compare("FILE_NOT_FOUND")==0){
+        return;
+    }
 
 }
 
@@ -686,6 +695,43 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
     return succesfulAssignment;
 }
 
+QString AtrialFibresView::LandmarkFilesCreated(QString defaultName, QString type){
+    QString path, res;
+    path = directory + mitk::IOUtil::GetDirectorySeparator();
+    res = "FILE_NOT_FOUND";
+
+    bool foundVtk, foundTxt;
+    foundVtk = QFile::exists(path+defaultName+".vtk");
+    foundTxt = QFile::exists(path+defaultName+".txt");
+
+    MITK_INFO(foundVtk) << ("Found" + type + "file in VTK format").toStdString();
+    MITK_INFO(foundTxt) << ("Found" + type + "file in TXT format").toStdString();
+
+    std::string msg;
+    if(!foundTxt && !foundVtk){
+        msg = "File not found\n";
+        msg += "Do you have a VTK or TXT for the: ";
+        msg += (type.toStdString() + " landmarks?");
+
+        int reply = QMessageBox::question(NULL, "File not found", msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+        if(reply==QMessageBox::Yes){
+            msg = ("Open " + type.toStdString() + " landmarks file");
+            res = QFileDialog::getOpenFileName(NULL, msg.c_str(), directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        } else{
+            msg = ("Use StepW button to Select Landmarks of type: " + type).toStdString();
+            QMessageBox::information(NULL, "Attention", msg.c_str());
+        }
+    } else if(foundVtk) {
+        MITK_INFO << "Loading file in VTK format";
+        res = path+defaultName+".vtk";
+    } else{
+        MITK_INFO << "Loading file in TXT format";
+        res = path+defaultName+".txt";
+    }
+
+    return res;
+}
+
 void AtrialFibresView::SetManualModeButtons(bool b){
     //Set visibility of buttons
     m_Controls.button_man4_segmentation->setVisible(b);
@@ -697,5 +743,5 @@ void AtrialFibresView::SetManualModeButtons(bool b){
 
 
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
-    m_Controls.button_auto4_landmarks->setVisible(b);
+    m_Controls.button_auto4_meshpreproc->setVisible(b);
 }
