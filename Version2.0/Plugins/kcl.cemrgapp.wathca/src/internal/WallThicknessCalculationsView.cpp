@@ -500,10 +500,12 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
 
     try {
 
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "AnalyticBloodpool.nii";
-        mitk::Image::Pointer analyticImage = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
+        QString pathAnalytic = directory + mitk::IOUtil::GetDirectorySeparator() + "AnalyticBloodpool.nii";
+        mitk::Image::Pointer analyticImage = mitk::IOUtil::Load<mitk::Image>(pathAnalytic.toStdString());
+        QString pathCropped = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
+        mitk::Image::Pointer croppedPVImage = mitk::IOUtil::Load<mitk::Image>(pathCropped.toStdString());
 
-        if (analyticImage) {
+        if (analyticImage && croppedPVImage) {
 
             //Loop through labelled image
             typedef itk::Image<short, 3> ImageType;
@@ -541,14 +543,11 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
 
             //Import to MITK image
             typedef itk::LabelMapToLabelImageFilter<LabelMapType, ImageType> LabelMapToLabelImageFilterType;
-            LabelMapToLabelImageFilterType::Pointer labelImageConverter1 = LabelMapToLabelImageFilterType::New();
-            labelImageConverter1->SetInput(selector->GetOutput(1));
-            labelImageConverter1->Update();
-            mitk::Image::Pointer bp = mitk::ImportItkImage(labelImageConverter1->GetOutput());
-            LabelMapToLabelImageFilterType::Pointer labelImageConverter2 = LabelMapToLabelImageFilterType::New();
-            labelImageConverter2->SetInput(selector->GetOutput(0));
-            labelImageConverter2->Update();
-            mitk::Image::Pointer ap = mitk::ImportItkImage(labelImageConverter2->GetOutput());
+            LabelMapToLabelImageFilterType::Pointer labelImageConverter = LabelMapToLabelImageFilterType::New();
+            labelImageConverter->SetInput(selector->GetOutput(0));
+            labelImageConverter->Update();
+            mitk::Image::Pointer ap = mitk::ImportItkImage(labelImageConverter->GetOutput());
+            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii");
 
             //Ask for user input to set the parameters
             QDialog* inputs = new QDialog(0,0);
