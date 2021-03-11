@@ -1071,6 +1071,112 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
+    // Method equivalent to:  meshtool extract surface
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+
+    outname += (outputSuffix.at(0)=="_") ? outputSuffix : ("_"+outputSuffix);
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "extract" << "surface";
+    arguments << ("-msh="+meshname);
+    arguments << ("-op="+op);
+    arguments << ("-surf="+outname);
+
+    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + outname + ".surf.vtx";
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if (successful) {
+        MITK_INFO << "Surface extraction successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    return outAbsolutePath;
+}
+
+QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad){
+    // Method equivalent to:  meshtool extract surface
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "extract" << "gradient";
+    arguments << ("-msh="+meshname);
+    arguments << ("-idat="+home.relativeFilePath(idatName));
+    arguments << ("-odat="+home.relativeFilePath(odatName));
+    if(elemGrad){
+        arguments << "-mode=1"; // compute element gradient
+    }
+
+    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + odatName + ".grad.vec";
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if (successful) {
+        MITK_INFO << "Gradient extraction successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    return outAbsolutePath;
+}
+
+QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax, double hmin, double havg, double surfCorr){
+    // Method equivalent to: meshtool resample surfmesh
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "resample" << "surfmesh";
+    arguments << ("-msh="+meshname);
+    arguments << ("-ifmt=vtk");
+    arguments << ("-outmsh="+outname);
+    arguments << ("-ofmt=vtk_polydata");
+    arguments << ("-max="+QString::number(hmax));
+    arguments << ("-avrg="+QString::number(havg));
+    arguments << ("-min="+QString::number(hmin));
+
+    if(surfCorr>0){
+        arguments << ("-surf_corr="+QString::number(surfCorr));
+    }
+
+    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + outname + ".vtk";
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if (successful) {
+        MITK_INFO << "Surface remeshing successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    return outAbsolutePath;
+}
+
 /***************************************************************************
  *********************** Docker Helper Functions ***************************
  ***************************************************************************/
@@ -1091,6 +1197,93 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
     if (mirtkTest == 0)
         argumentList << dockerexe;
     return argumentList;
+}
+
+QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroName, QStringList oneName, QStringList regionLabels){
+    SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
+    QString executablePath = "";
+    #if defined(__APPLE__)
+            executablePath = "/usr/local/bin/";
+    #endif
+        QString executableName = executablePath+"docker";
+        QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+        QDir home(dir);
+        QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "fibres_pt_1"+mitk::IOUtil::GetDirectorySeparator()+outName;
+        QDir outDir(outPath);
+        QString outIgbFile = outPath + mitk::IOUtil::GetDirectorySeparator() + "phie.igb";
+
+        MITK_INFO(outDir.mkpath(outPath)) << "Output directory created.";
+        if(!outDir.exists()){
+            MITK_INFO << ("Error creating directory: " + outPath).toStdString();
+        } else{
+            QStringList arguments;
+            arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
+            arguments << "docker.opencarp.org/opencarp/opencarp:latest";
+            arguments << "openCARP";
+            arguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
+            arguments << "-parab_options_file";
+            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/ilu_cg_opts";
+            arguments << "-ellip_options_file";
+            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/amg_cg_opts";
+            arguments << "-simID" << home.relativeFilePath(outPath);
+            arguments << "-meshname" << meshName;
+            arguments << "-experiment" << "2";
+            arguments << "-bidomain" << "1";
+
+            MITK_INFO << "[openCarp] setup arguments computed";
+
+            int numStim = zeroName.size() + oneName.size();
+            arguments << "-num_stim" << QString::number(numStim);
+            for (int ix = 0; ix < zeroName.size(); ix++) {
+                arguments << ("-stimulus[" + QString::number(ix) + "].vtx_file") << home.relativeFilePath(zeroName.at(ix));
+                arguments << ("-stimulus[" + QString::number(ix) + "].stimtype") << "3"; // =0
+            }
+            for (int jx = zeroName.size(); jx < numStim; jx++) {
+                arguments << ("-stimulus[" + QString::number(jx) + "].vtx_file") << home.relativeFilePath(oneName.at(jx-zeroName.size()));
+                arguments << ("-stimulus[" + QString::number(jx) + "].stimtype") << "2"; // =1
+            }
+
+            arguments << ("-stimulus[" + QString::number(numStim-1) + "].start") << "0";
+            arguments << ("-stimulus[" + QString::number(numStim-1) + "].duration") << "1";
+            arguments << ("-stimulus[" + QString::number(numStim-1) + "].strength") << "1";
+
+            MITK_INFO << "[openCarp] stimulus arguments computed";
+
+            arguments << "-num_gregions" << "1";
+            arguments << "-gregion[0].name" << "myo";
+            arguments << "-gregion[0].g_il" << "1";
+            arguments << "-gregion[0].g_it" << "1";
+            arguments << "-gregion[0].g_in" << "1";
+            arguments << "-gregion[0].g_el" << "1";
+            arguments << "-gregion[0].g_et" << "1";
+            arguments << "-gregion[0].g_en" << "1";
+            arguments << "-gregion[0].num_IDs"<< QString::number(regionLabels.size());
+            for (int ix = 0; ix < regionLabels.size(); ix++) {
+                arguments << "-gregion[0].ID[" +QString::number(ix)+ "]"<< regionLabels.at(ix);
+            }
+
+            bool successful = ExecuteCommand(executableName, arguments, outIgbFile);
+
+            if (successful) {
+                MITK_INFO << "Laplace solves generation successful. Creating .dat file";
+                QString outPathFile = dir+mitk::IOUtil::GetDirectorySeparator()+meshName+"_"+outName+"_potential.dat";
+
+                arguments.clear();
+                arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
+                arguments << "docker.opencarp.org/opencarp/opencarp:latest";
+                arguments << "igbextract" << home.relativeFilePath(outIgbFile) << "-O";
+                arguments << home.relativeFilePath(outPathFile) << "-o" << "ascii_1pL";
+                successful = ExecuteCommand(executableName, arguments, outPathFile);
+                if(successful){
+                    outAbsolutePath =  outPathFile;
+                }
+            } else{
+                MITK_WARN << "Error with openCARP LAPLACE SOLVES Docker container.";
+            }
+        }
+
+        return outAbsolutePath;
 }
 
 /***************************************************************************

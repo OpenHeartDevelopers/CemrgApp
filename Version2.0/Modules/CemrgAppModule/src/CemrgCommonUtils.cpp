@@ -59,6 +59,13 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCamera.h>
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkSphere.h>
+#include <vtkSphereSource.h>
+#include <vtkClipPolyData.h>
+#include <vtkDataSetSurfaceFilter.h>
+#include <vtkCleanPolyData.h>
+#include <vtkPolyDataConnectivityFilter.h>
+#include <vtkCleanPolyData.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -358,6 +365,56 @@ mitk::Surface::Pointer CemrgCommonUtils::ExtractSurfaceFromSegmentation(mitk::Im
 
     mitk::Surface::Pointer shell = im2surf->GetOutput();
     return shell;
+}
+
+mitk::Surface::Pointer CemrgCommonUtils::ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath){
+    double centre[3] = {x_c, y_c, z_c};
+    //Clipper
+    vtkSmartPointer<vtkSphere> sphere = vtkSmartPointer<vtkSphere>::New();
+    sphere->SetCenter(centre);
+    sphere->SetRadius(radius);
+    vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
+    clipper->SetClipFunction(sphere);
+    clipper->SetInputData(surface->GetVtkPolyData());
+    clipper->InsideOutOff();
+    clipper->Update();
+
+    if(!saveToPath.isEmpty()){
+        MITK_INFO << ("Saving clipper sphere to: " + saveToPath).toStdString();
+        mitk::Surface::Pointer outSphere = mitk::Surface::New();
+        vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+        sphereSource->SetCenter(centre[0], centre[1], centre[2]);
+        sphereSource->SetRadius(radius);
+        sphereSource->SetPhiResolution(40);
+        sphereSource->SetThetaResolution(40);
+        sphereSource->Update();
+
+        outSphere->SetVtkPolyData(sphereSource->GetOutput());
+        mitk::IOUtil::Save(outSphere, saveToPath.toStdString());
+    }
+
+    //Extract and clean surface mesh
+    vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+    surfer->SetInputData(clipper->GetOutput());
+    surfer->Update();
+
+    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputConnection(surfer->GetOutputPort());
+    cleaner->Update();
+
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    lrgRegion->SetInputConnection(cleaner->GetOutputPort());
+    lrgRegion->SetExtractionModeToLargestRegion();
+    lrgRegion->Update();
+
+    cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputConnection(lrgRegion->GetOutputPort());
+    cleaner->Update();
+
+    //Return the clipped mesh
+    surface->SetVtkPolyData(cleaner->GetOutput());
+
+    return surface;
 }
 
 void CemrgCommonUtils::FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname){
