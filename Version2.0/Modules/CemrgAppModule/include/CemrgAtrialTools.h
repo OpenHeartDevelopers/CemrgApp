@@ -89,6 +89,8 @@ public:
     inline void SetWorkingDirectory(QString wd){directory =wd;};
     inline void SetTagSegmentationName(QString tsn){tagSegName = tsn;};
 
+    inline void SetSurface(QString surfpath){surface = mitk::IOUtil::Load<mitk::Surface>(surfpath.toStdString()); surfLoaded=true;}; // START HERE
+
     // Label setters
     inline void SetMV(int _mv){mv=_mv;};
     inline void SetBODY(int b){abody=b;};
@@ -98,22 +100,24 @@ public:
     inline void SetRSPV(int rs){rspv=rs;};
     inline void SetRIPV(int ri){lspv=ri;};
 
+    inline bool HasSurface(){return surfLoaded;};
+
     void SetNaiveSegmentationTags();
 
     ImageType::Pointer RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="tag-segmentation.nii");
-    void GetSurfaceWithTags(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool tagsOnSurface=true);
+    mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
+    void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
     void ClipMitralValveAuto(QString dir, QString mvName, QString outName);
 
     void SetSurfaceLabels(int ap_InSurf, int li_InSurf, int ls_InSurf, int rs_InSurf, int ri_InSurf);
 
     // helper functions
-    ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0);
+    ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);
     ImageType::Pointer AddImage(ImageType::Pointer im1, ImageType::Pointer im2);
     ThresholdType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal);
     ImFilterType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
-    mitk::Surface::Pointer FlipSegmentation(mitk::Surface::Pointer surf);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);
 
 private:
@@ -130,14 +134,12 @@ private:
     int abody, mv, laap, lipv, lspv, rspv, ripv;
     int autolaap, autolipv, autolspv, autorspv, autoripv;
     std::vector<int> detectedLabels;
-    bool segmentationSet, debugSteps;
+    bool segmentationSet, debugSteps, surfLoaded;
     //Constant Vein Labels
     //const int LEFTSUPERIORPV  = 11;
-    //const int LEFTMIDDLEPV    = 12;
     //const int LEFTINFERIORPV  = 13;
     //const int LEFTCOMMONPV    = 14;
     //const int RIGHTSUPERIORPV = 15;
-    //const int RIGHTMIDDLEPV   = 16;
     //const int RIGHTINFERIORPV = 17;
     //const int RIGHTCOMMONPV   = 18;
     //const int APPENDAGECUT    = 19;

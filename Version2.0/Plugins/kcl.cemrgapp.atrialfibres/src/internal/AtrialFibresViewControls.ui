@@ -111,6 +111,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_auto5_clipPV">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step5: Clip PVs</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="button_man4_segmentation">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>

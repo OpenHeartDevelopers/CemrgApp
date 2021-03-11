@@ -182,6 +182,9 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
     QString outname = "prodRoughLandmarks";
     ofstream fileRough;
 
+    // vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    // vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
+
     MITK_INFO << "[SaveRoughPoints] Saving TXT file.";
     fileRough.open((prodPath + outname + ".txt").toStdString());
     for (unsigned int i=0; i<roughSeedLabels.size(); i++){
@@ -189,16 +192,20 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
         fileRough << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
+        // points->InsertNextPoint(point);
     }
     fileRough.close();
+
+    // pd->SetPoints(points);
+
+    MITK_INFO << "[SaveRoughPoints] Saving VTK file";
+    // mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
+    // outputPoints->SetVtkPolyData(pd);
+    // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
 
     m_Controls.button_save2_refined->setEnabled(true);
     Help();
 
-    MITK_INFO << "[SaveRoughPoints] Saving VTK file";
-    mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
-    outputPoints->SetVtkPolyData(roughLineSeeds);
-    mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
 
 }
 
@@ -213,6 +220,9 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     QString outname = "prodRefinedLandmarks";
     ofstream fileRefined;
 
+    // vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    // vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
+
     MITK_INFO << "[SaveRefinedPoints] Saving TXT file.";
     fileRefined.open((prodPath + outname + ".txt").toStdString());
     for (unsigned int i=0; i<refinedSeedLabels.size(); i++){
@@ -220,13 +230,15 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
         fileRefined << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
+        // points->InsertNextPoint(point);
     }
     fileRefined.close();
+    // pd->SetPoints(points);
 
     MITK_INFO << "[SaveRefinedPoints] Saving VTK file";
-    mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
-    outputPoints->SetVtkPolyData(refinedLineSeeds);
-    mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
+    // mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
+    // outputPoints->SetVtkPolyData(pd);
+    // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
 }
 
 void AtrialFibresLandmarksView::SetDirectoryFile(const QString directory, const QString fileName) {

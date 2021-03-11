@@ -33,6 +33,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkSurface.h>
 #include "ui_AtrialFibresViewControls.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
+#include "ui_AtrialFibresViewUIRemesh.h"
+
 #include "QmitkRenderWindow.h"
 #include "mitkCommon.h"
 #include "mitkDataStorage.h"
@@ -69,10 +71,14 @@ public:
 
     void AutomaticAnalysis();
     bool GetUserMeshingInputs();
+    bool GetUserRemeshingInputs();
+    bool LoadSurfaceChecks();
 
     // helper
     void SetManualModeButtons(bool b);
     void SetAutomaticModeButtons(bool b);
+    void SetTagNameFromPath(QString path);
+    void UserLoadSurface();
 
     inline void SetManualModeButtonsOn(){SetManualModeButtons(true);};
     inline void SetManualModeButtonsOff(){SetManualModeButtons(false);};
@@ -115,13 +121,16 @@ protected:
 
     Ui::AtrialFibresViewControls m_Controls;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
+    Ui::AtrialFibresViewUIRemesh m_UIRemesh;
+
 private:
 
     QString fileName, cnnPath;
-    QString directory, tagName;
+    QString directory, tagName, remeshSuffix;
     std::unique_ptr<CemrgAtrialTools> atrium;
     bool automaticPipeline, askedAboutAutoPipeline;
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
+    double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

@@ -106,6 +106,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
     connect(m_Controls.button_auto4_meshpreproc, SIGNAL(clicked()), this, SLOT(MeshPreprocessing()));
     connect(m_Controls.button_man4_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
+    connect(m_Controls.button_auto5_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
     connect(m_Controls.button_man5_idPV, SIGNAL(clicked()), this, SLOT(IdentifyPV())); // pv clipper
     connect(m_Controls.button_man6_labelmesh, SIGNAL(clicked()), this, SLOT(CreateLabelledMesh()));
     connect(m_Controls.button_man7_clipMV, SIGNAL(clicked()), this, SLOT(ClipperMV()));
@@ -125,9 +126,10 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     // Set default variables
     tagName = "tag-segmentation";
+    remeshSuffix = "-remesh";
     askedAboutAutoPipeline = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
-    atrium->SetDebugModeOn();
+    atrium->SetDebugModeOff();
 
     SetManualModeButtonsOff();
     SetAutomaticModeButtonsOff();
@@ -371,8 +373,11 @@ void AtrialFibresView::AutomaticAnalysis(){
     MITK_INFO << "[AUTOMATIC_PIPELINE] Create Mesh";
     //Ask for user input to set the parameters
     bool userInputsAccepted = GetUserMeshingInputs();
+
     if(userInputsAccepted){
-        atrium->GetSurfaceWithTags(tagAtriumAuto, directory, tagName+".vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
+
+        atrium->ProjectTagsOnSurface(tagAtriumAuto, directory, tagName+".vtk",
+            uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, true);
 
         MITK_INFO << "[AUTOMATIC_PIPELINE] Add the mesh to storage";
         QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
@@ -387,12 +392,6 @@ void AtrialFibresView::AutomaticAnalysis(){
         CemrgCommonUtils::AddToStorage(surface, meshName, this->GetDataStorage());
     }
 
-    MITK_INFO << "[AUTOMATIC_PIPELINE] Clip MV";
-    bool oldDebug = atrium->Debugging();
-    atrium->SetDebugModeOn();
-    atrium->ClipMitralValveAuto(directory, "prodMVI.nii", tagName+".vtk");
-    atrium->SetDebugMode(oldDebug);
-
 }
 
 void AtrialFibresView::MeshPreprocessing(){
@@ -403,7 +402,6 @@ void AtrialFibresView::MeshPreprocessing(){
     this->GetSite()->GetPage()->ResetPerspective();
     AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", automaticPipeline);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
-
 }
 
 // Manual pipeline
@@ -505,7 +503,7 @@ void AtrialFibresView::IdentifyPV(){
                 mitk::CastToItkImage(image, segImage);
                 bool userInputsAccepted = GetUserMeshingInputs();
                 if(userInputsAccepted){
-                    atrium->GetSurfaceWithTags(segImage, directory, "segmentation.vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, false);
+                    atrium->SurfSegmentation(segImage, directory, "segmentation.vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
 
                     //Add the mesh to storage
                     std::string meshName = segNode->GetName() + "-Mesh";
@@ -527,58 +525,91 @@ void AtrialFibresView::CreateLabelledMesh(){
 }
 
 void AtrialFibresView::ClipperMV(){
+    if(automaticPipeline){
+        MITK_INFO << "[ClipperMV] Clipping mitral valve";
+        bool oldDebug = atrium->Debugging();
+        atrium->SetDebugModeOn();
+        atrium->ClipMitralValveAuto(directory, "prodMVI.nii", tagName+".vtk");
+        atrium->SetDebugMode(oldDebug);
+    } else {
+
+    }
 
 }
 
 void AtrialFibresView::ClipperPV(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.#
+    if (!LoadSurfaceChecks()) return; // Surface was not loaded and user could not find file.
 
-}
+    if(automaticPipeline){
+        MITK_INFO << "[ClipperPV] clipping PVs from automatic pipeline.";
 
-bool AtrialFibresView::GetUserMeshingInputs(){
-    QDialog* inputs = new QDialog(0,0);
-    bool userInputAccepted=false;
-    m_UIMeshing.setupUi(inputs);
-    connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
-    connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-    int dialogCode = inputs->exec();
+        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
 
-    //Act on dialog return code
-    if (dialogCode == QDialog::Accepted) {
+        mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
+        path = directory + mitk::IOUtil::GetDirectorySeparator() + "prodClipperIDsAndRadii.txt";
+        if(QFile::exists(path)){
 
-        bool ok1, ok2, ok3, ok4;
-        uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
-        uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
-        uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
-        uiMesh_ds= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
+            MITK_INFO << "[ClipperPV] Reading in centre IDs and radii";
+            std::ifstream fi;
+            fi.open((path.toStdString()));
 
-        //Set default values
-        if (!ok1 || !ok2 || !ok3 || !ok4)
-            QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-        if (!ok1) uiMesh_th=0.5;
-        if (!ok2) uiMesh_bl=1.0;
-        if (!ok3) uiMesh_smth=3;
-        if (!ok4) uiMesh_ds=0.5;
+            int numPts;
+            fi >> numPts;
 
-        inputs->deleteLater();
-        userInputAccepted=true;
+            for (int ix = 0; ix < numPts; ix++) {
+                int ptId;
+                double radius, x_c, y_c, z_c;
 
-    } else if (dialogCode == QDialog::Rejected) {
-        inputs->close();
-        inputs->deleteLater();
-    }//_if
+                fi >> ptId >> x_c >> y_c >> z_c >> radius;
 
-    return userInputAccepted;
+                QString spherePath = directory + mitk::IOUtil::GetDirectorySeparator() + "pvClipper_" + QString::number(ptId) + ".vtk";
+                std::cout << "Read points: ID:" << ptId << " C=[" << x_c << " " << y_c << " " << z_c << "] R=" << radius <<'\n';
+
+                surface = CemrgCommonUtils::ClipWithSphere(surface, x_c, y_c, z_c, radius, spherePath);
+            }
+            fi.close();
+
+            // save surface
+            path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + "-Clipped.vtk";
+            mitk::IOUtil::Save(surface, path.toStdString());
+            atrium->SetSurface(path);
+
+            SetTagNameFromPath(path);
+            ClipperMV();
+
+        } else{
+            QMessageBox::warning(NULL, "Warning", "Radii file not found");
+            return;
+        }
+
+    } else {
+        MITK_INFO << "[ClipperPV] clipping PVs from manual pipeline.";
+
+    }
 }
 
 // Labelled Mesh to UAC
 void AtrialFibresView::MeshingOptions(){
+    if (!RequestProjectDirectoryFromUser()) return;
+    if (!LoadSurfaceChecks()) return;
 
+    MITK_INFO << "[MeshingOptions] Remeshing";
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+    cmd->SetUseDockerContainers(true);
+    bool userInputsAccepted = GetUserRemeshingInputs();
+    if(userInputsAccepted){
+        QString remesh = cmd->DockerRemeshSurface(directory, tagName, tagName+remeshSuffix,
+            uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+        SetTagNameFromPath(remesh);
+    }
 }
 
 void AtrialFibresView::SelectLandmarks(){
     MITK_INFO << "[MeshPreprocessing] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
-
+    if (!LoadSurfaceChecks()) return;
+    
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
     AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk");
@@ -695,6 +726,92 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
     return succesfulAssignment;
 }
 
+bool AtrialFibresView::GetUserRemeshingInputs(){
+    QDialog* inputs = new QDialog(0,0);
+    bool userInputAccepted=false;
+    m_UIRemesh.setupUi(inputs);
+    connect(m_UIRemesh.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UIRemesh.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+
+        bool ok1, ok2, ok3, ok4;
+        uiRemesh_max= m_UIRemesh.lineEdit_1max->text().toDouble(&ok1);
+        uiRemesh_avrg= m_UIRemesh.lineEdit_2avrg->text().toDouble(&ok2);
+        uiRemesh_min= m_UIRemesh.lineEdit_3min->text().toDouble(&ok3);
+        uiRemesh_surfcorr= m_UIRemesh.lineEdit_4surfcorr->text().toDouble(&ok4);
+
+        QString newsuffix = m_UIRemesh.lineEdit_5suffix->text().simplified();
+        if(!newsuffix.isEmpty()){
+            remeshSuffix = "-" + newsuffix;
+        }
+
+        //Set default values
+        if (!ok1 || !ok2 || !ok3 || !ok4)
+            QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
+        if (!ok1) uiRemesh_max=0.5;
+        if (!ok2) uiRemesh_avrg=0.3;
+        if (!ok3) uiRemesh_min=0.1;
+        if (!ok4) uiRemesh_surfcorr=0.95;
+
+        // checks on min,max and avrg
+        if(uiRemesh_max < uiRemesh_min || uiRemesh_max < uiRemesh_avrg || uiRemesh_avrg < uiRemesh_min){
+            QMessageBox::warning(NULL, "Attention", "Non consistent parameters, using defaults!");
+            uiRemesh_max=0.5;
+            uiRemesh_avrg=0.3;
+            uiRemesh_min=0.1;
+            uiRemesh_surfcorr=0.95;
+        }
+
+        inputs->deleteLater();
+        userInputAccepted=true;
+
+    } else if (dialogCode == QDialog::Rejected) {
+        inputs->close();
+        inputs->deleteLater();
+    }//_if
+
+    return userInputAccepted;
+}
+
+bool AtrialFibresView::GetUserMeshingInputs(){
+    QDialog* inputs = new QDialog(0,0);
+    bool userInputAccepted=false;
+    m_UIMeshing.setupUi(inputs);
+    connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+
+        bool ok1, ok2, ok3, ok4;
+        uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
+        uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
+        uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
+        uiMesh_ds= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
+
+        //Set default values
+        if (!ok1 || !ok2 || !ok3 || !ok4)
+            QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
+        if (!ok1) uiMesh_th=0.5;
+        if (!ok2) uiMesh_bl=1.0;
+        if (!ok3) uiMesh_smth=3;
+        if (!ok4) uiMesh_ds=0.5;
+
+        inputs->deleteLater();
+        userInputAccepted=true;
+
+    } else if (dialogCode == QDialog::Rejected) {
+        inputs->close();
+        inputs->deleteLater();
+    }//_if
+
+    return userInputAccepted;
+}
+
 QString AtrialFibresView::LandmarkFilesCreated(QString defaultName, QString type){
     QString path, res;
     path = directory + mitk::IOUtil::GetDirectorySeparator();
@@ -741,7 +858,41 @@ void AtrialFibresView::SetManualModeButtons(bool b){
     m_Controls.button_man8_clipPV->setVisible(b);
 }
 
-
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
     m_Controls.button_auto4_meshpreproc->setVisible(b);
+    m_Controls.button_auto5_clipPV->setVisible(b);
+}
+
+void AtrialFibresView::SetTagNameFromPath(QString path){
+    QFileInfo fi(path);
+    tagName = fi.baseName();
+}
+
+bool AtrialFibresView::LoadSurfaceChecks(){
+    bool success = true;
+    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+
+    if(!QFile::exists(path)){
+        int reply1 = QMessageBox::question(NULL, "Surface file not found", "Do you have a surface file to load?", QMessageBox::Yes, QMessageBox::No);
+        if(reply1==QMessageBox::Yes){
+            UserLoadSurface();
+        } else {
+            success=false;
+        }
+    } else{
+        std::string msg = ("Load automatically file called: [" + tagName + ".vtk]?").toStdString();
+        int reply2 = QMessageBox::question(NULL, "Surface file to load", msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+        if(reply2==QMessageBox::No){
+            UserLoadSurface();
+        }
+    }
+
+    MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + path).toStdString();
+
+    return success;
+}
+
+void AtrialFibresView::UserLoadSurface(){
+    QString newpath = QFileDialog::getOpenFileName(NULL, "Select the surface file to clip!", directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+    SetTagNameFromPath(newpath);
 }

@@ -12,6 +12,7 @@ set(INTERNAL_CPP_FILES
 set(UI_FILES
   src/internal/AtrialFibresViewControls.ui
   src/internal/AtrialFibresViewUIMeshing.ui
+  src/internal/AtrialFibresViewUIRemesh.ui
   src/internal/AtrialFibresClipperViewControls.ui
   src/internal/AtrialFibresClipperViewLabels.ui
   src/internal/AtrialFibresClipperViewUIRadius.ui

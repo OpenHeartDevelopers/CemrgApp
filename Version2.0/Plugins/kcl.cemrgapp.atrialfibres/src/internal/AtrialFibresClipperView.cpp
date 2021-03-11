@@ -696,14 +696,21 @@ void AtrialFibresClipperView::ClipPVs(){
 
     int reply = QMessageBox::question(NULL, "Question", "Do want to save the current clipper radii?",
         QMessageBox::Yes, QMessageBox::No);
+
     if (reply==QMessageBox::Yes){
         QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
         path += "prodClipperIDsAndRadii.txt";
         std::ofstream fo(path.toStdString());
-        for (size_t ix = 0; ix < pvClipperRadii.size() ; ix++) {
-            /* code for clipping everything */
-            std::cout << pvClipperSeedIdx->GetId(ix) << ", " << pvClipperRadii.at(ix) << '\n';
-            fo << pvClipperSeedIdx->GetId(ix) << ", " << pvClipperRadii.at(ix) << std::endl;
+        fo << pvClipperRadii.size() << std::endl;
+        for (int ix = 0; ix < pvClipperRadii.size() ; ix++) {
+            double* c = surface->GetVtkPolyData()->GetPoint(pvClipperSeedIdx->GetId(ix));
+
+            std::cout << "Saving ID:" << pvClipperSeedIdx->GetId(ix) << " ";
+            std::cout << "Radius" << pvClipperRadii.at(ix) << " ";
+            std::cout << "C = [" << c[0] << ", " << c[1] << ", " << c[2] << ", "  << "]";
+            fo << pvClipperSeedIdx->GetId(ix) << " ";
+            fo << c[0] << " " << c[1] << " " << c[2] << " ";
+            fo << pvClipperRadii.at(ix) << std::endl;
         }
         fo.close();
     }
@@ -1290,9 +1297,10 @@ void AtrialFibresClipperView::IgnoreLabel(std::vector<int> ignoredIds){
 
     double ptLabel;
     std::cout << "Ignoring: ";
-    for (vtkIdType labelIdx = 0; labelIdx < ignoredIds.size(); labelIdx++) {
-        ptLabel = pointScalars->GetTuple1(labelIdx);
-        std::cout << ptLabel << std::endl;
+    for (vtkIdType idx = 0; idx < ignoredIds.size(); idx++) {
+        vtkIdType ptId = ignoredIds.at(idx);
+        ptLabel = pointScalars->GetTuple1(ptId);
+        std::cout << "Point ID: " << ptId << " - " << ptLabel << std::endl;
         double s;
         for (vtkIdType vId = 0; vId < surface->GetVtkPolyData()->GetNumberOfPoints(); vId++) {
             s = pointScalars->GetTuple1(vId);
@@ -1321,6 +1329,9 @@ void AtrialFibresClipperView::IgnoreLabel(std::vector<int> ignoredIds){
 }
 
 void AtrialFibresClipperView::DiscardUnwantedLabel(std::vector<int> discardedIds){
+    QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+    path += (AtrialFibresClipperView::fileName + "nii");
+
     vtkFloatArray *pointScalars = vtkFloatArray::New();
     pointScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
 
