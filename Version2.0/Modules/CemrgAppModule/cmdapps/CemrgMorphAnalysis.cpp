@@ -111,17 +111,14 @@ int main(int argc, char* argv[]) {
 
             //Import to MITK image
             typedef itk::LabelMapToLabelImageFilter<LabelMapType, ImageType> LabelMapToLabelImageFilterType;
-            LabelMapToLabelImageFilterType::Pointer labelImageConverter1 = LabelMapToLabelImageFilterType::New();
-            labelImageConverter1->SetInput(selector->GetOutput(1));
-            labelImageConverter1->Update();
-            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory + "/PVeinsCroppedImage.nii");
-            LabelMapToLabelImageFilterType::Pointer labelImageConverter2 = LabelMapToLabelImageFilterType::New();
-            labelImageConverter2->SetInput(selector->GetOutput(0));
-            labelImageConverter2->Update();
-            mitk::Image::Pointer ap = mitk::ImportItkImage(labelImageConverter2->GetOutput());
+            LabelMapToLabelImageFilterType::Pointer labelImageConverter = LabelMapToLabelImageFilterType::New();
+            labelImageConverter->SetInput(selector->GetOutput(0));
+            labelImageConverter->Update();
+            mitk::Image::Pointer ap = mitk::ImportItkImage(labelImageConverter->GetOutput());
+            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii");
 
-            mitk::IOUtil::Save(bp,directory+"/BP.nii.gz");
-            mitk::IOUtil::Save(ap,directory+"/AP.nii.gz");
+            mitk::IOUtil::Save(ap, directory + mitk::IOUtil::GetDirectorySeparator() + "AP.nii.gz");
+            mitk::IOUtil::Save(bp, directory + mitk::IOUtil::GetDirectorySeparator() + "BP.nii.gz");
 
             //Ask for user input to set the parameters
             float th = 0.5;
