@@ -160,13 +160,14 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
         Visualiser();
     }
     if(automaticPipeline){
-        m_Controls.slider->setEnabled(false);
-        m_Controls.spinBox->setEnabled(false);
-        m_Controls.comboBox->setEnabled(false);
-    } else{
+        m_Controls.button_auto2_clippers->setEnabled(false);
         m_Controls.slider_auto->setEnabled(false);
         m_Controls.comboBox_auto->setEnabled(false);
         m_Controls.button_auto4_clipPv->setEnabled(false);
+    } else{
+        m_Controls.slider->setEnabled(false);
+        m_Controls.spinBox->setEnabled(false);
+        m_Controls.comboBox->setEnabled(false);
     }
 }
 
@@ -196,13 +197,10 @@ void AtrialFibresClipperView::iniPreSurf() {
 
     if(automaticPipeline){
         CemrgCommonUtils::FlipXYPlane(shell, "", "");
-        vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
-        cell_to_point->SetInputData(shell->GetVtkPolyData());
-        cell_to_point->PassCellDataOn();
-        cell_to_point->Update();
-        shell->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
+        CemrgCommonUtils::SetCellDataToPointData(shell);
 
-        vtkSmartPointer<vtkPolyData> pd = cell_to_point->GetPolyDataOutput();
+        // vtkSmartPointer<vtkPolyData> pd = cell_to_point->GetPolyDataOutput();
+        vtkSmartPointer<vtkPolyData> pd = shell->GetVtkPolyData();
         vtkFloatArray *pointScalars = vtkFloatArray::New();
         vtkFloatArray *cellScalars = vtkFloatArray::New();
 
@@ -213,14 +211,23 @@ void AtrialFibresClipperView::iniPreSurf() {
         for (vtkIdType vId = 0; vId < pd->GetNumberOfPoints() ; vId++) {
             s = pointScalars->GetTuple1(vId);
 
-            if (std::floor(s)!=s){ // scalar value is not a category
-                int s2;
+            if (std::floor(s)!=s || std::floor(s) <= 10){ // scalar value is not a category
+                double s2, maxCell=-1;
                 vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
                 cellIds->Initialize();
 
                 pd->GetPointCells(vId, cellIds);
-                s2 = cellScalars->GetTuple1(cellIds->GetId(0));
-                pointScalars->SetTuple1(vId, s2);
+                for (vtkIdType cId = 0; cId < cellIds->GetNumberOfIds(); cId++) {
+                    s2 = cellScalars->GetTuple1(cellIds->GetId(0));
+                    if(s2>maxCell){
+                        maxCell = s2;
+                    }
+                }
+                if(maxCell < 11){
+                    pointScalars->SetTuple1(vId, 1);
+                } else{
+                    pointScalars->SetTuple1(vId, std::floor(s2));
+                }
             }
         }
         shell->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
@@ -566,6 +573,7 @@ void AtrialFibresClipperView::SaveLabels(){
 
     IgnoreLabel(ignoredIds);
 
+    m_Controls.button_auto2_clippers->setEnabled(true);
 }
 
 void AtrialFibresClipperView::ShowPvClippers(){

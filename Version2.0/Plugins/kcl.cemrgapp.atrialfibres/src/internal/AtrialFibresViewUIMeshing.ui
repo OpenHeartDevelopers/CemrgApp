@@ -72,7 +72,7 @@
    <item>
     <widget class="QLineEdit" name="lineEdit_4">
      <property name="placeholderText">
-      <string>Decimate (default = 0.5)</string>
+      <string>Decimate (default = 0.0)</string>
      </property>
     </widget>
    </item>

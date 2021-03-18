@@ -111,10 +111,10 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_man6_labelmesh, SIGNAL(clicked()), this, SLOT(CreateLabelledMesh()));
     connect(m_Controls.button_man7_clipMV, SIGNAL(clicked()), this, SLOT(ClipperMV()));
     connect(m_Controls.button_man8_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
-    connect(m_Controls.button_x_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
+    connect(m_Controls.button_w_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
 
     // Labelled Mesh to UAC
-    connect(m_Controls.button_w_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
+    connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
     connect(m_Controls.button_y_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
     connect(m_Controls.button_z_refineUac, SIGNAL(clicked()), this, SLOT(UacMeshRefinement()));
 
@@ -126,7 +126,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     // Set default variables
     tagName = "tag-segmentation";
-    remeshSuffix = "-remesh";
+    refinedSuffix = "-remesh";
     askedAboutAutoPipeline = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
     atrium->SetDebugModeOff();
@@ -571,12 +571,14 @@ void AtrialFibresView::ClipperPV(){
             fi.close();
 
             // save surface
-            path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + "-Clipped.vtk";
+            path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
             mitk::IOUtil::Save(surface, path.toStdString());
             atrium->SetSurface(path);
 
             SetTagNameFromPath(path);
             ClipperMV();
+
+            QMessageBox::information(NULL, "Attention", "Clipping of PV and MV finished");
 
         } else{
             QMessageBox::warning(NULL, "Warning", "Radii file not found");
@@ -590,6 +592,17 @@ void AtrialFibresView::ClipperPV(){
 }
 
 // Labelled Mesh to UAC
+void AtrialFibresView::SelectLandmarks(){
+    MITK_INFO << "[MeshPreprocessing] ";
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!LoadSurfaceChecks()) return;
+
+    //Show the plugin
+    this->GetSite()->GetPage()->ResetPerspective();
+    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk");
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibreslandmarksview");
+}
+
 void AtrialFibresView::MeshingOptions(){
     if (!RequestProjectDirectoryFromUser()) return;
     if (!LoadSurfaceChecks()) return;
@@ -599,22 +612,29 @@ void AtrialFibresView::MeshingOptions(){
     cmd->SetUseDockerContainers(true);
     bool userInputsAccepted = GetUserRemeshingInputs();
     if(userInputsAccepted){
-        QString remesh = cmd->DockerRemeshSurface(directory, tagName, tagName+remeshSuffix,
-            uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
-        SetTagNameFromPath(remesh);
+        QString remesh = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+
+        QString prodPathOut = directory + mitk::IOUtil::GetDirectorySeparator();
+        QString targetname = prodPathOut + tagName + ".vtk";
+
+        mitk::Surface::Pointer _target = mitk::IOUtil::Load<mitk::Surface>(targetname.toStdString());
+        mitk::Surface::Pointer _remesh = mitk::IOUtil::Load<mitk::Surface>(remesh.toStdString());
+
+        MITK_INFO << "[MeshingOptions] projecting tags onto remeshed surface";
+        std::unique_ptr<CemrgScarAdvanced> csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
+        csadv->SetOutputPath(prodPathOut.toStdString());
+        csadv->SetWeightedCorridorBool(false);
+        csadv->SetSourceAndTarget(_remesh->GetVtkPolyData(), _target->GetVtkPolyData());
+        csadv->TransformSource2Target(tagName+refinedSuffix);
+
+        _remesh = mitk::IOUtil::Load<mitk::Surface>(remesh.toStdString());
+        CemrgCommonUtils::SetPointDataToCellData(_remesh, false, remesh);
+
+        // go though cells and set values in the 2-9 range to another value
+        // save individual vtks for: RS, RI, LS, LI and LAA
     }
 }
 
-void AtrialFibresView::SelectLandmarks(){
-    MITK_INFO << "[MeshPreprocessing] ";
-    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
-    if (!LoadSurfaceChecks()) return;
-    
-    //Show the plugin
-    this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk");
-    this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibreslandmarksview");
-}
 
 void AtrialFibresView::UacCalculation(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
@@ -745,7 +765,7 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
 
         QString newsuffix = m_UIRemesh.lineEdit_5suffix->text().simplified();
         if(!newsuffix.isEmpty()){
-            remeshSuffix = "-" + newsuffix;
+            refinedSuffix = "-" + newsuffix;
         }
 
         //Set default values
@@ -799,7 +819,7 @@ bool AtrialFibresView::GetUserMeshingInputs(){
         if (!ok1) uiMesh_th=0.5;
         if (!ok2) uiMesh_bl=1.0;
         if (!ok3) uiMesh_smth=3;
-        if (!ok4) uiMesh_ds=0.5;
+        if (!ok4) uiMesh_ds=0.0;
 
         inputs->deleteLater();
         userInputAccepted=true;

@@ -722,7 +722,7 @@ void CemrgScarAdvanced::SetSourceAndTarget(
     _target = tg;
 }
 
-void CemrgScarAdvanced::TransformSource2Target() {
+void CemrgScarAdvanced::TransformSource2Target(QString outName) {
 
     // Copy scalar values from target to source
     vtkSmartPointer<vtkPolyData> Output_Poly = vtkSmartPointer<vtkPolyData>::New();
@@ -762,7 +762,7 @@ void CemrgScarAdvanced::TransformSource2Target() {
     Output_Poly->GetPointData()->SetScalars(Output_Poly_Scalar);
 
     vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
-    writer->SetFileName((GetOutputPath()+"MaxScarPre_OnPost.vtk").c_str());
+    writer->SetFileName((GetOutputPath()+outName.toStdString()+".vtk").c_str());
     writer->SetInputData(Output_Poly);
     writer->Write();
 }

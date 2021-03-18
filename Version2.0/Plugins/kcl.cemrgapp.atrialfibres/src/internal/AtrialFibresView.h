@@ -126,7 +126,7 @@ protected:
 private:
 
     QString fileName, cnnPath;
-    QString directory, tagName, remeshSuffix;
+    QString directory, tagName, refinedSuffix;
     std::unique_ptr<CemrgAtrialTools> atrium;
     bool automaticPipeline, askedAboutAutoPipeline;
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;

@@ -197,7 +197,7 @@ public:
 
     // F&I T3
     void SetSourceAndTarget(vtkSmartPointer<vtkPolyData> sc, vtkSmartPointer<vtkPolyData> tg);
-    void TransformSource2Target();
+    void TransformSource2Target(QString outName="MaxScarPre_OnPost");
 
     CemrgScarAdvanced();
 };

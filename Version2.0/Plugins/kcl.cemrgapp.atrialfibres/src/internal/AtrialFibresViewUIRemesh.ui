@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>222</width>
-    <height>248</height>
+    <width>248</width>
+    <height>196</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -80,13 +80,6 @@
     <widget class="QLineEdit" name="lineEdit_4surfcorr">
      <property name="placeholderText">
       <string>Surf Corr (default = 0.95)</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>

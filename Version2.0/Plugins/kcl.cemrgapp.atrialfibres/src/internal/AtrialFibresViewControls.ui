@@ -116,7 +116,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    Step5: Clip PVs</string>
+      <string>    Step5: Clip PVs and MV</string>
      </property>
     </widget>
    </item>
@@ -181,7 +181,17 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_w_meshtools">
+    <widget class="QPushButton" name="button_w_landmarks">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    StepW: Select Landmarks</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_x_meshtools">
      <property name="font">
       <font>
        <weight>50</weight>
@@ -193,17 +203,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepW: Mesh improvement</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="button_x_landmarks">
-     <property name="styleSheet">
-      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
-     </property>
-     <property name="text">
-      <string>    StepX: Select Landmarks</string>
+      <string>    StepX: Mesh improvement</string>
      </property>
     </widget>
    </item>

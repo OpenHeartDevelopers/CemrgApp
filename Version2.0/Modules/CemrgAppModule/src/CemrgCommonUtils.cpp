@@ -66,6 +66,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCleanPolyData.h>
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkCleanPolyData.h>
+#include <vtkCellDataToPointData.h>
+#include <vtkPointDataToCellData.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -365,6 +367,32 @@ mitk::Surface::Pointer CemrgCommonUtils::ExtractSurfaceFromSegmentation(mitk::Im
 
     mitk::Surface::Pointer shell = im2surf->GetOutput();
     return shell;
+}
+
+void CemrgCommonUtils::SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath){
+    vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
+    cell_to_point->SetInputData(surface->GetVtkPolyData());
+    cell_to_point->PassCellDataOn();
+    cell_to_point->SetContributingCellOption(2); // All=0, Patch=1, DataSetMax=2
+    cell_to_point->Update();
+    surface->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
+
+    if(!outputPath.isEmpty()){
+        mitk::IOUtil::Save(surface, outputPath.toStdString());
+    }
+}
+
+void CemrgCommonUtils::SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories, QString outputPath){
+    vtkSmartPointer<vtkPointDataToCellData> point_to_cell = vtkSmartPointer<vtkPointDataToCellData>::New();
+    point_to_cell->SetInputData(surface->GetVtkPolyData());
+    point_to_cell->PassPointDataOn();
+    point_to_cell->SetCategoricalData(categories);
+    point_to_cell->Update();
+    surface->SetVtkPolyData(point_to_cell->GetPolyDataOutput());
+
+    if(!outputPath.isEmpty()){
+        mitk::IOUtil::Save(surface, outputPath.toStdString());
+    }
 }
 
 mitk::Surface::Pointer CemrgCommonUtils::ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath){
