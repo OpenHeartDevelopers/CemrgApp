@@ -79,6 +79,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 //CemrgAppModule
 #include "CemrgScar3D.h"
+#include "CemrgScarAdvanced.h"
 #include "CemrgCommonUtils.h"
 #include "CemrgMeasure.h"
 
@@ -95,17 +96,17 @@ CemrgAtrialTools::CemrgAtrialTools() {
 void CemrgAtrialTools::SetDefaultSegmentationTags(){
     abody = 1;
     mv = 10;
-    laap = -1;
-    lspv = -1;
-    lipv = -1;
-    rspv = -1;
-    ripv = -1;
+    lspv = 11;
+    lipv = 13;
+    rspv = 15;
+    ripv = 17;
+    laap = 19;
 
-    autolaap=-1;
-    autolspv=-1;
-    autolipv=-1;
-    autorspv=-1;
-    autoripv=-1;
+    naivelaap=-1;
+    naivelspv=-1;
+    naivelipv=-1;
+    naiverspv=-1;
+    naiveripv=-1;
 
 }
 
@@ -227,7 +228,8 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
     int idx=0;
     while(!veinsIter.IsAtEnd()){
         if(veinsIter.Get() > 0){
-            detectedLabels.push_back((int)veinsIter.Get()+10);
+            int value = (int)veinsIter.Get()+10;
+            detectedLabels.push_back(value);
             imIter.Set(detectedLabels[idx]);
             idx++;
         }
@@ -236,7 +238,6 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
     }
     MITK_INFO << "Relabelling finished";
 
-    SetNaiveSegmentationTags();
     SetTagSegmentationName(outName);
     SaveImageToDisk(im, dir, tagSegName);
 
@@ -277,6 +278,7 @@ void CemrgAtrialTools::ProjectTagsOnSurface(ImageType::Pointer im, QString dir, 
 
     MITK_INFO << "Projection of image labels onto surface";
     surface = scar->Scar3D(dir.toStdString(), labelSegIm);
+    surface->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("elemTag");
     surfLoaded=true;
 
     QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
@@ -343,6 +345,67 @@ void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvName, QString 
         MITK_INFO << ("Saving to file: " + outPath).toStdString();
         mitk::IOUtil::Save(surface, outPath.toStdString());
     }
+}
+
+void CemrgAtrialTools::ProjectShellScalars(QString dir, QString scalarsShellPath, QString outputShellPath){
+    QString prodPathOut = dir + mitk::IOUtil::GetDirectorySeparator();
+    QFileInfo fi(outputShellPath);
+
+    mitk::Surface::Pointer _scalarsShell = mitk::IOUtil::Load<mitk::Surface>(scalarsShellPath.toStdString());
+    mitk::Surface::Pointer _outputShell = mitk::IOUtil::Load<mitk::Surface>(outputShellPath.toStdString());
+
+    std::unique_ptr<CemrgScarAdvanced> csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
+    csadv->SetOutputPath(prodPathOut.toStdString());
+    csadv->SetWeightedCorridorBool(false);
+    csadv->SetSourceAndTarget(_outputShell->GetVtkPolyData(), _scalarsShell->GetVtkPolyData());
+    csadv->TransformSource2Target(fi.baseName());
+}
+
+void CemrgAtrialTools::SetSurfaceLabels(QString correctLabels, QString naiveLabels){
+    std::ifstream fileCorrect, fileNaive;
+    fileCorrect.open(correctLabels.toStdString());
+    fileNaive.open(naiveLabels.toStdString());
+    int correctlabel, naivelabel;
+    std::string line, nline;
+
+    while(std::getline(fileCorrect, line)){
+        std::getline(fileNaive, nline);
+
+        QString qline =  QString::fromStdString(line);
+        QString qlineNaive = QString::fromStdString(nline);
+        correctlabel = qline.toInt();
+        naivelabel = qlineNaive.toInt();
+
+        if(correctlabel == laap){
+            naivelaap = naivelabel;
+        } else if(correctlabel == lspv){
+            naivelspv = naivelabel;
+        } else if(correctlabel == lipv){
+            naivelipv = naivelabel;
+        } else if(correctlabel == rspv){
+            naiverspv = naivelabel;
+        } else if(correctlabel == ripv){
+            naiveripv = naivelabel;
+        }
+    }
+}
+
+void CemrgAtrialTools::ExtractLabelFromShell(QString dir, int label, QString outName){
+    // make sure surface is loaded
+
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> cf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    //cf->SetOutputPointsPrecision(outputPointsPrecision);
+    cf->SetInputData(surface->GetVtkPolyData());
+    cf->ScalarConnectivityOn();
+    cf->FullScalarConnectivityOn();
+    cf->SetScalarRange(GetNaiveLabel(label), GetNaiveLabel(label));
+    cf->Update();
+    cf->SetExtractionModeToLargestRegion();
+
+    QString path = dir + mitk::IOUtil::GetDirectorySeparator() + outName + ".vtk";
+    mitk::Surface::Pointer outputsurf = mitk::Surface::New();
+    outputsurf->SetVtkPolyData(cf->GetOutput());
+    mitk::IOUtil::Save(outputsurf, path.toStdString());
 }
 
 //helper functions
@@ -427,14 +490,18 @@ void CemrgAtrialTools::SaveImageToDisk(ImageType::Pointer im, QString dir, QStri
     }
 }
 
-// helper functions
-void CemrgAtrialTools::SetNaiveSegmentationTags(){
-    int numDetectedLabels = detectedLabels.size();
-    if(numDetectedLabels>=5){
-        autolaap=detectedLabels[0];
-        autolipv=detectedLabels[1];
-        autolspv=detectedLabels[2];
-        autorspv=detectedLabels[3];
-        autoripv=detectedLabels[4];
+int CemrgAtrialTools::GetNaiveLabel(int l){
+    int res;
+    if(l == laap){
+        res = naivelaap;
+    } else if(l == lspv){
+        res = naivelspv;
+    } else if(l == lipv){
+        res = naivelipv;
+    } else if(l == rspv){
+        res = naiverspv;
+    } else if(l == ripv){
+        res = naiveripv;
     }
+    return res;
 }

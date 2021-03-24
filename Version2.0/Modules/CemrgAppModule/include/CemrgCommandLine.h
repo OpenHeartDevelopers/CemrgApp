@@ -72,6 +72,7 @@ public:
     // meshtool routines
     QString DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix); // extract surface
     QString DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad=true); // extract gradient
+    QString DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale=-1);
     QString DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax=1, double hmin=0.98, double havg=0.3, double surfCorr=0.95); // resample surfmesh
 
     //Docker Helper Functions

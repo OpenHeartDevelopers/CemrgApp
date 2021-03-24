@@ -89,7 +89,7 @@ public:
     inline void SetWorkingDirectory(QString wd){directory =wd;};
     inline void SetTagSegmentationName(QString tsn){tagSegName = tsn;};
 
-    inline void SetSurface(QString surfpath){surface = mitk::IOUtil::Load<mitk::Surface>(surfpath.toStdString()); surfLoaded=true;}; // START HERE
+    inline void SetSurface(QString surfpath){surface = mitk::IOUtil::Load<mitk::Surface>(surfpath.toStdString()); surfLoaded=true;};
 
     // Label setters
     inline void SetMV(int _mv){mv=_mv;};
@@ -99,6 +99,17 @@ public:
     inline void SetLSPV(int ls){lspv=ls;};
     inline void SetRSPV(int rs){rspv=rs;};
     inline void SetRIPV(int ri){lspv=ri;};
+
+    // label Getters
+    inline int MV(){return mv;};
+    inline int BODY(){return abody;};
+    inline int LAAP(){return laap;};
+    inline int LIPV(){return lipv;};
+    inline int LSPV(){return lspv;};
+    inline int RSPV(){return rspv;};
+    inline int RIPV(){return ripv;};
+
+    int GetNaiveLabel(int l);
 
     inline bool HasSurface(){return surfLoaded;};
 
@@ -111,7 +122,9 @@ public:
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
     void ClipMitralValveAuto(QString dir, QString mvName, QString outName);
 
-    void SetSurfaceLabels(int ap_InSurf, int li_InSurf, int ls_InSurf, int rs_InSurf, int ri_InSurf);
+    void SetSurfaceLabels(QString correctLabels, QString naiveLabels);
+    void ProjectShellScalars(QString dir, QString scalarsShellPath, QString outputShellPath);
+    void ExtractLabelFromShell(QString dir, int label, QString outName);
 
     // helper functions
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);
@@ -132,7 +145,7 @@ private:
     QString directory, tagSegName;
 
     int abody, mv, laap, lipv, lspv, rspv, ripv;
-    int autolaap, autolipv, autolspv, autorspv, autoripv;
+    int naivelaap, naivelipv, naivelspv, naiverspv, naiveripv;
     std::vector<int> detectedLabels;
     bool segmentationSet, debugSteps, surfLoaded;
     //Constant Vein Labels

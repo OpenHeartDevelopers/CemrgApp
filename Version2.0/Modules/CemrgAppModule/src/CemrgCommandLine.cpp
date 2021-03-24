@@ -1177,6 +1177,45 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale){
+    // Method equivalent to: meshtool convert
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "convert";
+    arguments << ("-imsh="+imsh);
+    arguments << ("-ifmt="+ifmt);
+    arguments << ("-omsh="+omsh);
+    arguments << ("-ofmt="+ofmt);
+
+    if(scale>0){
+        arguments << ("-scale="+QString::number(scale));
+    }
+
+    QString fileExt = "";
+    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + omsh;
+    outPath += (ofmt.contains("carp", QString::CaseInsensitive)) ? ".pts" : ".vtk";
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if (successful) {
+        MITK_INFO << "Surface remeshing successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    return outAbsolutePath;
+}
+
+
 /***************************************************************************
  *********************** Docker Helper Functions ***************************
  ***************************************************************************/

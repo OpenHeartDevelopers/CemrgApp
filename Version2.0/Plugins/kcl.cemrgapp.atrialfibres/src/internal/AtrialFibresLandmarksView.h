@@ -70,7 +70,7 @@ public:
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
-    void Help();
+    void Help(bool firstTime=false);
     void SaveRoughPoints();
     void SaveRefinedPoints();
 

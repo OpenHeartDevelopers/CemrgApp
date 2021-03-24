@@ -126,7 +126,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     // Set default variables
     tagName = "tag-segmentation";
-    refinedSuffix = "-remesh";
+    refinedSuffix = "-refined";
     askedAboutAutoPipeline = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
     atrium->SetDebugModeOff();
@@ -587,7 +587,6 @@ void AtrialFibresView::ClipperPV(){
 
     } else {
         MITK_INFO << "[ClipperPV] clipping PVs from manual pipeline.";
-
     }
 }
 
@@ -612,26 +611,31 @@ void AtrialFibresView::MeshingOptions(){
     cmd->SetUseDockerContainers(true);
     bool userInputsAccepted = GetUserRemeshingInputs();
     if(userInputsAccepted){
-        QString remesh = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+        QString refinedPath = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+        QString refSeg = cmd->DockerRemeshSurface(directory, "segmentation", "segmentation"+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+        QString orgShellName = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
 
-        QString prodPathOut = directory + mitk::IOUtil::GetDirectorySeparator();
-        QString targetname = prodPathOut + tagName + ".vtk";
+        MITK_INFO << "[MeshingOptions] projecting tags onto refinedSurfed surface";
+        atrium->ProjectShellScalars(directory, orgShellName, refinedPath);
 
-        mitk::Surface::Pointer _target = mitk::IOUtil::Load<mitk::Surface>(targetname.toStdString());
-        mitk::Surface::Pointer _remesh = mitk::IOUtil::Load<mitk::Surface>(remesh.toStdString());
+        MITK_INFO << "[MeshingOptions] point data to cell data";
+        mitk::Surface::Pointer _refinedSurf = mitk::IOUtil::Load<mitk::Surface>(refinedPath.toStdString());
+        CemrgCommonUtils::SetPointDataToCellData(_refinedSurf, false, refinedPath);
+        atrium->SetSurface(refinedPath);
 
-        MITK_INFO << "[MeshingOptions] projecting tags onto remeshed surface";
-        std::unique_ptr<CemrgScarAdvanced> csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
-        csadv->SetOutputPath(prodPathOut.toStdString());
-        csadv->SetWeightedCorridorBool(false);
-        csadv->SetSourceAndTarget(_remesh->GetVtkPolyData(), _target->GetVtkPolyData());
-        csadv->TransformSource2Target(tagName+refinedSuffix);
+        QString correctLabels = directory + mitk::IOUtil::GetDirectorySeparator() + "prodSeedLabels.txt";
+        QString naiveLabels = directory + mitk::IOUtil::GetDirectorySeparator() + "prodNaiveSeedLabels.txt";
+        atrium->SetSurfaceLabels(correctLabels, naiveLabels);
 
-        _remesh = mitk::IOUtil::Load<mitk::Surface>(remesh.toStdString());
-        CemrgCommonUtils::SetPointDataToCellData(_remesh, false, remesh);
+        // fix areas between body and atrium
 
-        // go though cells and set values in the 2-9 range to another value
         // save individual vtks for: RS, RI, LS, LI and LAA
+        atrium->ExtractLabelFromShell(directory, atrium->BODY(), "BODY");
+        atrium->ExtractLabelFromShell(directory, atrium->LSPV(), "LSPV");
+        atrium->ExtractLabelFromShell(directory, atrium->LIPV(), "LIPV");
+        atrium->ExtractLabelFromShell(directory, atrium->RSPV(), "RSPV");
+        atrium->ExtractLabelFromShell(directory, atrium->RIPV(), "RIPV");
+        atrium->ExtractLabelFromShell(directory, atrium->LAAP(), "LAAP");
     }
 }
 

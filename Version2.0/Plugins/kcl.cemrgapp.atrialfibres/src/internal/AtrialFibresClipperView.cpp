@@ -81,6 +81,7 @@ PURPOSE.  See the above copyright notices for more information.
 // Qt
 #include <QMessageBox>
 #include <QDesktopWidget>
+#include <QFile>
 
 // CemrgAppModule
 #include <CemrgAtriaClipper.h>
@@ -211,7 +212,7 @@ void AtrialFibresClipperView::iniPreSurf() {
         for (vtkIdType vId = 0; vId < pd->GetNumberOfPoints() ; vId++) {
             s = pointScalars->GetTuple1(vId);
 
-            if (std::floor(s)!=s || std::floor(s) <= 10){ // scalar value is not a category
+            if (std::floor(s)!=s){ // scalar value is not a category
                 double s2, maxCell=-1;
                 vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
                 cellIds->Initialize();
@@ -351,7 +352,7 @@ void AtrialFibresClipperView::CtrPlanes() {
         else if (pickedSeedLabels.at(i) == 18)
             comboText = "RIGHT COMMON PV";
         else if (pickedSeedLabels.at(i) == 19)
-            comboText = "APPENDAGE CUT";
+            comboText = "APPENDAGE";
         m_Controls.comboBox->insertItem(i, comboText);
     }//_for
     m_Controls.widget_1->GetRenderWindow()->Render();
@@ -547,31 +548,50 @@ void AtrialFibresClipperView::SaveLabels(){
     MITK_INFO << "[SaveLabels] Saving labels to file.";
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     std::vector<int> ignoredIds;
-    ofstream fileLabels, fileIds, fileIgnoreIds, fileDiscardIds;
+    int ignored=0, discarded=0;
+    double s;
+    ofstream fileLabels, fileIds, fileLabelInShell, fileIgnoreIds, fileDiscardIds;
 
     fileLabels.open((prodPath + "prodSeedLabels.txt").toStdString());
     fileIds.open((prodPath + "prodSeedIds.txt").toStdString());
     fileIgnoreIds.open((prodPath + "prodIgnoreSeedIds.txt").toStdString());
     fileDiscardIds.open((prodPath + "prodDiscardSeedIds.txt").toStdString());
+    fileLabelInShell.open((prodPath + "prodNaiveSeedLabels.txt").toStdString());
+
+    vtkFloatArray *scalars = vtkFloatArray::New();
+    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
 
     // 14=ignore, 18=discard
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
         if(pickedSeedLabels.at(i)==14){ //ignore
             ignoredIds.push_back(pickedSeedIds->GetId(i));
             fileIgnoreIds << pickedSeedIds->GetId(i) << "\n";
+            ignored++;
         } else if(pickedSeedLabels.at(i)==18){ // discard
             fileDiscardIds << pickedSeedIds->GetId(i) << "\n";
+            discarded++;
         } else{
             fileLabels << pickedSeedLabels.at(i) << "\n";
             fileIds << pickedSeedIds->GetId(i) << "\n";
+
+            fileLabelInShell << scalars->GetTuple1(pickedSeedIds->GetId(i)) << "\n";
         }
     }
     fileLabels.close();
     fileIds.close();
     fileIgnoreIds.close();
     fileDiscardIds.close();
+    fileLabelInShell.close();
 
-    IgnoreLabel(ignoredIds);
+    if(ignored==0){
+        QFile::remove(prodPath + "prodIgnoreSeedIds.txt");
+    } else{
+        IgnoreLabel(ignoredIds);
+    }
+
+    if(discarded==0){
+        QFile::remove(prodPath + "prodDiscardSeedIds.txt");
+    }
 
     m_Controls.button_auto2_clippers->setEnabled(true);
 }
@@ -671,16 +691,14 @@ void AtrialFibresClipperView::InterPvSpacing(){
         vId = qline.section(',', 1, 1).toInt();
         vScalar = qline.section(',', 6, 6).toDouble();
 
-        if (vScalar != 1){
-            pointScalars->SetTuple1(vId, 1);
+        pointScalars->SetTuple1(vId, 1);
 
-            vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-            cellIds->Initialize();
+        vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+        cellIds->Initialize();
 
-            surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
-            for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
-                cellScalars->SetTuple1(cellIds->GetId(ix), 1);
-            }
+        surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
+        for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
+            cellScalars->SetTuple1(cellIds->GetId(ix), 1);
         }
     }
     fi.close();

@@ -148,6 +148,7 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
     }
 
     m_Controls.button_save2_refined->setEnabled(false);
+    Help(true);
 }
 
 void AtrialFibresLandmarksView::SetFocus() {
@@ -164,10 +165,18 @@ AtrialFibresLandmarksView::~AtrialFibresLandmarksView() {
 }
 
 // slots
-void AtrialFibresLandmarksView::Help(){
-    std::string msg = GetRoughPointsGuide() + "\n";
-    msg += GetRefinedPointsGiude();
-
+void AtrialFibresLandmarksView::Help(bool firstTime){
+    std::string msg = "";
+    if(firstTime){
+        msg = "HELP\n Select Rough locations with the spacebar, ";
+        msg += "then click the Save Rough Locations button to enable saving ";
+        msg += "Refined Loactions.\n\n";
+        msg += GetRoughPointsGuide();
+    } else if(!m_Controls.button_save2_refined->isEnabled()) {
+        msg = GetRoughPointsGuide();
+    } else {
+        msg = GetRefinedPointsGiude();
+    }
     QMessageBox::information(NULL, "Help", msg.c_str());
 }
 
@@ -535,7 +544,7 @@ std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
 }
 
 std::string AtrialFibresLandmarksView::GetRefinedPointsGiude(){
-    std::string res = "ROUGH LANDMARKS GUIDE\n Select specific locations for: \n";
+    std::string res = "REFINED LANDMARKS GUIDE\n Select specific locations for: \n";
     res += "LSPV. At the junction of the LSPV with the LA body, at the height of the roof\n";
     res += "LSPV posterior. Assign the posterior section of the LSPV/LA junction.\n";
     res += "RSPV. At the junction of the RSPV with the LA body, at the height of the roof\n";

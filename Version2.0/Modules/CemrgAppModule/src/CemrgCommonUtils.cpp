@@ -373,7 +373,7 @@ void CemrgCommonUtils::SetCellDataToPointData(mitk::Surface::Pointer surface, QS
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
     cell_to_point->SetInputData(surface->GetVtkPolyData());
     cell_to_point->PassCellDataOn();
-    cell_to_point->SetContributingCellOption(2); // All=0, Patch=1, DataSetMax=2
+    cell_to_point->SetContributingCellOption(0); // All=0, Patch=1, DataSetMax=2
     cell_to_point->Update();
     surface->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
 
