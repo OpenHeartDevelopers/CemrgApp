@@ -66,6 +66,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCleanPolyData.h>
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkCleanPolyData.h>
+#include <vtkCellDataToPointData.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -499,7 +500,7 @@ QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename
     }
 }
 
-void CemrgCommonUtils::ConvertToCarto(
+bool CemrgCommonUtils::ConvertToCarto(
         std::string vtkPath, std::vector<double> thresholds, double meanBP, double stdvBP, int methodType, bool discreteScheme) {
 
     //Read vtk from the file
@@ -547,10 +548,19 @@ void CemrgCommonUtils::ConvertToCarto(
     //Point data
     vtkSmartPointer<vtkFloatArray> pointData = vtkSmartPointer<vtkFloatArray>::New();
     try {
-        pointData = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
+        if (pd->GetCellData()->GetScalars() != NULL) {
+
+            vtkSmartPointer<vtkCellDataToPointData> cellToPoint = vtkSmartPointer<vtkCellDataToPointData>::New();
+            cellToPoint->SetInputData(pd);
+            cellToPoint->PassCellDataOn();
+            cellToPoint->Update();
+            pointData = vtkFloatArray::SafeDownCast(cellToPoint->GetPolyDataOutput()->GetPointData()->GetScalars());
+
+        } else
+            throw;
     } catch (...) {
-        MITK_WARN << "Storing point data failed! Check your input";
-        return;
+        MITK_ERROR << "Storing point data failed! Check your input";
+        return false;
     }//_try
 
     float min = pointData->GetRange()[0];
@@ -628,6 +638,7 @@ void CemrgCommonUtils::ConvertToCarto(
     }//_for
 
     cartoFile.close();
+    return true;
 }
 
 void CemrgCommonUtils::MotionTrackingReport(QString directory, int timePoints) {

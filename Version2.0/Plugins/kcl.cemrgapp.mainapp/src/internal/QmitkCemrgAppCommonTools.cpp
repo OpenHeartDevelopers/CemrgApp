@@ -171,8 +171,11 @@ void QmitkCemrgAppCommonTools::ConvertToCarto() {
         }//_if
 
         //Conversion
-        CemrgCommonUtils::ConvertToCarto(path.toStdString(), thresholds, meanBP, stdvBP, methodType, discreteScheme);
-        QMessageBox::information(NULL, "Attention", "Conversion Completed!");
+        bool result = CemrgCommonUtils::ConvertToCarto(path.toStdString(), thresholds, meanBP, stdvBP, methodType, discreteScheme);
+        if (result)
+            QMessageBox::information(NULL, "Attention", "Conversion Completed!");
+        else
+            QMessageBox::information(NULL, "Attention", "Conversion Failed!");
         inputs->deleteLater();
 
     } else if (dialogCode == QDialog::Rejected) {
