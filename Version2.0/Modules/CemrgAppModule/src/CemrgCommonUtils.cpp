@@ -369,13 +369,14 @@ mitk::Surface::Pointer CemrgCommonUtils::ExtractSurfaceFromSegmentation(mitk::Im
     return shell;
 }
 
-void CemrgCommonUtils::SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath){
+void CemrgCommonUtils::SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath, QString fieldname){
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
     cell_to_point->SetInputData(surface->GetVtkPolyData());
     cell_to_point->PassCellDataOn();
     cell_to_point->SetContributingCellOption(0); // All=0, Patch=1, DataSetMax=2
     cell_to_point->Update();
     surface->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
+    surface->GetVtkPolyData()->GetPointData()->GetScalars()->SetName(fieldname.toStdString().c_str());
 
     if(!outputPath.isEmpty()){
         mitk::IOUtil::Save(surface, outputPath.toStdString());

@@ -63,7 +63,7 @@ public:
     //Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
     static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh=0.5, double blur=0.8, double smoothIterations=3, double decimation=0.5);
-    static void SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath="");
+    static void SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath="", QString fieldname="scalars");
     static void SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories=false, QString outputPath="");
     static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath="");
     static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname="segmentation.vtk");

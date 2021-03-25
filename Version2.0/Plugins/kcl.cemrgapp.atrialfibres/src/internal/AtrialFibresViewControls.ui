@@ -106,7 +106,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step4: Manual mesh preprocessing</string>
+      <string>   Step4: Mesh Preprocessing</string>
      </property>
     </widget>
    </item>
@@ -181,16 +181,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_w_landmarks">
-     <property name="styleSheet">
-      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
-     </property>
-     <property name="text">
-      <string>    StepW: Select Landmarks</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="button_x_meshtools">
      <property name="font">
       <font>
@@ -208,9 +198,29 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_y_calculateUac">
+    <widget class="QPushButton" name="button_y_vtk2carp">
      <property name="styleSheet">
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    StepY: Convert format</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_0_landmarks">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    StepW: Select Landmarks</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_0_calculateUac">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
       <string>    StepY: Calculate UAC</string>
@@ -218,12 +228,29 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_z_refineUac">
+    <widget class="QPushButton" name="button_0_refineUac">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    StepZ: Refine UAC</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_z_scar">
      <property name="styleSheet">
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepZ: Refine UAC</string>
+      <string>    StepZ: Scar Projection</string>
      </property>
     </widget>
    </item>

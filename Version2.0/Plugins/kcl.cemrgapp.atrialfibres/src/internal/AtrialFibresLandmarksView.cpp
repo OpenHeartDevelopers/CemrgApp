@@ -200,7 +200,7 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
         vtkIdType vId = roughSeedIds->GetId(i);
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
-        fileRough << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
+        fileRough << std::setprecision(12) << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
         // points->InsertNextPoint(point);
     }
     fileRough.close();
@@ -238,13 +238,13 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
         vtkIdType vId = refinedSeedIds->GetId(i);
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
-        fileRefined << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
+        fileRefined << std::setprecision(12) << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
         // points->InsertNextPoint(point);
     }
     fileRefined.close();
     // pd->SetPoints(points);
 
-    MITK_INFO << "[SaveRefinedPoints] Saving VTK file";
+    // MITK_INFO << "[SaveRefinedPoints] Saving VTK file";
     // mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
     // outputPoints->SetVtkPolyData(pd);
     // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
@@ -261,34 +261,6 @@ void AtrialFibresLandmarksView::iniPreSurf() {
     // mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
     mitk::Surface::Pointer shell = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
     CemrgCommonUtils::FlipXYPlane(shell, "", "");
-    vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
-    cell_to_point->SetInputData(shell->GetVtkPolyData());
-    cell_to_point->PassCellDataOn();
-    cell_to_point->Update();
-    shell->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
-
-    vtkSmartPointer<vtkPolyData> pd = cell_to_point->GetPolyDataOutput();
-    vtkFloatArray *pointScalars = vtkFloatArray::New();
-    vtkFloatArray *cellScalars = vtkFloatArray::New();
-
-    pointScalars = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
-    cellScalars = vtkFloatArray::SafeDownCast(pd->GetCellData()->GetScalars());
-    double s;
-    int countpts=0;
-    for (vtkIdType vId = 0; vId < pd->GetNumberOfPoints() ; vId++) {
-        s = pointScalars->GetTuple1(vId);
-
-        if (std::floor(s)!=s){ // scalar value is not a category
-            int s2;
-            vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-            cellIds->Initialize();
-
-            pd->GetPointCells(vId, cellIds);
-            s2 = cellScalars->GetTuple1(cellIds->GetId(0));
-            pointScalars->SetTuple1(vId, s2);
-        }
-    }
-    shell->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
     mitk::IOUtil::Save(shell, path.toStdString());
 
     surface = shell;
@@ -299,8 +271,8 @@ void AtrialFibresLandmarksView::Visualiser(double opacity){
     double max_scalar=-1, min_scalar=1e9,s;
     vtkFloatArray *scalars = vtkFloatArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
-    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfPoints();i++) {
+    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
         s = scalars->GetTuple1(i);
         if (s > max_scalar)
             max_scalar = s;

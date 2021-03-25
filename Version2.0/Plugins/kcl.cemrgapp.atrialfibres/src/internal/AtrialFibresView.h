@@ -79,6 +79,7 @@ public:
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
     void UserLoadSurface();
+    int Ask(std::string title, std::string msg);
 
     inline void SetManualModeButtonsOn(){SetManualModeButtons(true);};
     inline void SetManualModeButtonsOff(){SetManualModeButtons(false);};
@@ -107,8 +108,11 @@ protected slots:
 
     // Labelled Mesh to UAC
     void MeshingOptions();
+    void ConvertFormat();
     void UacCalculation();
     void UacMeshRefinement();
+
+    void ScarProjection();
     void Reset();
 
 protected:
@@ -131,6 +135,7 @@ private:
     bool automaticPipeline, askedAboutAutoPipeline;
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
+    bool uiRemesh_vtk2carp, uiRemesh_extractParts;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

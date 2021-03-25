@@ -117,7 +117,7 @@ public:
 
     ImageType::Pointer RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
-    ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="tag-segmentation.nii");
+    ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="labelled.nii");
     mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
     void ClipMitralValveAuto(QString dir, QString mvName, QString outName);

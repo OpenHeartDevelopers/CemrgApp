@@ -198,40 +198,6 @@ void AtrialFibresClipperView::iniPreSurf() {
 
     if(automaticPipeline){
         CemrgCommonUtils::FlipXYPlane(shell, "", "");
-        CemrgCommonUtils::SetCellDataToPointData(shell);
-
-        // vtkSmartPointer<vtkPolyData> pd = cell_to_point->GetPolyDataOutput();
-        vtkSmartPointer<vtkPolyData> pd = shell->GetVtkPolyData();
-        vtkFloatArray *pointScalars = vtkFloatArray::New();
-        vtkFloatArray *cellScalars = vtkFloatArray::New();
-
-        pointScalars = vtkFloatArray::SafeDownCast(pd->GetPointData()->GetScalars());
-        cellScalars = vtkFloatArray::SafeDownCast(pd->GetCellData()->GetScalars());
-        double s;
-        int countpts=0;
-        for (vtkIdType vId = 0; vId < pd->GetNumberOfPoints() ; vId++) {
-            s = pointScalars->GetTuple1(vId);
-
-            if (std::floor(s)!=s){ // scalar value is not a category
-                double s2, maxCell=-1;
-                vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-                cellIds->Initialize();
-
-                pd->GetPointCells(vId, cellIds);
-                for (vtkIdType cId = 0; cId < cellIds->GetNumberOfIds(); cId++) {
-                    s2 = cellScalars->GetTuple1(cellIds->GetId(0));
-                    if(s2>maxCell){
-                        maxCell = s2;
-                    }
-                }
-                if(maxCell < 11){
-                    pointScalars->SetTuple1(vId, 1);
-                } else{
-                    pointScalars->SetTuple1(vId, std::floor(s2));
-                }
-            }
-        }
-        shell->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
         mitk::IOUtil::Save(shell, path.toStdString());
     }
     surface = shell;
@@ -559,7 +525,10 @@ void AtrialFibresClipperView::SaveLabels(){
     fileLabelInShell.open((prodPath + "prodNaiveSeedLabels.txt").toStdString());
 
     vtkFloatArray *scalars = vtkFloatArray::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
+    mitk::Surface::Pointer tempsurf = mitk::Surface::New();
+    tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
+    CemrgCommonUtils::SetCellDataToPointData(tempsurf);
+    scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
 
     // 14=ignore, 18=discard
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
@@ -585,8 +554,6 @@ void AtrialFibresClipperView::SaveLabels(){
 
     if(ignored==0){
         QFile::remove(prodPath + "prodIgnoreSeedIds.txt");
-    } else{
-        IgnoreLabel(ignoredIds);
     }
 
     if(discarded==0){
@@ -661,10 +628,14 @@ void AtrialFibresClipperView::InterPvSpacing(){
     int thickness = 3;
     std::string lrpre = "";
 
+    mitk::Surface::Pointer tempsurf = mitk::Surface::New();
+    tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
+    CemrgCommonUtils::SetCellDataToPointData(tempsurf);
+
     csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
     csadv->SetOutputFileName((prodPathOut+"corridor.csv").toStdString());
     csadv->SetOutputPath(prodPathOut.toStdString());
-    csadv->SetInputData(surface->GetVtkPolyData());
+    csadv->SetInputData(tempsurf->GetVtkPolyData());
     csadv->SetWeightedCorridorBool(false);
     csadv->SetLeftRightPrefix(lrpre);
     csadv->CorridorFromPointList(idVectors, circleCorridor);
@@ -676,9 +647,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
     MITK_INFO << ("[InterPvSpacing] Opened file :" + path2corridor).toStdString();
 
     MITK_INFO << "[InterPvSpacing] Update shell and save it";
-    vtkFloatArray *pointScalars = vtkFloatArray::New();
     vtkFloatArray *cellScalars = vtkFloatArray::New();
-    pointScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
     cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
 
     std::string line, header;
@@ -687,11 +656,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
     while(std::getline(fi, line)){
         QString qline =  QString::fromStdString(line);
         vtkIdType vId;
-        double vScalar;
         vId = qline.section(',', 1, 1).toInt();
-        vScalar = qline.section(',', 6, 6).toDouble();
-
-        pointScalars->SetTuple1(vId, 1);
 
         vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
         cellIds->Initialize();
@@ -703,7 +668,6 @@ void AtrialFibresClipperView::InterPvSpacing(){
     }
     fi.close();
 
-    surface->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
     surface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
 
     MITK_INFO << "[InterPvSpacing] Set new scalar vector into surface.";
@@ -733,7 +697,7 @@ void AtrialFibresClipperView::ClipPVs(){
 
             std::cout << "Saving ID:" << pvClipperSeedIdx->GetId(ix) << " ";
             std::cout << "Radius" << pvClipperRadii.at(ix) << " ";
-            std::cout << "C = [" << c[0] << ", " << c[1] << ", " << c[2] << ", "  << "]";
+            std::cout << "C = [" << c[0] << ", " << c[1] << ", " << c[2] << ", "  << "]" << std::endl;
             fo << pvClipperSeedIdx->GetId(ix) << " ";
             fo << c[0] << " " << c[1] << " " << c[2] << " ";
             fo << pvClipperRadii.at(ix) << std::endl;
@@ -758,8 +722,8 @@ void AtrialFibresClipperView::VisualiserAuto(double opacity) {
     double max_scalar=-1, min_scalar=1e9,s;
     vtkFloatArray *scalars = vtkFloatArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
-    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfPoints();i++) {
+    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
         s = scalars->GetTuple1(i);
         if (s > max_scalar)
             max_scalar = s;
@@ -1310,61 +1274,6 @@ void AtrialFibresClipperView::UserSelectPvLabel(){
     } else if (dialogCode == QDialog::Rejected) {
         inputs->close();
     }//_if
-}
-
-void AtrialFibresClipperView::IgnoreLabel(std::vector<int> ignoredIds){
-    MITK_INFO << "[IgnoreLabel] Ignoring labels in shell";
-    QString prodPathOut = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
-
-    vtkFloatArray *cellScalars = vtkFloatArray::New();
-    vtkFloatArray *pointScalars = vtkFloatArray::New();
-    cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
-    pointScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
-
-    double ptLabel;
-    std::cout << "Ignoring: ";
-    for (vtkIdType idx = 0; idx < ignoredIds.size(); idx++) {
-        vtkIdType ptId = ignoredIds.at(idx);
-        ptLabel = pointScalars->GetTuple1(ptId);
-        std::cout << "Point ID: " << ptId << " - " << ptLabel << std::endl;
-        double s;
-        for (vtkIdType vId = 0; vId < surface->GetVtkPolyData()->GetNumberOfPoints(); vId++) {
-            s = pointScalars->GetTuple1(vId);
-
-            if(s==ptLabel){
-                pointScalars->SetTuple1(vId, 1);
-
-                vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-                cellIds->Initialize();
-                surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
-
-                for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
-                    cellScalars->SetTuple1(cellIds->GetId(ix), 1);
-                }
-            }
-        }
-    }
-
-    surface->GetVtkPolyData()->GetPointData()->SetScalars(pointScalars);
-    surface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
-
-    MITK_INFO << "[IgnoreLabel] Set new scalar vector into surface.";
-    mitk::IOUtil::Save(surface, (prodPathOut+AtrialFibresClipperView::fileName).toStdString());
-    MITK_INFO << "[IgnoreLabel] Saved surface";
-
-}
-
-void AtrialFibresClipperView::DiscardUnwantedLabel(std::vector<int> discardedIds){
-    QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
-    path += (AtrialFibresClipperView::fileName + "nii");
-
-    vtkFloatArray *pointScalars = vtkFloatArray::New();
-    pointScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
-
-    double ptLabel;
-    for (vtkIdType labelIdx = 0; labelIdx < discardedIds.size(); labelIdx++) {
-        ptLabel = pointScalars->GetTuple1(labelIdx);
-    }
 }
 
 void AtrialFibresClipperView::PrintCorridorIds(){

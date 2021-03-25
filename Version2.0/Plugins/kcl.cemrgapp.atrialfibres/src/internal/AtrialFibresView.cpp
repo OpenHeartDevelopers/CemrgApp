@@ -111,12 +111,16 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_man6_labelmesh, SIGNAL(clicked()), this, SLOT(CreateLabelledMesh()));
     connect(m_Controls.button_man7_clipMV, SIGNAL(clicked()), this, SLOT(ClipperMV()));
     connect(m_Controls.button_man8_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
-    connect(m_Controls.button_w_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
+    connect(m_Controls.button_0_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
 
     // Labelled Mesh to UAC
     connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
-    connect(m_Controls.button_y_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
-    connect(m_Controls.button_z_refineUac, SIGNAL(clicked()), this, SLOT(UacMeshRefinement()));
+    connect(m_Controls.button_y_vtk2carp, SIGNAL(clicked()), this, SLOT(ConvertFormat()));
+    connect(m_Controls.button_0_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
+    connect(m_Controls.button_0_refineUac, SIGNAL(clicked()), this, SLOT(UacMeshRefinement()));
+
+    // Scar analysis
+    connect(m_Controls.button_z_scar, SIGNAL(clicked()), this, SLOT(ScarProjection()));
 
     connect(m_Controls.button_r, SIGNAL(clicked()), this, SLOT(Reset()));
 
@@ -125,7 +129,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_2_1, SIGNAL(clicked()), this, SLOT(ConvertNII()));
 
     // Set default variables
-    tagName = "tag-segmentation";
+    tagName = "labelled";
     refinedSuffix = "-refined";
     askedAboutAutoPipeline = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
@@ -223,51 +227,77 @@ void AtrialFibresView::ConvertNII() {
         return;
     }//_if
 
-    //Ask the user for a dir to store data
-    if (directory.isEmpty()) {
-        directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
-        if (directory.isEmpty() || directory.simplified().contains(" ")) {
-            QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
-            directory = QString();
-            return;
-        }//_if
-    }
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
-    //Generic Conversion to nii
+    //Order dicoms based on their type
+    std::vector<int> indexNodes;
+    std::vector<std::string> seriesDscrps;
+    foreach (mitk::DataNode::Pointer node, nodes) {
+
+        std::string seriesDescription;
+        node->GetData()->GetPropertyList()->GetStringProperty("dicom.series.SeriesDescription", seriesDescription);
+
+        if (seriesDescription.find("LGE")      != seriesDescription.npos) indexNodes.push_back(0);
+        else if (seriesDescription.find("MRA") != seriesDescription.npos) indexNodes.push_back(1);
+
+        //Trim whitespaces
+        seriesDescription = QString::fromStdString(seriesDescription).replace(")","").toStdString();
+        seriesDescription = QString::fromStdString(seriesDescription).replace("(","").toStdString();
+        seriesDescription = QString::fromStdString(seriesDescription).simplified().replace(" ","").toStdString();
+        seriesDscrps.push_back(seriesDescription);
+    }//_for
+
+    //Sort indexes based on comparing values
+    std::vector<int> index(indexNodes.size());
+    std::iota(index.begin(), index.end(), 0);
+    std::sort(index.begin(), index.end(), [&](int i1, int i2) {return indexNodes[i1]<indexNodes[i2];});
+
+    //Warning for cases when type is not found
+    size_t length1 = nodes.size();
+    size_t length2 = indexNodes.size();
+    bool test = std::adjacent_find(indexNodes.begin(), indexNodes.end(), std::not_equal_to<int>()) == indexNodes.end();
+    if (length1 != length2 || test) {
+        QMessageBox::warning(NULL, "Attention",
+                             "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
+        index.resize(nodes.size());
+        std::iota(index.begin(), index.end(), 0);
+    }//_if
+
+    //Convert to Nifti
     int ctr = 0;
-    QString path;
+    QString path, type;
     bool successfulNitfi, resampleImage, reorientToRAI;
-    resampleImage = false;
+    resampleImage = true;
     reorientToRAI = true;
 
     this->BusyCursorOn();
-    mitk::ProgressBar::GetInstance()->AddStepsToDo(nodes.size());
-    foreach (mitk::DataNode::Pointer node, nodes) {
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path, resampleImage, reorientToRAI);
+    mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
+    foreach (int idx, index) {
+        type = (ctr==0) ? "LGE":"MRA";
+        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
+        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
         if (successfulNitfi) {
-            this->GetDataStorage()->Remove(node);
+            this->GetDataStorage()->Remove(nodes.at(idx));
+            std::string key = "dicom.series.SeriesDescription";
+            mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
+            set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), seriesDscrps.at(idx).c_str());
+            ctr++;
         } else {
-            mitk::ProgressBar::GetInstance()->Progress(nodes.size());
+            mitk::ProgressBar::GetInstance()->Progress(index.size());
             return;
-        }
+        }//_if
         mitk::ProgressBar::GetInstance()->Progress();
-    }//_for
+    }//for
     nodes.clear();
     this->BusyCursorOff();
 
-    //Load first item
-    ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
-    mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
+    MITK_INFO << "Loading all items";
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
 
 void AtrialFibresView::AnalysisChoice(){
     int reply1 = QMessageBox::question(NULL, "Question",
-        "Do you want to use the automatic pipeline?", QMessageBox::Yes, QMessageBox::No);
+        "Use the semi-automatic pipeline?", QMessageBox::Yes, QMessageBox::No);
 
     SetAutomaticPipeline(reply1==QMessageBox::Yes);
     askedAboutAutoPipeline = true;
@@ -367,7 +397,7 @@ void AtrialFibresView::AutomaticAnalysis(){
     mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
     mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
 
-    MITK_INFO << "[AUTOMATIC_PIPELINE] Automatic PV labels";
+    MITK_INFO << "[AUTOMATIC_PIPELINE] Assign PV labels automatically";
     ImageType::Pointer tagAtriumAuto = atrium->AssignAutomaticLabels(segImage, directory);
 
     MITK_INFO << "[AUTOMATIC_PIPELINE] Create Mesh";
@@ -612,30 +642,24 @@ void AtrialFibresView::MeshingOptions(){
     bool userInputsAccepted = GetUserRemeshingInputs();
     if(userInputsAccepted){
         QString refinedPath = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
-        QString refSeg = cmd->DockerRemeshSurface(directory, "segmentation", "segmentation"+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
-        QString orgShellName = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
-
-        MITK_INFO << "[MeshingOptions] projecting tags onto refinedSurfed surface";
-        atrium->ProjectShellScalars(directory, orgShellName, refinedPath);
 
         MITK_INFO << "[MeshingOptions] point data to cell data";
-        mitk::Surface::Pointer _refinedSurf = mitk::IOUtil::Load<mitk::Surface>(refinedPath.toStdString());
-        CemrgCommonUtils::SetPointDataToCellData(_refinedSurf, false, refinedPath);
         atrium->SetSurface(refinedPath);
 
         QString correctLabels = directory + mitk::IOUtil::GetDirectorySeparator() + "prodSeedLabels.txt";
         QString naiveLabels = directory + mitk::IOUtil::GetDirectorySeparator() + "prodNaiveSeedLabels.txt";
         atrium->SetSurfaceLabels(correctLabels, naiveLabels);
 
-        // fix areas between body and atrium
+        if(uiRemesh_extractParts){
+            MITK_INFO << "[MeshingOptions] save individual vtks for: RS, RI, LS, LI and LAA";
+            atrium->ExtractLabelFromShell(directory, atrium->LSPV(), "LSPV");
+            atrium->ExtractLabelFromShell(directory, atrium->LIPV(), "LIPV");
+            atrium->ExtractLabelFromShell(directory, atrium->RSPV(), "RSPV");
+            atrium->ExtractLabelFromShell(directory, atrium->RIPV(), "RIPV");
+            atrium->ExtractLabelFromShell(directory, atrium->LAAP(), "LAAP");
+        }
 
-        // save individual vtks for: RS, RI, LS, LI and LAA
-        atrium->ExtractLabelFromShell(directory, atrium->BODY(), "BODY");
-        atrium->ExtractLabelFromShell(directory, atrium->LSPV(), "LSPV");
-        atrium->ExtractLabelFromShell(directory, atrium->LIPV(), "LIPV");
-        atrium->ExtractLabelFromShell(directory, atrium->RSPV(), "RSPV");
-        atrium->ExtractLabelFromShell(directory, atrium->RIPV(), "RIPV");
-        atrium->ExtractLabelFromShell(directory, atrium->LAAP(), "LAAP");
+        MITK_INFO << "[MeshingOptions] finished";
     }
 }
 
@@ -653,6 +677,23 @@ void AtrialFibresView::UacCalculation(){
 }
 
 void AtrialFibresView::UacMeshRefinement(){
+
+}
+
+void AtrialFibresView::ConvertFormat(){
+    if(uiRemesh_vtk2carp){
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+        
+        MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
+        double scale=1000; // convert to microns from mm
+        QString ioMsh=tagName+refinedSuffix; // value of input and output mesh names
+        cmd->DockerConvertMeshFormat(directory, ioMsh, "vtk", ioMsh, "carp_txt",scale);
+    }
+
+}
+
+void AtrialFibresView::ScarProjection(){
 
 }
 
@@ -760,6 +801,8 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
+        uiRemesh_vtk2carp = m_UIRemesh.check_1vtk2carp->isChecked();
+        uiRemesh_extractParts = m_UIRemesh.check_2extractlabels->isChecked();
 
         bool ok1, ok2, ok3, ok4;
         uiRemesh_max= m_UIRemesh.lineEdit_1max->text().toDouble(&ok1);
@@ -880,11 +923,20 @@ void AtrialFibresView::SetManualModeButtons(bool b){
     m_Controls.button_man6_labelmesh->setVisible(b);
     m_Controls.button_man7_clipMV->setVisible(b);
     m_Controls.button_man8_clipPV->setVisible(b);
+
+    m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
+    m_Controls.button_0_calculateUac->setText("    Step7: CAlculate UAC");
+    m_Controls.button_0_refineUac->setText("    Step8: Refine UAC");
+
 }
 
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
     m_Controls.button_auto4_meshpreproc->setVisible(b);
     m_Controls.button_auto5_clipPV->setVisible(b);
+
+    m_Controls.button_0_landmarks->setText("    Step9: Select Landmarks");
+    m_Controls.button_0_calculateUac->setText("    Step10: CAlculate UAC");
+    m_Controls.button_0_refineUac->setText("    Step11: Refine UAC");
 }
 
 void AtrialFibresView::SetTagNameFromPath(QString path){
@@ -897,7 +949,7 @@ bool AtrialFibresView::LoadSurfaceChecks(){
     QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
 
     if(!QFile::exists(path)){
-        int reply1 = QMessageBox::question(NULL, "Surface file not found", "Do you have a surface file to load?", QMessageBox::Yes, QMessageBox::No);
+        int reply1 = Ask("Surface file not found", "Do you have a surface file to load?");
         if(reply1==QMessageBox::Yes){
             UserLoadSurface();
         } else {
@@ -905,7 +957,7 @@ bool AtrialFibresView::LoadSurfaceChecks(){
         }
     } else{
         std::string msg = ("Load automatically file called: [" + tagName + ".vtk]?").toStdString();
-        int reply2 = QMessageBox::question(NULL, "Surface file to load", msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+        int reply2 = Ask("Surface file to load", msg.c_str());
         if(reply2==QMessageBox::No){
             UserLoadSurface();
         }
@@ -917,6 +969,10 @@ bool AtrialFibresView::LoadSurfaceChecks(){
 }
 
 void AtrialFibresView::UserLoadSurface(){
-    QString newpath = QFileDialog::getOpenFileName(NULL, "Select the surface file to clip!", directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+    QString newpath = QFileDialog::getOpenFileName(NULL, "Select the surface file to load!", directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
     SetTagNameFromPath(newpath);
+}
+
+int AtrialFibresView::Ask(std::string title, std::string msg){
+    return QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
 }

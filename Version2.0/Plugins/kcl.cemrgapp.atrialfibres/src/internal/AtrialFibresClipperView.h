@@ -74,9 +74,6 @@ public:
     void UserSelectPvLabel();
     void PrintCorridorIds();
 
-    void IgnoreLabel(std::vector<int> ignoredIds);
-    void DiscardUnwantedLabel(std::vector<int> discardedIds);
-
 protected slots:
 
     /// \brief Called when the user clicks the GUI button

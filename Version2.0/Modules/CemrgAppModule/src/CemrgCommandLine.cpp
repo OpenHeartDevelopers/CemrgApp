@@ -1202,7 +1202,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
 
     QString fileExt = "";
     QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + omsh;
-    outPath += (ofmt.contains("carp", QString::CaseInsensitive)) ? ".pts" : ".vtk";
+    outPath += (ofmt.contains("carp", Qt::CaseInsensitive)) ? ".pts" : ".vtk";
 
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 

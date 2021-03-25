@@ -56,6 +56,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolyDataWriter.h>
 #include <vtkPolygon.h>
 #include <vtkCellArray.h>
+#include <vtkConnectivityFilter.h>
 
 //ITK
 #include <itkSubtractImageFilter.h>
@@ -88,7 +89,7 @@ CemrgAtrialTools::CemrgAtrialTools() {
     this->debugSteps = true;
     this->surfLoaded = false;
     this->atriumSegmentation = ImageType::New();
-    this->tagSegName = "tag-segmentation.nii";
+    this->tagSegName = "labelled.nii";
 
     SetDefaultSegmentationTags();
 }
@@ -392,10 +393,12 @@ void CemrgAtrialTools::SetSurfaceLabels(QString correctLabels, QString naiveLabe
 
 void CemrgAtrialTools::ExtractLabelFromShell(QString dir, int label, QString outName){
     // make sure surface is loaded
+    mitk::Surface::Pointer outputsurf = mitk::Surface::New();
+    outputsurf->SetVtkPolyData(surface->GetVtkPolyData());
+    CemrgCommonUtils::SetCellDataToPointData(outputsurf);
 
     vtkSmartPointer<vtkPolyDataConnectivityFilter> cf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
-    //cf->SetOutputPointsPrecision(outputPointsPrecision);
-    cf->SetInputData(surface->GetVtkPolyData());
+    cf->SetInputData(outputsurf->GetVtkPolyData());
     cf->ScalarConnectivityOn();
     cf->FullScalarConnectivityOn();
     cf->SetScalarRange(GetNaiveLabel(label), GetNaiveLabel(label));
@@ -403,7 +406,6 @@ void CemrgAtrialTools::ExtractLabelFromShell(QString dir, int label, QString out
     cf->SetExtractionModeToLargestRegion();
 
     QString path = dir + mitk::IOUtil::GetDirectorySeparator() + outName + ".vtk";
-    mitk::Surface::Pointer outputsurf = mitk::Surface::New();
     outputsurf->SetVtkPolyData(cf->GetOutput());
     mitk::IOUtil::Save(outputsurf, path.toStdString());
 }

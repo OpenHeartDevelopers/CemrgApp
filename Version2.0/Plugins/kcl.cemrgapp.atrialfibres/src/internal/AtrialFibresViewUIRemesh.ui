@@ -2,36 +2,31 @@
 <ui version="4.0">
  <class>AtrialFibresViewUIRemesh</class>
  <widget class="QWidget" name="AtrialFibresViewUIRemesh">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>248</width>
-    <height>196</height>
-   </rect>
-  </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>5</horstretch>
+    <verstretch>10</verstretch>
    </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
-    <width>0</width>
+    <width>248</width>
     <height>196</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>16777215</width>
-    <height>196</height>
+    <width>248</width>
+    <height>588</height>
    </size>
   </property>
   <property name="windowTitle">
    <string>Set Values</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SetFixedSize</enum>
+   </property>
    <item>
     <widget class="QLabel" name="titleLabel">
      <property name="styleSheet">
@@ -85,6 +80,30 @@
    </item>
    <item>
     <widget class="QLineEdit" name="lineEdit_5suffix"/>
+   </item>
+   <item>
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="check_1vtk2carp">
+     <property name="text">
+      <string>Convert to carp (.pts, .elem files)</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="check_2extractlabels">
+     <property name="text">
+      <string>Extract labels as vtk files</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
