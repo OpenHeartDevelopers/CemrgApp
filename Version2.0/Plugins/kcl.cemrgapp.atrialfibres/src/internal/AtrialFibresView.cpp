@@ -684,7 +684,7 @@ void AtrialFibresView::ConvertFormat(){
     if(uiRemesh_vtk2carp){
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
-        
+
         MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
         double scale=1000; // convert to microns from mm
         QString ioMsh=tagName+refinedSuffix; // value of input and output mesh names
@@ -694,7 +694,7 @@ void AtrialFibresView::ConvertFormat(){
 }
 
 void AtrialFibresView::ScarProjection(){
-
+    bool userInputAccepted = GetUserScarProjectionInputs();
 }
 
 void AtrialFibresView::Reset() {
@@ -868,6 +868,91 @@ bool AtrialFibresView::GetUserMeshingInputs(){
         if (!ok3) uiMesh_smth=3;
         if (!ok4) uiMesh_ds=0.0;
 
+        inputs->deleteLater();
+        userInputAccepted=true;
+
+    } else if (dialogCode == QDialog::Rejected) {
+        inputs->close();
+        inputs->deleteLater();
+    }//_if
+
+    return userInputAccepted;
+}
+
+bool AtrialFibresView::GetUserScarProjectionInputs(){
+    bool userInputAccepted=false;
+
+    QDialog* inputs = new QDialog(0,0);
+    m_UIcemrgnet.setupUi(inputs);
+    connect(m_UIcemrgnet.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UIcemrgnet.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    QString meType_UI;
+    QStringList separated_thresh_list;
+
+    uiScar_minStep = -1;
+    uiScar_maxStep = 3;
+    uiScar_projectionMethod = 2;
+    uiScar_thresholdMethod = 1;
+
+    if (dialogCode == QDialog::Accepted) {
+
+        MITK_INFO << "[UI] User inputs being selected.";
+        MITK_INFO << "[UI] Intensity projection";
+        bool ok1, ok2;
+        uiScar_minStep = m_UIcemrgnet.minStep_lineEdit->text().toInt(&ok1);
+        uiScar_maxStep = m_UIcemrgnet.maxStep_lineEdit->text().toInt(&ok2);
+        if (!ok1) uiScar_minStep = -1;
+        if (!ok2) uiScar_maxStep = 3;
+
+        uiScar_projectionMethod = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? 2 : 1;
+        uiScar_thresholdMethod = m_UIcemrgnet.iir_radioButton->isChecked() ? 1 : 2;
+        meType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? "Max" : "Mean";
+
+        MITK_INFO << ("[UI] Using: " + meType_UI + " Intensity projection.").toStdString();
+        MITK_INFO << ("[UI] In/out values: (" + QString::number(uiScar_minStep) + ", " +
+                      QString::number(uiScar_maxStep) + ")").toStdString();
+        MITK_INFO << QString::number(uiScar_projectionMethod);
+        MITK_INFO << "[UI] Thresholding information.";
+
+        QString thresh_list, whichThresh;
+
+        if (m_UIcemrgnet.iir_radioButton->isChecked()) { // IIR method
+            whichThresh = "IIR";
+            thresh_list = m_UIcemrgnet.iir_textEdit->toPlainText();
+            separated_thresh_list << "0.97" << "1.16";
+        } else if (m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
+            whichThresh = "MEAN+SD";
+            thresh_list = m_UIcemrgnet.meanSD_textEdit->toPlainText();
+            separated_thresh_list << "2.3" << "3.3";
+        }
+
+        MITK_INFO << ("[UI] Threshold: " + whichThresh).toStdString();
+        MITK_INFO << ("[UI] Threshold list: " + thresh_list).toStdString();
+        MITK_INFO << QString::number(uiScar_thresholdMethod);
+
+        thresh_list.remove(" ", Qt::CaseSensitive);
+        if (!thresh_list.isEmpty()) {
+
+            MITK_INFO << "[UI] Creating list of thresholds";
+            separated_thresh_list.removeLast();
+            separated_thresh_list.removeLast();
+            separated_thresh_list = thresh_list.split("," , QString::SkipEmptyParts);
+            int listspaces = separated_thresh_list.removeAll(" ");
+            int listduplicates = separated_thresh_list.removeDuplicates();
+            separated_thresh_list.sort();
+        }//_if
+
+        double tryNumber;
+        bool vOK;
+        for(int ix=0; ix<separated_thresh_list.size(); ix++) {
+            MITK_INFO << separated_thresh_list.at(ix);
+            tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
+            if (vOK) uiScar_thresValues.push_back(tryNumber);
+        }
+
+        inputs->close();
         inputs->deleteLater();
         userInputAccepted=true;
 

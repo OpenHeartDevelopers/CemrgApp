@@ -34,6 +34,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "ui_AtrialFibresViewControls.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
 #include "ui_AtrialFibresViewUIRemesh.h"
+#include "ui_AtrialScarViewUIcemrgnet.h"
 
 #include "QmitkRenderWindow.h"
 #include "mitkCommon.h"
@@ -72,6 +73,7 @@ public:
     void AutomaticAnalysis();
     bool GetUserMeshingInputs();
     bool GetUserRemeshingInputs();
+    bool GetUserScarProjectionInputs();
     bool LoadSurfaceChecks();
 
     // helper
@@ -126,6 +128,7 @@ protected:
     Ui::AtrialFibresViewControls m_Controls;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
     Ui::AtrialFibresViewUIRemesh m_UIRemesh;
+    Ui::AtrialScarViewUIcemrgnet m_UIcemrgnet;
 
 private:
 
@@ -136,6 +139,8 @@ private:
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
     bool uiRemesh_vtk2carp, uiRemesh_extractParts;
+    int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod;
+    std::vector<double> uiScar_thresValues;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;
