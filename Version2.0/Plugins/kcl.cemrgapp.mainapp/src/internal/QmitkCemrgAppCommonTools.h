@@ -57,6 +57,7 @@ protected slots:
     void ConvertToCarto();
     void ConvertToCartoUIUpdate();
     void ConvertToCartoUITextUpdate();
+    void ConvertCarpToVtk();
 
 protected:
 

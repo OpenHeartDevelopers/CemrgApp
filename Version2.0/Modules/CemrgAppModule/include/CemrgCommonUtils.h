@@ -68,7 +68,7 @@ public:
     static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath="");
     static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname="segmentation.vtk");
     static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
-    static void ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
+    static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
 
     //Tracking Utils
@@ -77,6 +77,18 @@ public:
     //Generic
     static mitk::DataNode::Pointer AddToStorage(
             mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init=true);
+
+    //Carp Utils
+    static void OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling=1000);
+    static void CalculateCentreOfGravity(QString pointPath, QString elemPath, QString outputPath);
+    static void RegionMapping(QString bpPath, QString pointPath, QString elemPath, QString outputPath);
+    static void NormaliseFibreFiles(QString fibresPath, QString outputPath);
+    static void RectifyFileValues(QString pathToFile, double minVal=0.0, double maxVal=1.0);
+    static int GetTotalFromCarpFile(QString pathToFile, bool totalAtTop=true);
+    static std::vector<double> ReadScalarField(QString pathToFile);
+    static void CarpToVtk(QString elemPath, QString ptsPath, QString outputPath, bool saveRegionlabels=true);
+    static void AppendScalarFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader=true);
+    static void AppendVectorFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader=true);
 
 private:
 
