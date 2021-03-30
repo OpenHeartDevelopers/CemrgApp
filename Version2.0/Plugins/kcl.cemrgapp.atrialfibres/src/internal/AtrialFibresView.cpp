@@ -72,6 +72,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkImplicitPolyDataDistance.h>
 #include <vtkTimerLog.h>
 #include <vtkClipPolyData.h>
+#include <vtkDecimatePro.h>
 
 //ITK
 #include <itkAddImageFilter.h>
@@ -88,11 +89,13 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QDirIterator>
 
 //CemrgAppModule
 #include <CemrgCommonUtils.h>
 #include <CemrgCommandLine.h>
 #include <CemrgMeasure.h>
+#include <CemrgScar3D.h>
 
 const std::string AtrialFibresView::VIEW_ID = "org.mitk.views.atrialfibresview"; // org.mitk.views.atrialfibresview
 
@@ -132,6 +135,8 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     tagName = "labelled";
     refinedSuffix = "-refined";
     askedAboutAutoPipeline = false;
+    uiRemesh_vtk2carp = true;
+    uiRemesh_extractParts = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
     atrium->SetDebugModeOff();
 
@@ -151,8 +156,7 @@ void AtrialFibresView::LoadDICOM() {
     int reply1 = QMessageBox::No;
 #if defined(__APPLE__)
     MITK_INFO << "Ask user about alternative DICOM reader";
-    reply1 = QMessageBox::question(NULL, "Question", "Use alternative DICOM reader?",
-                        QMessageBox::Yes, QMessageBox::No);
+    reply1 = Ask("Question", "Use alternative DICOM reader?");
 #endif
 
     if (reply1 == QMessageBox::Yes) {
@@ -296,8 +300,7 @@ void AtrialFibresView::ConvertNII() {
 }
 
 void AtrialFibresView::AnalysisChoice(){
-    int reply1 = QMessageBox::question(NULL, "Question",
-        "Use the semi-automatic pipeline?", QMessageBox::Yes, QMessageBox::No);
+    int reply1 = Ask("Question", "Use the semi-automatic pipeline?");
 
     SetAutomaticPipeline(reply1==QMessageBox::Yes);
     askedAboutAutoPipeline = true;
@@ -307,8 +310,7 @@ void AtrialFibresView::AnalysisChoice(){
         if (!RequestProjectDirectoryFromUser()) return; // checks if the directory has been set
         SetAutomaticModeButtonsOn();
 
-        int reply = QMessageBox::question(NULL, "Check for previous output!",
-                "Do you want to skip steps 1 to 3?", QMessageBox::Yes, QMessageBox::No);
+        int reply = Ask("Check for previous output!","Do you want to skip steps 1 to 3?");
         if(reply==QMessageBox::No){
             MITK_INFO << "Performing Automatic analysis on CemrgNet prediction.";
             AutomaticAnalysis();
@@ -330,8 +332,7 @@ void AtrialFibresView::AnalysisChoice(){
 // Automatic pipeline
 void AtrialFibresView::AutomaticAnalysis(){
     if(cnnPath.isEmpty()){
-        int reply = QMessageBox::question(NULL, "Question",
-        "Do you have a previous automatic segmentation?", QMessageBox::Yes, QMessageBox::No);
+        int reply = Ask("Question", "Do you have a previous automatic segmentation?");
 
         if(reply==QMessageBox::Yes){
             cnnPath = QFileDialog::getOpenFileName(NULL, "Open Automatic Segmentation file",
@@ -438,9 +439,7 @@ void AtrialFibresView::MeshPreprocessing(){
 void AtrialFibresView::SegmentIMGS() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
-    int replyAuto = QMessageBox::question(NULL, "Question", "Do you want an automatic segmentation?",
-            QMessageBox::Yes, QMessageBox::No);
-
+    int replyAuto = Ask("Question", "Do you want an automatic segmentation?");
     if(replyAuto == QMessageBox::Yes){
         //Check for selection of image
         QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
@@ -487,8 +486,7 @@ void AtrialFibresView::SegmentIMGS() {
                 QMessageBox::warning(NULL, "Attention", "Please select a CEMRA to segment!");
         }//_if_data
     } else {
-        int replyLoad =  QMessageBox::question(NULL, "Question", "Do you have a segmentation to load?",
-                QMessageBox::Yes, QMessageBox::No);
+        int replyLoad =  Ask("Question", "Do you have a segmentation to load?");
 
         if (replyLoad == QMessageBox::Yes) {
             QString path = QFileDialog::getOpenFileName(NULL, "Open Segmentation file",
@@ -681,6 +679,9 @@ void AtrialFibresView::UacMeshRefinement(){
 }
 
 void AtrialFibresView::ConvertFormat(){
+    if (!RequestProjectDirectoryFromUser()) return;
+    if (!LoadSurfaceChecks()) return;
+
     if(uiRemesh_vtk2carp){
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
@@ -694,7 +695,184 @@ void AtrialFibresView::ConvertFormat(){
 }
 
 void AtrialFibresView::ScarProjection(){
+
+    if (!RequestProjectDirectoryFromUser()) return;
+
+    QDirIterator searchit(directory, QDirIterator::Subdirectories);
+    QString mraPath, lgePath, cnnPath;
+    while(searchit.hasNext()) {
+        QFileInfo searchfinfo(searchit.next());
+        if (searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
+            if (searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
+                lgePath = searchfinfo.absoluteFilePath();
+
+            if (searchfinfo.fileName().contains("dcm-MRA", Qt::CaseSensitive))
+                mraPath = searchfinfo.absoluteFilePath();
+
+            if (searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
+                cnnPath = searchfinfo.absoluteFilePath();
+        }
+    }//_while
+
+
     bool userInputAccepted = GetUserScarProjectionInputs();
+    if(userInputAccepted){
+        MITK_INFO << ("Files to be read: \n\n [LGE]: " + lgePath + "\n [MRA]: " + mraPath).toStdString();
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+
+        if (cnnPath.isEmpty()) {
+            MITK_INFO << "[SCAR_PROJECTION] Computing automatic segmentation step.";
+            cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
+        }
+        MITK_INFO << "Round pixel values from automatic segmentation.";
+        CemrgCommonUtils::RoundPixelValues(cnnPath);
+
+        MITK_INFO << "[SCAR_PROJECTION][1] Adjust CNN label to MRA";
+        atrium->AdjustSegmentationLabelToImage(cnnPath, mraPath, "LA.nii");
+
+        MITK_INFO << "[SCAR_PROJECTION][2] Image registration";
+        QString laregPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA-reg.nii";
+        cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
+        cmd->ExecuteTransformation(directory, cnnPath, laregPath);
+
+        MITK_INFO << "[SCAR_PROJECTION][3] Clean segmentation";
+        ImageType::Pointer lareg = atrium->CleanAutomaticSegmentation(directory, "LA-reg.nii");
+        mitk::IOUtil::Save(mitk::ImportItkImage(lareg), laregPath.toStdString());
+        MITK_INFO << ("[...][3.1] Saved file: "+laregPath).toStdString();
+
+        MITK_INFO << "[SCAR_PROJECTION][4] Separate veins";
+        ImageType::Pointer veinsIm = atrium->ExtractLabel("Veins", lareg, 2, 3.0, 5);
+        mitk::IOUtil::Save(mitk::ImportItkImage(veinsIm), (directory + "/prodVeins.nii").toStdString());
+        veinsIm = atrium->AssignAutomaticLabels(veinsIm, directory, "prodSeparatedVeins.nii", false);
+
+        MITK_INFO << "[SCAR_PROJECTION][5] Vein clipping mesh";
+        mitk::Image::Pointer laregMitk = mitk::ImportItkImage(lareg);
+        mitk::Surface::Pointer segSurface = CemrgCommonUtils::ExtractSurfaceFromSegmentation(laregMitk, 0.5, 0, 10, 0.1);
+        CemrgCommonUtils::FlipXYPlane(segSurface, directory, "segmentation.vtk");
+        // QString output1 = cmd->ExecuteSurf(directory, laregPath, "close", 1, .5, 0, 10);
+        // mitk::Surface::Pointer segSurface = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
+        // vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
+        // deci->SetInputData(segSurface->GetVtkPolyData());
+        // deci->SetTargetReduction(0.1);
+        // deci->PreserveTopologyOn();
+        // deci->Update();
+        // segSurface->SetVtkPolyData(deci->GetOutput());
+
+        MITK_INFO << "[SCAR_PROJECTION][6] Find vein landmark";
+        int nveins = 5;
+        QString seedname = "scarSeeds";
+        std::vector<int> pickedSeedLabels;
+        vtkSmartPointer<vtkIdList> pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
+        pickedSeedIds->Initialize();
+        atrium->FindVeinLandmarks(veinsIm, segSurface->Clone()->GetVtkPolyData(), nveins, seedname);
+
+        QString idsPath = directory + mitk::IOUtil::GetDirectorySeparator() + seedname + "Ids.txt";
+        QString labelsPath = directory + mitk::IOUtil::GetDirectorySeparator() + seedname + "Labels.txt";
+        std::ifstream fids(idsPath.toStdString());
+        std::ifstream flabels(labelsPath.toStdString());
+
+        for (int ix = 0; ix < nveins; ix++) {
+            vtkIdType vId;
+            int label;
+
+            fids >> vId;
+            flabels >> label;
+
+            pickedSeedIds->InsertNextId(vId);
+            pickedSeedLabels.push_back(label);
+        }
+
+        MITK_INFO << "[SCAR_PROJECTION][7] Clip the veins";
+        bool autoLines = true;
+        std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, segSurface));
+        bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, autoLines);
+        if (!successful) {
+            QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
+            return;
+        }//_Check for failure
+        MITK_INFO << "[...][7.1] ComputeCtrLines finished .";
+        successful = clipper->ComputeCtrLinesClippers(pickedSeedLabels);
+        if (!successful) {
+            QMessageBox::critical(NULL, "Attention", "Computation of Clipper Planes Failed!");
+            return;
+        }//_if
+        MITK_INFO << "[...][7.2] ComputeCtrLinesClippers finished .";
+        clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(lareg), false);
+        MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
+
+        MITK_INFO << "[SCAR_PROJECTION][8] Create a mesh from clipped segmentation of veins";
+        QString veinsCroppedPath = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
+        mitk::Image::Pointer veinsCropped = mitk::IOUtil::Load<mitk::Image>(veinsCroppedPath.toStdString());
+        mitk::Surface::Pointer LaShell = CemrgCommonUtils::ExtractSurfaceFromSegmentation(veinsCropped, 0.5, 0, 10, 0.1);
+        CemrgCommonUtils::FlipXYPlane(LaShell, "", "");
+
+        MITK_INFO << "[SCAR_PROJECTION][9] Clip the mitral valve";
+        bool oldDebug = atrium->Debugging();
+        atrium->SetDebugModeOn();
+        atrium->ClipMitralValveAuto(directory, "prodMVI.nii", "segmentation.vtk");
+        atrium->SetDebugMode(oldDebug);
+
+        MITK_INFO << "[SCAR_PROJECTION][10] Scar projection";
+        std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
+        scar->SetMinStep(uiScar_minStep);
+        scar->SetMaxStep(uiScar_maxStep);
+        scar->SetMethodType(uiScar_projectionMethod);
+
+        atrium->ResampleSegmentationLabelToImage(veinsCroppedPath, lgePath);
+        mitk::Image::Pointer lge = mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString());
+
+        scar->SetScarSegImage(mitk::IOUtil::Load<mitk::Image>(veinsCroppedPath.toStdString()));
+        mitk::Surface::Pointer scarShell = scar->Scar3D(directory.toStdString(), lge);
+
+        QString scarPath = directory + mitk::IOUtil::GetDirectorySeparator() + "MaxScar.vtk";
+        CemrgCommonUtils::SetCellDataToPointData(scarShell, scarPath, "scalars");
+
+        MITK_INFO << "[SCAR_PROJECTION][11] Thresholding";
+        typedef itk::Image<float, 3> FloatImageType;
+        double mean = 0.0, stdv = 0.0;
+        FloatImageType::Pointer lgeFloat = FloatImageType::New();
+        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
+        ImageType::Pointer segITK = atrium->LoadImage(veinsCroppedPath);
+        mitk::Image::Pointer roiImage = atrium->ImErode(segITK);
+        scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
+
+        MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
+        QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+        scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
+
+        MITK_INFO << "[...][11.2] Saving to files.";
+        double thisThresh, thisPercentage, thisValue;
+        ofstream prodFile1, prodFileExplanation;
+        prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
+        for(int ix=0; (unsigned) ix < uiScar_thresValues.size(); ix++) {
+            thisValue = uiScar_thresValues.at(ix);
+            thisThresh = (uiScar_thresholdMethod == 1) ? mean*thisValue : mean + thisValue*stdv;
+            thisPercentage = scar->Thresholding(thisThresh);
+            prodFile1 << thisValue << "\n";
+            prodFile1 << uiScar_thresholdMethod << "\n";
+            prodFile1 << mean << "\n";
+            prodFile1 << stdv << "\n";
+            prodFile1 << thisThresh << "\n";
+            prodFile1 << "SCORE: " << thisPercentage << "\n";
+            prodFile1 << "=============== separation ================\n";
+        }
+        prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
+        prodFileExplanation << "VALUE\n";
+        prodFileExplanation << "THRESHOLD TYPE: (1 = V*IIR, 2 = MEAN + V*STDev)\n";
+        prodFileExplanation << "MEAN INTENSITY\n";
+        prodFileExplanation << "STANDARD DEVIATION (STDev)\n";
+        prodFileExplanation << "THRESHOLD\n";
+        prodFileExplanation << "SCAR SCORE (percentage)\n";
+        prodFileExplanation << "=============== separation ================";
+        prodFile1.close();
+        prodFileExplanation.close();
+    }
+
+    if(automaticPipeline){
+    } else{
+
+    }
 }
 
 void AtrialFibresView::Reset() {
@@ -982,7 +1160,7 @@ QString AtrialFibresView::LandmarkFilesCreated(QString defaultName, QString type
         msg += "Do you have a VTK or TXT for the: ";
         msg += (type.toStdString() + " landmarks?");
 
-        int reply = QMessageBox::question(NULL, "File not found", msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+        int reply = Ask("File not found", msg);
         if(reply==QMessageBox::Yes){
             msg = ("Open " + type.toStdString() + " landmarks file");
             res = QFileDialog::getOpenFileName(NULL, msg.c_str(), directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
@@ -1009,19 +1187,19 @@ void AtrialFibresView::SetManualModeButtons(bool b){
     m_Controls.button_man7_clipMV->setVisible(b);
     m_Controls.button_man8_clipPV->setVisible(b);
 
-    m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
-    m_Controls.button_0_calculateUac->setText("    Step7: CAlculate UAC");
-    m_Controls.button_0_refineUac->setText("    Step8: Refine UAC");
 
+    m_Controls.button_0_landmarks->setText("    Step9: Select Landmarks");
+    m_Controls.button_0_calculateUac->setText("    Step10: Calculate UAC");
+    m_Controls.button_0_refineUac->setText("    Step11: Refine UAC");
 }
 
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
     m_Controls.button_auto4_meshpreproc->setVisible(b);
     m_Controls.button_auto5_clipPV->setVisible(b);
 
-    m_Controls.button_0_landmarks->setText("    Step9: Select Landmarks");
-    m_Controls.button_0_calculateUac->setText("    Step10: CAlculate UAC");
-    m_Controls.button_0_refineUac->setText("    Step11: Refine UAC");
+    m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
+    m_Controls.button_0_calculateUac->setText("    Step7: Calculate UAC");
+    m_Controls.button_0_refineUac->setText("    Step8: Refine UAC");
 }
 
 void AtrialFibresView::SetTagNameFromPath(QString path){

@@ -57,6 +57,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolygon.h>
 #include <vtkCellArray.h>
 #include <vtkConnectivityFilter.h>
+#include <vtkImageResize.h>
+#include <vtkImageChangeInformation.h>
 
 //ITK
 #include <itkSubtractImageFilter.h>
@@ -118,6 +120,51 @@ ImageType::Pointer CemrgAtrialTools::LoadImage(QString imagePath){
     mitk::CastToItkImage(mitkImage, itkImage);
 
     return itkImage;
+}
+
+void CemrgAtrialTools::AdjustSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath){
+    mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(imPath.toStdString());
+    mitk::Image::Pointer segIm = mitk::IOUtil::Load<mitk::Image>(segImPath.toStdString());
+    double origin[3]; double spacing[3];
+    im->GetGeometry()->GetOrigin().ToArray(origin);
+    im->GetGeometry()->GetSpacing().ToArray(spacing);
+
+    vtkSmartPointer<vtkImageResize> resizeFilter = vtkSmartPointer<vtkImageResize>::New();
+    resizeFilter->SetResizeMethodToOutputDimensions();
+    resizeFilter->SetOutputDimensions(im->GetDimension(0), im->GetDimension(1), im->GetDimension(2));
+    resizeFilter->InterpolateOff();
+    resizeFilter->SetInputData(segIm->GetVtkImageData());
+    resizeFilter->Update();
+
+    vtkSmartPointer<vtkImageChangeInformation> changeFilter = vtkSmartPointer<vtkImageChangeInformation>::New();
+    changeFilter->SetInputConnection(resizeFilter->GetOutputPort());
+    changeFilter->SetOutputSpacing(spacing);
+    changeFilter->SetOutputOrigin(origin);
+    changeFilter->Update();
+
+    segIm->Initialize(changeFilter->GetOutput());
+    segIm->SetVolume(changeFilter->GetOutput()->GetScalarPointer());
+
+    QString outputPath = (outImPath.isEmpty()) ? segImPath : outImPath;
+    mitk::IOUtil::Save(segIm, outputPath.toStdString());
+}
+
+void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath){
+    ImageType::Pointer segITK = LoadImage(segImPath);
+    ImageType::Pointer lgeITK = LoadImage(imPath);
+
+    itk::ResampleImageFilter<ImageType, ImageType>::Pointer resampleFilter;
+    resampleFilter = itk::ResampleImageFilter<ImageType, ImageType>::New();
+    resampleFilter->SetInput(segITK);
+    resampleFilter->SetReferenceImage(lgeITK);
+    resampleFilter->SetUseReferenceImage(true);
+    resampleFilter->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageType>::New());
+    resampleFilter->SetDefaultPixelValue(0);
+    resampleFilter->UpdateLargestPossibleRegion();
+
+    segITK = resampleFilter->GetOutput();
+
+    QString outputPath = (outImPath.isEmpty()) ? segImPath : outImPath;
 }
 
 ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName){
@@ -208,7 +255,7 @@ ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QSt
     return atriumSegmentation;
 }
 
-ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName){
+ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName, bool relabel){
 
     MITK_INFO << "Extracting and cleaning pulmonary veins";
 
@@ -227,9 +274,10 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
     IteratorType veinsIter(conn2->GetOutput(), conn2->GetOutput()->GetLargestPossibleRegion());
 
     int idx=0;
+    int relabelValue = relabel ? 10 : 1;
     while(!veinsIter.IsAtEnd()){
         if(veinsIter.Get() > 0){
-            int value = (int)veinsIter.Get()+10;
+            int value = (int)veinsIter.Get()+relabelValue;
             detectedLabels.push_back(value);
             imIter.Set(detectedLabels[idx]);
             idx++;
@@ -410,6 +458,71 @@ void CemrgAtrialTools::ExtractLabelFromShell(QString dir, int label, QString out
     mitk::IOUtil::Save(outputsurf, path.toStdString());
 }
 
+void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<vtkPolyData> pd, int nveins, QString outName){
+    vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
+    pointLocator->SetDataSet(pd);
+    pointLocator->BuildLocator();
+
+    vtkSmartPointer<vtkIdList> pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
+    pickedSeedIds->Initialize();
+
+    IteratorType itLMK(im, im->GetRequestedRegion());
+    std::vector<std::vector<double>> veinsCentre;
+    QString fcentresPath = directory + mitk::IOUtil::GetDirectorySeparator() + outName + "Centres.txt";
+    std::ofstream fcentres(fcentresPath.toStdString());
+
+    for (int j=0; j<nveins; j++) {
+        int ctrVeinsVoxels = 0;
+        std::vector<double> veinLandmark(3, 0.0);
+        for (itLMK.GoToBegin(); !itLMK.IsAtEnd(); ++itLMK) {
+            if ((int)itLMK.Get() == (j+1)) {
+                ImageType::PointType point;
+                im->TransformIndexToPhysicalPoint(itLMK.GetIndex(), point);
+                veinLandmark[0] += point[0];
+                veinLandmark[1] += point[1];
+                veinLandmark[2] += point[2];
+                ctrVeinsVoxels++;
+            }
+        }//_for
+        veinLandmark[0] /= ctrVeinsVoxels;
+        veinLandmark[1] /= ctrVeinsVoxels;
+        veinLandmark[2] /= ctrVeinsVoxels;
+        veinsCentre.push_back(veinLandmark);
+
+        fcentres << veinLandmark[0] << "," << veinLandmark[1] << "," << veinLandmark[2] << std::endl;
+    }//_nveins
+    fcentres.close();
+
+    for (int j=0; j<nveins; j++) {
+        double veinLandmark[3];
+        veinLandmark[0] = veinsCentre.at(j)[0];
+        veinLandmark[1] = veinsCentre.at(j)[1];
+        veinLandmark[2] = veinsCentre.at(j)[2];
+
+        vtkIdType id = pointLocator->FindClosestPoint(veinLandmark);
+        pickedSeedIds->InsertNextId(id);
+    }//_nveins
+
+    std::vector<int> pickedSeedLabels;
+    for (int j=0; j<nveins; j++){
+        pickedSeedLabels.push_back(21);
+    }
+
+    QString fidsPath = directory + mitk::IOUtil::GetDirectorySeparator() + outName + "Ids.txt";
+    QString flabelsPath = directory + mitk::IOUtil::GetDirectorySeparator() + outName + "Labels.txt";
+    std::ofstream fids(fidsPath.toStdString());
+    std::ofstream flabels(flabelsPath.toStdString());
+
+    for (int ix = 0; ix < nveins; ix++) {
+        vtkIdType vId = ix;
+        fids << pickedSeedIds->GetId(vId) << std::endl;
+        flabels << pickedSeedLabels.at(ix) << std::endl;
+    }
+    fids.close();
+    flabels.close();
+
+}
+
 //helper functions
 ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius, int maxNumObjects){
     MITK_INFO << ("Thresholding " + tag + " from clean segmentation").toStdString();
@@ -443,7 +556,6 @@ ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointe
     } else{
         return auxIm;
     }
-
 }
 
 ImageType::Pointer CemrgAtrialTools::AddImage(ImageType::Pointer im1, ImageType::Pointer im2){
@@ -478,6 +590,21 @@ ImFilterType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint16_
     imOpenFilter->Update();
 
     return imOpenFilter;
+}
+
+mitk::Image::Pointer CemrgAtrialTools::ImErode(ImageType::Pointer input, int vxls){
+    StrElType binaryBall;
+    binaryBall.SetRadius(vxls);
+    binaryBall.CreateStructuringElement();
+    ErosionFilterType::Pointer erosionFilter = ErosionFilterType::New();
+    erosionFilter->SetInput(input);
+    erosionFilter->SetKernel(binaryBall);
+    erosionFilter->UpdateLargestPossibleRegion();
+
+    mitk::Image::Pointer roiImage = mitk::Image::New();
+    roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
+
+    return roiImage;
 }
 
 void CemrgAtrialTools::SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName){

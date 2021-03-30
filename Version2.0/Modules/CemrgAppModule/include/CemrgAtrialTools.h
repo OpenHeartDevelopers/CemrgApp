@@ -56,6 +56,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <itkAddImageFilter.h>
 #include <itkConnectedComponentImageFilter.h>
 #include <itkLabelShapeKeepNObjectsImageFilter.h>
+#include <itkGrayscaleErodeImageFilter.h>
+#include <itkRelabelComponentImageFilter.h>
 
 #include "CemrgAtriaClipper.h"
 
@@ -65,14 +67,18 @@ PURPOSE.  See the above copyright notices for more information.
 #include <MitkCemrgAppModuleExports.h>
 
 typedef itk::Image<uint16_t,3> ImageType;
+typedef itk::Image<float,3> FloatImageType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
 typedef itk::BinaryMorphologicalOpeningImageFilter<ImageType, ImageType, StrElType> ImFilterType;
+typedef itk::GrayscaleErodeImageFilter<ImageType, FloatImageType, StrElType> ErosionFilterType;
+
 typedef itk::ImageRegionIterator<ImageType> IteratorType;
 typedef itk::AddImageFilter<ImageType, ImageType, ImageType> AddFilterType;
 
 typedef itk::ConnectedComponentImageFilter<ImageType, ImageType> ConnectedComponentImageFilterType;
 typedef itk::LabelShapeKeepNObjectsImageFilter<ImageType> LabelShapeKeepNObjImgFilterType;
+typedef itk::RelabelComponentImageFilter<ImageType, ImageType> RelabelFilterType;
 
 class MITKCEMRGAPPMODULE_EXPORT CemrgAtrialTools {
 
@@ -115,9 +121,12 @@ public:
 
     void SetNaiveSegmentationTags();
 
+    void AdjustSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath="");
+    void ResampleSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath="");
+
     ImageType::Pointer RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
-    ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="labelled.nii");
+    ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="labelled.nii", bool relabel=true);
     mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
     void ClipMitralValveAuto(QString dir, QString mvName, QString outName);
@@ -126,11 +135,14 @@ public:
     void ProjectShellScalars(QString dir, QString scalarsShellPath, QString outputShellPath);
     void ExtractLabelFromShell(QString dir, int label, QString outName);
 
+    void FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<vtkPolyData> pd, int nveins, QString outName="scarSeeds");
+
     // helper functions
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);
     ImageType::Pointer AddImage(ImageType::Pointer im1, ImageType::Pointer im2);
     ThresholdType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal);
     ImFilterType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
+    mitk::Image::Pointer ImErode(ImageType::Pointer input, int vxls=3);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);
 
 private:
