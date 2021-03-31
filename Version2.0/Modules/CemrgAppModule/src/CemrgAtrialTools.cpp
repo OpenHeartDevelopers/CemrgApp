@@ -186,13 +186,15 @@ ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QStrin
     return keepObjs->GetOutput();
 }
 
-ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName){
+ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName, QString cleanName){
     QString inputPath = dir + mitk::IOUtil::GetDirectorySeparator() + segName;
     ImageType::Pointer orgSegImage = LoadImage(inputPath);
 
     ImageType::Pointer atriumCoarse = RemoveNoiseFromAutomaticSegmentation(dir, segName);
 
-    SaveImageToDisk(atriumCoarse, dir, "1_CleanSegmentation.nii");
+    if(!cleanName.isEmpty()){
+        SaveImageToDisk(atriumCoarse, dir, cleanName);
+    }
 
     MITK_INFO << "[CleanAutomaticSegmentation] Relabel clean segmentation's veins";
     IteratorType segImgIter(atriumCoarse, atriumCoarse->GetLargestPossibleRegion());
@@ -249,7 +251,9 @@ ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QSt
 
     atriumSegmentation = body;
     MITK_INFO << "[CleanAutomaticSegmentation] Saving Mitral Valve";
-    SaveImageToDisk(atriumSegmentation, dir, "2_SegmentationWithVeins.nii");
+    if(debugSteps){
+        SaveImageToDisk(atriumSegmentation, dir, "2_SegmentationWithVeins.nii");
+    }
     SaveImageToDisk(keepObjs2->GetOutput(), dir, "prodMVI.nii");
 
     return atriumSegmentation;
@@ -261,14 +265,16 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
 
     uint16_t veinsthresh = 2;
     ImageType::Pointer veins = ExtractLabel("Veins", im, veinsthresh, 3.0, 5);
-    SaveImageToDisk(veins, dir, "3_ThresholdedVeins.nii");
 
     MITK_INFO << "Label each detected vein";
     ConnectedComponentImageFilterType::Pointer conn2 = ConnectedComponentImageFilterType::New();
     conn2->SetInput(veins);
     conn2->Update();
 
-    SaveImageToDisk(conn2->GetOutput(), dir, "4_ConnectedComponentsVeins.nii");
+    if(debugSteps){
+        SaveImageToDisk(veins, dir, "3_ThresholdedVeins.nii");
+        SaveImageToDisk(conn2->GetOutput(), dir, "4_ConnectedComponentsVeins.nii");
+    }
 
     IteratorType imIter(im, im->GetLargestPossibleRegion());
     IteratorType veinsIter(conn2->GetOutput(), conn2->GetOutput()->GetLargestPossibleRegion());
@@ -335,23 +341,20 @@ void CemrgAtrialTools::ProjectTagsOnSurface(ImageType::Pointer im, QString dir, 
     MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
 }
 
-void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvName, QString outName){
+void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvNameExt, QString outName, bool insideout){
     MITK_INFO << "[ClipMitralValveAuto]";
     // Make vtk of prodMVI
     MITK_INFO << "Loading Mitral Valve Image (mvi)";
-    QString mviPath = dir + mitk::IOUtil::GetDirectorySeparator() + mvName;
+    QString mviPath = dir + mitk::IOUtil::GetDirectorySeparator() + mvNameExt;
     mitk::Image::Pointer mvi = mitk::IOUtil::Load<mitk::Image>(mviPath.toStdString());
     mitk::MorphologicalOperations::Dilate(mvi, 2, mitk::MorphologicalOperations::StructuralElementType::Ball);
 
     MITK_INFO << "Extract surface from mvi";
     mitk::Surface::Pointer clipperSurf = CemrgCommonUtils::ExtractSurfaceFromSegmentation(mvi, 0.5, 0, 10);
 
-    if(debugSteps){
-        QFileInfo fi(mviPath);
-        QString mvSurfPath = dir + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + ".vtk";
-        MITK_INFO << ("[debug] Saving surface to " + mvSurfPath).toStdString();
-        mitk::IOUtil::Save(clipperSurf, mvSurfPath.toStdString());
-    }
+    QFileInfo fi(mviPath);
+    QString mvSurfPath = dir + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + ".vtk";
+    mitk::IOUtil::Save(clipperSurf, mvSurfPath.toStdString());
 
     // Implement code from command line tool
     MITK_INFO << "Define implicit function object (mitral valve)";
@@ -364,8 +367,11 @@ void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvName, QString 
     vtkSmartPointer<vtkClipPolyData> mvclipper = vtkSmartPointer<vtkClipPolyData>::New();
     mvclipper->SetClipFunction(implicitFn);
     mvclipper->SetInputData(surface->GetVtkPolyData());
-    mvclipper->InsideOutOn();
-    // mvclipper->InsideOutOff();
+    if(insideout){
+        mvclipper->InsideOutOn();
+    } else{
+        mvclipper->InsideOutOff();
+    }
     mvclipper->Update();
 
     MITK_INFO << "Extract and clean surface mesh.";
@@ -460,6 +466,12 @@ void CemrgAtrialTools::ExtractLabelFromShell(QString dir, int label, QString out
 
 void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<vtkPolyData> pd, int nveins, QString outName){
     vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
+    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+        double* point = pd->GetPoint(i);
+        point[0] = -point[0];
+        point[1] = -point[1];
+        pd->GetPoints()->SetPoint(i, point);
+    }//_for
     pointLocator->SetDataSet(pd);
     pointLocator->BuildLocator();
 
@@ -608,15 +620,13 @@ mitk::Image::Pointer CemrgAtrialTools::ImErode(ImageType::Pointer input, int vxl
 }
 
 void CemrgAtrialTools::SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName){
-    if(debugSteps || tagSegName.compare(imName)==0 || imName.compare("prodMVI.nii")==0){
-        QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + imName;
-        MITK_INFO << ("Saving image " + imName + " to: " + dir).toStdString();
-        mitk::Image::Pointer outputImg = mitk::Image::New();
-        mitk::CastToMitkImage(im, outputImg);
-        mitk::IOUtil::Save(outputImg, outputPath.toStdString());
-    } else {
-        MITK_INFO << "Saving to disk disabled.";
-    }
+    QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + imName;
+    outputPath += (!imName.contains(".nii")) ? ".nii" : "";
+    MITK_INFO << ("Saving image " + imName + " to: " + dir).toStdString();
+
+    mitk::Image::Pointer outputImg = mitk::Image::New();
+    mitk::CastToMitkImage(im, outputImg);
+    mitk::IOUtil::Save(outputImg, outputPath.toStdString());
 }
 
 int CemrgAtrialTools::GetNaiveLabel(int l){

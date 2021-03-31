@@ -125,11 +125,11 @@ public:
     void ResampleSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath="");
 
     ImageType::Pointer RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
-    ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
+    ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii", QString cleanName="");
     ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="labelled.nii", bool relabel=true);
     mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
-    void ClipMitralValveAuto(QString dir, QString mvName, QString outName);
+    void ClipMitralValveAuto(QString dir, QString mvNameExt, QString outName, bool insideout=true);
 
     void SetSurfaceLabels(QString correctLabels, QString naiveLabels);
     void ProjectShellScalars(QString dir, QString scalarsShellPath, QString outputShellPath);

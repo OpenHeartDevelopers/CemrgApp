@@ -269,7 +269,7 @@ void AtrialFibresView::ConvertNII() {
 
     //Convert to Nifti
     int ctr = 0;
-    QString path, type;
+    QString prodPath, type;
     bool successfulNitfi, resampleImage, reorientToRAI;
     resampleImage = true;
     reorientToRAI = true;
@@ -278,12 +278,12 @@ void AtrialFibresView::ConvertNII() {
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
         type = (ctr==0) ? "LGE":"MRA";
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
+        prodPath = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
+        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), prodPath, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
             std::string key = "dicom.series.SeriesDescription";
-            mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
+            mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(prodPath.toStdString(), *this->GetDataStorage());
             set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), seriesDscrps.at(idx).c_str());
             ctr++;
         } else {
@@ -331,6 +331,7 @@ void AtrialFibresView::AnalysisChoice(){
 
 // Automatic pipeline
 void AtrialFibresView::AutomaticAnalysis(){
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     if(cnnPath.isEmpty()){
         int reply = Ask("Question", "Do you have a previous automatic segmentation?");
 
@@ -346,7 +347,7 @@ void AtrialFibresView::AutomaticAnalysis(){
                 return;
             }
 
-            QString mraPath = directory + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
+            QString mraPath = prodPath + "test.nii";
             if(nodes.size() == 0){
                 MITK_INFO << "Searching MRA files";
 
@@ -393,7 +394,7 @@ void AtrialFibresView::AutomaticAnalysis(){
 
     MITK_INFO << "[AUTOMATIC_PIPELINE] Clean Segmentation";
     ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory, (fi.baseName()+".nii"));
-    cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
+    cnnPath = prodPath + "LA.nii";
 
     mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
     mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
@@ -411,7 +412,7 @@ void AtrialFibresView::AutomaticAnalysis(){
             uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, true);
 
         MITK_INFO << "[AUTOMATIC_PIPELINE] Add the mesh to storage";
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+        QString path = prodPath + tagName + ".vtk";
 
         std::cout << "Path to load: " << path.toStdString() <<'\n';
         std::cout << "tagName: " << tagName.toStdString() << '\n';
@@ -438,6 +439,7 @@ void AtrialFibresView::MeshPreprocessing(){
 // Manual pipeline
 void AtrialFibresView::SegmentIMGS() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
 
     int replyAuto = Ask("Question", "Do you want an automatic segmentation?");
     if(replyAuto == QMessageBox::Yes){
@@ -460,7 +462,7 @@ void AtrialFibresView::SegmentIMGS() {
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
 
                 //CNN prediction
-                mraPath = directory + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
+                mraPath = prodPath + "test.nii";
                 mitk::IOUtil::Save(image, mraPath.toStdString());
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
                 cmd->SetUseDockerContainers(true);
@@ -472,7 +474,7 @@ void AtrialFibresView::SegmentIMGS() {
 
                 //Clean prediction
                 ImageType::Pointer segImage = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
-                cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
+                cnnPath = prodPath + "LA.nii";
 
                 mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
                 mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
@@ -555,10 +557,7 @@ void AtrialFibresView::CreateLabelledMesh(){
 void AtrialFibresView::ClipperMV(){
     if(automaticPipeline){
         MITK_INFO << "[ClipperMV] Clipping mitral valve";
-        bool oldDebug = atrium->Debugging();
-        atrium->SetDebugModeOn();
         atrium->ClipMitralValveAuto(directory, "prodMVI.nii", tagName+".vtk");
-        atrium->SetDebugMode(oldDebug);
     } else {
 
     }
@@ -569,13 +568,15 @@ void AtrialFibresView::ClipperPV(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.#
     if (!LoadSurfaceChecks()) return; // Surface was not loaded and user could not find file.
 
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+
     if(automaticPipeline){
         MITK_INFO << "[ClipperPV] clipping PVs from automatic pipeline.";
 
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+        QString path = prodPath + tagName + ".vtk";
 
         mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "prodClipperIDsAndRadii.txt";
+        path = prodPath + "prodClipperIDsAndRadii.txt";
         if(QFile::exists(path)){
 
             MITK_INFO << "[ClipperPV] Reading in centre IDs and radii";
@@ -591,7 +592,7 @@ void AtrialFibresView::ClipperPV(){
 
                 fi >> ptId >> x_c >> y_c >> z_c >> radius;
 
-                QString spherePath = directory + mitk::IOUtil::GetDirectorySeparator() + "pvClipper_" + QString::number(ptId) + ".vtk";
+                QString spherePath = prodPath + "pvClipper_" + QString::number(ptId) + ".vtk";
                 std::cout << "Read points: ID:" << ptId << " C=[" << x_c << " " << y_c << " " << z_c << "] R=" << radius <<'\n';
 
                 surface = CemrgCommonUtils::ClipWithSphere(surface, x_c, y_c, z_c, radius, spherePath);
@@ -599,7 +600,7 @@ void AtrialFibresView::ClipperPV(){
             fi.close();
 
             // save surface
-            path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+            path = prodPath + tagName + ".vtk";
             mitk::IOUtil::Save(surface, path.toStdString());
             atrium->SetSurface(path);
 
@@ -634,6 +635,8 @@ void AtrialFibresView::MeshingOptions(){
     if (!RequestProjectDirectoryFromUser()) return;
     if (!LoadSurfaceChecks()) return;
 
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+
     MITK_INFO << "[MeshingOptions] Remeshing";
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
@@ -644,8 +647,8 @@ void AtrialFibresView::MeshingOptions(){
         MITK_INFO << "[MeshingOptions] point data to cell data";
         atrium->SetSurface(refinedPath);
 
-        QString correctLabels = directory + mitk::IOUtil::GetDirectorySeparator() + "prodSeedLabels.txt";
-        QString naiveLabels = directory + mitk::IOUtil::GetDirectorySeparator() + "prodNaiveSeedLabels.txt";
+        QString correctLabels = prodPath + "prodSeedLabels.txt";
+        QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
         atrium->SetSurfaceLabels(correctLabels, naiveLabels);
 
         if(uiRemesh_extractParts){
@@ -697,6 +700,7 @@ void AtrialFibresView::ConvertFormat(){
 void AtrialFibresView::ScarProjection(){
 
     if (!RequestProjectDirectoryFromUser()) return;
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
 
     QDirIterator searchit(directory, QDirIterator::Subdirectories);
     QString mraPath, lgePath, cnnPath;
@@ -732,12 +736,14 @@ void AtrialFibresView::ScarProjection(){
         atrium->AdjustSegmentationLabelToImage(cnnPath, mraPath, "LA.nii");
 
         MITK_INFO << "[SCAR_PROJECTION][2] Image registration";
-        QString laregPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA-reg.nii";
+        QString laregName = "LA-reg.nii", cleanName = "prodClean.nii";
+        QString laregPath = prodPath + laregName;
+        QString laregCleanPath = prodPath + cleanName;
         cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
         cmd->ExecuteTransformation(directory, cnnPath, laregPath);
 
         MITK_INFO << "[SCAR_PROJECTION][3] Clean segmentation";
-        ImageType::Pointer lareg = atrium->CleanAutomaticSegmentation(directory, "LA-reg.nii");
+        ImageType::Pointer lareg = atrium->CleanAutomaticSegmentation(directory, laregName, cleanName);
         mitk::IOUtil::Save(mitk::ImportItkImage(lareg), laregPath.toStdString());
         MITK_INFO << ("[...][3.1] Saved file: "+laregPath).toStdString();
 
@@ -747,17 +753,14 @@ void AtrialFibresView::ScarProjection(){
         veinsIm = atrium->AssignAutomaticLabels(veinsIm, directory, "prodSeparatedVeins.nii", false);
 
         MITK_INFO << "[SCAR_PROJECTION][5] Vein clipping mesh";
-        mitk::Image::Pointer laregMitk = mitk::ImportItkImage(lareg);
-        mitk::Surface::Pointer segSurface = CemrgCommonUtils::ExtractSurfaceFromSegmentation(laregMitk, 0.5, 0, 10, 0.1);
-        CemrgCommonUtils::FlipXYPlane(segSurface, directory, "segmentation.vtk");
-        // QString output1 = cmd->ExecuteSurf(directory, laregPath, "close", 1, .5, 0, 10);
-        // mitk::Surface::Pointer segSurface = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
-        // vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
-        // deci->SetInputData(segSurface->GetVtkPolyData());
-        // deci->SetTargetReduction(0.1);
-        // deci->PreserveTopologyOn();
-        // deci->Update();
-        // segSurface->SetVtkPolyData(deci->GetOutput());
+        QString output1 = cmd->ExecuteSurf(directory, laregCleanPath, "close", 1, .5, 0, 10);
+        mitk::Surface::Pointer segSurface = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
+        vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
+        deci->SetInputData(segSurface->GetVtkPolyData());
+        deci->SetTargetReduction(0.1);
+        deci->PreserveTopologyOn();
+        deci->Update();
+        segSurface->SetVtkPolyData(deci->GetOutput());
 
         MITK_INFO << "[SCAR_PROJECTION][6] Find vein landmark";
         int nveins = 5;
@@ -767,8 +770,8 @@ void AtrialFibresView::ScarProjection(){
         pickedSeedIds->Initialize();
         atrium->FindVeinLandmarks(veinsIm, segSurface->Clone()->GetVtkPolyData(), nveins, seedname);
 
-        QString idsPath = directory + mitk::IOUtil::GetDirectorySeparator() + seedname + "Ids.txt";
-        QString labelsPath = directory + mitk::IOUtil::GetDirectorySeparator() + seedname + "Labels.txt";
+        QString idsPath = prodPath + seedname + "Ids.txt";
+        QString labelsPath = prodPath + seedname + "Labels.txt";
         std::ifstream fids(idsPath.toStdString());
         std::ifstream flabels(labelsPath.toStdString());
 
@@ -798,20 +801,19 @@ void AtrialFibresView::ScarProjection(){
             return;
         }//_if
         MITK_INFO << "[...][7.2] ComputeCtrLinesClippers finished .";
-        clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(lareg), false);
+        mitk::Image::Pointer prodClean = mitk::IOUtil::Load<mitk::Image>(laregCleanPath.toStdString());
+        clipper->ClipVeinsImage(pickedSeedLabels, prodClean, false);
         MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
 
         MITK_INFO << "[SCAR_PROJECTION][8] Create a mesh from clipped segmentation of veins";
-        QString veinsCroppedPath = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
+        QString veinsCroppedPath = prodPath + "PVeinsCroppedImage.nii";
         mitk::Image::Pointer veinsCropped = mitk::IOUtil::Load<mitk::Image>(veinsCroppedPath.toStdString());
-        mitk::Surface::Pointer LaShell = CemrgCommonUtils::ExtractSurfaceFromSegmentation(veinsCropped, 0.5, 0, 10, 0.1);
-        CemrgCommonUtils::FlipXYPlane(LaShell, "", "");
+        mitk::Surface::Pointer LaShell = CemrgCommonUtils::ExtractSurfaceFromSegmentation(veinsCropped);
+        mitk::IOUtil::Save(LaShell, (prodPath+"segmentation.vtk").toStdString());
 
         MITK_INFO << "[SCAR_PROJECTION][9] Clip the mitral valve";
-        bool oldDebug = atrium->Debugging();
-        atrium->SetDebugModeOn();
+        atrium->SetSurface(prodPath+"segmentation.vtk");
         atrium->ClipMitralValveAuto(directory, "prodMVI.nii", "segmentation.vtk");
-        atrium->SetDebugMode(oldDebug);
 
         MITK_INFO << "[SCAR_PROJECTION][10] Scar projection";
         std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
@@ -825,7 +827,7 @@ void AtrialFibresView::ScarProjection(){
         scar->SetScarSegImage(mitk::IOUtil::Load<mitk::Image>(veinsCroppedPath.toStdString()));
         mitk::Surface::Pointer scarShell = scar->Scar3D(directory.toStdString(), lge);
 
-        QString scarPath = directory + mitk::IOUtil::GetDirectorySeparator() + "MaxScar.vtk";
+        QString scarPath = prodPath + "MaxScar.vtk";
         CemrgCommonUtils::SetCellDataToPointData(scarShell, scarPath, "scalars");
 
         MITK_INFO << "[SCAR_PROJECTION][11] Thresholding";
@@ -838,7 +840,6 @@ void AtrialFibresView::ScarProjection(){
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
 
         MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
-        QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
         scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
 
         MITK_INFO << "[...][11.2] Saving to files.";
@@ -867,11 +868,6 @@ void AtrialFibresView::ScarProjection(){
         prodFileExplanation << "=============== separation ================";
         prodFile1.close();
         prodFileExplanation.close();
-    }
-
-    if(automaticPipeline){
-    } else{
-
     }
 }
 
@@ -1143,13 +1139,13 @@ bool AtrialFibresView::GetUserScarProjectionInputs(){
 }
 
 QString AtrialFibresView::LandmarkFilesCreated(QString defaultName, QString type){
-    QString path, res;
-    path = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath, res;
+    prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     res = "FILE_NOT_FOUND";
 
     bool foundVtk, foundTxt;
-    foundVtk = QFile::exists(path+defaultName+".vtk");
-    foundTxt = QFile::exists(path+defaultName+".txt");
+    foundVtk = QFile::exists(prodPath+defaultName+".vtk");
+    foundTxt = QFile::exists(prodPath+defaultName+".txt");
 
     MITK_INFO(foundVtk) << ("Found" + type + "file in VTK format").toStdString();
     MITK_INFO(foundTxt) << ("Found" + type + "file in TXT format").toStdString();
@@ -1170,10 +1166,10 @@ QString AtrialFibresView::LandmarkFilesCreated(QString defaultName, QString type
         }
     } else if(foundVtk) {
         MITK_INFO << "Loading file in VTK format";
-        res = path+defaultName+".vtk";
+        res = prodPath+defaultName+".vtk";
     } else{
         MITK_INFO << "Loading file in TXT format";
-        res = path+defaultName+".txt";
+        res = prodPath+defaultName+".txt";
     }
 
     return res;
@@ -1209,9 +1205,9 @@ void AtrialFibresView::SetTagNameFromPath(QString path){
 
 bool AtrialFibresView::LoadSurfaceChecks(){
     bool success = true;
-    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
 
-    if(!QFile::exists(path)){
+    if(!QFile::exists(prodPath)){
         int reply1 = Ask("Surface file not found", "Do you have a surface file to load?");
         if(reply1==QMessageBox::Yes){
             UserLoadSurface();
@@ -1226,7 +1222,7 @@ bool AtrialFibresView::LoadSurfaceChecks(){
         }
     }
 
-    MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + path).toStdString();
+    MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + prodPath).toStdString();
 
     return success;
 }
