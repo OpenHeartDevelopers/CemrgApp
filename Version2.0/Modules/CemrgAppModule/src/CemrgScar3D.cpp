@@ -351,6 +351,47 @@ void CemrgScar3D::SaveNormalisedScalars(double divisor, mitk::Surface::Pointer s
 
 }
 
+void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> values_vector, int threshType, double mean, double stdv, bool printGuide){
+    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    double thisThresh, thisPercentage, thisValue;
+    std::ofstream prodFile1;
+    prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
+    for(int ix=0; (unsigned) ix < values_vector.size(); ix++) {
+        thisValue = values_vector.at(ix);
+        thisThresh = (threshType == 1) ? mean*thisValue : mean + thisValue*stdv;
+        thisPercentage = Thresholding(thisThresh);
+        prodFile1 << thisValue << "\n";
+        prodFile1 << threshType << "\n";
+        prodFile1 << mean << "\n";
+        prodFile1 << stdv << "\n";
+        prodFile1 << thisThresh << "\n";
+        prodFile1 << "SCORE: " << thisPercentage << "\n";
+        if(!printGuide){
+            prodFile1 << "=============== separation ================\n";
+        }
+    }
+    prodFile1.close();
+
+    if(printGuide){
+        std::ofstream prodFileExplanation;
+        prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
+        prodFileExplanation << "VALUE\n";
+        prodFileExplanation << "THRESHOLD TYPE: (1 = V*IIR, 2 = MEAN + V*STDev)\n";
+        prodFileExplanation << "MEAN INTENSITY\n";
+        prodFileExplanation << "STANDARD DEVIATION (STDev)\n";
+        prodFileExplanation << "THRESHOLD\n";
+        prodFileExplanation << "SCAR SCORE (percentage)\n";
+        prodFileExplanation << "=============== separation ================";
+        prodFileExplanation.close();
+    }
+}
+
+void PrintThresholdingResults(QString dir, double value, int threshType, double mean, double stdv){
+    std::vector<double> v;
+    v.push_back(value);
+    PrintThresholdingResults(dir, v, threshType, mean, stdv, false);
+}
+
 double CemrgScar3D::GetMinScalar() const {
 
     return minScalar;
