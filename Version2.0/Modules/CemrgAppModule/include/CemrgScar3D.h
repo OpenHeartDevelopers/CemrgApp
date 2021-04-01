@@ -51,7 +51,7 @@ public:
     void SaveScarDebugImage(QString name, QString dir);
     void SaveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name);
     void PrintThresholdingResults(QString dir, std::vector<double> values_vector, int threshType, double mean, double stdv, bool printGuide=true);
-    void PrintThresholdingResults(QString dir, double value, int threshType, double mean, double stdv);
+    void PrintSingleThresholdingResult(QString dir, double value, int threshType, double mean, double stdv);
 
     double GetMinScalar() const;
     double GetMaxScalar() const;
