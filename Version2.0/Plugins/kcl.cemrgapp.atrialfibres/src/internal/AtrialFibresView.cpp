@@ -837,37 +837,10 @@ void AtrialFibresView::ScarProjection(){
         mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
         ImageType::Pointer segITK = atrium->LoadImage(veinsCroppedPath);
         mitk::Image::Pointer roiImage = atrium->ImErode(segITK);
+
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
-
-        MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
         scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
-
-        MITK_INFO << "[...][11.2] Saving to files.";
-        double thisThresh, thisPercentage, thisValue;
-        ofstream prodFile1, prodFileExplanation;
-        prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
-        for(int ix=0; (unsigned) ix < uiScar_thresValues.size(); ix++) {
-            thisValue = uiScar_thresValues.at(ix);
-            thisThresh = (uiScar_thresholdMethod == 1) ? mean*thisValue : mean + thisValue*stdv;
-            thisPercentage = scar->Thresholding(thisThresh);
-            prodFile1 << thisValue << "\n";
-            prodFile1 << uiScar_thresholdMethod << "\n";
-            prodFile1 << mean << "\n";
-            prodFile1 << stdv << "\n";
-            prodFile1 << thisThresh << "\n";
-            prodFile1 << "SCORE: " << thisPercentage << "\n";
-            prodFile1 << "=============== separation ================\n";
-        }
-        prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
-        prodFileExplanation << "VALUE\n";
-        prodFileExplanation << "THRESHOLD TYPE: (1 = V*IIR, 2 = MEAN + V*STDev)\n";
-        prodFileExplanation << "MEAN INTENSITY\n";
-        prodFileExplanation << "STANDARD DEVIATION (STDev)\n";
-        prodFileExplanation << "THRESHOLD\n";
-        prodFileExplanation << "SCAR SCORE (percentage)\n";
-        prodFileExplanation << "=============== separation ================";
-        prodFile1.close();
-        prodFileExplanation.close();
+        scar->PrintThresholdingResults(directory, uiScar_thresValues, uiScar_thresholdMethod, mean, stdv);
     }
 }
 
