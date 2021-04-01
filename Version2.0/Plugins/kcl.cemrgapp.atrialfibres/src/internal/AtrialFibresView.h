@@ -81,6 +81,7 @@ public:
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
     void UserLoadSurface();
+    QString GetFilePath(QString type, QString extension);
     int Ask(std::string title, std::string msg);
 
     inline void SetManualModeButtonsOn(){SetManualModeButtons(true);};
@@ -135,7 +136,7 @@ private:
     QString fileName, cnnPath;
     QString directory, tagName, refinedSuffix;
     std::unique_ptr<CemrgAtrialTools> atrium;
-    bool automaticPipeline, askedAboutAutoPipeline;
+    bool automaticPipeline, analysisOnLge;
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
     bool uiRemesh_vtk2carp, uiRemesh_extractParts;

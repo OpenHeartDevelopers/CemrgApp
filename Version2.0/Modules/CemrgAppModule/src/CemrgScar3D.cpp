@@ -386,7 +386,7 @@ void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> valu
     }
 }
 
-void PrintSingleThresholdingResult(QString dir, double value, int threshType, double mean, double stdv){
+void CemrgScar3D::PrintSingleThresholdingResult(QString dir, double value, int threshType, double mean, double stdv){
     std::vector<double> v;
     v.push_back(value);
     PrintThresholdingResults(dir, v, threshType, mean, stdv, false);

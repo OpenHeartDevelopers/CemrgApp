@@ -96,6 +96,7 @@ public:
     inline void SetTagSegmentationName(QString tsn){tagSegName = tsn;};
 
     inline void SetSurface(QString surfpath){surface = mitk::IOUtil::Load<mitk::Surface>(surfpath.toStdString()); surfLoaded=true;};
+    inline mitk::Surface::Pointer GetSurface(){return surface;};
 
     // Label setters
     inline void SetMV(int _mv){mv=_mv;};

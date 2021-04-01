@@ -134,7 +134,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     // Set default variables
     tagName = "labelled";
     refinedSuffix = "-refined";
-    askedAboutAutoPipeline = false;
+    analysisOnLge = false;
     uiRemesh_vtk2carp = true;
     uiRemesh_extractParts = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
@@ -303,7 +303,6 @@ void AtrialFibresView::AnalysisChoice(){
     int reply1 = Ask("Question", "Use the semi-automatic pipeline?");
 
     SetAutomaticPipeline(reply1==QMessageBox::Yes);
-    askedAboutAutoPipeline = true;
 
     if(reply1==QMessageBox::Yes){
         MITK_INFO<<"Automatic pipeline";
@@ -393,10 +392,37 @@ void AtrialFibresView::AutomaticAnalysis(){
     MITK_INFO << ("Directory: "+ directory + " segmentation name: " + fi.baseName()).toStdString();
 
     MITK_INFO << "[AUTOMATIC_PIPELINE] Clean Segmentation";
-    ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory, (fi.baseName()+".nii"));
+    ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory, (fi.baseName()+".nii"), "prodClean.nii");
     cnnPath = prodPath + "LA.nii";
-
+    QString laregPath = prodPath + "LA-reg.nii";
     mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
+
+    int replyLAreg = Ask("Register to LGE", "Move to LGE space and prepare for scar projection?");
+    if(replyLAreg==QMessageBox::Yes){
+        MITK_INFO << "search for lge and mra";
+        QString lgePath = GetFilePath("dcm-LGE", ".nii");
+        QString mraPath = GetFilePath("dcm-MRA", ".nii");
+
+        if(lgePath.isEmpty()){
+            lgePath = QFileDialog::getOpenFileName(NULL, "Open LGE image file",
+                directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        }
+        if(mraPath.isEmpty()){
+            mraPath = QFileDialog::getOpenFileName(NULL, "Open MRA image file",
+                directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        }
+        // register and transform
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
+        cmd->ExecuteTransformation(directory, cnnPath, laregPath);
+        //update cnnPath
+
+        segImage = atrium->LoadImage(laregPath);
+        cnnPath = laregPath;
+        analysisOnLge = true;
+        tagName += "-reg";
+    }
+
     mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
 
     MITK_INFO << "[AUTOMATIC_PIPELINE] Assign PV labels automatically";
@@ -607,6 +633,10 @@ void AtrialFibresView::ClipperPV(){
             SetTagNameFromPath(path);
             ClipperMV();
 
+            QString correctLabels = prodPath + "prodSeedLabels.txt";
+            QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
+            atrium->SetSurfaceLabels(correctLabels, naiveLabels);
+
             QMessageBox::information(NULL, "Attention", "Clipping of PV and MV finished");
 
         } else{
@@ -647,10 +677,6 @@ void AtrialFibresView::MeshingOptions(){
         MITK_INFO << "[MeshingOptions] point data to cell data";
         atrium->SetSurface(refinedPath);
 
-        QString correctLabels = prodPath + "prodSeedLabels.txt";
-        QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
-        atrium->SetSurfaceLabels(correctLabels, naiveLabels);
-
         if(uiRemesh_extractParts){
             MITK_INFO << "[MeshingOptions] save individual vtks for: RS, RI, LS, LI and LAA";
             atrium->ExtractLabelFromShell(directory, atrium->LSPV(), "LSPV");
@@ -683,17 +709,17 @@ void AtrialFibresView::UacMeshRefinement(){
 
 void AtrialFibresView::ConvertFormat(){
     if (!RequestProjectDirectoryFromUser()) return;
-    if (!LoadSurfaceChecks()) return;
 
-    if(uiRemesh_vtk2carp){
-        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-        cmd->SetUseDockerContainers(true);
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+    cmd->SetUseDockerContainers(true);
 
-        MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
-        double scale=1000; // convert to microns from mm
-        QString ioMsh=tagName+refinedSuffix; // value of input and output mesh names
-        cmd->DockerConvertMeshFormat(directory, ioMsh, "vtk", ioMsh, "carp_txt",scale);
-    }
+    // QString meshPath = QDialog::getOpenFileName();
+
+    MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
+    double scale=1000; // convert to microns from mm
+    QString ioMsh=tagName+refinedSuffix; // value of input and output mesh names
+    cmd->DockerConvertMeshFormat(directory, ioMsh, "vtk", ioMsh, "carp_txt",scale);
+
 
 }
 
@@ -702,145 +728,64 @@ void AtrialFibresView::ScarProjection(){
     if (!RequestProjectDirectoryFromUser()) return;
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
 
-    QDirIterator searchit(directory, QDirIterator::Subdirectories);
-    QString mraPath, lgePath, cnnPath;
-    while(searchit.hasNext()) {
-        QFileInfo searchfinfo(searchit.next());
-        if (searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if (searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
-                lgePath = searchfinfo.absoluteFilePath();
-
-            if (searchfinfo.fileName().contains("dcm-MRA", Qt::CaseSensitive))
-                mraPath = searchfinfo.absoluteFilePath();
-
-            if (searchfinfo.fileName().contains("LA-cemrgnet.nii", Qt::CaseSensitive))
-                cnnPath = searchfinfo.absoluteFilePath();
+    if(!analysisOnLge){
+        tagName += "-reg";
+        if(!LoadSurfaceChecks()){
+            QMessageBox::information(NULL, "Attention", "Repeat the pipeline on the LGE image!");
+            return;
         }
-    }//_while
+    }
+    atrium->SetSurface(prodPath + tagName + ".vtk");
 
+    MITK_INFO << "[SCAR_PROJECTION][1] get lge path";
+    QString lgePath = GetFilePath("dcm-LGE", ".nii");
+    if(lgePath.isEmpty()){
+        lgePath = QFileDialog::getOpenFileName(NULL, "Open LGE image file",
+            directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+    }
+    mitk::Image::Pointer lge = mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString());
+
+    MITK_INFO << "[SCAR_PROJECTION][2] copy prodClean file to PVeinsCroppedImage";
+    QString cleanPath = prodPath + "prodClean.nii";
+    QString segPath = prodPath + "PVeinsCroppedImage.nii";
+    if(!QFile::copy(cleanPath, segPath)){
+        ImageType::Pointer im = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
+        mitk::IOUtil::Save(mitk::ImportItkImage(im), cleanPath.toStdString());
+        mitk::IOUtil::Save(mitk::ImportItkImage(im), segPath.toStdString());
+    }
+    atrium->ResampleSegmentationLabelToImage(segPath, lgePath);
+
+    MITK_INFO << "[SCAR_PROJECTION][3] convert tagname to segmentation.vtk";
+    QString segvtkName = "segmentation-reg.vtk";
+    CemrgCommonUtils::FlipXYPlane(atrium->GetSurface(), directory, segvtkName);
+    // mitk::Surface::s mitk::IOUtil::Load<mitk::Surface>
 
     bool userInputAccepted = GetUserScarProjectionInputs();
     if(userInputAccepted){
-        MITK_INFO << ("Files to be read: \n\n [LGE]: " + lgePath + "\n [MRA]: " + mraPath).toStdString();
-        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-        cmd->SetUseDockerContainers(true);
-
-        if (cnnPath.isEmpty()) {
-            MITK_INFO << "[SCAR_PROJECTION] Computing automatic segmentation step.";
-            cnnPath = cmd->DockerCemrgNetPrediction(mraPath);
-        }
-        MITK_INFO << "Round pixel values from automatic segmentation.";
-        CemrgCommonUtils::RoundPixelValues(cnnPath);
-
-        MITK_INFO << "[SCAR_PROJECTION][1] Adjust CNN label to MRA";
-        atrium->AdjustSegmentationLabelToImage(cnnPath, mraPath, "LA.nii");
-
-        MITK_INFO << "[SCAR_PROJECTION][2] Image registration";
-        QString laregName = "LA-reg.nii", cleanName = "prodClean.nii";
-        QString laregPath = prodPath + laregName;
-        QString laregCleanPath = prodPath + cleanName;
-        cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
-        cmd->ExecuteTransformation(directory, cnnPath, laregPath);
-
-        MITK_INFO << "[SCAR_PROJECTION][3] Clean segmentation";
-        ImageType::Pointer lareg = atrium->CleanAutomaticSegmentation(directory, laregName, cleanName);
-        mitk::IOUtil::Save(mitk::ImportItkImage(lareg), laregPath.toStdString());
-        MITK_INFO << ("[...][3.1] Saved file: "+laregPath).toStdString();
-
-        MITK_INFO << "[SCAR_PROJECTION][4] Separate veins";
-        ImageType::Pointer veinsIm = atrium->ExtractLabel("Veins", lareg, 2, 3.0, 5);
-        mitk::IOUtil::Save(mitk::ImportItkImage(veinsIm), (directory + "/prodVeins.nii").toStdString());
-        veinsIm = atrium->AssignAutomaticLabels(veinsIm, directory, "prodSeparatedVeins.nii", false);
-
-        MITK_INFO << "[SCAR_PROJECTION][5] Vein clipping mesh";
-        QString output1 = cmd->ExecuteSurf(directory, laregCleanPath, "close", 1, .5, 0, 10);
-        mitk::Surface::Pointer segSurface = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
-        vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
-        deci->SetInputData(segSurface->GetVtkPolyData());
-        deci->SetTargetReduction(0.1);
-        deci->PreserveTopologyOn();
-        deci->Update();
-        segSurface->SetVtkPolyData(deci->GetOutput());
-
-        MITK_INFO << "[SCAR_PROJECTION][6] Find vein landmark";
-        int nveins = 5;
-        QString seedname = "scarSeeds";
-        std::vector<int> pickedSeedLabels;
-        vtkSmartPointer<vtkIdList> pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
-        pickedSeedIds->Initialize();
-        atrium->FindVeinLandmarks(veinsIm, segSurface->Clone()->GetVtkPolyData(), nveins, seedname);
-
-        QString idsPath = prodPath + seedname + "Ids.txt";
-        QString labelsPath = prodPath + seedname + "Labels.txt";
-        std::ifstream fids(idsPath.toStdString());
-        std::ifstream flabels(labelsPath.toStdString());
-
-        for (int ix = 0; ix < nveins; ix++) {
-            vtkIdType vId;
-            int label;
-
-            fids >> vId;
-            flabels >> label;
-
-            pickedSeedIds->InsertNextId(vId);
-            pickedSeedLabels.push_back(label);
-        }
-
-        MITK_INFO << "[SCAR_PROJECTION][7] Clip the veins";
-        bool autoLines = true;
-        std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, segSurface));
-        bool successful = clipper->ComputeCtrLines(pickedSeedLabels, pickedSeedIds, autoLines);
-        if (!successful) {
-            QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
-            return;
-        }//_Check for failure
-        MITK_INFO << "[...][7.1] ComputeCtrLines finished .";
-        successful = clipper->ComputeCtrLinesClippers(pickedSeedLabels);
-        if (!successful) {
-            QMessageBox::critical(NULL, "Attention", "Computation of Clipper Planes Failed!");
-            return;
-        }//_if
-        MITK_INFO << "[...][7.2] ComputeCtrLinesClippers finished .";
-        mitk::Image::Pointer prodClean = mitk::IOUtil::Load<mitk::Image>(laregCleanPath.toStdString());
-        clipper->ClipVeinsImage(pickedSeedLabels, prodClean, false);
-        MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
-
-        MITK_INFO << "[SCAR_PROJECTION][8] Create a mesh from clipped segmentation of veins";
-        QString veinsCroppedPath = prodPath + "PVeinsCroppedImage.nii";
-        mitk::Image::Pointer veinsCropped = mitk::IOUtil::Load<mitk::Image>(veinsCroppedPath.toStdString());
-        mitk::Surface::Pointer LaShell = CemrgCommonUtils::ExtractSurfaceFromSegmentation(veinsCropped);
-        mitk::IOUtil::Save(LaShell, (prodPath+"segmentation.vtk").toStdString());
-
-        MITK_INFO << "[SCAR_PROJECTION][9] Clip the mitral valve";
-        atrium->SetSurface(prodPath+"segmentation.vtk");
-        atrium->ClipMitralValveAuto(directory, "prodMVI.nii", "segmentation.vtk");
-
-        MITK_INFO << "[SCAR_PROJECTION][10] Scar projection";
+        MITK_INFO << "[SCAR_PROJECTION][4] scar projection";
         std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
         scar->SetMinStep(uiScar_minStep);
         scar->SetMaxStep(uiScar_maxStep);
         scar->SetMethodType(uiScar_projectionMethod);
 
-        atrium->ResampleSegmentationLabelToImage(veinsCroppedPath, lgePath);
-        mitk::Image::Pointer lge = mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString());
-
-        scar->SetScarSegImage(mitk::IOUtil::Load<mitk::Image>(veinsCroppedPath.toStdString()));
-        mitk::Surface::Pointer scarShell = scar->Scar3D(directory.toStdString(), lge);
+        scar->SetScarSegImage(mitk::IOUtil::Load<mitk::Image>(segPath.toStdString()));
+        mitk::Surface::Pointer scarShell = scar->Scar3D(directory.toStdString(), lge, (segvtkName).toStdString());
 
         QString scarPath = prodPath + "MaxScar.vtk";
-        CemrgCommonUtils::SetCellDataToPointData(scarShell, scarPath, "scalars");
+        CemrgCommonUtils::SetCellDataToPointData(scarShell, scarPath, "scar");
 
-        MITK_INFO << "[SCAR_PROJECTION][11] Thresholding";
+        MITK_INFO << "[SCAR_PROJECTION][5] Thresholding";
         typedef itk::Image<float, 3> FloatImageType;
         double mean = 0.0, stdv = 0.0;
         FloatImageType::Pointer lgeFloat = FloatImageType::New();
         mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
-        ImageType::Pointer segITK = atrium->LoadImage(veinsCroppedPath);
+        ImageType::Pointer segITK = atrium->LoadImage(segPath);
         mitk::Image::Pointer roiImage = atrium->ImErode(segITK);
 
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
         scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
         scar->PrintThresholdingResults(directory, uiScar_thresValues, uiScar_thresholdMethod, mean, stdv);
+
     }
 }
 
@@ -1207,4 +1152,18 @@ void AtrialFibresView::UserLoadSurface(){
 
 int AtrialFibresView::Ask(std::string title, std::string msg){
     return QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+}
+
+QString AtrialFibresView::GetFilePath(QString nameSubstring, QString extension){
+    QString result = "";
+    QDirIterator searchit(directory, QDirIterator::Subdirectories);
+    while(searchit.hasNext()) {
+        QFileInfo searchfinfo(searchit.next());
+        if (searchfinfo.fileName().contains(extension, Qt::CaseSensitive)) {
+            if (searchfinfo.fileName().contains((nameSubstring), Qt::CaseSensitive))
+                result = searchfinfo.absoluteFilePath();
+        }
+    }//_while
+
+    return result;
 }
