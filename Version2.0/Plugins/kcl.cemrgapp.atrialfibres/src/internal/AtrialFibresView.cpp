@@ -674,7 +674,6 @@ void AtrialFibresView::MeshingOptions(){
     if(userInputsAccepted){
         QString refinedPath = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
 
-        MITK_INFO << "[MeshingOptions] point data to cell data";
         atrium->SetSurface(refinedPath);
 
         if(uiRemesh_extractParts){
@@ -710,17 +709,20 @@ void AtrialFibresView::UacMeshRefinement(){
 void AtrialFibresView::ConvertFormat(){
     if (!RequestProjectDirectoryFromUser()) return;
 
+    QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
+        directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    // QString meshPath = QDialog::getOpenFileName();
-
-    MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
-    double scale=1000; // convert to microns from mm
-    QString ioMsh=tagName+refinedSuffix; // value of input and output mesh names
-    cmd->DockerConvertMeshFormat(directory, ioMsh, "vtk", ioMsh, "carp_txt",scale);
-
-
+    QFileInfo fi(meshPath);
+    bool userInputsAccepted = GetUserConvertFormatInputs(fi.baseName(), fi.suffix());
+    if(userInputsAccepted){
+        MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
+        cmd->DockerConvertMeshFormat(directory, fi.baseName(), "vtk", uiFormat_outName, uiFormat_outExt, uiFormat_scale);
+    }
 }
 
 void AtrialFibresView::ScarProjection(){
@@ -743,7 +745,10 @@ void AtrialFibresView::ScarProjection(){
         lgePath = QFileDialog::getOpenFileName(NULL, "Open LGE image file",
             directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
     }
-    mitk::Image::Pointer lge = mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString());
+    typedef itk::Image<float, 3> FloatImageType;
+    FloatImageType::Pointer lgeFloat = FloatImageType::New();
+    mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
+    mitk::Image::Pointer lge = mitk::ImportItkImage(lgeFloat);
 
     MITK_INFO << "[SCAR_PROJECTION][2] copy prodClean file to PVeinsCroppedImage";
     QString cleanPath = prodPath + "prodClean.nii";
@@ -775,16 +780,20 @@ void AtrialFibresView::ScarProjection(){
         CemrgCommonUtils::SetCellDataToPointData(scarShell, scarPath, "scar");
 
         MITK_INFO << "[SCAR_PROJECTION][5] Thresholding";
-        typedef itk::Image<float, 3> FloatImageType;
         double mean = 0.0, stdv = 0.0;
-        FloatImageType::Pointer lgeFloat = FloatImageType::New();
-        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
+        // typedef itk::Image<float, 3> FloatImageType;
+        // FloatImageType::Pointer lgeFloat = FloatImageType::New();
+        // mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
         ImageType::Pointer segITK = atrium->LoadImage(segPath);
         mitk::Image::Pointer roiImage = atrium->ImErode(segITK);
 
-        scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
-        scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
-        scar->PrintThresholdingResults(directory, uiScar_thresValues, uiScar_thresholdMethod, mean, stdv);
+        if(scar->CalculateMeanStd(lge, roiImage, mean, stdv)){
+            MITK_INFO << "[SCAR_PROJECTION][6] Saving normalised shell and prodThresholds.txt";
+            scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
+            scar->PrintThresholdingResults(directory, uiScar_thresValues, uiScar_thresholdMethod, mean, stdv);
+        } else{
+            MITK_INFO << "[SCAR_PROJECTION][ERROR] Wrong dimensions between LGE and ROI Image";
+        }
 
     }
 }
@@ -881,6 +890,41 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
     }//_if
 
     return succesfulAssignment;
+}
+
+bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext){
+    QDialog* inputs = new QDialog(0,0);
+    bool userInputAccepted=false;
+    m_UIFormat.setupUi(inputs);
+    connect(m_UIFormat.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UIFormat.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    m_UIFormat.label_1inname->setText(inname);
+    m_UIFormat.label_2inext->setText(inext);
+    int dialogCode = inputs->exec();
+
+    if (dialogCode == QDialog::Accepted){
+        uiFormat_outName = inname;
+        uiFormat_outExt = m_UIFormat.comboBox->currentText();
+
+        QString newoutname = m_UIFormat.lineEdit_1outname->text().simplified();
+        if(!newoutname.isEmpty()){
+            uiFormat_outName = newoutname;
+        }
+
+        bool ok1;
+        uiFormat_scale = m_UIFormat.lineEdit_2scale->text().toInt(&ok1);
+        if(!ok1){
+            uiFormat_scale = 1000;
+        }
+        inputs->deleteLater();
+        userInputAccepted=true;
+
+    } else if (dialogCode == QDialog::Rejected) {
+        inputs->close();
+        inputs->deleteLater();
+    }//_if
+
+    return userInputAccepted;
 }
 
 bool AtrialFibresView::GetUserRemeshingInputs(){

@@ -13,6 +13,7 @@ set(UI_FILES
   src/internal/AtrialFibresViewControls.ui
   src/internal/AtrialFibresViewUIMeshing.ui
   src/internal/AtrialFibresViewUIRemesh.ui
+  src/internal/AtrialFibresViewUIConvert.ui
   ../kcl.cemrgapp.scar/src/internal/AtrialScarViewUIcemrgnet.ui
   src/internal/AtrialFibresClipperViewControls.ui
   src/internal/AtrialFibresClipperViewLabels.ui

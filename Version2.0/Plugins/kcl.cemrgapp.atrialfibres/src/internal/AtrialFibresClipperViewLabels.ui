@@ -58,7 +58,7 @@
      <item row="2" column="0">
       <widget class="QRadioButton" name="radioBtn_LAA">
        <property name="text">
-        <string>Appendage (cut)</string>
+        <string>Appendage</string>
        </property>
       </widget>
      </item>

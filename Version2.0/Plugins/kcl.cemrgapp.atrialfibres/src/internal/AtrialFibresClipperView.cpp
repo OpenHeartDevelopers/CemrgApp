@@ -34,6 +34,8 @@ PURPOSE.  See the above copyright notices for more information.
 // Qmitk
 #include <mitkImage.h>
 #include <mitkIOUtil.h>
+#include <mitkImageCast.h>
+#include <mitkITKImageImport.h>
 #include <mitkProgressBar.h>
 #include <mitkNodePredicateProperty.h>
 #include <mitkManualSegmentationToSurfaceFilter.h>
@@ -193,13 +195,11 @@ void AtrialFibresClipperView::SetDirectoryFile(const QString directory, const QS
 void AtrialFibresClipperView::iniPreSurf() {
     //Find the selected node
     QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator() + AtrialFibresClipperView::fileName;
-    // mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
     mitk::Surface::Pointer shell = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
 
-    if(automaticPipeline){
-        CemrgCommonUtils::FlipXYPlane(shell, "", "");
-        mitk::IOUtil::Save(shell, path.toStdString());
-    }
+    CemrgCommonUtils::FlipXYPlane(shell, AtrialFibresClipperView::directory, AtrialFibresClipperView::fileName);
+    // if(automaticPipeline){
+    // }
     surface = shell;
 
 }
@@ -306,17 +306,17 @@ void AtrialFibresClipperView::CtrPlanes() {
         clipperActors.push_back(clipperActor);
         QString comboText = "DEFAULT";
         if (pickedSeedLabels.at(i) == 11)
-            comboText = "LEFT SUPERIOR PV";
+            comboText = "LSPV";
         else if (pickedSeedLabels.at(i) == 13)
-            comboText = "LEFT INFERIOR PV";
+            comboText = "LIPV";
         else if (pickedSeedLabels.at(i) == 14)
-            comboText = "LEFT COMMON PV";
+            comboText = "IGNORE";
         else if (pickedSeedLabels.at(i) == 15)
-            comboText = "RIGHT SUPERIOR PV";
+            comboText = "RSPV";
         else if (pickedSeedLabels.at(i) == 17)
-            comboText = "RIGHT INFERIOR PV";
+            comboText = "RIPV";
         else if (pickedSeedLabels.at(i) == 18)
-            comboText = "RIGHT COMMON PV";
+            comboText = "DISCARD";
         else if (pickedSeedLabels.at(i) == 19)
             comboText = "APPENDAGE";
         m_Controls.comboBox->insertItem(i, comboText);
@@ -376,7 +376,11 @@ void AtrialFibresClipperView::ClipperImage() {
 
                 this->BusyCursorOn();
                 this->GetDataStorage()->Remove(segNode);
-                clipper->ClipVeinsImage(pickedSeedLabels, image, morphAnalysis ? true : false);
+                // convert image to ImageTypeSHRT
+                typedef itk::Image<short, 3> ShortImageType;
+                ShortImageType::Pointer imgshort = ShortImageType::New();
+                mitk::CastToItkImage(image, imgshort);
+                clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(imgshort), morphAnalysis ? true : false);
                 this->BusyCursorOff();
                 QMessageBox::information(NULL, "Attention", "Segmentation is now clipped!");
 

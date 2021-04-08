@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>AtrialFibresViewUIRemesh</class>
  <widget class="QWidget" name="AtrialFibresViewUIRemesh">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>248</width>
+    <height>260</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>5</horstretch>
@@ -79,7 +87,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEdit_5suffix"/>
+    <widget class="QLineEdit" name="lineEdit_5suffix">
+     <property name="placeholderText">
+      <string>New mesh suffix (default = 'refined')</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="Line" name="line_2">

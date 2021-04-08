@@ -34,6 +34,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "ui_AtrialFibresViewControls.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
 #include "ui_AtrialFibresViewUIRemesh.h"
+#include "ui_AtrialFibresViewUIConvert.h"
 #include "ui_AtrialScarViewUIcemrgnet.h"
 
 #include "QmitkRenderWindow.h"
@@ -74,6 +75,7 @@ public:
     bool GetUserMeshingInputs();
     bool GetUserRemeshingInputs();
     bool GetUserScarProjectionInputs();
+    bool GetUserConvertFormatInputs(QString inname, QString inext);
     bool LoadSurfaceChecks();
 
     // helper
@@ -129,6 +131,7 @@ protected:
     Ui::AtrialFibresViewControls m_Controls;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
     Ui::AtrialFibresViewUIRemesh m_UIRemesh;
+    Ui::AtrialFibresViewUIConvert m_UIFormat;
     Ui::AtrialScarViewUIcemrgnet m_UIcemrgnet;
 
 private:
@@ -140,8 +143,9 @@ private:
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
     bool uiRemesh_vtk2carp, uiRemesh_extractParts;
-    int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod;
+    int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod, uiFormat_scale;
     std::vector<double> uiScar_thresValues;
+    QString uiFormat_outExt, uiFormat_outName;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

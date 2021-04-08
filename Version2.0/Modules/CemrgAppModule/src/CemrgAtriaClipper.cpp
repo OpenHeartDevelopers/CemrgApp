@@ -448,6 +448,8 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         dilationFilter->SetKernel(binaryBall);
         dilationFilter->UpdateLargestPossibleRegion();
         cutImg = mitk::ImportItkImage(dilationFilter->GetOutput())->Clone();
+
+
         CastToItkImage(cutImg, cutItkImage);
 
         //Subtract images
@@ -455,6 +457,11 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         subFilter->SetInput1(segItkImage);
         subFilter->SetInput2(cutItkImage);
         subFilter->UpdateLargestPossibleRegion();
+
+        MITK_INFO << "Saving substracted images";
+        QString clippath = directory + mitk::IOUtil::GetDirectorySeparator() + "subs_";
+        clippath += (QString::number(pickedSeedLabels.at(i)) + ".nii");
+        mitk::IOUtil::Save(mitk::ImportItkImage(subFilter->GetOutput()), clippath.toStdString());
 
         //Duplicate subtract images
         DuplicatorType::Pointer duplicator = DuplicatorType::New();
