@@ -284,8 +284,9 @@ bool CemrgScar3D::CalculateMeanStd(mitk::Image::Pointer lgeImage, mitk::Image::P
     //Loop image voxels
     std::vector<float> voxelValues;
     for (int i=0; i<dimsROI; i++) {
-        if (*pvROI == 1)
+        if (*pvROI > 0){
             voxelValues.push_back(*pvLGE);
+        }
         pvLGE++;
         pvROI++;
     }//_for

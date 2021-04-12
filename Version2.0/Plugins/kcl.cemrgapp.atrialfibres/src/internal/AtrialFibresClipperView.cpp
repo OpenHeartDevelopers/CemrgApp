@@ -376,11 +376,7 @@ void AtrialFibresClipperView::ClipperImage() {
 
                 this->BusyCursorOn();
                 this->GetDataStorage()->Remove(segNode);
-                // convert image to ImageTypeSHRT
-                typedef itk::Image<short, 3> ShortImageType;
-                ShortImageType::Pointer imgshort = ShortImageType::New();
-                mitk::CastToItkImage(image, imgshort);
-                clipper->ClipVeinsImage(pickedSeedLabels, mitk::ImportItkImage(imgshort), morphAnalysis ? true : false);
+                clipper->ClipVeinsImage(pickedSeedLabels, image, morphAnalysis ? true : false);
                 this->BusyCursorOff();
                 QMessageBox::information(NULL, "Attention", "Segmentation is now clipped!");
 

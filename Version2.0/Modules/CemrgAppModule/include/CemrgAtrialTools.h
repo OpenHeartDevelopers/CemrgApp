@@ -58,6 +58,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <itkLabelShapeKeepNObjectsImageFilter.h>
 #include <itkGrayscaleErodeImageFilter.h>
 #include <itkRelabelComponentImageFilter.h>
+#include <itkCastImageFilter.h>
 
 #include "CemrgAtriaClipper.h"
 
@@ -68,6 +69,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 typedef itk::Image<uint16_t,3> ImageType;
 typedef itk::Image<float,3> FloatImageType;
+typedef itk::Image<short,3> ShortImageType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> StrElType;
 typedef itk::BinaryMorphologicalOpeningImageFilter<ImageType, ImageType, StrElType> ImFilterType;
@@ -80,12 +82,15 @@ typedef itk::ConnectedComponentImageFilter<ImageType, ImageType> ConnectedCompon
 typedef itk::LabelShapeKeepNObjectsImageFilter<ImageType> LabelShapeKeepNObjImgFilterType;
 typedef itk::RelabelComponentImageFilter<ImageType, ImageType> RelabelFilterType;
 
+typedef itk::CastImageFilter<ImageType, ShortImageType> CastUint16ToShortFilterType;
+
 class MITKCEMRGAPPMODULE_EXPORT CemrgAtrialTools {
 
 public:
     CemrgAtrialTools();
     void SetDefaultSegmentationTags();
-    ImageType::Pointer LoadImage(QString imagePath);
+    ImageType::Pointer LoadImage(QString imagePath, bool binarise=false);
+    ShortImageType::Pointer LoadShortImage(QString imagePath);
 
     inline void SetDebugMode(bool s2d){debugSteps=s2d;};
     inline void SetDebugModeOn(){SetDebugMode(true);};
@@ -143,6 +148,7 @@ public:
     ImageType::Pointer AddImage(ImageType::Pointer im1, ImageType::Pointer im2);
     ThresholdType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal);
     ImFilterType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
+    ShortImageType::Pointer Uint16ToShort(ImageType::Pointer im);
     mitk::Image::Pointer ImErode(ImageType::Pointer input, int vxls=3);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);
 

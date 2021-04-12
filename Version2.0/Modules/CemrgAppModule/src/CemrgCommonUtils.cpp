@@ -254,6 +254,27 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, 
     return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI);
 }
 
+void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
+    using ImageType = itk::Image<float, 3>;
+    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        float value = (imIter.Get() > background) ? 1 : 0;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    mitk::CastToMitkImage(im, image);
+
+}
+
 bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient) {
 
     bool successful = false;

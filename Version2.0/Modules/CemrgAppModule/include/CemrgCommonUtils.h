@@ -54,6 +54,9 @@ public:
     static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=false, bool reorientToRAI=false);
     static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=false, bool reorientToRAI=false);
 
+    // Image Analysis Utils
+    static void Binarise(mitk::Image::Pointer image, float background=0);
+
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
     static void RoundPixelValues(QString pathToImage, QString outputPath="");

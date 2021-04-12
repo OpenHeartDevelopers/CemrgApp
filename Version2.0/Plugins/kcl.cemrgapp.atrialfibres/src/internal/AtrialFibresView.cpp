@@ -781,10 +781,8 @@ void AtrialFibresView::ScarProjection(){
 
         MITK_INFO << "[SCAR_PROJECTION][5] Thresholding";
         double mean = 0.0, stdv = 0.0;
-        // typedef itk::Image<float, 3> FloatImageType;
-        // FloatImageType::Pointer lgeFloat = FloatImageType::New();
-        // mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
-        ImageType::Pointer segITK = atrium->LoadImage(segPath);
+        bool binarise=true;
+        ImageType::Pointer segITK = atrium->LoadImage(segPath, binarise);
         mitk::Image::Pointer roiImage = atrium->ImErode(segITK);
 
         if(scar->CalculateMeanStd(lge, roiImage, mean, stdv)){

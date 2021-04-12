@@ -113,11 +113,33 @@ void CemrgAtrialTools::SetDefaultSegmentationTags(){
 
 }
 
+ShortImageType::Pointer LoadShortImage(QString imagePath){
+    mitk::Image::Pointer mitkImage = mitk::IOUtil::Load<mitk::Image>(imagePath.toStdString());
+    ShortImageType::Pointer itkImage = ShortImageType::New();
+    mitk::CastToItkImage(mitkImage, itkImage);
 
-ImageType::Pointer CemrgAtrialTools::LoadImage(QString imagePath){
+    return itkImage;
+}
+
+ImageType::Pointer CemrgAtrialTools::LoadImage(QString imagePath, bool binarise){
     mitk::Image::Pointer mitkImage = mitk::IOUtil::Load<mitk::Image>(imagePath.toStdString());
     ImageType::Pointer itkImage = ImageType::New();
     mitk::CastToItkImage(mitkImage, itkImage);
+
+    if(binarise){
+        using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+        IteratorType imIter(itkImage, itkImage->GetLargestPossibleRegion());
+
+        imIter.GoToBegin();
+        while(!imIter.IsAtEnd()){
+            if(imIter.Get()>0){
+                imIter.Set(1);
+            } else{
+                imIter.Set(0);
+            }
+            ++imIter;
+        }
+    }
 
     return itkImage;
 }
@@ -617,6 +639,12 @@ mitk::Image::Pointer CemrgAtrialTools::ImErode(ImageType::Pointer input, int vxl
     roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
 
     return roiImage;
+}
+
+ShortImageType::Pointer CemrgAtrialTools::Uint16ToShort(ImageType::Pointer im){
+    CastUint16ToShortFilterType::Pointer u16ToShort = CastUint16ToShortFilterType::New();
+    u16ToShort->SetInput(im);
+    return u16ToShort->GetOutput();
 }
 
 void CemrgAtrialTools::SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName){

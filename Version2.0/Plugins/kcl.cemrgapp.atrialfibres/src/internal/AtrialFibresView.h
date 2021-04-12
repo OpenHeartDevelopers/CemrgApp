@@ -57,6 +57,8 @@ PURPOSE.  See the above copyright notices for more information.
 */
 
 typedef itk::Image<uint16_t,3> ImageType;
+typedef itk::Image<float,3> FloatImageType;
+typedef itk::Image<short,3> ShortImageType;
 
 class AtrialFibresView : public QmitkAbstractView {
 
