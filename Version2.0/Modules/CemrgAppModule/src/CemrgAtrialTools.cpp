@@ -658,7 +658,7 @@ void CemrgAtrialTools::SaveImageToDisk(ImageType::Pointer im, QString dir, QStri
 }
 
 int CemrgAtrialTools::GetNaiveLabel(int l){
-    int res;
+    int res=-1;
     if(l == laap){
         res = naivelaap;
     } else if(l == lspv){

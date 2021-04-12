@@ -1075,6 +1075,7 @@ bool AtrialFibresView::GetUserScarProjectionInputs(){
             separated_thresh_list = thresh_list.split("," , QString::SkipEmptyParts);
             int listspaces = separated_thresh_list.removeAll(" ");
             int listduplicates = separated_thresh_list.removeDuplicates();
+            std::cout << "Spaces in list: " << listspaces << " Duplicates in list: " << listduplicates << '\n';
             separated_thresh_list.sort();
         }//_if
 

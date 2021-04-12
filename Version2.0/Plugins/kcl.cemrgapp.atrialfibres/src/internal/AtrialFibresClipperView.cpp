@@ -473,9 +473,6 @@ void AtrialFibresClipperView::PvClipperRadius(){
     Visualiser(0.5);
 
     int index = m_Controls.comboBox_auto->currentIndex();
-
-    vtkIdType seedId = pvClipperSeedIdx->GetId(index);
-    double radiusAtId = pvClipperRadii.at(index);
     double newRadius = (double) m_Controls.slider_auto->value();
 
     VisualiseSphereAtPoint(index, newRadius);
@@ -515,7 +512,6 @@ void AtrialFibresClipperView::SaveLabels(){
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     std::vector<int> ignoredIds;
     int ignored=0, discarded=0;
-    double s;
     ofstream fileLabels, fileIds, fileLabelInShell, fileIgnoreIds, fileDiscardIds;
 
     fileLabels.open((prodPath + "prodSeedLabels.txt").toStdString());
@@ -637,6 +633,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
     csadv->SetOutputPath(prodPathOut.toStdString());
     csadv->SetInputData(tempsurf->GetVtkPolyData());
     csadv->SetWeightedCorridorBool(false);
+    csadv->SetNeighbourhoodSize(thickness);
     csadv->SetLeftRightPrefix(lrpre);
     csadv->CorridorFromPointList(idVectors, circleCorridor);
 
@@ -692,7 +689,7 @@ void AtrialFibresClipperView::ClipPVs(){
         path += "prodClipperIDsAndRadii.txt";
         std::ofstream fo(path.toStdString());
         fo << pvClipperRadii.size() << std::endl;
-        for (int ix = 0; ix < pvClipperRadii.size() ; ix++) {
+        for (int ix = 0; ix < (int) pvClipperRadii.size() ; ix++) {
             double* c = surface->GetVtkPolyData()->GetPoint(pvClipperSeedIdx->GetId(ix));
 
             std::cout << "Saving ID:" << pvClipperSeedIdx->GetId(ix) << " ";
