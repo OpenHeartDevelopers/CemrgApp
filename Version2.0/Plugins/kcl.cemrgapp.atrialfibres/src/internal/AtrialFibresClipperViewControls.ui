@@ -105,7 +105,7 @@ background-color: yellow;</string>
         <string>Auto Lines</string>
        </property>
        <property name="checked">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>

@@ -324,6 +324,49 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
     return im;
 }
 
+ImageType::Pointer CemrgAtrialTools::AssignOstiaLabelsToVeins(ImageType::Pointer im, QString dir, QString outName){
+    ImageType::Pointer veins = ThresholdImage(im, 2, 1000); // im >= 2
+    ConnectedComponentImageFilterType::Pointer connectedVeins = ConnectedComponentImageFilterType::New();
+    connectedVeins->SetInput(veins);
+    connectedVeins->Update();
+
+    RelabelFilterType::Pointer labelVeins = RelabelFilterType::New();
+    labelVeins->SetInput(connectedVeins->GetOutput());
+    labelVeins->Update();
+
+    unsigned long numObjects = labelVeins->GetNumberOfObjects();
+
+    IteratorType liter(labelVeins->GetOutput(), labelVeins->GetOutput()->GetLargestPossibleRegion());
+    IteratorType pviter(im, im->GetLargestPossibleRegion());
+
+    liter.GoToBegin();
+    pviter.GoToBegin();
+    std::vector<int> veinTips(numObjects, 0);
+    std::vector<int> veinOstia(numObjects, 0);
+    while(!liter.IsAtEnd()){
+        int l = (int) liter.Get();
+        int pv = (int) pviter.Get();
+        if(l>0){
+            if(IsLabel(pv)>0){
+                veinOstia.at(l-1) = pv;
+            } else{
+                veinTips.at(l-1) = pv;
+                pviter.Set(veinOstia.at(l-1));
+            }
+        }
+        ++liter;
+        ++pviter;
+    }
+
+    SetTagSegmentationName(outName);
+    SaveImageToDisk(im, dir, tagSegName);
+
+    segmentationSet = true;
+    atriumSegmentation = im;
+
+    return im;
+}
+
 mitk::Image::Pointer CemrgAtrialTools::SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds){
     MITK_INFO << "Extracting Surface";
     mitk::Image::Pointer labelSegIm = mitk::Image::New();
@@ -560,18 +603,12 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 //helper functions
 ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius, int maxNumObjects){
     MITK_INFO << ("Thresholding " + tag + " from clean segmentation").toStdString();
-    ThresholdType::Pointer thresVeins = ThresholdImage(im, label);
+    ImageType::Pointer auxIm = ThresholdImage(im, label);
 
-    ImageType::Pointer auxIm;
     if(filterRadius > 0){
-        // morphological opening step
         MITK_INFO << "Morphological opening - remove speckle noise";
-        ImFilterType::Pointer imopen = ImOpen(thresVeins->GetOutput(), filterRadius);
-        auxIm = imopen->GetOutput();
+        auxIm = ImOpen(auxIm, filterRadius);
 
-    } else{
-        MITK_INFO << "Morphological opening - ignored";
-        auxIm = thresVeins->GetOutput();
     }
 
     if (maxNumObjects>0){
@@ -601,19 +638,21 @@ ImageType::Pointer CemrgAtrialTools::AddImage(ImageType::Pointer im1, ImageType:
     return sum->GetOutput();
 }
 
-ThresholdType::Pointer CemrgAtrialTools::ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal){
+ImageType::Pointer CemrgAtrialTools::ThresholdImage(ImageType::Pointer input, uint16_t lowerThres, uint16_t upperThres){
+    uint16_t upper = (upperThres < lowerThres) ? lowerThres : upperThres;
+
     ThresholdType::Pointer thresholdOutput = ThresholdType::New();
     thresholdOutput->SetInput(input);
-    thresholdOutput->SetLowerThreshold(thresholdVal);
-    thresholdOutput->SetUpperThreshold(thresholdVal);
+    thresholdOutput->SetLowerThreshold(lowerThres);
+    thresholdOutput->SetUpperThreshold(upper);
     thresholdOutput->SetInsideValue(1);
     thresholdOutput->SetOutsideValue(0);
     thresholdOutput->Update();
 
-    return thresholdOutput;
+    return thresholdOutput->GetOutput();
 }
 
-ImFilterType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint16_t radius){
+ImageType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint16_t radius){
     StrElType structuringElement;
     structuringElement.SetRadius(static_cast<unsigned long>(radius));
     structuringElement.CreateStructuringElement();
@@ -623,7 +662,7 @@ ImFilterType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint16_
     imOpenFilter->SetKernel(structuringElement);
     imOpenFilter->Update();
 
-    return imOpenFilter;
+    return imOpenFilter->GetOutput();
 }
 
 mitk::Image::Pointer CemrgAtrialTools::ImErode(ImageType::Pointer input, int vxls){
@@ -669,6 +708,22 @@ int CemrgAtrialTools::GetNaiveLabel(int l){
         res = naiverspv;
     } else if(l == ripv){
         res = naiveripv;
+    }
+    return res;
+}
+
+int CemrgAtrialTools::IsLabel(int l){
+    int res=-1;
+    if(l == laap){
+        res = laap;
+    } else if(l == lspv){
+        res = lspv;
+    } else if(l == lipv){
+        res = lipv;
+    } else if(l == rspv){
+        res = rspv;
+    } else if(l == ripv){
+        res = ripv;
     }
     return res;
 }

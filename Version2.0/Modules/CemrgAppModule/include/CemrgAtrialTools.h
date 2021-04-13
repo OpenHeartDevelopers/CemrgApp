@@ -122,6 +122,7 @@ public:
     inline int RIPV(){return ripv;};
 
     int GetNaiveLabel(int l);
+    int IsLabel(int l);
 
     inline bool HasSurface(){return surfLoaded;};
 
@@ -133,6 +134,8 @@ public:
     ImageType::Pointer RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii");
     ImageType::Pointer CleanAutomaticSegmentation(QString dir, QString segName="LA-cemrgnet.nii", QString cleanName="");
     ImageType::Pointer AssignAutomaticLabels(ImageType::Pointer im, QString dir, QString outName="labelled.nii", bool relabel=true);
+    ImageType::Pointer AssignOstiaLabelsToVeins(ImageType::Pointer im, QString dir, QString outName="labelled.nii");
+
     mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
     void ClipMitralValveAuto(QString dir, QString mvNameExt, QString outName, bool insideout=true);
@@ -146,8 +149,8 @@ public:
     // helper functions
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);
     ImageType::Pointer AddImage(ImageType::Pointer im1, ImageType::Pointer im2);
-    ThresholdType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t thresholdVal);
-    ImFilterType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
+    ImageType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t lowerThres, uint16_t upperThres=-1000);
+    ImageType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
     ShortImageType::Pointer Uint16ToShort(ImageType::Pointer im);
     mitk::Image::Pointer ImErode(ImageType::Pointer input, int vxls=3);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);

@@ -85,6 +85,8 @@ public:
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
     void UserLoadSurface();
+    void SetLgeAnalysis(bool b);
+    QString UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer seg);
     QString GetFilePath(QString type, QString extension);
     int Ask(std::string title, std::string msg);
 
@@ -106,6 +108,7 @@ protected slots:
     void MeshPreprocessing();
     // Manual pipeline
     void SegmentIMGS();
+    void ManualLgeRegistration();
     void IdentifyPV();
     void CreateLabelledMesh();
     void ClipperMV();

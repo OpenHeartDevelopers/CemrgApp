@@ -131,10 +131,12 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     m_Controls.button_2_1->setVisible(false);
     connect(m_Controls.button_2_1, SIGNAL(clicked()), this, SLOT(ConvertNII()));
 
+    m_Controls.button_z_man_Lge->setVisible(false);
+    connect(m_Controls.button_z_man_Lge, SIGNAL(clicked()), this, SLOT(ManualLgeRegistration()));
+
     // Set default variables
     tagName = "labelled";
     refinedSuffix = "-refined";
-    analysisOnLge = false;
     uiRemesh_vtk2carp = true;
     uiRemesh_extractParts = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
@@ -142,6 +144,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     SetManualModeButtonsOff();
     SetAutomaticModeButtonsOff();
+    SetLgeAnalysis(false);
 }
 
 void AtrialFibresView::SetFocus() {
@@ -394,34 +397,8 @@ void AtrialFibresView::AutomaticAnalysis(){
     MITK_INFO << "[AUTOMATIC_PIPELINE] Clean Segmentation";
     ImageType::Pointer segImage = atrium->CleanAutomaticSegmentation(directory, (fi.baseName()+".nii"), "prodClean.nii");
     cnnPath = prodPath + "LA.nii";
-    QString laregPath = prodPath + "LA-reg.nii";
     mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
-
-    int replyLAreg = Ask("Register to LGE", "Move to LGE space and prepare for scar projection?");
-    if(replyLAreg==QMessageBox::Yes){
-        MITK_INFO << "search for lge and mra";
-        QString lgePath = GetFilePath("dcm-LGE", ".nii");
-        QString mraPath = GetFilePath("dcm-MRA", ".nii");
-
-        if(lgePath.isEmpty()){
-            lgePath = QFileDialog::getOpenFileName(NULL, "Open LGE image file",
-                directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
-        }
-        if(mraPath.isEmpty()){
-            mraPath = QFileDialog::getOpenFileName(NULL, "Open MRA image file",
-                directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
-        }
-        // register and transform
-        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-        cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
-        cmd->ExecuteTransformation(directory, cnnPath, laregPath);
-        //update cnnPath
-
-        segImage = atrium->LoadImage(laregPath);
-        cnnPath = laregPath;
-        analysisOnLge = true;
-        tagName += "-reg";
-    }
+    cnnPath = UserIncludeLgeAnalysis(cnnPath, segImage);
 
     mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
 
@@ -500,9 +477,12 @@ void AtrialFibresView::SegmentIMGS() {
 
                 //Clean prediction
                 ImageType::Pointer segImage = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
-                cnnPath = prodPath + "LA.nii";
+                cnnPath = UserIncludeLgeAnalysis((prodPath + "LA.nii"), segImage);
 
-                mitk::IOUtil::Save(mitk::ImportItkImage(segImage), cnnPath.toStdString());
+                mitk::Image::Pointer im = mitk::ImportItkImage(segImage);
+                CemrgCommonUtils::Binarise(im);
+                mitk::IOUtil::Save(im, cnnPath.toStdString());
+
                 mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
                 remove(mraPath.toStdString().c_str());
 
@@ -522,16 +502,61 @@ void AtrialFibresView::SegmentIMGS() {
 
             if (path.isEmpty()) return;
 
+            ImageType::Pointer segImage = atrium->LoadImage(path);
+            path = UserIncludeLgeAnalysis(path, segImage);
+
+            mitk::Image::Pointer im = mitk::ImportItkImage(segImage);
+            CemrgCommonUtils::Binarise(im);
+            mitk::IOUtil::Save(im, path.toStdString());
+
             mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
             mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
-
-            //Restore image name
-            QFileInfo fullPathInfo(path);
         } else {
             //Show segmentation plugin
             this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentation");
+            m_Controls.button_z_man_Lge->setVisible(true);
         } //_if_q_loadSegmentation
     }//_if_q_automatic
+}
+
+void AtrialFibresView::ManualLgeRegistration(){
+    QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+    if (nodes.size() != 1) {
+        QMessageBox::warning(NULL, "Attention",
+                "Please select the CEMRA images from the Data Manager to segment!");
+        return;
+    }//_if
+
+    QString segPath, prodPath;
+    prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    mitk::BaseData::Pointer data = nodes.at(0)->GetData();
+    if (data) {
+        mitk::Image::Pointer segImageMitk = dynamic_cast<mitk::Image*>(data.GetPointer());
+        if (segImageMitk) {
+
+            this->BusyCursorOn();
+            mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
+
+            segPath = prodPath + "LA.nii";
+            mitk::IOUtil::Save(segImageMitk, segPath.toStdString());
+
+            ImageType::Pointer segImage = ImageType::New();
+            mitk::CastToItkImage(segImageMitk, segImage);
+
+            QString segRegPath = UserIncludeLgeAnalysis(segPath, segImage);
+            mitk::ProgressBar::GetInstance()->Progress();
+
+            mitk::IOUtil::Save(mitk::ImportItkImage(segImage), segRegPath.toStdString());
+            mitk::IOUtil::Load(segRegPath.toStdString(), *this->GetDataStorage());
+
+            QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
+            mitk::ProgressBar::GetInstance()->Progress();
+            this->BusyCursorOff();
+
+        } else{
+            QMessageBox::warning(NULL, "Attention", "Please select the segmentation!");
+        }
+    }//_if_data
 }
 
 void AtrialFibresView::IdentifyPV(){
@@ -577,7 +602,41 @@ void AtrialFibresView::IdentifyPV(){
 }
 
 void AtrialFibresView::CreateLabelledMesh(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
+    QString segRegPath = GetFilePath("LA-reg", ".nii");
+    if(!segRegPath.isEmpty()){
+        int reply = Ask("Registered segmentation found", "Consider a Scar Projection analysis?");
+        SetLgeAnalysis(reply==QMessageBox::Yes);
+    }
+    tagName += analysisOnLge ? "-reg" : "";
+
+    QString prodPath =  directory + mitk::IOUtil::GetDirectorySeparator();
+
+    ImageType::Pointer pveins = atrium->LoadImage(prodPath+"pVeinsLabelled.nii");
+    pveins = atrium->AssignOstiaLabelsToVeins(pveins, directory, tagName);
+
+    MITK_INFO << "[AUTOMATIC_PIPELINE] Create Mesh";
+    //Ask for user input to set the parameters
+    bool userInputsAccepted = GetUserMeshingInputs();
+
+    if(userInputsAccepted){
+
+        atrium->ProjectTagsOnSurface(pveins, directory, tagName+".vtk",
+            uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, true);
+
+        MITK_INFO << "Add the mesh to storage";
+        QString path = prodPath + tagName + ".vtk";
+
+        std::cout << "Path to load: " << path.toStdString() <<'\n';
+        std::cout << "tagName: " << tagName.toStdString() << '\n';
+        mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
+        // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+        // CemrgCommonUtils::FlipXYPlane(surface, "");
+
+        std::string meshName = tagName.toStdString() + "-Mesh";
+        CemrgCommonUtils::AddToStorage(surface, meshName, this->GetDataStorage());
+    }
 }
 
 void AtrialFibresView::ClipperMV(){
@@ -1141,6 +1200,7 @@ void AtrialFibresView::SetManualModeButtons(bool b){
     m_Controls.button_man4_segmentation->setVisible(b);
     m_Controls.button_man5_idPV->setVisible(b);
     m_Controls.button_man6_labelmesh->setVisible(b);
+    m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
     m_Controls.button_man7_clipMV->setVisible(b);
     m_Controls.button_man8_clipPV->setVisible(b);
 
@@ -1151,7 +1211,7 @@ void AtrialFibresView::SetManualModeButtons(bool b){
 }
 
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
-    m_Controls.button_auto4_meshpreproc->setVisible(b);
+    // m_Controls.button_auto4_meshpreproc->setVisible(b);
     m_Controls.button_auto5_clipPV->setVisible(b);
 
     m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
@@ -1209,4 +1269,46 @@ QString AtrialFibresView::GetFilePath(QString nameSubstring, QString extension){
     }//_while
 
     return result;
+}
+
+QString AtrialFibresView::UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer segImage){
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString resultString = segPath;
+
+    int replyLAreg = Ask("Register to LGE", "Move to LGE space and prepare for scar projection?");
+    if(replyLAreg==QMessageBox::Yes){
+        QFileInfo fi(segPath);
+        QString segRegPath = prodPath + fi.baseName() + "-reg." + fi.suffix();
+
+        MITK_INFO << "search for lge and mra";
+        QString lgePath = GetFilePath("dcm-LGE", ".nii");
+        QString mraPath = GetFilePath("dcm-MRA", ".nii");
+
+        if(lgePath.isEmpty()){
+            lgePath = QFileDialog::getOpenFileName(NULL, "Open LGE image file",
+            directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        }
+        if(mraPath.isEmpty()){
+            mraPath = QFileDialog::getOpenFileName(NULL, "Open MRA image file",
+            directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        }
+        // register and transform
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
+        cmd->ExecuteTransformation(directory, segPath, segRegPath);
+
+        segImage = atrium->LoadImage(segRegPath);
+
+        resultString = segRegPath;
+        tagName += "-reg";
+
+        SetLgeAnalysis(true);
+    }
+
+    return resultString;
+}
+
+void AtrialFibresView::SetLgeAnalysis(bool b){
+    analysisOnLge = b;
+    m_Controls.button_z_scar->setEnabled(b);
 }

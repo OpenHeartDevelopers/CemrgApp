@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>227</width>
-    <height>650</height>
+    <width>243</width>
+    <height>711</height>
    </rect>
   </property>
   <property name="font">
@@ -127,6 +127,13 @@
      </property>
      <property name="text">
       <string>    Step4: Segment Image</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_z_man_Lge">
+     <property name="text">
+      <string>Register to LGE space</string>
      </property>
     </widget>
    </item>
