@@ -72,6 +72,9 @@ public:
     bool IsPointSelectionControlsAvailable();
     bool IsClipperManualControlsAvailable();
     void UserSelectPvLabel();
+    void LoadPickedSeedsFromFile();
+    void CreateSphereClipperAndRadiiVectors(bool showOnRenderer);
+    void SaveSphereClippers();
     void PrintCorridorIds();
 
 protected slots:
@@ -149,7 +152,7 @@ private:
     std::vector<vtkSmartPointer<vtkActor>> clipperActors;
 
     QDialog* inputs;
-    double maxScalar, minScalar;
+    double maxScalar, minScalar, defaultClipperRadius;
     int corridorMax, corridorCount;
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkCallbackCommand> callBack;

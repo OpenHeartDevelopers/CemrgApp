@@ -328,6 +328,8 @@ void AtrialFibresView::AnalysisChoice(){
     } else{
         MITK_INFO << "Setting up manual analysis.";
         SetManualModeButtonsOn();
+        m_Controls.button_auto4_meshpreproc->setVisible(true);
+        m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
     }
 }
 
@@ -432,10 +434,11 @@ void AtrialFibresView::AutomaticAnalysis(){
 void AtrialFibresView::MeshPreprocessing(){
     MITK_INFO << "[MeshPreprocessing] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!LoadSurfaceChecks()) return;
 
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", automaticPipeline);
+    AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", true);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
 }
 
@@ -604,12 +607,14 @@ void AtrialFibresView::IdentifyPV(){
 void AtrialFibresView::CreateLabelledMesh(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
-    QString segRegPath = GetFilePath("LA-reg", ".nii");
-    if(!segRegPath.isEmpty()){
-        int reply = Ask("Registered segmentation found", "Consider a Scar Projection analysis?");
-        SetLgeAnalysis(reply==QMessageBox::Yes);
+    if(!analysisOnLge){
+        QString segRegPath = GetFilePath("LA-reg", ".nii");
+        if(!segRegPath.isEmpty()){
+            int reply = Ask("Registered segmentation found", "Consider a Scar Projection analysis?");
+            SetLgeAnalysis(reply==QMessageBox::Yes);
+        }
+        tagName += analysisOnLge ? "-reg" : "";
     }
-    tagName += analysisOnLge ? "-reg" : "";
 
     QString prodPath =  directory + mitk::IOUtil::GetDirectorySeparator();
 
@@ -655,57 +660,55 @@ void AtrialFibresView::ClipperPV(){
 
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
 
-    if(automaticPipeline){
-        MITK_INFO << "[ClipperPV] clipping PVs from automatic pipeline.";
+    MITK_INFO << "[ClipperPV] clipping PVs.";
 
-        QString path = prodPath + tagName + ".vtk";
+    QString path = prodPath + tagName + ".vtk";
 
-        mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
-        path = prodPath + "prodClipperIDsAndRadii.txt";
-        if(QFile::exists(path)){
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
+    path = prodPath + "prodClipperIDsAndRadii.txt";
+    if(QFile::exists(path)){
 
-            MITK_INFO << "[ClipperPV] Reading in centre IDs and radii";
-            std::ifstream fi;
-            fi.open((path.toStdString()));
+        MITK_INFO << "[ClipperPV] Reading in centre IDs and radii";
+        std::ifstream fi;
+        fi.open((path.toStdString()));
 
-            int numPts;
-            fi >> numPts;
+        int numPts;
+        fi >> numPts;
 
-            for (int ix = 0; ix < numPts; ix++) {
-                int ptId;
-                double radius, x_c, y_c, z_c;
+        for (int ix = 0; ix < numPts; ix++) {
+            int ptId;
+            double radius, x_c, y_c, z_c;
 
-                fi >> ptId >> x_c >> y_c >> z_c >> radius;
+            fi >> ptId >> x_c >> y_c >> z_c >> radius;
 
-                QString spherePath = prodPath + "pvClipper_" + QString::number(ptId) + ".vtk";
-                std::cout << "Read points: ID:" << ptId << " C=[" << x_c << " " << y_c << " " << z_c << "] R=" << radius <<'\n';
+            QString spherePath = prodPath + "pvClipper_" + QString::number(ptId) + ".vtk";
+            std::cout << "Read points: ID:" << ptId << " C=[" << x_c << " " << y_c << " " << z_c << "] R=" << radius <<'\n';
 
-                surface = CemrgCommonUtils::ClipWithSphere(surface, x_c, y_c, z_c, radius, spherePath);
-            }
-            fi.close();
+            surface = CemrgCommonUtils::ClipWithSphere(surface, x_c, y_c, z_c, radius, spherePath);
+        }
+        fi.close();
 
-            // save surface
-            path = prodPath + tagName + ".vtk";
-            mitk::IOUtil::Save(surface, path.toStdString());
-            atrium->SetSurface(path);
+        // save surface
+        path = prodPath + tagName + ".vtk";
+        mitk::IOUtil::Save(surface, path.toStdString());
+        atrium->SetSurface(path);
 
-            SetTagNameFromPath(path);
+        SetTagNameFromPath(path);
+        if(automaticPipeline){
             ClipperMV();
 
             QString correctLabels = prodPath + "prodSeedLabels.txt";
             QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
             atrium->SetSurfaceLabels(correctLabels, naiveLabels);
-
-            QMessageBox::information(NULL, "Attention", "Clipping of PV and MV finished");
-
-        } else{
-            QMessageBox::warning(NULL, "Warning", "Radii file not found");
-            return;
         }
 
-    } else {
-        MITK_INFO << "[ClipperPV] clipping PVs from manual pipeline.";
+        QMessageBox::information(NULL, "Attention", "Clipping of PV and MV finished");
+
+    } else{
+        QMessageBox::warning(NULL, "Warning", "Radii file not found");
+        return;
     }
+
 }
 
 // Labelled Mesh to UAC
@@ -1200,18 +1203,17 @@ void AtrialFibresView::SetManualModeButtons(bool b){
     m_Controls.button_man4_segmentation->setVisible(b);
     m_Controls.button_man5_idPV->setVisible(b);
     m_Controls.button_man6_labelmesh->setVisible(b);
-    m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
     m_Controls.button_man7_clipMV->setVisible(b);
     m_Controls.button_man8_clipPV->setVisible(b);
 
 
-    m_Controls.button_0_landmarks->setText("    Step9: Select Landmarks");
-    m_Controls.button_0_calculateUac->setText("    Step10: Calculate UAC");
-    m_Controls.button_0_refineUac->setText("    Step11: Refine UAC");
+    m_Controls.button_0_landmarks->setText("    Step10: Select Landmarks");
+    m_Controls.button_0_calculateUac->setText("    Step11: Calculate UAC");
+    m_Controls.button_0_refineUac->setText("    Step12: Refine UAC");
 }
 
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
-    // m_Controls.button_auto4_meshpreproc->setVisible(b);
+    m_Controls.button_auto4_meshpreproc->setVisible(b);
     m_Controls.button_auto5_clipPV->setVisible(b);
 
     m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");

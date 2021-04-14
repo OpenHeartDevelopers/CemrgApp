@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>243</width>
-    <height>711</height>
+    <height>745</height>
    </rect>
   </property>
   <property name="font">
@@ -101,26 +101,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_auto4_meshpreproc">
-     <property name="styleSheet">
-      <string notr="true">text-align: left;</string>
-     </property>
-     <property name="text">
-      <string>   Step4: Mesh Preprocessing</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="button_auto5_clipPV">
-     <property name="styleSheet">
-      <string notr="true">text-align: left;</string>
-     </property>
-     <property name="text">
-      <string>    Step5: Clip PVs and MV</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="button_man4_segmentation">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
@@ -146,7 +126,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>   Step5: Identify PVs</string>
+      <string>    Step5: Identify PVs</string>
      </property>
     </widget>
    </item>
@@ -161,12 +141,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_man7_clipMV">
+    <widget class="QPushButton" name="button_auto4_meshpreproc">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    Step7: Clip Mitral Valve</string>
+      <string>   Step4: Mesh Preprocessing</string>
      </property>
     </widget>
    </item>
@@ -177,6 +157,26 @@
      </property>
      <property name="text">
       <string>    Step8: Clip PV</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_man7_clipMV">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step9: Clip Mitral Valve</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_auto5_clipPV">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step5: Clip PVs and MV</string>
      </property>
     </widget>
    </item>

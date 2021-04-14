@@ -167,7 +167,7 @@ background-color: yellow;</string>
      <item row="1" column="4">
       <widget class="QPushButton" name="button_auto4_clipPv">
        <property name="text">
-        <string>Clip all</string>
+        <string>Save clippers</string>
        </property>
       </widget>
      </item>

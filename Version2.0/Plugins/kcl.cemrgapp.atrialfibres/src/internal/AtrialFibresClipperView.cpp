@@ -119,6 +119,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     SetManualModeButtons(!automaticPipeline);
     corridorMax = 5;
     corridorCount = 0;
+    defaultClipperRadius = 9.0;
 
     //Create GUI widgets
     inputs = new QDialog(0,0);
@@ -159,6 +160,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     iniPreSurf();
     if (surface.IsNotNull()) {
         InitialisePickerObjects();
+        LoadPickedSeedsFromFile();
         clipper = std::unique_ptr<CemrgAtriaClipper>(new CemrgAtriaClipper(directory, surface));
         Visualiser();
     }
@@ -233,6 +235,11 @@ void AtrialFibresClipperView::CtrLines() {
             QMessageBox::critical(NULL, "Attention", "Computation of Centrelines Failed!");
             return;
         }//_if
+
+        // save points for Mesh Preprocessing steps
+        bool showOnRenderer = false;
+        CreateSphereClipperAndRadiiVectors(showOnRenderer);
+        SaveSphereClippers();
     }//_if
 
     //Set surface opacity
@@ -566,40 +573,46 @@ void AtrialFibresClipperView::ShowPvClippers(){
     }
 
     MITK_INFO << "[ShowPvClippers] Filling Combo box from picked seeds";
-    int cboxIndx=0;
-    double defaultRadius = 9;
-    for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
-        if(pickedSeedLabels.at(i)!=14 && pickedSeedLabels.at(i)!=18 && pickedSeedLabels.at(i)!=19){
-            pvClipperSeedIdx->InsertNextId(pickedSeedIds->GetId(i));
-            pvClipperRadii.push_back(defaultRadius);
-
-            VisualiseSphereAtPoint(cboxIndx, defaultRadius);
-
-            QString comboText = "DEFAULT";
-            if (pickedSeedLabels.at(i) == 11){
-                comboText = "LSPV";
-            } else if (pickedSeedLabels.at(i) == 13){
-                comboText = "LIPV";
-            } else if (pickedSeedLabels.at(i) == 15){
-                comboText = "RSPV";
-            } else if (pickedSeedLabels.at(i) == 17){
-                comboText = "RIPV";
-            }
-
-            m_Controls.comboBox_auto->insertItem(cboxIndx, comboText);
-            cboxIndx++;
-        }
-    }
+    bool showOnRenderer= true;
+    CreateSphereClipperAndRadiiVectors(showOnRenderer);
 
     m_Controls.widget_1->GetRenderWindow()->Render();
 
     m_Controls.slider_auto->setEnabled(true);
     m_Controls.slider_auto->setRange(6, 13);
-    m_Controls.slider_auto->setValue(defaultRadius);
+    m_Controls.slider_auto->setValue(defaultClipperRadius);
 
     m_Controls.comboBox_auto->setEnabled(true);
 
     m_Controls.button_auto4_clipPv->setEnabled(true);
+}
+
+void AtrialFibresClipperView::CreateSphereClipperAndRadiiVectors(bool showOnRenderer){
+    int cboxIndx=0;
+    for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
+        if(pickedSeedLabels.at(i)!=14 && pickedSeedLabels.at(i)!=18 && pickedSeedLabels.at(i)!=19){
+            pvClipperSeedIdx->InsertNextId(pickedSeedIds->GetId(i));
+            pvClipperRadii.push_back(defaultClipperRadius);
+
+            if (showOnRenderer){
+                VisualiseSphereAtPoint(cboxIndx, defaultClipperRadius);
+
+                QString comboText = "DEFAULT";
+                if (pickedSeedLabels.at(i) == 11){
+                    comboText = "LSPV";
+                } else if (pickedSeedLabels.at(i) == 13){
+                    comboText = "LIPV";
+                } else if (pickedSeedLabels.at(i) == 15){
+                    comboText = "RSPV";
+                } else if (pickedSeedLabels.at(i) == 17){
+                    comboText = "RIPV";
+                }
+
+                m_Controls.comboBox_auto->insertItem(cboxIndx, comboText);
+                cboxIndx++;
+            }
+        }
+    }
 }
 
 void AtrialFibresClipperView::InterPvSpacing(){
@@ -674,6 +687,12 @@ void AtrialFibresClipperView::InterPvSpacing(){
     ResetCorridorObjects();
     Visualiser();
 
+
+    int reply = QMessageBox::question(NULL, "Finish fixing mesh corridors?", "Finish fixing mesh corridors?", QMessageBox::Yes, QMessageBox::No);
+    if(reply == QMessageBox::Yes){
+        m_Controls.button_auto3_spacing->setEnabled(false);
+    }
+
 }
 
 void AtrialFibresClipperView::ClipPVs(){
@@ -685,23 +704,31 @@ void AtrialFibresClipperView::ClipPVs(){
         QMessageBox::Yes, QMessageBox::No);
 
     if (reply==QMessageBox::Yes){
-        QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
-        path += "prodClipperIDsAndRadii.txt";
-        std::ofstream fo(path.toStdString());
-        fo << pvClipperRadii.size() << std::endl;
-        for (int ix = 0; ix < (int) pvClipperRadii.size() ; ix++) {
-            double* c = surface->GetVtkPolyData()->GetPoint(pvClipperSeedIdx->GetId(ix));
-
-            std::cout << "Saving ID:" << pvClipperSeedIdx->GetId(ix) << " ";
-            std::cout << "Radius" << pvClipperRadii.at(ix) << " ";
-            std::cout << "C = [" << c[0] << ", " << c[1] << ", " << c[2] << ", "  << "]" << std::endl;
-            fo << pvClipperSeedIdx->GetId(ix) << " ";
-            fo << c[0] << " " << c[1] << " " << c[2] << " ";
-            fo << pvClipperRadii.at(ix) << std::endl;
-        }
-        fo.close();
+        SaveSphereClippers();
     }
 
+    m_Controls.button_auto1_savelabels->setEnabled(false);
+    m_Controls.button_auto2_clippers->setEnabled(false);
+    m_Controls.button_auto3_spacing->setEnabled(false);
+
+}
+
+void AtrialFibresClipperView::SaveSphereClippers(){
+    QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+    path += "prodClipperIDsAndRadii.txt";
+    std::ofstream fo(path.toStdString());
+    fo << pvClipperRadii.size() << std::endl;
+    for (int ix = 0; ix < (int) pvClipperRadii.size() ; ix++) {
+        double* c = surface->GetVtkPolyData()->GetPoint(pvClipperSeedIdx->GetId(ix));
+
+        std::cout << "Saving ID:" << pvClipperSeedIdx->GetId(ix) << " ";
+        std::cout << "Radius" << pvClipperRadii.at(ix) << " ";
+        std::cout << "C = [" << c[0] << ", " << c[1] << ", " << c[2] << ", "  << "]" << std::endl;
+        fo << pvClipperSeedIdx->GetId(ix) << " ";
+        fo << c[0] << " " << c[1] << " " << c[2] << " ";
+        fo << pvClipperRadii.at(ix) << std::endl;
+    }
+    fo.close();
 }
 
 void AtrialFibresClipperView::Visualiser(double opacity){
@@ -1271,6 +1298,66 @@ void AtrialFibresClipperView::UserSelectPvLabel(){
     } else if (dialogCode == QDialog::Rejected) {
         inputs->close();
     }//_if
+}
+
+void AtrialFibresClipperView::LoadPickedSeedsFromFile(){
+    QString prodPath = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+    QString pointsPath = prodPath + "prodClipperIDsAndRadii.txt";
+    QString pickedLabelsPath = prodPath + "prodSeedLabels.txt";
+
+    if(QFile::exists(pointsPath)){
+        int reply = QMessageBox::question(NULL, "Question", "Load previously selected points?");
+        if(reply==QMessageBox::Yes){
+            MITK_INFO << "Retrieving labels from file";
+            std::ifstream flabels;
+            flabels.open(pickedLabelsPath.toStdString());
+            std::vector<int> v;
+            int l;
+
+            flabels >> l;
+            while(!flabels.eof()){
+                if(l!=14 && l!=18 && l!=19){
+                    v.push_back(l);
+                }
+                flabels >> l;
+            }
+            flabels.close();
+
+            MITK_INFO << "Reading in centre IDs and radii";
+            std::ifstream fi;
+            fi.open((pointsPath.toStdString()));
+
+            int numPts;
+            fi >> numPts;
+
+            vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
+            vtkSmartPointer<vtkPolyData> pd = surface->Clone()->GetVtkPolyData();
+            for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+                double* pt = pd->GetPoint(i);
+                pt[0] = -pt[0];
+                pt[1] = -pt[1];
+                pd->GetPoints()->SetPoint(i, pt);
+            }//_for
+            pointLocator->SetDataSet(pd);
+            pointLocator->BuildLocator();
+            for (int ix = 0; ix < numPts; ix++) {
+                int ptId;
+                double radius, ptInFile[3];
+
+                fi >> ptId >> ptInFile[0] >> ptInFile[1] >> ptInFile[2] >> radius;
+                vtkIdType vId = pointLocator->FindClosestPoint(ptInFile);
+
+                pickedSeedIds->InsertNextId(vId);
+                pickedSeedLabels.push_back(v.at(ix));
+                pickedLineSeeds->GetPoints()->InsertNextPoint(ptInFile);
+                pickedLineSeeds->Modified();
+
+                pvClipperSeedIdx->InsertNextId(vId);
+                pvClipperRadii.push_back(defaultClipperRadius);
+            }
+            fi.close();
+        }
+    }
 }
 
 void AtrialFibresClipperView::PrintCorridorIds(){
