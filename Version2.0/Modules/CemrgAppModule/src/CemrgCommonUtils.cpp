@@ -1334,3 +1334,40 @@ void CemrgCommonUtils::AppendVectorFieldToVtk(QString vtkPath, QString fieldName
 
     VTKFile.close();
 }
+
+void CemrgCommonUtils::VtkScalarToFile(QString vtkPath, QString outPath, QString fieldName, bool isElem){
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(vtkPath.toStdString());
+    vtkFloatArray *scalars = vtkFloatArray::New();
+    vtkIdType numObjects;
+
+    std::cout << "fieldName: " << fieldName.toStdString() << '\n';
+
+    if (isElem){
+        // surface->GetVtkPolyData()->GetCellData()->SetActiveScalars(fieldName.toStdString().c_str());
+        scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        numObjects = surface->GetVtkPolyData()->GetNumberOfCells();
+    } else{
+        // surface->GetVtkPolyData()->GetCellData()->SetActiveScalars(fieldName.toStdString().c_str());
+        scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        numObjects = surface->GetVtkPolyData()->GetNumberOfCells();
+    }
+
+    std::ofstream fo(outPath.toStdString());
+
+    double s;
+    for (vtkIdType ix=0;ix<numObjects;ix++) {
+        s = scalars->GetTuple1(ix);
+        fo << std::setprecision(12) << s;
+        if(ix<numObjects-1){
+            fo << std::endl;
+        }
+    }
+}
+
+void CemrgCommonUtils::VtkPointScalarToFile(QString vtkPath, QString outPath, QString fieldName){
+    VtkScalarToFile(vtkPath, outPath, fieldName, false);
+}
+
+void CemrgCommonUtils::VtkCellScalarToFile(QString vtkPath, QString outPath, QString fieldName){
+    VtkScalarToFile(vtkPath, outPath, fieldName, true);
+}

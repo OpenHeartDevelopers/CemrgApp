@@ -93,6 +93,10 @@ public:
     static void AppendScalarFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader=true);
     static void AppendVectorFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader=true);
 
+    static void VtkScalarToFile(QString vtkPath, QString outPath, QString fieldName="scalars", bool isElem=false);
+    static void VtkPointScalarToFile(QString vtkPath, QString outPath, QString fieldName="scalars");
+    static void VtkCellScalarToFile(QString vtkPath, QString outPath, QString fieldName="scalars");
+
 private:
 
     //Cropping Utils

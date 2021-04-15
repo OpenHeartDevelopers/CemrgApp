@@ -101,12 +101,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="check_1vtk2carp">
+    <widget class="QCheckBox" name="check_1isscalar">
      <property name="text">
-      <string>Convert to carp (.pts, .elem files)</string>
+      <string>File has scalar field</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
    </item>

@@ -111,7 +111,7 @@
     </widget>
    </item>
    <item alignment="Qt::AlignHCenter">
-    <widget class="QPushButton" name="button_z_man_Lge">
+    <widget class="QPushButton" name="button_man4_1_Lge">
      <property name="text">
       <string>Register to LGE space</string>
      </property>
@@ -166,7 +166,21 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    Step9: Clip Mitral Valve</string>
+      <string>    Step9: MV Clipper</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_man7_1_landmarks">
+     <property name="text">
+      <string>Select Landmarks</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_man7_2_clipMV">
+     <property name="text">
+      <string>Clip Mitral Valve</string>
      </property>
     </widget>
    </item>

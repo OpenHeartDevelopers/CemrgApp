@@ -1177,6 +1177,39 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, bool isElem){
+    // Method equivalent to: meshtool interpolate Xdata, where X= isElem? elem : node;
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+    QString Xdata = isElem ? "elemdata" : "nodedata";
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "interpolate" << Xdata;
+    arguments << ("-imsh="+meshname);
+    arguments << ("-omsh="+outmesh);
+    arguments << ("-idat="+idatExt);
+    arguments << ("-odat="+odatExt);
+
+    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + odatExt;
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if (successful) {
+        MITK_INFO << "Interpolating data successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    return outAbsolutePath;
+}
+
 QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale){
     // Method equivalent to: meshtool convert
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");

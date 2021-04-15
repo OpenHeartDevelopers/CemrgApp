@@ -112,6 +112,8 @@ protected slots:
     void IdentifyPV();
     void CreateLabelledMesh();
     void ClipperMV();
+    void SelectMvLandmarks();
+    void ClipMV();
     void ClipperPV();
 
     void SelectLandmarks();
@@ -147,7 +149,7 @@ private:
     bool automaticPipeline, analysisOnLge;
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
-    bool uiRemesh_vtk2carp, uiRemesh_extractParts;
+    bool uiRemesh_isscalar, uiRemesh_extractParts;
     int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod, uiFormat_scale;
     std::vector<double> uiScar_thresValues;
     QString uiFormat_outExt, uiFormat_outName;

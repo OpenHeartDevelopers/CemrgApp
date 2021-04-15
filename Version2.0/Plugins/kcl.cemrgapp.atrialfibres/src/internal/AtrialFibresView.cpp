@@ -101,11 +101,10 @@ const std::string AtrialFibresView::VIEW_ID = "org.mitk.views.atrialfibresview";
 
 void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
-    // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
     connect(m_Controls.button_1, SIGNAL(clicked()), this, SLOT(LoadDICOM()));
     connect(m_Controls.button_2, SIGNAL(clicked()), this, SLOT(ProcessIMGS()));
-    // Segmentation to Labelled Mesh pipeline
+
     connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
     connect(m_Controls.button_auto4_meshpreproc, SIGNAL(clicked()), this, SLOT(MeshPreprocessing()));
     connect(m_Controls.button_man4_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
@@ -131,13 +130,18 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     m_Controls.button_2_1->setVisible(false);
     connect(m_Controls.button_2_1, SIGNAL(clicked()), this, SLOT(ConvertNII()));
 
-    m_Controls.button_z_man_Lge->setVisible(false);
-    connect(m_Controls.button_z_man_Lge, SIGNAL(clicked()), this, SLOT(ManualLgeRegistration()));
+    m_Controls.button_man4_1_Lge->setVisible(false);
+    connect(m_Controls.button_man4_1_Lge, SIGNAL(clicked()), this, SLOT(ManualLgeRegistration()));
+
+    m_Controls.button_man7_1_landmarks->setVisible(false);
+    m_Controls.button_man7_2_clipMV->setVisible(false);
+    connect(m_Controls.button_man7_1_landmarks, SIGNAL(clicked()), this, SLOT(SelectMvLandmarks()));
+    connect(m_Controls.button_man7_2_clipMV, SIGNAL(clicked()), this, SLOT(ClipMV()));
 
     // Set default variables
     tagName = "labelled";
     refinedSuffix = "-refined";
-    uiRemesh_vtk2carp = true;
+    uiRemesh_isscalar = false;
     uiRemesh_extractParts = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
     atrium->SetDebugModeOff();
@@ -505,6 +509,17 @@ void AtrialFibresView::SegmentIMGS() {
 
             if (path.isEmpty()) return;
 
+            QFileInfo fi(path);
+            if(!analysisOnLge && fi.baseName().contains("-reg")){
+                std::string msg = "Registered segmentation " + fi.baseName().toStdString() + " found.";
+                msg += "\nConsider LGE scar projection analysis?";
+                int replyLgeAnalysis = Ask("Question", msg.c_str());
+                if(replyLgeAnalysis==QMessageBox::Yes){
+                    analysisOnLge = true;
+                    tagName += "-reg";
+                }
+            }
+
             ImageType::Pointer segImage = atrium->LoadImage(path);
             path = UserIncludeLgeAnalysis(path, segImage);
 
@@ -517,7 +532,7 @@ void AtrialFibresView::SegmentIMGS() {
         } else {
             //Show segmentation plugin
             this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentation");
-            m_Controls.button_z_man_Lge->setVisible(true);
+            m_Controls.button_man4_1_Lge->setVisible(true);
         } //_if_q_loadSegmentation
     }//_if_q_automatic
 }
@@ -649,10 +664,164 @@ void AtrialFibresView::ClipperMV(){
         MITK_INFO << "[ClipperMV] Clipping mitral valve";
         atrium->ClipMitralValveAuto(directory, "prodMVI.nii", tagName+".vtk");
     } else {
-
+        if (m_Controls.button_man7_1_landmarks->isVisible()) {
+            m_Controls.button_man7_1_landmarks->setVisible(false);
+            m_Controls.button_man7_2_clipMV->setVisible(false);
+            return;
+        } else {
+            MITK_INFO << "[ClipperMV] Reveal buttons for manual functionalities";
+            m_Controls.button_man7_1_landmarks->setVisible(true);
+            m_Controls.button_man7_2_clipMV->setVisible(true);
+        }//_if
     }
-
 }
+
+void AtrialFibresView::SelectMvLandmarks(){
+    if (m_Controls.button_man7_1_landmarks->text() == QString::fromStdString("Select Landmarks")) {
+
+        //Show the plugin
+        QMessageBox::information(NULL, "Attention", "Please select 3 points around the mitral valve!");
+        this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
+        m_Controls.button_man7_1_landmarks->setText("Display Clipper");
+
+    } else {
+
+        //Check for selection of points
+        QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+        if (nodes.empty()) {
+            QMessageBox::warning(NULL, "Attention", "Please select the pointsets from the Data Manager to clip the mitral valve!");
+            return;
+        }//_if
+
+        //Check selection type
+        mitk::DataNode::Pointer landMarks = nodes.front();
+        mitk::PointSet::Pointer pointSet = dynamic_cast<mitk::PointSet*>(landMarks->GetData());
+        if (!pointSet || pointSet->GetSize() != 3) {
+            QMessageBox::warning(NULL, "Attention", "Please select landmarks with 3 points from the Data Manager to continue!");
+            return;
+        }//_if
+
+        //If the path was chosen incorrectly returns
+        if (!RequestProjectDirectoryFromUser()) return;
+
+        //Reset the button
+        m_Controls.button_man7_1_landmarks->setText("Select Landmarks");
+
+        //Retrieve mean and distance of 3 points
+        double x_c = 0;
+        double y_c = 0;
+        double z_c = 0;
+        for(int i=0; i<pointSet->GetSize(); i++) {
+            x_c = x_c + pointSet->GetPoint(i).GetElement(0);
+            y_c = y_c + pointSet->GetPoint(i).GetElement(1);
+            z_c = z_c + pointSet->GetPoint(i).GetElement(2);
+        }//_for
+        x_c /= pointSet->GetSize();
+        y_c /= pointSet->GetSize();
+        z_c /= pointSet->GetSize();
+        //double distance[pointSet->GetSize()];
+        double * distance = new double[pointSet->GetSize()];
+        for(int i=0; i<pointSet->GetSize(); i++) {
+            double x_d = pointSet->GetPoint(i).GetElement(0) - x_c;
+            double y_d = pointSet->GetPoint(i).GetElement(1) - y_c;
+            double z_d = pointSet->GetPoint(i).GetElement(2) - z_c;
+            distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+        }//_for
+        double radius = *std::max_element(distance, distance + pointSet->GetSize());
+
+        delete[] distance;
+        //Create the clipper geometry
+        vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+        sphereSource->SetCenter(x_c, y_c, z_c);
+        sphereSource->SetRadius(radius);
+        sphereSource->SetPhiResolution(40);
+        sphereSource->SetThetaResolution(40);
+        sphereSource->Update();
+        mitk::Surface::Pointer mvClipper = mitk::Surface::New();
+        mvClipper->SetVtkPolyData(sphereSource->GetOutput());
+
+        //Adjust the data storage
+        mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+        for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt)
+            if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
+                this->GetDataStorage()->Remove(nodeIt->Value());
+        CemrgCommonUtils::AddToStorage(mvClipper, "MVClipper", this->GetDataStorage(), false);
+        sob = this->GetDataStorage()->GetAll();
+        for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+            if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos) {
+                nodeIt->Value()->SetProperty("opacity", mitk::FloatProperty::New(0.4));
+                nodeIt->Value()->SetProperty("color", mitk::ColorProperty::New(1.0, 0.0, 0.0));
+            }//_if
+        }//_for
+
+    }//_if
+}
+
+void AtrialFibresView::ClipMV(){
+    //Check for selection of points
+    QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+    if (nodes.empty()) {
+        QMessageBox::warning(NULL, "Attention", "Please select the pointsets from the Data Manager to clip the mitral valve!");
+        this->GetSite()->GetPage()->ResetPerspective();
+        return;
+    }//_if
+
+    //Check selection type
+    mitk::DataNode::Pointer landMarks = nodes.front();
+    mitk::PointSet::Pointer pointSet = dynamic_cast<mitk::PointSet*>(landMarks->GetData());
+    if (!pointSet || pointSet->GetSize() != 3) {
+        QMessageBox::warning(NULL, "Attention", "Please select landmarks with 3 points from the Data Manager to continue!");
+        return;
+    }//_if
+
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+    //Read in and copy
+    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
+    mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+    if (surface->GetVtkPolyData() == NULL) {
+        QMessageBox::critical(NULL, "Attention", "No mesh was found in the project directory!");
+        return;
+    }//_if
+    QString orgP = path.left(path.lastIndexOf(QChar('.'))) + "-Original.vtk";
+    mitk::IOUtil::Save(mitk::IOUtil::Load<mitk::Surface>(path.toStdString()), orgP.toStdString());
+
+    /*
+     * Producibility Test
+     **/
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    mitk::IOUtil::Save(pointSet, (prodPath + "prodMVCLandmarks.mps").toStdString());
+    /*
+     * End Test
+     **/
+
+    this->BusyCursorOn();
+    std::unique_ptr<CemrgScar3D> scarObj = std::unique_ptr<CemrgScar3D>(new CemrgScar3D());
+    surface = scarObj->ClipMesh3D(surface, pointSet);
+    this->BusyCursorOff();
+
+    //Check to remove the previous mesh node
+    mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+    for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+        if (nodeIt->Value()->GetName().find("-Mesh") != nodeIt->Value()->GetName().npos)
+            this->GetDataStorage()->Remove(nodeIt->Value());
+        if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
+            this->GetDataStorage()->Remove(nodeIt->Value());
+    }//_for
+    CemrgCommonUtils::AddToStorage(surface, "MVClipped-Mesh", this->GetDataStorage(), false);
+
+    //Reverse coordination of surface for writing MIRTK style
+    mitk::Surface::Pointer surfCloned = surface->Clone();
+    vtkSmartPointer<vtkPolyData> pd = surfCloned->GetVtkPolyData();
+    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+        double* point = pd->GetPoint(i);
+        point[0] = -point[0];
+        point[1] = -point[1];
+        pd->GetPoints()->SetPoint(i, point);
+    }//_for
+    mitk::IOUtil::Save(surfCloned, path.toStdString());
+}
+
 
 void AtrialFibresView::ClipperPV(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.#
@@ -735,6 +904,35 @@ void AtrialFibresView::MeshingOptions(){
     bool userInputsAccepted = GetUserRemeshingInputs();
     if(userInputsAccepted){
         QString refinedPath = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+
+        if(uiRemesh_isscalar){
+            QString pathNoExt = prodPath+tagName;
+            QString fieldName = "scar";
+            CemrgCommonUtils::VtkCellScalarToFile(pathNoExt+".vtk", pathNoExt+"_elem.dat", fieldName);
+            CemrgCommonUtils::VtkPointScalarToFile(pathNoExt+".vtk", pathNoExt+"_pts.dat", fieldName);
+            std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+            cmd->SetUseDockerContainers(true);
+            // convert to carp simple
+            cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName+"-temp", "carp_txt", 1);
+            cmd->DockerConvertMeshFormat(directory, tagName+refinedSuffix, "vtk", tagName+refinedSuffix+"-temp", "carp_txt", 1);
+
+            // new functionality: meshtool interpolate elemdata
+            cmd->DockerInterpolateCell(directory, tagName+"-temp", tagName+refinedSuffix+"-temp", tagName+"_elem.dat", tagName+refinedSuffix+"_elem.dat");
+            cmd->DockerInterpolateCell(directory, tagName+"-temp", tagName+refinedSuffix+"-temp", tagName+"_pts.dat", tagName+refinedSuffix+"_pts.dat");
+
+            std::vector<double> refinedCellScalars = CemrgCommonUtils::ReadScalarField(prodPath+tagName+refinedSuffix+"_elem.dat");
+            std::vector<double> refinedPointScalars = CemrgCommonUtils::ReadScalarField(prodPath+tagName+refinedSuffix+"_pts.dat");
+            CemrgCommonUtils::AppendScalarFieldToVtk(refinedPath, fieldName, "POINT", refinedPointScalars, false);
+            CemrgCommonUtils::AppendScalarFieldToVtk(refinedPath, fieldName, "CELL", refinedCellScalars, false);
+
+            // cleanup
+            QStringList exts = {".elem", ".pts", ".lon", ".fcon"};
+            for (int ix = 0; ix < exts.size(); ix++) {
+                QFile::remove(prodPath+tagName+"-temp"+exts.at(ix));
+                QFile::remove(prodPath+tagName+refinedSuffix+"-temp"+exts.at(ix));
+            }
+
+        }
 
         atrium->SetSurface(refinedPath);
 
@@ -837,6 +1035,7 @@ void AtrialFibresView::ScarProjection(){
 
         scar->SetScarSegImage(mitk::IOUtil::Load<mitk::Image>(segPath.toStdString()));
         mitk::Surface::Pointer scarShell = scar->Scar3D(directory.toStdString(), lge, (segvtkName).toStdString());
+        scarShell->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("scar");
 
         QString scarPath = prodPath + "MaxScar.vtk";
         CemrgCommonUtils::SetCellDataToPointData(scarShell, scarPath, "scar");
@@ -997,7 +1196,7 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-        uiRemesh_vtk2carp = m_UIRemesh.check_1vtk2carp->isChecked();
+        uiRemesh_isscalar = m_UIRemesh.check_1isscalar->isChecked();
         uiRemesh_extractParts = m_UIRemesh.check_2extractlabels->isChecked();
 
         bool ok1, ok2, ok3, ok4;
