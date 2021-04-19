@@ -85,6 +85,7 @@ public:
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
     void UserLoadSurface();
+    void CheckLoadedMeshQuality();
     void SetLgeAnalysis(bool b);
     QString UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer seg);
     QString GetFilePath(QString type, QString extension);

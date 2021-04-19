@@ -70,6 +70,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
 #include <vtkImplicitPolyDataDistance.h>
+#include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkTimerLog.h>
 #include <vtkClipPolyData.h>
 #include <vtkDecimatePro.h>
@@ -1452,6 +1453,7 @@ bool AtrialFibresView::LoadSurfaceChecks(){
 void AtrialFibresView::UserLoadSurface(){
     QString newpath = QFileDialog::getOpenFileName(NULL, "Select the surface file to load!", directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
     SetTagNameFromPath(newpath);
+    CheckLoadedMeshQuality();
 }
 
 int AtrialFibresView::Ask(std::string title, std::string msg){
@@ -1512,4 +1514,47 @@ QString AtrialFibresView::UserIncludeLgeAnalysis(QString segPath, ImageType::Poi
 void AtrialFibresView::SetLgeAnalysis(bool b){
     analysisOnLge = b;
     m_Controls.button_z_scar->setEnabled(b);
+}
+
+void AtrialFibresView::CheckLoadedMeshQuality(){
+    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString meshinput = prodPath + tagName + ".vtk";
+
+    int reply = Ask("Question", "Are you sure your loaded surface is a VTK polydata?");
+    if(reply == QMessageBox::Yes){
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+        meshinput = cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName, "vtk_polydata", 1);
+    }
+
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
+
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> cf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    cf->ScalarConnectivityOff();
+    cf->SetInputData(surface->GetVtkPolyData());
+    cf->SetExtractionModeToAllRegions();
+    cf->Update();
+
+    int numRegions = cf->GetNumberOfExtractedRegions();
+
+    if(numRegions>1){
+        MITK_INFO << ("Number of regions in mesh: " + QString::number(numRegions)).toStdString();
+        cf->SetExtractionModeToSpecifiedRegions();
+        cf->Modified();
+        cf->Update();
+
+        for (int ix = 0; ix < numRegions; ix++) {
+
+            cf->InitializeSpecifiedRegionList();
+            cf->AddSpecifiedRegion(ix);
+            cf->Modified();
+            cf->Update();
+
+            vtkSmartPointer<vtkPolyData> temp = cf->GetOutput();
+            surface->SetVtkPolyData(cf->GetOutput());
+            QString nameExt = "connectivityTest_"+QString::number(ix)+".vtk";
+            mitk::IOUtil::Save(surface, (prodPath+nameExt).toStdString());
+        }
+
+    }
 }
