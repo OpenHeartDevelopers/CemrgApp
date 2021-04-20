@@ -150,7 +150,9 @@ public:
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);
     ImageType::Pointer AddImage(ImageType::Pointer im1, ImageType::Pointer im2);
     ImageType::Pointer ThresholdImage(ImageType::Pointer input, uint16_t lowerThres, uint16_t upperThres=-1000);
+    ThresholdType::Pointer ThresholdImageFilter(ImageType::Pointer input, uint16_t thresholdVal);
     ImageType::Pointer ImOpen(ImageType::Pointer input, uint16_t radius);
+    ImFilterType::Pointer ImOpenFilter(ImageType::Pointer input, uint16_t radius);
     ShortImageType::Pointer Uint16ToShort(ImageType::Pointer im);
     mitk::Image::Pointer ImErode(ImageType::Pointer input, int vxls=3);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);

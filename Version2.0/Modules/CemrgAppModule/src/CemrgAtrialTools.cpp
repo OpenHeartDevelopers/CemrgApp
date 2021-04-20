@@ -233,6 +233,10 @@ ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QSt
         ++ogImgIter;
     }
 
+    if(debugSteps){
+        SaveImageToDisk(atriumCoarse, dir, "1_RemoveNoiseWithVeins.nii");
+    }
+
     MITK_INFO << "[CleanAutomaticSegmentation] Extracting and cleaning atrium body";
     uint16_t bodythresh = 1;
     ImageType::Pointer body = ExtractLabel("LA-body", atriumCoarse, bodythresh, 1.0);
@@ -603,12 +607,18 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 //helper functions
 ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius, int maxNumObjects){
     MITK_INFO << ("Thresholding " + tag + " from clean segmentation").toStdString();
-    ImageType::Pointer auxIm = ThresholdImage(im, label);
+    ThresholdType::Pointer thresVeins = ThresholdImageFilter(im, label);
 
+    ImageType::Pointer auxIm;
     if(filterRadius > 0){
+        // morphological opening step
         MITK_INFO << "Morphological opening - remove speckle noise";
-        auxIm = ImOpen(auxIm, filterRadius);
+        ImFilterType::Pointer imopen = ImOpenFilter(thresVeins->GetOutput(), filterRadius);
+        auxIm = imopen->GetOutput();
 
+    } else{
+        MITK_INFO << "Morphological opening - ignored";
+        auxIm = thresVeins->GetOutput();
     }
 
     if (maxNumObjects>0){
@@ -663,6 +673,31 @@ ImageType::Pointer CemrgAtrialTools::ImOpen(ImageType::Pointer input, uint16_t r
     imOpenFilter->Update();
 
     return imOpenFilter->GetOutput();
+}
+
+ThresholdType::Pointer CemrgAtrialTools::ThresholdImageFilter(ImageType::Pointer input, uint16_t thresholdVal){
+    ThresholdType::Pointer thresholdOutput = ThresholdType::New();
+    thresholdOutput->SetInput(input);
+    thresholdOutput->SetLowerThreshold(thresholdVal);
+    thresholdOutput->SetUpperThreshold(thresholdVal);
+    thresholdOutput->SetInsideValue(1);
+    thresholdOutput->SetOutsideValue(0);
+    thresholdOutput->Update();
+
+    return thresholdOutput;
+}
+
+ImFilterType::Pointer CemrgAtrialTools::ImOpenFilter(ImageType::Pointer input, uint16_t radius){
+    StrElType structuringElement;
+    structuringElement.SetRadius(static_cast<unsigned long>(radius));
+    structuringElement.CreateStructuringElement();
+
+    ImFilterType::Pointer imOpenFilter = ImFilterType::New();
+    imOpenFilter->SetInput(input);
+    imOpenFilter->SetKernel(structuringElement);
+    imOpenFilter->Update();
+
+    return imOpenFilter;
 }
 
 mitk::Image::Pointer CemrgAtrialTools::ImErode(ImageType::Pointer input, int vxls){
