@@ -285,8 +285,7 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(oneNode.GetPointer());
         if (image) { //Test if this data item is an image
             image = CemrgCommonUtils::IsoImageResampleReorient(image, resample, reorient);
-            mitk::Image::Pointer paddedImg = CemrgCommonUtils::PadImageWithConstant(image);
-            mitk::IOUtil::Save(paddedImg, path2file.toStdString());
+            mitk::IOUtil::Save(image, path2file.toStdString());
             successful = true;
         } else{
             MITK_INFO << "[...] Problem casting node data to image";
@@ -337,6 +336,14 @@ mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer
 
     return image;
 }
+
+void CemrgCommonUtils::SavePadImageWithConstant(QString inputPath, QString outputPath, int vxlsToExtend, short constant){
+    QString out = (outputPath.isEmpty()) ? inputPath : outputPath;
+    mitk::Image::Pointer inImg = mitk::IOUtil::Load<mitk::Image>(inputPath.toStdString());
+    mitk::Image::Pointer outImg = CemrgCommonUtils::PadImageWithConstant(inImg, vxlsToExtend, constant);
+    mitk::IOUtil::Save(outImg, out.toStdString());
+}
+
 
 void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath){
     QFileInfo fi(pathToImage);

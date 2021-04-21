@@ -290,6 +290,7 @@ void AtrialFibresView::ConvertNII() {
         type = (ctr==0) ? "LGE":"MRA";
         prodPath = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), prodPath, resampleImage, reorientToRAI);
+        CemrgCommonUtils::SavePadImageWithConstant(prodPath);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
             std::string key = "dicom.series.SeriesDescription";
