@@ -270,8 +270,9 @@ void AtrialFibresView::ConvertNII() {
     size_t length2 = indexNodes.size();
     bool test = std::adjacent_find(indexNodes.begin(), indexNodes.end(), std::not_equal_to<int>()) == indexNodes.end();
     if (length1 != length2 || test) {
-        QMessageBox::warning(NULL, "Attention",
-                             "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
+        std::string msg = "Cannot find the type of images automatically.";
+        msg += "Revert to user order and selections in the data manager:\n LGE at the top, then CEMRA at the bottom!";
+        QMessageBox::warning(NULL, "Attention", msg.c_str());
         index.resize(nodes.size());
         std::iota(index.begin(), index.end(), 0);
     }//_if
@@ -340,7 +341,6 @@ void AtrialFibresView::AnalysisChoice(){
             SetAutomaticModeButtonsOff();
             m_Controls.button_man4_segmentation->setEnabled(true);
             m_Controls.button_auto4_meshpreproc->setVisible(true);
-            m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
         }
     } else{
         MITK_INFO << "[AnalysisChoice] Analysis starting from surface";
@@ -355,7 +355,6 @@ void AtrialFibresView::AnalysisChoice(){
         SetAutomaticModeButtonsOff();
         m_Controls.button_man4_segmentation->setEnabled(false);
         m_Controls.button_auto4_meshpreproc->setVisible(true);
-        m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
     }
 
 }
@@ -1082,6 +1081,8 @@ void AtrialFibresView::ScarProjection(){
 
 void AtrialFibresView::Reset() {
 
+
+
     try {
 
         ctkPluginContext* context = mitk::kcl_cemrgapp_atrialfibres_Activator::getContext();
@@ -1428,6 +1429,11 @@ void AtrialFibresView::SetManualModeButtons(bool b){
     m_Controls.button_man7_clipMV->setVisible(b);
     m_Controls.button_man8_clipPV->setVisible(b);
 
+    if(b){
+        m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
+    } else{
+        m_Controls.button_auto4_meshpreproc->setText("    Step4: Mesh Preprocessing");
+    }
 
     m_Controls.button_0_landmarks->setText("    Step10: Select Landmarks");
     m_Controls.button_0_calculateUac->setText("    Step11: Calculate UAC");

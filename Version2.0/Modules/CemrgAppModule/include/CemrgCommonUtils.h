@@ -59,6 +59,7 @@ public:
 
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
+    static mitk::Image::Pointer PadImageWithConstant(mitk::Image::Pointer image, int vxlsToExtend=2, short constant=0);
     static void RoundPixelValues(QString pathToImage, QString outputPath="");
 
     // static void RoundPointDataValues(vtkSmartPointer<vtkPolyData> pd);

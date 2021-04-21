@@ -32,6 +32,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <itkImageRegionIteratorWithIndex.h>
 #include <itkResampleImageFilter.h>
 #include <itkOrientImageFilter.h>
+#include <itkPasteImageFilter.h>
 
 //VTK
 #include <vtkPolyData.h>
@@ -284,7 +285,8 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(oneNode.GetPointer());
         if (image) { //Test if this data item is an image
             image = CemrgCommonUtils::IsoImageResampleReorient(image, resample, reorient);
-            mitk::IOUtil::Save(image, path2file.toStdString());
+            mitk::Image::Pointer paddedImg = CemrgCommonUtils::PadImageWithConstant(image);
+            mitk::IOUtil::Save(paddedImg, path2file.toStdString());
             successful = true;
         } else{
             MITK_INFO << "[...] Problem casting node data to image";
@@ -295,6 +297,45 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
     }//_if
 
     return successful;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer image, int vxlsToExtend, short constant){
+    using ImageType = itk::Image<short,3>;
+
+    ImageType::Pointer inputImg = ImageType::New();
+    mitk::CastToItkImage(image, inputImg);
+
+    ImageType::Pointer outputImg = ImageType::New();
+    ImageType::IndexType start;
+    start[0] = 0; start[1] = 0; start[2] = 0;
+
+    ImageType::SizeType size;
+    size[0] = image->GetDimension(0) + 2*vxlsToExtend;
+    size[1] = image->GetDimension(1) + 2*vxlsToExtend;
+    size[2] = image->GetDimension(2) + 2*vxlsToExtend;
+
+    ImageType::RegionType region;
+    region.SetSize(size);
+    region.SetIndex(start);
+
+    outputImg->SetRegions(region);
+    outputImg->Allocate();
+
+    ImageType::IndexType indexForOutput;
+    indexForOutput[0] = vxlsToExtend;
+    indexForOutput[1] = vxlsToExtend;
+    indexForOutput[2] = vxlsToExtend;
+
+    using PasteImage = itk::PasteImageFilter<ImageType, ImageType>;
+    PasteImage::Pointer paste = PasteImage::New();
+    paste->SetSourceImage(inputImg);
+    paste->SetSourceRegion(inputImg->GetLargestPossibleRegion());
+    paste->SetDestinationImage(outputImg);
+    paste->SetDestinationIndex(indexForOutput);
+
+    image = mitk::ImportItkImage(paste->GetOutput())->Clone();
+
+    return image;
 }
 
 void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath){
