@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/CemrgApp">
-        <file>icon.xpm</file>
-        <file>icon_research.xpm</file>
-        <file>CemrgAppLogo.png</file>
-    </qresource>
-</RCC>

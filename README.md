@@ -9,10 +9,6 @@ CemrgApp is available as free open-source software under a 3-clause BSD license.
 This software is distributed WITHOUT ANY WARRANTY or SUPPORT.\
 This software SHOULD NOT be used for diagnosis or treatment of patients.
 
-Current Versions
-----------------
-Versions of CemrgApp are organised in separate folders in the repository.
-
 Instructions
 ------------
 Refer to Wiki pages at https://github.com/CemrgAppDevelopers/CemrgApp/wiki
