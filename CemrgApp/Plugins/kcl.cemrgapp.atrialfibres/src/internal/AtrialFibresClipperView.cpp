@@ -579,7 +579,7 @@ void AtrialFibresClipperView::ShowPvClippers(){
     m_Controls.widget_1->GetRenderWindow()->Render();
 
     m_Controls.slider_auto->setEnabled(true);
-    m_Controls.slider_auto->setRange(6, 13);
+    m_Controls.slider_auto->setRange(5, 15);
     m_Controls.slider_auto->setValue(defaultClipperRadius);
 
     m_Controls.comboBox_auto->setEnabled(true);

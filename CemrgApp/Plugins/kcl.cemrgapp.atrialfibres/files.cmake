@@ -11,6 +11,7 @@ set(INTERNAL_CPP_FILES
 
 set(UI_FILES
   src/internal/AtrialFibresViewControls.ui
+  src/internal/AtrialFibresViewUIAnalysisSelector.ui
   src/internal/AtrialFibresViewUIMeshing.ui
   src/internal/AtrialFibresViewUIRemesh.ui
   src/internal/AtrialFibresViewUIConvert.ui

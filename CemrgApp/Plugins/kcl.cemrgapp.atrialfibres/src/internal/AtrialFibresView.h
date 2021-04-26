@@ -32,6 +32,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QmitkAbstractView.h>
 #include <mitkSurface.h>
 #include "ui_AtrialFibresViewControls.h"
+#include "ui_AtrialFibresViewUIAnalysisSelector.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
 #include "ui_AtrialFibresViewUIRemesh.h"
 #include "ui_AtrialFibresViewUIConvert.h"
@@ -74,6 +75,7 @@ public:
     inline void SetAutomaticPipeline(bool isAuto){automaticPipeline=isAuto;};
 
     void AutomaticAnalysis();
+    bool GetUserAnalysisSelectorInputs();
     bool GetUserMeshingInputs();
     bool GetUserRemeshingInputs();
     bool GetUserScarProjectionInputs();
@@ -137,6 +139,7 @@ protected:
             berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
     Ui::AtrialFibresViewControls m_Controls;
+    Ui::AtrialFibresViewUIAnalysisSelector m_UISelector;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
     Ui::AtrialFibresViewUIRemesh m_UIRemesh;
     Ui::AtrialFibresViewUIConvert m_UIFormat;
@@ -148,12 +151,16 @@ private:
     QString directory, tagName, refinedSuffix;
     std::unique_ptr<CemrgAtrialTools> atrium;
     bool automaticPipeline, analysisOnLge;
+
+    // user-defined parameters
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
     bool uiRemesh_isscalar, uiRemesh_extractParts;
     int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod, uiFormat_scale;
     std::vector<double> uiScar_thresValues;
     QString uiFormat_outExt, uiFormat_outName;
+    int uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
+    bool uiSelector_imgauto_skipCemrgNet, uiSelector_imgauto_skipLabel, uiSelector_img_scar, uiSelector_man_seg;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

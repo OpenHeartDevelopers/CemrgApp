@@ -150,6 +150,12 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     SetManualModeButtonsOff();
     SetAutomaticModeButtonsOff();
+
+    uiSelector_pipeline = 0;
+    uiSelector_imgauto_skipCemrgNet = false;
+    uiSelector_imgauto_skipLabel = false;
+    uiSelector_img_scar = false;
+    uiSelector_man_seg = false;
     SetLgeAnalysis(false);
 }
 
@@ -1250,6 +1256,41 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
             uiRemesh_avrg=0.3;
             uiRemesh_min=0.1;
             uiRemesh_surfcorr=0.95;
+        }
+
+        inputs->deleteLater();
+        userInputAccepted=true;
+
+    } else if (dialogCode == QDialog::Rejected) {
+        inputs->close();
+        inputs->deleteLater();
+    }//_if
+
+    return userInputAccepted;
+}
+
+bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
+    QDialog* inputs = new QDialog(0,0);
+    bool userInputAccepted=false;
+    m_UISelector.setupUi(inputs);
+    connect(m_UISelector.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UISelector.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+        uiSelector_img_scar = m_UISelector.check_img_scar->isChecked();
+
+        if(m_UISelector.radioBtn_img_auto->isChecked()){
+            uiSelector_pipeline = 0;
+            uiSelector_imgauto_skipCemrgNet = m_UISelector.check_img_auto_skipSeg->isChecked();
+            uiSelector_imgauto_skipLabel = m_UISelector.check_img_auto_skipLabel->isChecked();
+        } else if(m_UISelector.radioBtn_img_man->isChecked()){
+            uiSelector_pipeline = 1;
+            uiSelector_man_seg = m_UISelector.check_img_man_skipSeg->isChecked();
+        } else{
+            uiSelector_pipeline = 2;
+            uiSelector_img_scar = false;
         }
 
         inputs->deleteLater();
