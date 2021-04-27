@@ -301,7 +301,7 @@ void QmitkCemrgAppCommonTools::PadImageEdgesWithConstant(){
 
         CemrgCommonUtils::SavePadImageWithConstant(pathToImage, outputPath, paddingSize, constantForPadding);
 
-        QMessageBox::attention(NULL, "Operation finished", "File created");
+        QMessageBox::information(NULL, "Attention", "Operation finished. File created");
     }
 
 }
