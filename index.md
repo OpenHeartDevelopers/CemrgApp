@@ -15,13 +15,6 @@ title: CemrgApp Home
 <img align="right" height="18%" rotate="180" width="18%" src="./assets/logo.svg">
 
 An Interactive Medical Imaging Platform with Image Processing and Computer Vision Toolkits for Cardiovascular Research.
-At present, CemrgApp supports:
-
-+ Motion Quantification
-+ Anatomical Measurements
-+ Scar Quantification
-+ Morphological Measurements
-+ Electrophysiology Simulations
 
 Links:
 
