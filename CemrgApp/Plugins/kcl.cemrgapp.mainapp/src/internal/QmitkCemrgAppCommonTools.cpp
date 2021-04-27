@@ -54,6 +54,8 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     m_Controls.setupUi(parent);
     connect(m_Controls.button_1, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
     connect(m_Controls.button_2, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
+    connect(m_Controls.button_3, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertCarpToVtk);
+    connect(m_Controls.button_4, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::PadImageEdgesWithConstant);
 }
 
 void QmitkCemrgAppCommonTools::SetFocus() {
