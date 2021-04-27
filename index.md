@@ -11,20 +11,24 @@ title: CemrgApp Home
 ---
 
 ## Welcome to the CemrgApp page
-| Project on                                            | Download binaries     |  |
-|-------------------------------------------------------|-----------------------|----------------|
-| [Github](https://github.com/CemrgDevelopers/CemrgApp) | [Latest version](https://github.com/CemrgDevelopers/CemrgApp/releases/tag/v2.1.1) | [Wiki Page](https://github.com/CemrgDevelopers/CemrgApp/wiki) |
 
+<img align="right" height="18%" rotate="180" width="18%" src="./assets/logo.svg">
 
 An Interactive Medical Imaging Platform with Image Processing and Computer Vision Toolkits for Cardiovascular Research.
-
-CemrgApp at present supports:
+At present, CemrgApp supports:
 
 + Motion Quantification
 + Anatomical Measurements
 + Scar Quantification
 + Morphological Measurements
 + Electrophysiology Simulations
+
+Links:
+
++ [Project on Github](https://github.com/CemrgDevelopers/CemrgApp)
++ [Download our latest version](https://github.com/CemrgDevelopers/CemrgApp/releases/tag/v2.1.1)
++ [Visit our wiki Page](https://github.com/CemrgDevelopers/CemrgApp/wiki)
+
 
 Please cite the following article, if you use CemrgApp in your project:
 ```
