@@ -18,6 +18,7 @@ set(INTERNAL_CPP_FILES
 set(UI_FILES
   src/internal/QmitkCemrgAppCartoExport.ui
   src/internal/QmitkCemrgAppCommonToolsControls.ui
+  src/internal/QmitkCemrgAppImagePadding.ui
 )
 
 set(MOC_H_FILES

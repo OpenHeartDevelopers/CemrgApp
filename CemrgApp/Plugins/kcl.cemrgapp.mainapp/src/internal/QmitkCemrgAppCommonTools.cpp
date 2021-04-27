@@ -266,3 +266,42 @@ void QmitkCemrgAppCommonTools::ConvertCarpToVtk(){
         }
     }
 }
+
+void QmitkCemrgAppCommonTools::PadImageEdgesWithConstant(){
+    QString pathToImage = "";
+    pathToImage = QFileDialog::getOpenFileName(NULL, "Open image file");
+    if (pathToImage.isEmpty()) {
+        QMessageBox::warning(NULL, "Attention", "Select Correct Input (.nii) File!");
+        return;
+    }
+
+    //Ask for user input to set the parameters
+    QDialog* inputs = new QDialog(0,0);
+    m_ImagePadding.setupUi(inputs);
+    connect(m_ImagePadding.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_ImagePadding.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+    if (dialogCode == QDialog::Accepted) {
+        bool ok1, ok2;
+        int paddingSize = m_ImagePadding.lineEdit_2->text().toInt(&ok1);
+        int constantForPadding = m_ImagePadding.lineEdit_3->text().toDouble(&ok2);
+        QString outputName = m_ImagePadding.lineEdit_3->text();
+        QString outputPath = pathToImage;
+
+        if(!ok1){
+            paddingSize = 2;
+        }
+        if(!ok2){
+            constantForPadding = 0;
+        }
+        if(!outputName.isEmpty()){
+            QFileInfo fi(pathToImage);
+            outputPath = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + outputName + fi.suffix();
+        }
+
+        CemrgCommonUtils::SavePadImageWithConstant(pathToImage, outputPath, paddingSize, constantForPadding);
+
+        QMessageBox::attention(NULL, "Operation finished", "File created");
+    }
+
+}
