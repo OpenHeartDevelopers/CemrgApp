@@ -106,7 +106,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_1, SIGNAL(clicked()), this, SLOT(LoadDICOM()));
     connect(m_Controls.button_2, SIGNAL(clicked()), this, SLOT(ProcessIMGS()));
 
-    connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
+    connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice2()));
     connect(m_Controls.button_auto4_meshpreproc, SIGNAL(clicked()), this, SLOT(MeshPreprocessing()));
     connect(m_Controls.button_man4_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
     connect(m_Controls.button_auto5_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
@@ -155,7 +155,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     uiSelector_imgauto_skipCemrgNet = false;
     uiSelector_imgauto_skipLabel = false;
     uiSelector_img_scar = false;
-    uiSelector_man_seg = false;
+    uiSelector_man_useCemrgNet = false;
     SetLgeAnalysis(false);
 }
 
@@ -366,13 +366,54 @@ void AtrialFibresView::AnalysisChoice(){
 
 }
 
+void AtrialFibresView::AnalysisChoice2(){
+    if(!RequestProjectDirectoryFromUser()) return;
+
+    bool userInputsAccepted = GetUserAnalysisSelectorInputs();
+    if(userInputsAccepted){
+        // uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
+        SetAutomaticPipeline(uiSelector_pipeline==0);
+        if(uiSelector_pipeline==0){
+            MITK_INFO<<"[AnalysisChoice] Automatic pipeline";
+            SetAutomaticModeButtonsOn();
+            SetManualModeButtonsOff();
+            if(!uiSelector_imgauto_skipLabel){
+                MITK_INFO << "[AnalysisChoice] Performing Automatic analysis on CemrgNet prediction.";
+                AutomaticAnalysis();
+            } else{
+                MITK_INFO << "[AnalysisChoice] Skipping Neural network prediction and labelling. Checking for vtk file.";
+                if(!LoadSurfaceChecks()) return;
+            }
+        } else if(uiSelector_pipeline==1){
+            MITK_INFO << "[AnalysisChoice] Setting up manual analysis.";
+            SetManualModeButtonsOn();
+            SetAutomaticModeButtonsOff();
+            m_Controls.button_man4_segmentation->setEnabled(true);
+            m_Controls.button_auto4_meshpreproc->setVisible(true);
+
+        } else if(uiSelector_pipeline==2){
+            MITK_INFO << "[AnalysisChoice] Analysis starting from surface";
+            SetAutomaticPipeline(false);
+
+            // Load surface mesh
+
+            // Create fake segmentation image for labelling
+
+            SetManualModeButtonsOn();
+            SetAutomaticModeButtonsOff();
+            m_Controls.button_man4_segmentation->setEnabled(false);
+            m_Controls.button_auto4_meshpreproc->setVisible(true);
+        }
+    }
+}
+
 // Automatic pipeline
 void AtrialFibresView::AutomaticAnalysis(){
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     if(cnnPath.isEmpty()){
-        int reply = Ask("Question", "Do you have a previous automatic segmentation?");
-
-        if(reply==QMessageBox::Yes){
+        // int reply = Ask("Question", "Do you have a previous automatic segmentation?");
+        // uiSelector_imgauto_skipCemrgNet
+        if(uiSelector_imgauto_skipCemrgNet){
             cnnPath = QFileDialog::getOpenFileName(NULL, "Open Automatic Segmentation file",
             directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
             MITK_INFO << ("Loaded file: " + cnnPath).toStdString();
@@ -480,8 +521,9 @@ void AtrialFibresView::SegmentIMGS() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
 
-    int replyAuto = Ask("Question", "Do you want an automatic segmentation?");
-    if(replyAuto == QMessageBox::Yes){
+    // int replyAuto = Ask("Question", "Do you want an automatic segmentation?");
+    // uiSelector_man_useCemrgNet
+    if(uiSelector_man_useCemrgNet){
         //Check for selection of image
         QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
         if (nodes.size() != 1) {
@@ -1270,8 +1312,23 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
 }
 
 bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
-    QDialog* inputs = new QDialog(0,0);
+    QString metadata = Path("prodMetadata.txt");
     bool userInputAccepted=false;
+
+    if(QFile::exists(metadata)){
+        int reply0 = Ask("Metadata Found", "Load previous analysis metadata found?");
+        if(reply0==QMessageBox::Yes){
+            std::ifstream fi(metadata.toStdString());
+            fi >> uiSelector_pipeline;
+            fi >> uiSelector_imgauto_skipCemrgNet;
+            fi >> uiSelector_imgauto_skipLabel;
+            fi >> uiSelector_man_useCemrgNet;
+            fi >> uiSelector_img_scar;
+            fi.close();
+            return true;
+        }
+    }
+    QDialog* inputs = new QDialog(0,0);
     m_UISelector.setupUi(inputs);
     connect(m_UISelector.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_UISelector.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -1287,11 +1344,19 @@ bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
             uiSelector_imgauto_skipLabel = m_UISelector.check_img_auto_skipLabel->isChecked();
         } else if(m_UISelector.radioBtn_img_man->isChecked()){
             uiSelector_pipeline = 1;
-            uiSelector_man_seg = m_UISelector.check_img_man_skipSeg->isChecked();
+            uiSelector_man_useCemrgNet = m_UISelector.check_img_man_skipSeg->isChecked();
         } else{
             uiSelector_pipeline = 2;
             uiSelector_img_scar = false;
         }
+
+        std::ofstream fo(metadata.toStdString());
+        fo << uiSelector_pipeline << std::endl;
+        fo << uiSelector_imgauto_skipCemrgNet << std::endl;
+        fo << uiSelector_imgauto_skipLabel << std::endl;
+        fo << uiSelector_man_useCemrgNet << std::endl;
+        fo << uiSelector_img_scar << std::endl;
+        fo.close();
 
         inputs->deleteLater();
         userInputAccepted=true;
@@ -1546,11 +1611,12 @@ QString AtrialFibresView::GetFilePath(QString nameSubstring, QString extension){
 }
 
 QString AtrialFibresView::UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer segImage){
+    // uiSelector_img_scar
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     QString resultString = segPath;
 
-    int replyLAreg = Ask("Register to LGE", "Move to LGE space and prepare for scar projection?");
-    if(replyLAreg==QMessageBox::Yes){
+    // int replyLAreg = Ask("Register to LGE", "Move to LGE space and prepare for scar projection?");
+    if(uiSelector_img_scar){
         QFileInfo fi(segPath);
         QString segRegPath = prodPath + fi.baseName() + "-reg." + fi.suffix();
 

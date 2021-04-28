@@ -98,6 +98,8 @@ public:
     inline void SetAutomaticModeButtonsOn(){SetAutomaticModeButtons(true);};
     inline void SetAutomaticModeButtonsOff(){SetAutomaticModeButtons(false);};
 
+    inline QString Path(QString fnameExt=""){return (directory+mitk::IOUtil::GetDirectorySeparator()+fnameExt);};
+
     QString LandmarkFilesCreated(QString defaultName, QString type);
 
 protected slots:
@@ -107,6 +109,7 @@ protected slots:
     void ProcessIMGS();
     void ConvertNII();
     void AnalysisChoice(); // btn3
+    void AnalysisChoice2(); // btn3
     // Automatic Pipeline
     void MeshPreprocessing();
     // Manual pipeline
@@ -160,7 +163,7 @@ private:
     std::vector<double> uiScar_thresValues;
     QString uiFormat_outExt, uiFormat_outName;
     int uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
-    bool uiSelector_imgauto_skipCemrgNet, uiSelector_imgauto_skipLabel, uiSelector_img_scar, uiSelector_man_seg;
+    bool uiSelector_imgauto_skipCemrgNet, uiSelector_imgauto_skipLabel, uiSelector_img_scar, uiSelector_man_useCemrgNet;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;
