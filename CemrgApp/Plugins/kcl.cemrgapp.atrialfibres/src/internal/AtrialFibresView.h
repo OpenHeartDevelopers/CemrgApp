@@ -109,7 +109,6 @@ protected slots:
     void ProcessIMGS();
     void ConvertNII();
     void AnalysisChoice(); // btn3
-    void AnalysisChoice2(); // btn3
     // Automatic Pipeline
     void MeshPreprocessing();
     // Manual pipeline

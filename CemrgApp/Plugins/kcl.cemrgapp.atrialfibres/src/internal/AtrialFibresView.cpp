@@ -106,7 +106,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_1, SIGNAL(clicked()), this, SLOT(LoadDICOM()));
     connect(m_Controls.button_2, SIGNAL(clicked()), this, SLOT(ProcessIMGS()));
 
-    connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice2()));
+    connect(m_Controls.button_3_imanalysis, SIGNAL(clicked()), this, SLOT(AnalysisChoice()));
     connect(m_Controls.button_auto4_meshpreproc, SIGNAL(clicked()), this, SLOT(MeshPreprocessing()));
     connect(m_Controls.button_man4_segmentation, SIGNAL(clicked()), this, SLOT(SegmentIMGS()));
     connect(m_Controls.button_auto5_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
@@ -318,56 +318,6 @@ void AtrialFibresView::ConvertNII() {
 }
 
 void AtrialFibresView::AnalysisChoice(){
-    int reply1 = Ask("Question", "Are you working with images? (Click NO if you're starting from a surface mesh)");
-    if(reply1==QMessageBox::Yes){
-        int reply1_1 = Ask("Question", "Use the semi-automatic pipeline?");
-
-        SetAutomaticPipeline(reply1_1==QMessageBox::Yes);
-
-        if(reply1_1==QMessageBox::Yes){
-            MITK_INFO<<"[AnalysisChoice] Automatic pipeline";
-            if (!RequestProjectDirectoryFromUser()) return; // checks if the directory has been set
-            SetAutomaticModeButtonsOn();
-            SetManualModeButtonsOff();
-
-            int reply1_2 = Ask("Check for previous output!","Do you want to skip steps 1 to 3?");
-            if(reply1_2==QMessageBox::No){
-                MITK_INFO << "[AnalysisChoice] Performing Automatic analysis on CemrgNet prediction.";
-                AutomaticAnalysis();
-            } else if(reply1_2==QMessageBox::Yes){
-                MITK_INFO << "[AnalysisChoice] Skipping Neural network prediction. Checking for vtk file.";
-                if(!QFile::exists(directory+mitk::IOUtil::GetDirectorySeparator()+tagName+".vtk")){
-                    std::string msg = "Labelled mesh not found. Perform Step 3 again.";
-                    QMessageBox::warning(NULL, "File not found", msg.c_str());
-                    MITK_INFO << msg;
-                    return;
-                }
-            }
-        } else{
-            MITK_INFO << "[AnalysisChoice] Setting up manual analysis.";
-            SetManualModeButtonsOn();
-            SetAutomaticModeButtonsOff();
-            m_Controls.button_man4_segmentation->setEnabled(true);
-            m_Controls.button_auto4_meshpreproc->setVisible(true);
-        }
-    } else{
-        MITK_INFO << "[AnalysisChoice] Analysis starting from surface";
-        SetAutomaticPipeline(false);
-
-        // Load surface mesh
-
-        // Create fake segmentation image for labelling
-
-        // Set the right buttons of the manual pipeline
-        SetManualModeButtonsOn();
-        SetAutomaticModeButtonsOff();
-        m_Controls.button_man4_segmentation->setEnabled(false);
-        m_Controls.button_auto4_meshpreproc->setVisible(true);
-    }
-
-}
-
-void AtrialFibresView::AnalysisChoice2(){
     if(!RequestProjectDirectoryFromUser()) return;
 
     bool userInputsAccepted = GetUserAnalysisSelectorInputs();
