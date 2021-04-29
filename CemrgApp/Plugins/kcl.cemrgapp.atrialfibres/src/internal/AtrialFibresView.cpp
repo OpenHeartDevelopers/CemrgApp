@@ -323,7 +323,7 @@ void AtrialFibresView::AnalysisChoice(){
     bool userInputsAccepted = GetUserAnalysisSelectorInputs();
     if(userInputsAccepted){
         // uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
-        SetAutomaticPipeline(uiSelector_pipeline==0);
+        SetAutomaticPipeline(uiSelector_pipeline==0); // Image Pipeline (automatic)
         if(uiSelector_pipeline==0){
             MITK_INFO<<"[AnalysisChoice] Automatic pipeline";
             SetAutomaticModeButtonsOn();
@@ -336,14 +336,14 @@ void AtrialFibresView::AnalysisChoice(){
                 MITK_INFO << "[AnalysisChoice] Skipping Neural network prediction and labelling. Checking for vtk file.";
                 if(!LoadSurfaceChecks()) return;
             }
-        } else if(uiSelector_pipeline==1){
+        } else if(uiSelector_pipeline==1){ // Image Pipeline (manual)
             MITK_INFO << "[AnalysisChoice] Setting up manual analysis.";
             SetManualModeButtonsOn();
             SetAutomaticModeButtonsOff();
             m_Controls.button_man4_segmentation->setEnabled(true);
             m_Controls.button_auto4_meshpreproc->setVisible(true);
 
-        } else if(uiSelector_pipeline==2){
+        } else if(uiSelector_pipeline==2){ // Surface Pipeline (manual)
             MITK_INFO << "[AnalysisChoice] Analysis starting from surface";
             SetAutomaticPipeline(false);
 
@@ -1084,7 +1084,10 @@ void AtrialFibresView::ScarProjection(){
         double mean = 0.0, stdv = 0.0;
         bool binarise=true;
         ImageType::Pointer segITK = atrium->LoadImage(segPath, binarise);
-        mitk::Image::Pointer roiImage = atrium->ImErode(segITK);
+        mitk::IOUtil::Save(atrium->ImErode(segITK), Path("roi.nii").toStdString());
+
+        atrium->ResampleSegmentationLabelToImage(lgePath, Path("roi.nii"));
+        mitk::Image::Pointer roiImage = mitk::IOUtil::Load<mitk::Image>(Path("roi.nii").toStdString());
 
         if(scar->CalculateMeanStd(lge, roiImage, mean, stdv)){
             MITK_INFO << "[SCAR_PROJECTION][6] Saving normalised shell and prodThresholds.txt";
@@ -1294,46 +1297,50 @@ bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
             fi >> uiSelector_man_useCemrgNet;
             fi >> uiSelector_img_scar;
             fi.close();
-            return true;
+
+            userInputAccepted=true;
+
+        } else{
+            QDialog* inputs = new QDialog(0,0);
+            m_UISelector.setupUi(inputs);
+            connect(m_UISelector.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+            connect(m_UISelector.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+            int dialogCode = inputs->exec();
+
+            //Act on dialog return code
+            if (dialogCode == QDialog::Accepted) {
+                uiSelector_img_scar = m_UISelector.check_img_scar->isChecked();
+
+                if(m_UISelector.radioBtn_img_auto->isChecked()){
+                    uiSelector_pipeline = 0;
+                    uiSelector_imgauto_skipCemrgNet = m_UISelector.check_img_auto_skipSeg->isChecked();
+                    uiSelector_imgauto_skipLabel = m_UISelector.check_img_auto_skipLabel->isChecked();
+                } else if(m_UISelector.radioBtn_img_man->isChecked()){
+                    uiSelector_pipeline = 1;
+                    uiSelector_man_useCemrgNet = m_UISelector.check_img_man_skipSeg->isChecked();
+                } else{
+                    uiSelector_pipeline = 2;
+                    uiSelector_img_scar = false;
+                }
+
+                std::ofstream fo(metadata.toStdString());
+                fo << uiSelector_pipeline << std::endl;
+                fo << uiSelector_imgauto_skipCemrgNet << std::endl;
+                fo << uiSelector_imgauto_skipLabel << std::endl;
+                fo << uiSelector_man_useCemrgNet << std::endl;
+                fo << uiSelector_img_scar << std::endl;
+                fo.close();
+
+                inputs->deleteLater();
+                userInputAccepted=true;
+
+            } else if (dialogCode == QDialog::Rejected) {
+                inputs->close();
+                inputs->deleteLater();
+            }//_if
         }
     }
-    QDialog* inputs = new QDialog(0,0);
-    m_UISelector.setupUi(inputs);
-    connect(m_UISelector.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
-    connect(m_UISelector.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-    int dialogCode = inputs->exec();
-
-    //Act on dialog return code
-    if (dialogCode == QDialog::Accepted) {
-        uiSelector_img_scar = m_UISelector.check_img_scar->isChecked();
-
-        if(m_UISelector.radioBtn_img_auto->isChecked()){
-            uiSelector_pipeline = 0;
-            uiSelector_imgauto_skipCemrgNet = m_UISelector.check_img_auto_skipSeg->isChecked();
-            uiSelector_imgauto_skipLabel = m_UISelector.check_img_auto_skipLabel->isChecked();
-        } else if(m_UISelector.radioBtn_img_man->isChecked()){
-            uiSelector_pipeline = 1;
-            uiSelector_man_useCemrgNet = m_UISelector.check_img_man_skipSeg->isChecked();
-        } else{
-            uiSelector_pipeline = 2;
-            uiSelector_img_scar = false;
-        }
-
-        std::ofstream fo(metadata.toStdString());
-        fo << uiSelector_pipeline << std::endl;
-        fo << uiSelector_imgauto_skipCemrgNet << std::endl;
-        fo << uiSelector_imgauto_skipLabel << std::endl;
-        fo << uiSelector_man_useCemrgNet << std::endl;
-        fo << uiSelector_img_scar << std::endl;
-        fo.close();
-
-        inputs->deleteLater();
-        userInputAccepted=true;
-
-    } else if (dialogCode == QDialog::Rejected) {
-        inputs->close();
-        inputs->deleteLater();
-    }//_if
+    SetLgeAnalysis(uiSelector_img_scar);
 
     return userInputAccepted;
 }
