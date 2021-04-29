@@ -836,7 +836,7 @@ void CemrgCommonUtils::CalculateCentreOfGravity(QString pointPath, QString elemP
         int nPts, nElem;
 
         int fscanOut1 = fscanf(pointFileRead, "%d\n", &nPts);
-        MITK_INFO(fscanOut1==1) << "Filse size read correctly";
+        MITK_INFO(fscanOut1==1) << "File size read correctly";
 
         double* pts_array = (double*)malloc(nPts * 3 * sizeof(double));
     	if (pts_array == NULL) {
@@ -854,7 +854,7 @@ void CemrgCommonUtils::CalculateCentreOfGravity(QString pointPath, QString elemP
     	fclose(pointFileRead);
 
         fscanOut1 = fscanf(elemFileRead, "%d\n", &nElem);
-        MITK_INFO(fscanOut1==1) << "Filse size read correctly";
+        MITK_INFO(fscanOut1==1) << "File size read correctly";
 
         std::ofstream outputFileWrite;
         outputFileWrite.open(outputPath.toStdString());
