@@ -69,6 +69,8 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCleanPolyData.h>
 #include <vtkCellDataToPointData.h>
 #include <vtkPointDataToCellData.h>
+#include <vtkPolyDataToImageStencil.h>
+#include <vtkImageStencil.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -873,6 +875,78 @@ mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(ds);
 
     return node;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]){
+    vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
+    double bounds[6];
+    pd->GetBounds(bounds);
+
+    int dimensions[3];
+    for (int ix = 0; ix < 3; ix++) {
+        dimensions[ix] = static_cast<int>(std::ceil((bounds[ix * 2 + 1] - bounds[ix * 2]) / spacing[ix]));
+    }
+
+    double calcOrigin[3];
+    for (int jx = 0; jx < 3; jx++) {
+        origin[jx] = bounds[2*jx] + spacing[jx]/2;
+    }
+    std::cout << "o = (" << origin[0] << ", " << origin[1] << ", " << origin[2] << ")"<< '\n';
+
+    //Prepare empty image
+    vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
+    whiteImage->SetOrigin(origin);
+    whiteImage->SetSpacing(spacing);
+    whiteImage->SetDimensions(dimensions);
+    whiteImage->SetExtent(0, dimensions[0] - 1, 0, dimensions[1] - 1, 0, dimensions[2] - 1);
+    whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+
+    unsigned char inval = 1;
+    unsigned char otval = 0;
+
+    vtkIdType count = whiteImage->GetNumberOfPoints();
+    for (vtkIdType i = 0; i < count; ++i){
+        whiteImage->GetPointData()->GetScalars()->SetTuple1(i, inval);
+    }
+
+    //Image Stencil
+    vtkSmartPointer<vtkPolyDataToImageStencil> pol2stenc = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    pol2stenc->SetTolerance(0.5);
+    pol2stenc->SetInputData(pd);
+    pol2stenc->SetOutputOrigin(origin);
+    pol2stenc->SetOutputSpacing(spacing);
+    pol2stenc->SetOutputWholeExtent(whiteImage->GetExtent());
+    pol2stenc->Update();
+
+    vtkSmartPointer<vtkImageStencil> imgstenc = vtkSmartPointer<vtkImageStencil>::New();
+    imgstenc->SetInputData(whiteImage);
+    imgstenc->SetStencilConnection(pol2stenc->GetOutputPort());
+    imgstenc->ReverseStencilOff();
+    imgstenc->SetBackgroundValue(otval);
+    imgstenc->Update();
+
+    //VTK to ITK conversion
+    mitk::Image::Pointer cutImg = mitk::Image::New();
+    cutImg->Initialize(imgstenc->GetOutput());
+    cutImg->SetVolume(imgstenc->GetOutput()->GetScalarPointer());
+
+    return cutImg;
+
+}
+
+void CemrgCommonUtils::SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath){
+    QString out;
+
+    if(outputPath.isEmpty()){
+        QFileInfo fi(surfPath);
+        out = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + ".nii";
+    } else{
+        out = outputPath;
+    }
+    mitk::Surface::Pointer surf = mitk::IOUtil::Load<mitk::Surface>(surfPath.toStdString());
+    mitk::Image::Pointer im = CemrgCommonUtils::ImageFromSurfaceMesh(surf, origin, spacing);
+
+    mitk::IOUtil::Save(im, out.toStdString());
 }
 
 //UTILities for CARP - operations with .elem and .pts files

@@ -142,6 +142,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     // Set default variables
     tagName = "labelled";
     refinedSuffix = "-refined";
+    resurfaceMesh = false;
     uiRemesh_isscalar = false;
     uiRemesh_extractParts = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
@@ -377,6 +378,7 @@ void AtrialFibresView::AnalysisChoice2(){
             MITK_INFO<<"[AnalysisChoice] Automatic pipeline";
             SetAutomaticModeButtonsOn();
             SetManualModeButtonsOff();
+            m_Controls.button_3_imanalysis->setText("    Step3: Image Analysis");
             if(!uiSelector_imgauto_skipLabel){
                 MITK_INFO << "[AnalysisChoice] Performing Automatic analysis on CemrgNet prediction.";
                 AutomaticAnalysis();
@@ -396,8 +398,25 @@ void AtrialFibresView::AnalysisChoice2(){
             SetAutomaticPipeline(false);
 
             // Load surface mesh
+            if(!LoadSurfaceChecks()) return;
 
             // Create fake segmentation image for labelling
+            double origin[3] = {0, 0, 0};
+            double spacing[3] = {1, 1, 1};
+            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing);
+            CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
+
+            mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(Path(tagName+".nii").toStdString());
+            CemrgCommonUtils::AddToStorage(im, tagName.toStdString(), this->GetDataStorage());
+
+            if(resurfaceMesh){
+                QMessageBox::information(NULL, "Attention", "Surface mesh needs to be regenerated.");
+                bool userInputAccepted = GetUserMeshingInputs();
+                if(userInputAccepted){
+                    mitk::Surface::Pointer surf = CemrgCommonUtils::ExtractSurfaceFromSegmentation(im, uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
+                    mitk::IOUtil::Save(surf, Path(tagName+".vtk").toStdString());
+                }
+            }
 
             SetManualModeButtonsOn();
             SetAutomaticModeButtonsOff();
@@ -1675,6 +1694,7 @@ void AtrialFibresView::CheckLoadedMeshQuality(){
     int numRegions = cf->GetNumberOfExtractedRegions();
 
     if(numRegions>1){
+        resurfaceMesh = true;
         MITK_INFO << ("Number of regions in mesh: " + QString::number(numRegions)).toStdString();
         cf->SetExtractionModeToSpecifiedRegions();
         cf->Modified();

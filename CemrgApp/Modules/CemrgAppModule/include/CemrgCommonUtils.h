@@ -75,6 +75,8 @@ public:
     static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
+    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
+    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="");
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
