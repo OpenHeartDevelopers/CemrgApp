@@ -309,7 +309,7 @@ void MmcwView::CropinIMGS() {
                 path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
                 try {
                     inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
-                } catch(const std::exception& e) {
+                } catch(const std::exception&) {
                     mitk::ProgressBar::GetInstance()->Progress();
                     continue;
                 }//_try
@@ -445,7 +445,7 @@ void MmcwView::ResampIMGS() {
                         path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
                         try {
                             inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
-                        } catch(const std::exception& e) {
+                        } catch(const std::exception&) {
                             mitk::ProgressBar::GetInstance()->Progress();
                             continue;
                         }//_try

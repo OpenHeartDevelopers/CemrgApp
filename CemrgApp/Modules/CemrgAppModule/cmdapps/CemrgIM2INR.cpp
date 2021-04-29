@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
                 myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
                 myFile.close();
 
-            } catch(mitk::Exception& e) {
+            } catch(mitk::Exception&) {
                 MITK_ERROR << "Problems creating the file";
                 return EXIT_FAILURE;
             }
