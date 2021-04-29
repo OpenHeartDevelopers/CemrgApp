@@ -212,6 +212,7 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
     // outputPoints->SetVtkPolyData(pd);
     // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
 
+    m_Controls.button_save1_rough->setEnabled(false);
     m_Controls.button_save2_refined->setEnabled(true);
     Help();
 
@@ -248,6 +249,8 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     // mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
     // outputPoints->SetVtkPolyData(pd);
     // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
+    m_Controls.button_save2_refined->setEnabled(false);
+    m_Controls.button_guide1->setEnabled(false);
 }
 
 void AtrialFibresLandmarksView::SetDirectoryFile(const QString directory, const QString fileName) {
