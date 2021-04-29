@@ -858,7 +858,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     inputs->deleteLater();
                 }//_if
 
-            } catch(mitk::Exception& e) {
+            } catch(mitk::Exception&) {
                 return;
             }//_try
         } else
