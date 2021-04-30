@@ -172,21 +172,23 @@ void CemrgAtrialTools::AdjustSegmentationLabelToImage(QString segImPath, QString
 }
 
 void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath){
-    ImageType::Pointer segITK = LoadImage(segImPath);
-    ImageType::Pointer lgeITK = LoadImage(imPath);
+    ImageType::Pointer segItk = LoadImage(segImPath);
+    ImageType::Pointer im = LoadImage(imPath);
 
     itk::ResampleImageFilter<ImageType, ImageType>::Pointer resampleFilter;
     resampleFilter = itk::ResampleImageFilter<ImageType, ImageType>::New();
-    resampleFilter->SetInput(segITK);
-    resampleFilter->SetReferenceImage(lgeITK);
+    resampleFilter->SetInput(segItk);
+    resampleFilter->SetReferenceImage(im);
     resampleFilter->SetUseReferenceImage(true);
     resampleFilter->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageType>::New());
     resampleFilter->SetDefaultPixelValue(0);
     resampleFilter->UpdateLargestPossibleRegion();
 
-    segITK = resampleFilter->GetOutput();
-
     QString outputPath = (outImPath.isEmpty()) ? segImPath : outImPath;
+
+    mitk::Image::Pointer segIm = mitk::Image::New();
+    segIm = mitk::ImportItkImage(resampleFilter->GetOutput())->Clone();
+    mitk::IOUtil::Save(segIm, outputPath.toStdString());
 }
 
 ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName){
@@ -375,7 +377,6 @@ mitk::Image::Pointer CemrgAtrialTools::SurfSegmentation(ImageType::Pointer im, Q
     MITK_INFO << "Extracting Surface";
     mitk::Image::Pointer labelSegIm = mitk::Image::New();
     mitk::CastToMitkImage(im, labelSegIm);
-    QString path = dir + mitk::IOUtil::GetDirectorySeparator();
 
     mitk::Surface::Pointer segSurface = CemrgCommonUtils::ExtractSurfaceFromSegmentation(labelSegIm, th, bl, smth, ds);
     CemrgCommonUtils::FlipXYPlane(segSurface, dir, outName);

@@ -318,7 +318,11 @@ void AtrialFibresView::ConvertNII() {
 }
 
 void AtrialFibresView::AnalysisChoice(){
-    if(!RequestProjectDirectoryFromUser()) return;
+    MITK_INFO << "[AnalysisChoice]";
+    bool testRpdfu = RequestProjectDirectoryFromUser();
+    MITK_INFO(testRpdfu) << "Should continue";
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    MITK_INFO << "After directory selection checkup";
 
     bool userInputsAccepted = GetUserAnalysisSelectorInputs();
     if(userInputsAccepted){
@@ -1097,6 +1101,8 @@ void AtrialFibresView::ScarProjection(){
             MITK_INFO << "[SCAR_PROJECTION][ERROR] Wrong dimensions between LGE and ROI Image";
         }
 
+        QMessageBox::information(NULL, "Attention", "Scar projection finished!");
+
     }
 }
 
@@ -1284,6 +1290,7 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
 }
 
 bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
+    MITK_INFO << "[GetUserAnalysisSelectorInputs]";
     QString metadata = Path("prodMetadata.txt");
     bool userInputAccepted=false;
 
@@ -1299,46 +1306,47 @@ bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
             fi.close();
 
             userInputAccepted=true;
-
-        } else{
-            QDialog* inputs = new QDialog(0,0);
-            m_UISelector.setupUi(inputs);
-            connect(m_UISelector.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
-            connect(m_UISelector.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-            int dialogCode = inputs->exec();
-
-            //Act on dialog return code
-            if (dialogCode == QDialog::Accepted) {
-                uiSelector_img_scar = m_UISelector.check_img_scar->isChecked();
-
-                if(m_UISelector.radioBtn_img_auto->isChecked()){
-                    uiSelector_pipeline = 0;
-                    uiSelector_imgauto_skipCemrgNet = m_UISelector.check_img_auto_skipSeg->isChecked();
-                    uiSelector_imgauto_skipLabel = m_UISelector.check_img_auto_skipLabel->isChecked();
-                } else if(m_UISelector.radioBtn_img_man->isChecked()){
-                    uiSelector_pipeline = 1;
-                    uiSelector_man_useCemrgNet = m_UISelector.check_img_man_skipSeg->isChecked();
-                } else{
-                    uiSelector_pipeline = 2;
-                    uiSelector_img_scar = false;
-                }
-
-                std::ofstream fo(metadata.toStdString());
-                fo << uiSelector_pipeline << std::endl;
-                fo << uiSelector_imgauto_skipCemrgNet << std::endl;
-                fo << uiSelector_imgauto_skipLabel << std::endl;
-                fo << uiSelector_man_useCemrgNet << std::endl;
-                fo << uiSelector_img_scar << std::endl;
-                fo.close();
-
-                inputs->deleteLater();
-                userInputAccepted=true;
-
-            } else if (dialogCode == QDialog::Rejected) {
-                inputs->close();
-                inputs->deleteLater();
-            }//_if
         }
+    }
+
+    if(!userInputAccepted){
+        QDialog* inputs = new QDialog(0,0);
+        m_UISelector.setupUi(inputs);
+        connect(m_UISelector.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+        connect(m_UISelector.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+        int dialogCode = inputs->exec();
+
+        //Act on dialog return code
+        if (dialogCode == QDialog::Accepted) {
+            uiSelector_img_scar = m_UISelector.check_img_scar->isChecked();
+
+            if(m_UISelector.radioBtn_img_auto->isChecked()){
+                uiSelector_pipeline = 0;
+                uiSelector_imgauto_skipCemrgNet = m_UISelector.check_img_auto_skipSeg->isChecked();
+                uiSelector_imgauto_skipLabel = m_UISelector.check_img_auto_skipLabel->isChecked();
+            } else if(m_UISelector.radioBtn_img_man->isChecked()){
+                uiSelector_pipeline = 1;
+                uiSelector_man_useCemrgNet = m_UISelector.check_img_man_skipSeg->isChecked();
+            } else{
+                uiSelector_pipeline = 2;
+                uiSelector_img_scar = false;
+            }
+
+            std::ofstream fo(metadata.toStdString());
+            fo << uiSelector_pipeline << std::endl;
+            fo << uiSelector_imgauto_skipCemrgNet << std::endl;
+            fo << uiSelector_imgauto_skipLabel << std::endl;
+            fo << uiSelector_man_useCemrgNet << std::endl;
+            fo << uiSelector_img_scar << std::endl;
+            fo.close();
+
+            inputs->deleteLater();
+            userInputAccepted=true;
+
+        } else if (dialogCode == QDialog::Rejected) {
+            inputs->close();
+            inputs->deleteLater();
+        }//_if
     }
     SetLgeAnalysis(uiSelector_img_scar);
 
