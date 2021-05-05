@@ -96,7 +96,7 @@
      <item row="2" column="0">
       <widget class="QRadioButton" name="radioBtn_LIPV">
        <property name="text">
-        <string>Left Supreior (Posterior)</string>
+        <string>Left Superior (Posterior)</string>
        </property>
       </widget>
      </item>
