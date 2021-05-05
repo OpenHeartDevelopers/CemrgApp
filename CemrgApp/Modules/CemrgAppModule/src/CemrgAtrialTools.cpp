@@ -89,6 +89,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 CemrgAtrialTools::CemrgAtrialTools() {
     this->debugSteps = true;
+    this->debugMessages = false;
     this->surfLoaded = false;
     this->atriumSegmentation = ImageType::New();
     this->tagSegName = "labelled.nii";
@@ -172,7 +173,9 @@ void CemrgAtrialTools::AdjustSegmentationLabelToImage(QString segImPath, QString
 }
 
 void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath){
+    MITK_INFO(debugMessages) << ("[ResampleSegmentationLabelToImage] Loading " + segImPath).toStdString();
     ImageType::Pointer segItk = LoadImage(segImPath);
+    MITK_INFO(debugMessages) << ("[ResampleSegmentationLabelToImage] Loading " + imPath).toStdString();
     ImageType::Pointer im = LoadImage(imPath);
 
     itk::ResampleImageFilter<ImageType, ImageType>::Pointer resampleFilter;
@@ -183,12 +186,12 @@ void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QStri
     resampleFilter->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageType>::New());
     resampleFilter->SetDefaultPixelValue(0);
     resampleFilter->UpdateLargestPossibleRegion();
+    MITK_INFO(debugMessages) << "[ResampleSegmentationLabelToImage] finished resampling";
 
     QString outputPath = (outImPath.isEmpty()) ? segImPath : outImPath;
+    QFileInfo fo(outputPath);
 
-    mitk::Image::Pointer segIm = mitk::Image::New();
-    segIm = mitk::ImportItkImage(resampleFilter->GetOutput())->Clone();
-    mitk::IOUtil::Save(segIm, outputPath.toStdString());
+    SaveImageToDisk(resampleFilter->GetOutput(), fo.absolutePath(), fo.baseName());
 }
 
 ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName){
@@ -403,6 +406,27 @@ void CemrgAtrialTools::ProjectTagsOnSurface(ImageType::Pointer im, QString dir, 
 
     MITK_INFO << "Projection of image labels onto surface";
     surface = scar->Scar3D(dir.toStdString(), labelSegIm);
+    surface->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("elemTag");
+    surfLoaded=true;
+
+    QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
+    mitk::IOUtil::Save(surface, outputPath.toStdString());
+    MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
+}
+
+void CemrgAtrialTools::ProjectTagsOnExistingSurface(ImageType::Pointer im, QString dir, QString outName, QString existingSurfaceName){
+    mitk::Image::Pointer labelSegIm = mitk::Image::New();
+    mitk::CastToMitkImage(im, labelSegIm);
+
+    QString path = dir + mitk::IOUtil::GetDirectorySeparator();
+    std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
+    scar->SetMinStep(-1);
+    scar->SetMaxStep(3);
+    scar->SetMethodType(2);
+    scar->SetScarSegImage(labelSegIm);
+
+    MITK_INFO << "Projection of image labels onto surface";
+    surface = scar->Scar3D(dir.toStdString(), labelSegIm, existingSurfaceName.toStdString());
     surface->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("elemTag");
     surfLoaded=true;
 

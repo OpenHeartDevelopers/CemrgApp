@@ -197,13 +197,9 @@ void AtrialFibresClipperView::SetDirectoryFile(const QString directory, const QS
 void AtrialFibresClipperView::iniPreSurf() {
     //Find the selected node
     QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator() + AtrialFibresClipperView::fileName;
-    mitk::Surface::Pointer shell = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+    mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
 
-    CemrgCommonUtils::FlipXYPlane(shell, AtrialFibresClipperView::directory, AtrialFibresClipperView::fileName);
-    // if(automaticPipeline){
-    // }
     surface = shell;
-
 }
 
 // Manual pipeline

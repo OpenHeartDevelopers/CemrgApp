@@ -99,6 +99,7 @@ public:
     inline void SetAutomaticModeButtonsOff(){SetAutomaticModeButtons(false);};
 
     inline QString Path(QString fnameExt=""){return (directory+mitk::IOUtil::GetDirectorySeparator()+fnameExt);};
+    inline std::string StdStringPath(QString fnameExt=""){return (Path(fnameExt).toStdString());};
 
     QString LandmarkFilesCreated(QString defaultName, QString type);
 
@@ -155,7 +156,7 @@ private:
     bool automaticPipeline, analysisOnLge, resurfaceMesh;
 
     // user-defined parameters
-    double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds;
+    double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
     bool uiRemesh_isscalar, uiRemesh_extractParts;
     int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod, uiFormat_scale;

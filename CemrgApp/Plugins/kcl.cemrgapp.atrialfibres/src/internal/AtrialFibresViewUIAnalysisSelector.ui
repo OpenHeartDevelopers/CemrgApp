@@ -48,7 +48,7 @@
     </font>
    </property>
    <property name="text">
-    <string>User Configuration: Analysis Selector</string>
+    <string>Analysis Selector (Input Data)</string>
    </property>
   </widget>
   <widget class="QWidget" name="gridLayoutWidget">
@@ -61,24 +61,23 @@
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
+    <item row="7" column="0">
+     <widget class="QRadioButton" name="radioBtn_surf">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Surface Meshes (Manual)</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="2">
      <widget class="QCheckBox" name="check_img_man_skipSeg">
       <property name="text">
        <string>Automatic segmentation (CemrgNet)</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QCheckBox" name="check_img_auto_skipLabel">
-      <property name="text">
-       <string>Skip PV labelling step</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QCheckBox" name="check_img_auto_skipSeg">
-      <property name="text">
-       <string>Skip segmentation step (CemrgNet)</string>
       </property>
      </widget>
     </item>
@@ -94,7 +93,7 @@
        <string extracomment="Choose the value of X in the formula: X*IIR"/>
       </property>
       <property name="text">
-       <string>Analysis from Images</string>
+       <string>Images (Automatic)</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -105,16 +104,6 @@
      <widget class="Line" name="line">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <widget class="QCheckBox" name="check_img_scar">
-      <property name="text">
-       <string>Consider LGE scar projection</string>
-      </property>
-      <property name="checked">
-       <bool>false</bool>
       </property>
      </widget>
     </item>
@@ -133,23 +122,53 @@
        <string extracomment="Choose the value of X in the formula: MEAN + X*STDEV"/>
       </property>
       <property name="text">
-       <string>Manual Analysis from Images</string>
+       <string>Images (Manual)</string>
       </property>
       <property name="checked">
        <bool>false</bool>
       </property>
      </widget>
     </item>
-    <item row="6" column="0">
-     <widget class="QRadioButton" name="radioBtn_surf">
+    <item row="1" column="0">
+     <widget class="QCheckBox" name="check_img_auto_skipSeg">
+      <property name="text">
+       <string>Skip auto segmentation step</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QCheckBox" name="check_img_auto_skipLabel">
+      <property name="text">
+       <string>Skip PV labelling step</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="2">
+     <widget class="QCheckBox" name="check_img_scar">
+      <property name="text">
+       <string>Consider LGE scar projection</string>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QLabel" name="label">
       <property name="font">
        <font>
-        <weight>75</weight>
-        <bold>true</bold>
+        <family>MS Shell Dlg 2</family>
+        <pointsize>8</pointsize>
+        <weight>9</weight>
+        <italic>false</italic>
+        <bold>false</bold>
        </font>
       </property>
+      <property name="styleSheet">
+       <string notr="true">font: 75 8pt &quot;MS Shell Dlg 2&quot;;</string>
+      </property>
       <property name="text">
-       <string>Analysis from Surface Mesh (manual)</string>
+       <string>Images (optional)</string>
       </property>
      </widget>
     </item>

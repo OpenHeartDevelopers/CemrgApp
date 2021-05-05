@@ -297,7 +297,6 @@ void AtrialFibresView::ConvertNII() {
         type = (ctr==0) ? "LGE":"MRA";
         prodPath = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), prodPath, resampleImage, reorientToRAI);
-        CemrgCommonUtils::SavePadImageWithConstant(prodPath);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
             std::string key = "dicom.series.SeriesDescription";
@@ -367,8 +366,15 @@ void AtrialFibresView::AnalysisChoice(){
                 QMessageBox::information(NULL, "Attention", "Surface mesh needs to be regenerated.");
                 bool userInputAccepted = GetUserMeshingInputs();
                 if(userInputAccepted){
-                    mitk::Surface::Pointer surf = CemrgCommonUtils::ExtractSurfaceFromSegmentation(im, uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
-                    mitk::IOUtil::Save(surf, Path(tagName+".vtk").toStdString());
+                    mitk::Image::Pointer segIm = mitk::IOUtil::Load<mitk::Image>(Path(tagName+".nii").toStdString());
+                    CemrgCommonUtils::Binarise(segIm);
+                    mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
+
+                    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                    cmd->SetUseDockerContainers(true);
+
+                    cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
+
                 }
             }
 
@@ -459,9 +465,11 @@ void AtrialFibresView::AutomaticAnalysis(){
     bool userInputsAccepted = GetUserMeshingInputs();
 
     if(userInputsAccepted){
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
 
-        atrium->ProjectTagsOnSurface(tagAtriumAuto, directory, tagName+".vtk",
-            uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, true);
+        cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
+        atrium->ProjectTagsOnExistingSurface(tagAtriumAuto, directory, tagName+".vtk");
 
         MITK_INFO << "[AUTOMATIC_PIPELINE] Add the mesh to storage";
         QString path = prodPath + tagName + ".vtk";
@@ -494,8 +502,6 @@ void AtrialFibresView::SegmentIMGS() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
 
-    // int replyAuto = Ask("Question", "Do you want an automatic segmentation?");
-    // uiSelector_man_useCemrgNet
     if(uiSelector_man_useCemrgNet){
         //Check for selection of image
         QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
@@ -642,11 +648,17 @@ void AtrialFibresView::IdentifyPV(){
             if (image) {
 
                 MITK_INFO << "Mesh and save as 'segmentation.vtk'";
-                ImageType::Pointer segImage = ImageType::New();
-                mitk::CastToItkImage(image, segImage);
                 bool userInputsAccepted = GetUserMeshingInputs();
                 if(userInputsAccepted){
-                    atrium->SurfSegmentation(segImage, directory, "segmentation.vtk", uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds);
+
+                    MITK_INFO << "[IdentifyPV] Create clean segmentation";
+                    mitk::IOUtil::Save(image, StdStringPath("prodClean.nii"));
+
+                    MITK_INFO << "[IdentifyPV] Create surface file and projecting tags";
+                    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                    cmd->SetUseDockerContainers(true);
+
+                    cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
 
                     //Add the mesh to storage
                     std::string meshName = segNode->GetName() + "-Mesh";
@@ -680,14 +692,25 @@ void AtrialFibresView::CreateLabelledMesh(){
     ImageType::Pointer pveins = atrium->LoadImage(prodPath+"pVeinsLabelled.nii");
     pveins = atrium->AssignOstiaLabelsToVeins(pveins, directory, tagName);
 
-    MITK_INFO << "[AUTOMATIC_PIPELINE] Create Mesh";
+    MITK_INFO << "[CreateLabelledMesh] Create Mesh";
     //Ask for user input to set the parameters
     bool userInputsAccepted = GetUserMeshingInputs();
 
     if(userInputsAccepted){
+        MITK_INFO << "[CreateLabelledMesh] Create clean segmentation";
+        mitk::Image::Pointer segIm = mitk::Image::New();
+        mitk::CastToMitkImage(pveins, segIm);
+        CemrgCommonUtils::Binarise(segIm);
+        mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
 
-        atrium->ProjectTagsOnSurface(pveins, directory, tagName+".vtk",
-            uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_ds, true);
+        MITK_INFO << "[CreateLabelledMesh] Create surface file and projecting tags";
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+        int iter=1, blur=0, smth=10;
+        double th=0.5;
+
+        cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", iter, th, blur, smth);
+        atrium->ProjectTagsOnExistingSurface(pveins, directory, tagName+".vtk");
 
         MITK_INFO << "Add the mesh to storage";
         QString path = prodPath + tagName + ".vtk";
@@ -695,8 +718,6 @@ void AtrialFibresView::CreateLabelledMesh(){
         std::cout << "Path to load: " << path.toStdString() <<'\n';
         std::cout << "tagName: " << tagName.toStdString() << '\n';
         mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
-        // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
-        // CemrgCommonUtils::FlipXYPlane(surface, "");
 
         std::string meshName = tagName.toStdString() + "-Mesh";
         CemrgCommonUtils::AddToStorage(surface, meshName, this->GetDataStorage());
@@ -1057,11 +1078,19 @@ void AtrialFibresView::ScarProjection(){
     MITK_INFO << "[SCAR_PROJECTION][2] copy prodClean file to PVeinsCroppedImage";
     QString cleanPath = prodPath + "prodClean.nii";
     QString segPath = prodPath + "PVeinsCroppedImage.nii";
-    if(!QFile::copy(cleanPath, segPath)){
-        ImageType::Pointer im = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
-        mitk::IOUtil::Save(mitk::ImportItkImage(im), cleanPath.toStdString());
-        mitk::IOUtil::Save(mitk::ImportItkImage(im), segPath.toStdString());
+    if(automaticPipeline){
+        if(!QFile::copy(cleanPath, segPath)){
+            ImageType::Pointer im = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
+            mitk::IOUtil::Save(mitk::ImportItkImage(im), cleanPath.toStdString());
+            mitk::IOUtil::Save(mitk::ImportItkImage(im), segPath.toStdString());
+        }
+    } else{
+        mitk::Image::Pointer segImageMitk = mitk::IOUtil::Load<mitk::Image>(StdStringPath("PVeinsLabelled.nii"));
+        CemrgCommonUtils::Binarise(segImageMitk);
+        mitk::IOUtil::Save(segImageMitk, segPath.toStdString());
+        mitk::IOUtil::Save(segImageMitk, cleanPath.toStdString());
     }
+
     atrium->ResampleSegmentationLabelToImage(segPath, lgePath);
 
     MITK_INFO << "[SCAR_PROJECTION][3] convert tagname to segmentation.vtk";
@@ -1090,8 +1119,11 @@ void AtrialFibresView::ScarProjection(){
         ImageType::Pointer segITK = atrium->LoadImage(segPath, binarise);
         mitk::IOUtil::Save(atrium->ImErode(segITK), Path("roi.nii").toStdString());
 
-        atrium->ResampleSegmentationLabelToImage(lgePath, Path("roi.nii"));
-        mitk::Image::Pointer roiImage = mitk::IOUtil::Load<mitk::Image>(Path("roi.nii").toStdString());
+        atrium->ResampleSegmentationLabelToImage(Path("roi.nii"), lgePath);
+
+        FloatImageType::Pointer roiFloat = FloatImageType::New();
+        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(StdStringPath("roi.nii")), roiFloat);
+        mitk::Image::Pointer roiImage = mitk::ImportItkImage(roiFloat);
 
         if(scar->CalculateMeanStd(lge, roiImage, mean, stdv)){
             MITK_INFO << "[SCAR_PROJECTION][6] Saving normalised shell and prodThresholds.txt";
@@ -1368,15 +1400,15 @@ bool AtrialFibresView::GetUserMeshingInputs(){
         uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
         uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
         uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
-        uiMesh_ds= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
+        uiMesh_iter= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
 
         //Set default values
         if (!ok1 || !ok2 || !ok3 || !ok4)
             QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
         if (!ok1) uiMesh_th=0.5;
-        if (!ok2) uiMesh_bl=1.0;
-        if (!ok3) uiMesh_smth=3;
-        if (!ok4) uiMesh_ds=0.0;
+        if (!ok2) uiMesh_bl=0.0;
+        if (!ok3) uiMesh_smth=10;
+        if (!ok4) uiMesh_iter=1;
 
         inputs->deleteLater();
         userInputAccepted=true;
@@ -1522,22 +1554,24 @@ void AtrialFibresView::SetManualModeButtons(bool b){
 
     if(b){
         m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
+        m_Controls.button_0_landmarks->setText("    Step10: Select Landmarks");
+        m_Controls.button_0_calculateUac->setText("    Step11: Calculate UAC");
+        m_Controls.button_0_refineUac->setText("    Step12: Refine UAC");
     } else{
         m_Controls.button_auto4_meshpreproc->setText("    Step4: Mesh Preprocessing");
     }
 
-    m_Controls.button_0_landmarks->setText("    Step10: Select Landmarks");
-    m_Controls.button_0_calculateUac->setText("    Step11: Calculate UAC");
-    m_Controls.button_0_refineUac->setText("    Step12: Refine UAC");
 }
 
 void AtrialFibresView::SetAutomaticModeButtons(bool b){
     m_Controls.button_auto4_meshpreproc->setVisible(b);
     m_Controls.button_auto5_clipPV->setVisible(b);
 
-    m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
-    m_Controls.button_0_calculateUac->setText("    Step7: Calculate UAC");
-    m_Controls.button_0_refineUac->setText("    Step8: Refine UAC");
+    if(b){
+        m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
+        m_Controls.button_0_calculateUac->setText("    Step7: Calculate UAC");
+        m_Controls.button_0_refineUac->setText("    Step8: Refine UAC");
+    }
 }
 
 void AtrialFibresView::SetTagNameFromPath(QString path){

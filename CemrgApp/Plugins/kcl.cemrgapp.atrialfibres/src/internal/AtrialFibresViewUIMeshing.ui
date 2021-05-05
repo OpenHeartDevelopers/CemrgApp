@@ -46,6 +46,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QLineEdit" name="lineEdit_4">
+     <property name="placeholderText">
+      <string>'Close' iterations (default = 1)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLineEdit" name="lineEdit_1">
      <property name="placeholderText">
       <string>Threshold (default = 0.5)</string>
@@ -55,7 +62,7 @@
    <item>
     <widget class="QLineEdit" name="lineEdit_2">
      <property name="placeholderText">
-      <string>Blur (default = 1.0)</string>
+      <string>Blur (default = 0.0)</string>
      </property>
     </widget>
    </item>
@@ -65,14 +72,7 @@
       <string/>
      </property>
      <property name="placeholderText">
-      <string>Smooth (default = 3)</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="lineEdit_4">
-     <property name="placeholderText">
-      <string>Decimate (default = 0.0)</string>
+      <string>Smooth (default = 10)</string>
      </property>
     </widget>
    </item>

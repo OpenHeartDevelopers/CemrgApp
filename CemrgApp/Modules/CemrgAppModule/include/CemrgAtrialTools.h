@@ -92,10 +92,13 @@ public:
     ImageType::Pointer LoadImage(QString imagePath, bool binarise=false);
     ShortImageType::Pointer LoadShortImage(QString imagePath);
 
-    inline void SetDebugMode(bool s2d){debugSteps=s2d;};
+    inline void SetDebugMode(bool s2d){debugSteps=s2d; debugMessages=s2d;};
     inline void SetDebugModeOn(){SetDebugMode(true);};
     inline void SetDebugModeOff(){SetDebugMode(false);};
     inline bool Debugging(){return debugSteps;};
+    inline void SetDebugMessages(bool b){debugMessages=b;};
+    inline void SetDebugMessagesOn(){SetDebugMessages(true);};
+    inline void SetDebugMessagesOff(){SetDebugMessages(false);};
 
     inline void SetWorkingDirectory(QString wd){directory =wd;};
     inline void SetTagSegmentationName(QString tsn){tagSegName = tsn;};
@@ -138,6 +141,7 @@ public:
 
     mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
+    void ProjectTagsOnExistingSurface(ImageType::Pointer im, QString dir, QString outName, QString existingSurfaceName="segmentation.vtk");
     void ClipMitralValveAuto(QString dir, QString mvNameExt, QString outName, bool insideout=true);
 
     void SetSurfaceLabels(QString correctLabels, QString naiveLabels);
@@ -171,7 +175,7 @@ private:
     int abody, mv, laap, lipv, lspv, rspv, ripv;
     int naivelaap, naivelipv, naivelspv, naiverspv, naiveripv;
     std::vector<int> detectedLabels;
-    bool segmentationSet, debugSteps, surfLoaded;
+    bool segmentationSet, debugSteps, debugMessages,  surfLoaded;
     //Constant Vein Labels
     //const int LEFTSUPERIORPV  = 11;
     //const int LEFTINFERIORPV  = 13;

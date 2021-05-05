@@ -274,7 +274,7 @@ void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
         ++imIter;
     }
 
-    mitk::CastToMitkImage(im, image);
+    image = mitk::ImportItkImage(im)->Clone();
 
 }
 
