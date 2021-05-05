@@ -54,6 +54,9 @@ public:
     static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=false, bool reorientToRAI=false);
     static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=false, bool reorientToRAI=false);
 
+    // Image Analysis Utils
+    static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
+
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
     static void RoundPixelValues(QString pathToImage, QString outputPath="");
@@ -68,6 +71,7 @@ public:
     static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
+    static void FillHoles(mitk::Surface::Pointer surf, QString dir="", QString vtkname="");
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);

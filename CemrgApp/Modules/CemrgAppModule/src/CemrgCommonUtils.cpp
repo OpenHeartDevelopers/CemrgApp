@@ -67,6 +67,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkCellDataToPointData.h>
+#include <vtkFillHolesFilter.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -273,6 +274,43 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
     }//_if
 
     return successful;
+}
+
+void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath){
+    using ImageType = itk::Image<short,3>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    ImageType::SizeType size;
+    size[0] = image->GetDimension(0);
+    size[1] = image->GetDimension(1);
+    size[2] = image->GetDimension(2);
+
+    ImageType::IndexType pixelIndexStart, pixelIndexEnd;
+
+    for (ImageType::IndexValueType ix = 0; ix < 3; ix++) {
+        for (ImageType::IndexValueType jx = 0; jx < size[(ix+1)%3]; jx++) {
+            for (ImageType::IndexValueType kx = 0; kx < size[(ix+2)%3]; kx++) {
+                pixelIndexStart[ix] = 0;
+                pixelIndexStart[(ix+1)%3] = jx;
+                pixelIndexStart[(ix+2)%3] = kx;
+
+                pixelIndexEnd[ix] = size[ix]-1;
+                pixelIndexEnd[(ix+1)%3] = jx;
+                pixelIndexEnd[(ix+2)%3] = kx;
+
+                im->SetPixel(pixelIndexStart, 0);
+                im->SetPixel(pixelIndexEnd, 0);
+            }
+        }
+    }
+
+    mitk::Image::Pointer outImg = mitk::Image::New();
+    outImg = mitk::ImportItkImage(im)->Clone();
+    if(!outPath.isEmpty()){
+        mitk::IOUtil::Save(outImg, outPath.toStdString());
+    }
 }
 
 void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath){
@@ -777,6 +815,22 @@ mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(
 
     return node;
 }
+
+void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QString vtkname){
+    vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
+    vtkSmartPointer<vtkFillHolesFilter> fillholes = vtkSmartPointer<vtkFillHolesFilter>::New();
+    fillholes->SetInputData(pd);
+    fillholes->Update();
+
+    surf->SetVtkPolyData(fillholes->GetOutput());
+
+    if(!dir.isEmpty() && !vtkname.isEmpty()){
+        vtkname += (!vtkname.contains(".vtk")) ? ".vtk" : "";
+        QString outPath = dir + mitk::IOUtil::GetDirectorySeparator()+vtkname;
+        mitk::IOUtil::Save(surf, outPath.toStdString());
+    }
+}
+
 
 //UTILities for CARP - operations with .elem and .pts files
 void CemrgCommonUtils::OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling){
