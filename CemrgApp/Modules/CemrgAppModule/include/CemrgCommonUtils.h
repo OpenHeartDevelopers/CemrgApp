@@ -56,6 +56,7 @@ public:
 
     // Image Analysis Utils
     static void Binarise(mitk::Image::Pointer image, float background=0);
+    static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
 
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
@@ -77,6 +78,7 @@ public:
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
     static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
     static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="");
+    static void FillHoles(mitk::Surface::Pointer surf, QString dir="", QString vtkname="");
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
