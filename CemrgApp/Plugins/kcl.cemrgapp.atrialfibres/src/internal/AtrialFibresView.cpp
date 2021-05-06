@@ -534,7 +534,8 @@ void AtrialFibresView::SegmentIMGS() {
 
                 //Clean prediction
                 ImageType::Pointer segImage = atrium->RemoveNoiseFromAutomaticSegmentation(directory);
-                cnnPath = UserIncludeLgeAnalysis((prodPath + "LA.nii"), segImage);
+                atrium->SaveImageToDisk(segImage, directory, "LA.nii");
+                cnnPath = UserIncludeLgeAnalysis(Path("LA.nii"), segImage);
 
                 mitk::Image::Pointer im = mitk::ImportItkImage(segImage);
                 CemrgCommonUtils::Binarise(im);
