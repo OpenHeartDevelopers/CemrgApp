@@ -56,6 +56,7 @@ public:
 
     // Image Analysis Utils
     static void Binarise(mitk::Image::Pointer image, float background=0);
+    static mitk::Image::Pointer ReturnBinarised(mitk::Image::Pointer image, float background=0);
     static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
 
     //Nifti Conversion Utils

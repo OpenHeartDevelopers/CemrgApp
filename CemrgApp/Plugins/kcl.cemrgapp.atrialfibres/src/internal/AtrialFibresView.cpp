@@ -1087,7 +1087,7 @@ void AtrialFibresView::ScarProjection(){
         }
     } else{
         mitk::Image::Pointer segImageMitk = mitk::IOUtil::Load<mitk::Image>(StdStringPath("PVeinsLabelled.nii"));
-        CemrgCommonUtils::Binarise(segImageMitk);
+        segImageMitk = CemrgCommonUtils::ReturnBinarised(segImageMitk);
         mitk::IOUtil::Save(segImageMitk, segPath.toStdString());
         mitk::IOUtil::Save(segImageMitk, cleanPath.toStdString());
     }
@@ -1339,6 +1339,8 @@ bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
             fi.close();
 
             userInputAccepted=true;
+
+            MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
         }
     }
 
@@ -1599,8 +1601,10 @@ bool AtrialFibresView::LoadSurfaceChecks(){
         }
     }
 
-    prodPath = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
-    MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + prodPath).toStdString();
+    if(success){
+        prodPath = directory + mitk::IOUtil::GetDirectorySeparator() + tagName + ".vtk";
+        MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + prodPath).toStdString();
+    }
 
     return success;
 }

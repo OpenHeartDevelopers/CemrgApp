@@ -276,7 +276,28 @@ void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
     }
 
     image = mitk::ImportItkImage(im)->Clone();
+}
 
+mitk::Image::Pointer CemrgCommonUtils::ReturnBinarised(mitk::Image::Pointer image, float background){
+    using ImageType = itk::Image<float, 3>;
+    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        float value = (imIter.Get() > background) ? 1 : 0;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outImg = mitk::Image::New();
+    mitk::CastToMitkImage(im, outImg);
+    return outImg;
 }
 
 bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient) {
@@ -303,6 +324,7 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
 
 mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer image, int vxlsToExtend, short constant){
     using ImageType = itk::Image<short,3>;
+    MITK_WARN(constant != 0) << "Constant != 0 not supported yet";
 
     ImageType::Pointer inputImg = ImageType::New();
     mitk::CastToItkImage(image, inputImg);
@@ -360,9 +382,9 @@ void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QS
 
     ImageType::IndexType pixelIndexStart, pixelIndexEnd;
 
-    for (ImageType::IndexValueType ix = 0; ix < 3; ix++) {
-        for (ImageType::IndexValueType jx = 0; jx < size[(ix+1)%3]; jx++) {
-            for (ImageType::IndexValueType kx = 0; kx < size[(ix+2)%3]; kx++) {
+    for (unsigned int ix = 0; ix < 3; ix++) {
+        for (unsigned int jx = 0; jx < size[(ix+1)%3]; jx++) {
+            for (unsigned int kx = 0; kx < size[(ix+2)%3]; kx++) {
                 pixelIndexStart[ix] = 0;
                 pixelIndexStart[(ix+1)%3] = jx;
                 pixelIndexStart[(ix+2)%3] = kx;
@@ -924,7 +946,6 @@ mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Point
         dimensions[ix] = static_cast<int>(std::ceil((bounds[ix * 2 + 1] - bounds[ix * 2]) / spacing[ix]));
     }
 
-    double calcOrigin[3];
     for (int jx = 0; jx < 3; jx++) {
         origin[jx] = bounds[2*jx] + spacing[jx]/2;
     }
