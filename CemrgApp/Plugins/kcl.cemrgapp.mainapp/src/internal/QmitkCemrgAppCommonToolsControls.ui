@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>222</width>
-    <height>161</height>
+    <height>281</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -64,6 +64,13 @@
     <widget class="QPushButton" name="button_4">
      <property name="text">
       <string>Pad Image Edges with Constant</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_5">
+     <property name="text">
+      <string>Binarise Image</string>
      </property>
     </widget>
    </item>

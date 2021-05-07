@@ -60,6 +60,7 @@ protected slots:
     void ConvertToCartoUITextUpdate();
     void ConvertCarpToVtk();
     void PadImageEdgesWithConstant();
+    void BinariseImage();
 
 protected:
 

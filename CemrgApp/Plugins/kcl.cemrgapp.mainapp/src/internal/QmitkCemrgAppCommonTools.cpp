@@ -56,6 +56,7 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_2, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
     connect(m_Controls.button_3, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertCarpToVtk);
     connect(m_Controls.button_4, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::PadImageEdgesWithConstant);
+    connect(m_Controls.button_5, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::BinariseImage);
 }
 
 void QmitkCemrgAppCommonTools::SetFocus() {
@@ -306,4 +307,21 @@ void QmitkCemrgAppCommonTools::PadImageEdgesWithConstant(){
         QMessageBox::information(NULL, "Attention", "Operation finished. File created");
     }
 
+}
+
+void QmitkCemrgAppCommonTools::BinariseImage(){
+    QString pathToImage = "";
+    pathToImage = QFileDialog::getOpenFileName(NULL, "Open image file");
+    if (pathToImage.isEmpty()) {
+        QMessageBox::warning(NULL, "Attention", "Select Correct Input (.nii) File!");
+        return;
+    }
+
+    QFileInfo fi(pathToImage);
+    QString outPath = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + "-bin" + fi.suffix();
+
+    mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(pathToImage.toStdString());
+    mitk::Image::Pointer outIm = CemrgCommonUtils::ReturnBinarised(im);
+
+    mitk::IOUtil::Save(outIm, outPath.toStdString());
 }
