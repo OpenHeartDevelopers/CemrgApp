@@ -289,9 +289,9 @@ void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QS
 
     ImageType::IndexType pixelIndexStart, pixelIndexEnd;
 
-    for (ImageType::IndexValueType ix = 0; ix < 3; ix++) {
-        for (ImageType::IndexValueType jx = 0; jx < size[(ix+1)%3]; jx++) {
-            for (ImageType::IndexValueType kx = 0; kx < size[(ix+2)%3]; kx++) {
+    for (unsigned int ix = 0; ix < 3; ix++) {
+        for (unsigned int jx = 0; jx < size[(ix+1)%3]; jx++) {
+            for (unsigned int kx = 0; kx < size[(ix+2)%3]; kx++) {
                 pixelIndexStart[ix] = 0;
                 pixelIndexStart[(ix+1)%3] = jx;
                 pixelIndexStart[(ix+2)%3] = kx;
