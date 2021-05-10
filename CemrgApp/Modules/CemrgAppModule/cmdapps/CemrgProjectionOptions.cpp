@@ -56,6 +56,7 @@ in the framework.
 // Qt
 #include <QtDebug>
 #include <QString>
+#include <QDir>
 #include <QFileInfo>
 #include <QProcess>
 #include <QMessageBox>
@@ -89,15 +90,15 @@ int main(int argc, char* argv[]) {
                 "input-lge", "i", mitkCommandLineParser::InputFile,
                 "LGE path", "Full path of LGE.nii file.",
                 us::Any(), false);
-    parser.addArgument(
-                "output-name", "o", mitkCommandLineParser::String,
-                "Output filename", "Name of output. NO EXTENSION. Saved in same directory as <input-lge>.");
     parser.addArgument( // optional
-                "single-voxel-projection", "svp", mitkCommandLineParser::String,
-                "Single Voxel Projection", "Project LGE voxels onto Scar Map ONLY ONCE (Default=ON)");
+                "thresholds-method", "m", mitkCommandLineParser::Int,
+                "Thresholds method", "Choose between IIR*V (1) and M + STDV*V (2). (Default=2)");
+    parser.addArgument( // optional
+                "single-voxel-projection", "svp", mitkCommandLineParser::Bool,
+                "Single Voxel Projection", "Project LGE voxels onto Scar Map ONLY ONCE (Default=OFF)");
     parser.addArgument( // optional
                 "multi-thresholds", "t", mitkCommandLineParser::Bool,
-                "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1, 2, 2.3, 3.3, 4 and 5\n\t (V*IIR) V = 0.86,0.97, 1.16, 1.2 and 1.32");
+                "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1:0.1:5\n\t (V*IIR) V = 0.7:0.01:1.61");
     parser.addArgument( // optional
                 "verbose", "v", mitkCommandLineParser::Bool,
                 "Verbose Output", "Whether to produce verbose output");
@@ -116,43 +117,53 @@ int main(int argc, char* argv[]) {
 
     // Parse, cast and set required arguments
     // auto inFilename = us::any_cast<std::string>(parsedArgs["input-path"]);
+    MITK_INFO << "Parsing mandatory arguments";
     auto inFilename2 = us::any_cast<std::string>(parsedArgs["input-lge"]);
 
     // Default values for optional arguments
-    auto outFilename = "";
-    auto singlevoxelprojection = true;
+    // std::string prodthresfile = "prodThresholds.txt";
+    auto thresmethod = 2;
+    auto singlevoxelprojection = false;
     auto multithreshold = false;
     auto verbose = false;
 
-    // Parse, cast and set optional arguments
-    if(parsedArgs.end() != parsedArgs.find("output-name")){
-        outFilename = us::any_cast<std::string>(parsedArgs["output-name"]);
-    }
+    // Parse, cast and set optional argument
+    MITK_INFO << "Parsing optional arguments";
 
-    if (parsedArgs.end() != parsedArgs.find("single-voxel-projection")) {
-        singlevoxelprojection = us::any_cast<bool>(parsedArgs["single-voxel-projection"]);
+    if(parsedArgs.end() != parsedArgs.find("thresholds-method")){
+        thresmethod = us::any_cast<int>(parsedArgs["thresholds-method"]);
     }
 
     if (parsedArgs.end() != parsedArgs.find("multi-thresholds")) {
         multithreshold = us::any_cast<bool>(parsedArgs["multi-thresholds"]);
     }
+    std::cout << "multithresh" << multithreshold << '\n';
+
+    if (parsedArgs.end() != parsedArgs.find("single-voxel-projection")) {
+        singlevoxelprojection = us::any_cast<bool>(parsedArgs["single-voxel-projection"]);
+    }
+    std::cout << "single voxel " << singlevoxelprojection << '\n';
 
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
+    std::cout << "verbose" << verbose << '\n';
 
+    MITK_INFO << "Program starting...";
     try{
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
 
+        int method = thresmethod;
+        QString methodPref = (method==2) ? "MplusSD_" : "IIR_";
+        MITK_INFO(method==1) << "IIR METHOD";
+        MITK_INFO(method==2) << "M + SD METHOD";
+
         // PARSING ARGUMENTS
         QString lgename = QString::fromStdString(inFilename2);
         QString segvtk = "segmentation.vtk";
-        QString outname = QString::fromStdString(outFilename);
-        if(outname.isEmpty()){
-            outname = "MaxScar";
-        }
-        outname += singlevoxelprojection ? "-single-voxel" : "";
+        QString outname = methodPref+"MaxScar";
+        outname += singlevoxelprojection ? "-single-voxel" : "-repeated-voxels";
         outname += ".vtk";
 
         MITK_INFO(verbose) << "Obtaining input file path and working directory: ";
@@ -161,7 +172,13 @@ int main(int argc, char* argv[]) {
         QFileInfo fi(lgename);
         QString direct = fi.absolutePath();
         QString lgePath = fi.absoluteFilePath();
-        QString outputPath = direct + mitk::IOUtil::GetDirectorySeparator() + outname;
+        QString outputFolder = direct + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + "_OUTPUT" + mitk::IOUtil::GetDirectorySeparator();
+
+        QDir d(outputFolder);
+
+        if(!d.exists(outputFolder)){
+            MITK_INFO(d.mkpath(outputFolder)) << "Output folder created";
+        }
 
         typedef itk::Image<short, 3> ImageTypeCHAR;
         typedef itk::Image<short, 3> ImageTypeSHRT;
@@ -176,6 +193,9 @@ int main(int argc, char* argv[]) {
         scar->SetMinStep(minStep);
         scar->SetMaxStep(maxStep);
         scar->SetMethodType(methodType);
+
+        MITK_INFO(singlevoxelprojection) << "Setting Single voxel projection";
+        MITK_INFO(!singlevoxelprojection) << "Setting multiple voxels projection";
         scar->SetVoxelBasedProjection(singlevoxelprojection);
 
         ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
@@ -227,69 +247,40 @@ int main(int argc, char* argv[]) {
 
         MITK_INFO(verbose) << "Saving new scar map to " + outname.toStdString();
 
-        mitk::IOUtil::Save(scarShell, (prodPath + outname).toStdString());
-        scar->SaveNormalisedScalars(mean, scarShell, prodPath + "Normalised_" + outname);
+        mitk::IOUtil::Save(scarShell, (outputFolder + outname).toStdString());
+        scar->SaveNormalisedScalars(mean, scarShell, outputFolder + "Normalised_" + outname);
 
-        QFileInfo fi2(prodPath + outname);
+        QFileInfo fi2(outputFolder + outname);
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
 
         MITK_INFO(verbose) << "Writing to pordStats file" + prothresfile.toStdString();
-
-        int method;
-        double value, thres, percentage;
-        double data1[5];
-        ifstream prodFileRead;
-        QString fileRead = prodPath + "prodThresholds.txt";
-        prodFileRead.open(fileRead.toStdString());
-
-        MITK_INFO << "READ FILE: " + fileRead.toStdString();
-        MITK_INFO(verbose) <<  "Data READ:";
-        for(int i = 0; i < 5; i++) {
-            prodFileRead >> data1[i];
-            MITK_INFO(verbose) << data1[i];
-        }
-
-        value = data1[0];
-        method = data1[1];
-        thres = data1[4];
-
-        prodFileRead.close();
-
         ofstream prodFile1;
-        prodFile1.open((prodPath + prothresfile).toStdString());
-        prodFile1 << value << std::endl;
-        prodFile1 << method << std::endl;
+        prodFile1.open((outputFolder + prothresfile).toStdString());
+        prodFile1 << methodPref.toStdString() << std::endl;
         prodFile1 << mean << std::endl;
         prodFile1 << stdv << std::endl;
-        prodFile1 << thres << std::endl;
-
-        percentage = scar->Thresholding(thres);
-        prodFile1 << "SCORE:" << percentage << "%" << std::endl;
 
         if (multithreshold) {
             MITK_INFO << "Scores for multiple thresholds.";
             prodFile1 << "MULTIPLE SCORES:" << std::endl;
-            if (method == 2) {
-                double manyvalues[6] = {1, 2, 2.3, 3.3, 4, 5};
-                for(int i = 0; i < 6; i++) {
-                    double thisthres = mean + manyvalues[i]*stdv;
-                    double thispercentage = scar->Thresholding(thisthres);
-                    prodFile1 << "V = " << manyvalues[i] <<
-                                 ", SCORE:" << thispercentage << "%" << std::endl;
-                }
-            } // mean + V*stdv
-            else {
-                double manyvalues[5] = {0.86, 0.97, 1.16, 1.2, 1.32};
-                for(int i = 0; i < 5; i++) {
-                    double thisthres = mean*manyvalues[i];
-                    double thispercentage = scar->Thresholding(thisthres);
-                    prodFile1 << "V = " << manyvalues[i] <<
-                                 ", SCORE:" << thispercentage << "%" << std::endl;
-                }
-            } // V*IIR
+            double startVal, endVal, increment;
+
+            startVal = (method == 2) ? 1.0 : 0.7;
+            endVal = (method == 2) ? 5.0 : 1.61;
+            increment = (method == 2) ? 0.1 : 0.01;
+
+            double thisVal = startVal;
+            while (thisVal <= endVal) {
+                double thisthres = (method == 2) ? mean + thisVal*stdv : mean*thisVal;
+                double thispercentage = scar->Thresholding(thisthres);
+                prodFile1 << "V=" << thisVal << ", SCORE=" << thispercentage << std::endl;
+
+                thisVal += increment;
+            }
         }
 
         prodFile1.close();
+
 
         MITK_INFO(verbose) << "Goodbye!";
     }
