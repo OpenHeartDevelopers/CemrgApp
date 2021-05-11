@@ -189,18 +189,20 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
     MITK_INFO << "[SaveRoughPoints] Saving rough points to file.";
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     QString outname = "prodRoughLandmarks";
-    ofstream fileRough;
+    ofstream fileRough, fileRoughLabels;
 
     // vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
     // vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
 
     MITK_INFO << "[SaveRoughPoints] Saving TXT file.";
     fileRough.open((prodPath + outname + ".txt").toStdString());
+    fileRoughLabels.open((prodPath + outname + "-Labels.txt").toStdString());
     for (unsigned int i=0; i<roughSeedLabels.size(); i++){
         vtkIdType vId = roughSeedIds->GetId(i);
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
-        fileRough << std::setprecision(12) << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
+        fileRough << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
+        fileRoughLabels << GetStructureIdFromLabel(false, roughSeedLabels.at(i)) << "\n";
         // points->InsertNextPoint(point);
     }
     fileRough.close();
@@ -229,17 +231,20 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
     QString outname = "prodRefinedLandmarks";
     ofstream fileRefined;
+    ofstream fileRough, fileRefinedLabels;
 
     // vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
     // vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
 
     MITK_INFO << "[SaveRefinedPoints] Saving TXT file.";
     fileRefined.open((prodPath + outname + ".txt").toStdString());
+    fileRefinedLabels.open((prodPath + outname + "-Labels.txt").toStdString());
     for (unsigned int i=0; i<refinedSeedLabels.size(); i++){
         vtkIdType vId = refinedSeedIds->GetId(i);
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
-        fileRefined << std::setprecision(12) << vId << "," << point[0] << "," << point[1] << "," << point[2] << "\n";
+        fileRefined << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
+        fileRefinedLabels << GetStructureIdFromLabel(true, roughSeedLabels.at(i)) << "\n";
         // points->InsertNextPoint(point);
     }
     fileRefined.close();
@@ -607,4 +612,39 @@ void AtrialFibresLandmarksView::UserSelectPvRefinedLabel(){
     } else if (dialogCode == QDialog::Rejected) {
         inputsRefined->close();
     }//_if
+}
+
+std::string AtrialFibresLandmarksView::GetStructureIdFromLabel(bool refinedLandmarks, int label){
+    QString res;
+    if(!refinedLandmarks){
+        if(label==11){
+            res = "LSPV";
+        }else if(label==13){
+            res = "LIPV";
+        }else if(label==15){
+            res = "RSPV";
+        }else if(label==17){
+            res = "RIPV";
+        }else if(label==19){
+            res = "LAA_BASE";
+        }else if(label==21){
+            res = "LAA_TIP";
+        }
+    } else{
+        if(label==11){
+            res = "LSPV_ROOF";
+        }else if(label==13){
+            res = "LSPV_POST";
+        }else if(label==15){
+            res = "RSPV_ROOF";
+        }else if(label==17){
+            res = "RIPV_POST";
+        }else if(label==19){
+            res = "LAA";
+        }else if(label==22){
+            res = "FO";
+        }
+    }
+
+    return res.toStdString();
 }

@@ -66,6 +66,7 @@ public:
     std::string GetShortcuts();
     std::string GetRoughPointsGuide();
     std::string GetRefinedPointsGiude();
+    std::string GetStructureIdFromLabel(bool refinedLandmarks, int label);
 
 protected slots:
 
