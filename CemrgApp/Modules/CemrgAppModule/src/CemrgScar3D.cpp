@@ -168,7 +168,7 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         if (scalar < minScalar) minScalar = scalar;
 
         sdev = (scalar-mean) / sqrt(var);
-        sratio = mean ? scalar / mean : scalar;
+        sratio = mean ? scalar / mean : std::numeric_limits<decltype(sratio)>::max();
 
         if (maxSdev < sdev) maxSdev = sdev;
         if (maxSratio < sratio) maxSratio = sratio;

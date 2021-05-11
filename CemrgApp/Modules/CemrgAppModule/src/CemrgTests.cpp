@@ -334,7 +334,7 @@ void flattening() {
     //filter->SetScale(scale);
     try {
         filter->Update();
-    } catch(itk::ExceptionObject & excp) {
+    } catch(itk::ExceptionObject&) {
     }
     MeshType::Pointer mesh = filter->GetOutput();
 
