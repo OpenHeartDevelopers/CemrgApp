@@ -94,7 +94,7 @@ void QmitkCemrgAppCommonTools::ConvertToCarto() {
     if (fullPathInfo.dir().exists("prodThresholds.txt")) {
 
         //Threshold file
-        QString tPath = fullPathInfo.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "prodThresholds.txt";
+        QString tPath = fullPathInfo.absolutePath() + "/prodThresholds.txt";
         ifstream prodFileRead(tPath.toStdString());
         if (prodFileRead.is_open()) {
 
@@ -222,7 +222,7 @@ void QmitkCemrgAppCommonTools::ConvertCarpToVtk(){
     }
     QFileInfo fi(pathElem);
     QString dir = fi.absolutePath();
-    QString vtkPath = dir + mitk::IOUtil::GetDirectorySeparator() +  fi.baseName() + ".vtk";
+    QString vtkPath = dir + "/" +  fi.baseName() + ".vtk";
 
     pathPts = QFileDialog::getOpenFileName(NULL, "Open Mesh .pts File", dir.toStdString().c_str());
 

@@ -202,7 +202,7 @@ void MmeasurementView::ConvertNII() {
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
+        path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
@@ -217,7 +217,7 @@ void MmeasurementView::ConvertNII() {
 
     //Load first item
     ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
+    path = directory + "/dcm-" + QString::number(ctr) + ".nii";
     mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
@@ -263,7 +263,7 @@ void MmeasurementView::CropinIMGS() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
         mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
+        path = directory + "/" + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
         mitk::IOUtil::Save(outputImage, path.toStdString());
         mitk::ProgressBar::GetInstance()->Progress();
         this->BusyCursorOff();
@@ -286,7 +286,7 @@ void MmeasurementView::CropinIMGS() {
             for (int i=1; i<timePoints; i++) {
 
                 mitk::Image::Pointer inputImage;
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
+                path = directory + "/dcm-" + QString::number(i) + ".nii";
                 try {
                     inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
                 } catch(const std::exception&) {
@@ -397,7 +397,7 @@ void MmeasurementView::ResampIMGS() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 mitk::Image::Pointer outputImage = CemrgCommonUtils::Downsample(image, factor);
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + imgNode->GetName().c_str() + ".nii";
+                path = directory + "/" + imgNode->GetName().c_str() + ".nii";
                 mitk::IOUtil::Save(outputImage, path.toStdString());
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -419,7 +419,7 @@ void MmeasurementView::ResampIMGS() {
                     for (int i=1; i<timePoints; i++) {
 
                         mitk::Image::Pointer inputImage;
-                        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
+                        path = directory + "/dcm-" + QString::number(i) + ".nii";
                         try {
                             inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
                         } catch(const std::exception&) {
@@ -559,18 +559,13 @@ void MmeasurementView::Tracking() {
         if (time.isEmpty()) {
             ofstream file;
             //Absolute path
-            QString aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
-#if defined(__APPLE__)
-            aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                    mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                    mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
-#endif
-            file.open(aPath.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst");
-            file << directory << mitk::IOUtil::GetDirectorySeparator() << "dcm- .nii" << endl;
+            QString aPath = QCoreApplication::applicationDirPath() + "/MLib";
+            file.open(aPath.toStdString() + "/imgTimes.lst");
+            file << directory << "/dcm- .nii" << endl;
             for (int i=0; i<timePoints; i++)
                 file << i << " " << i*10 << endl;
             file.close();
-            time = aPath + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
+            time = aPath + "/imgTimes.lst";
         }//_if
 
         //Commandline execution
@@ -652,7 +647,7 @@ void MmeasurementView::Applying() {
             if (dialogCode == QDialog::Accepted) {
 
                 //Load input mesh, dofin file
-                QString input = directory + mitk::IOUtil::GetDirectorySeparator() + "input.vtk";
+                QString input = directory + "/input.vtk";
                 QString dofin = m_UIApplying.lineEdit_3->text();
 
                 //Load initial time, number of frames, smoothness
@@ -721,7 +716,7 @@ void MmeasurementView::WriteFileButton() {
         if (ok && !fileName.isEmpty() && fileName.endsWith(".csv")) {
 
             ofstream file;
-            file.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+            file.open(directory.toStdString() + "/" + fileName.toStdString());
             std::vector<double> values;
             for (int i=0; i<timePoints*smoothness; i++)
                 values.push_back(plotValueVectors[i]);

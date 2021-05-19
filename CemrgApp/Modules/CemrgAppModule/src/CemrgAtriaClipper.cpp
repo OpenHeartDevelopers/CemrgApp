@@ -89,7 +89,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
     try {
 
 		MITK_INFO << "Producibility test. ";
-        QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+        QString prodPath = directory + "/";
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
         ofstream prodFile1;
         prodFile1.open((prodPath + "prodSeedLabels.txt").toStdString());
@@ -265,7 +265,7 @@ void CemrgAtriaClipper::ClipVeinsMesh(std::vector<int> pickedSeedLabels) {
     }//_for
 
     //Save clipped mesh
-    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
+    QString path = directory + "/segmentation.vtk";
     mitk::IOUtil::Save(clippedSurface, path.toStdString());
 }
 
@@ -327,7 +327,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             double diam = diams->GetValue(position);
 
             ofstream morphResult;
-            QString morphPath = directory + mitk::IOUtil::GetDirectorySeparator() + "morphResults.txt";
+            QString morphPath = directory + "/morphResults.txt";
             morphResult.open(morphPath.toStdString(), std::ios_base::app);
             if (i == 0)
                 morphResult << "NO " << --noPV << "\n";
@@ -350,7 +350,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             polygonPolyData->SetPoints(centreLinePointPlanes.at(i));
             polygonPolyData->SetPolys(polygons);
             circle = polygonPolyData;
-            QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "manualType2Clipper.vtk";
+            QString path = directory + "/manualType2Clipper.vtk";
             vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
             writer->SetInputData(circle);
             writer->SetFileName(path.toStdString().c_str());
@@ -370,7 +370,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
          * Producibility Test
          **/
         try {
-            QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+            QString prodPath = directory + "/";
             mitk::Surface::Pointer prodSurf = mitk::Surface::New();
             prodSurf->SetVtkPolyData(circle);
             mitk::IOUtil::Save(prodSurf, (prodPath + "prodCutter" + QString::number(i) + ".vtk").toStdString());
@@ -551,16 +551,16 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
     }//_for
 
     //Save image with individual veins labelled
-    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsLabelled.nii";
+    QString path = directory + "/PVeinsLabelled.nii";
     mitk::Image::Pointer pvLabelled = mitk::ImportItkImage(pvLblsItkImage)->Clone();
     mitk::IOUtil::Save(pvLabelled, path.toStdString());
     if (morphAnalysis) {
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "AnalyticBloodpool.nii";
+        path = directory + "/AnalyticBloodpool.nii";
         mitk::IOUtil::Save(pvLabelled, path.toStdString());
     }//_if
 
     //Save clipped image
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
+    path = directory + "/PVeinsCroppedImage.nii";
     mitk::Image::Pointer pvCropped = mitk::ImportItkImage(segItkImage)->Clone();
     mitk::IOUtil::Save(pvCropped, path.toStdString());
     clippedSegImage = pvCropped;

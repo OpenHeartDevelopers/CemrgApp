@@ -192,7 +192,7 @@ void EASIView::ConvertNII() {
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
+        path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
@@ -207,7 +207,7 @@ void EASIView::ConvertNII() {
 
     //Load first item
     ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
+    path = directory + "/dcm-" + QString::number(ctr) + ".nii";
     mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
@@ -243,7 +243,7 @@ void EASIView::CropinIMGS() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
         mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
+        path = directory + "/" + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
         mitk::IOUtil::Save(outputImage, path.toStdString());
         mitk::ProgressBar::GetInstance()->Progress();
         this->BusyCursorOff();
@@ -337,7 +337,7 @@ void EASIView::ResampIMGS() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 mitk::Image::Pointer outputImage = CemrgCommonUtils::Downsample(image, factor);
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + imgNode->GetName().c_str() + ".nii";
+                path = directory + "/" + imgNode->GetName().c_str() + ".nii";
                 mitk::IOUtil::Save(outputImage, path.toStdString());
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -448,7 +448,7 @@ void EASIView::CreateMesh() {
                 header[255] = '\n';
 
                 //Write to binary file
-                std::string path = (directory + mitk::IOUtil::GetDirectorySeparator() + "converted.inr").toStdString();
+                std::string path = (directory + "/converted.inr").toStdString();
                 ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
                 myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
@@ -625,7 +625,7 @@ void EASIView::Simulation() {
                         plotValueVectors = plotValueVectorsLNG;
                     }//_if
                     ofstream fileLV;
-                    fileLV.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+                    fileLV.open(directory.toStdString() + "/" + fileName.toStdString());
                     std::vector<double> values;
                     for (int s=0; s<16; s++) {
                         for (int f=0; f<10; f++)
@@ -654,7 +654,7 @@ void EASIView::Simulation() {
                 fileName = "LA-SQZ.csv";
 
                 ofstream fileLA;
-                fileLA.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+                fileLA.open(directory.toStdString() + "/" + fileName.toStdString());
                 std::vector<double> values;
                 for (int f=0; f<10; f++)
                     values.push_back(plotValueVectorsGlobalSQZ[f]);

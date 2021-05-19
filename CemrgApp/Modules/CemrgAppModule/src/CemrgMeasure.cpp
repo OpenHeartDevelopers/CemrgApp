@@ -50,7 +50,7 @@ void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
 
     ofstream file;
     double x, y, z;
-    file.open(dir.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "input.vtk");
+    file.open(dir.toStdString() + "/input.vtk");
 
     //Header
     file << "# vtk DataFile Version 3.0" << endl;
@@ -81,7 +81,7 @@ std::vector <std::tuple<double, double, double>> CemrgMeasure::Deconvert(QString
     unsigned int items;
     std::vector<std::string> tokens;
     std::vector <std::tuple<double, double, double>> points;
-    ifstream file(dir.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "transformed-" + std::to_string(noFile) + ".vtk");
+    ifstream file(dir.toStdString() + "/transformed-" + std::to_string(noFile) + ".vtk");
 
     if (file.is_open()) {
 

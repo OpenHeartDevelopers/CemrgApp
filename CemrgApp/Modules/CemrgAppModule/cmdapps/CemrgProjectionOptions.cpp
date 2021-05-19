@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
         QFileInfo fi(lgename);
         QString direct = fi.absolutePath();
         QString lgePath = fi.absoluteFilePath();
-        QString outputFolder = direct + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + "_OUTPUT" + mitk::IOUtil::GetDirectorySeparator();
+        QString outputFolder = direct + "/" + fi.baseName() + "_OUTPUT" + "/";
 
         QDir d(outputFolder);
 
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
 
         MITK_INFO(verbose) << "Performing Scar projection using " + segvtk.toStdString();
 
-        QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
+        QString prodPath = direct + "/";
         mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
 
         MITK_INFO(verbose) << "Saving new scar map to " + outname.toStdString();

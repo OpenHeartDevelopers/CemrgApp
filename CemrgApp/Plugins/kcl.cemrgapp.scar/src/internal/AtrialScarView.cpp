@@ -185,7 +185,7 @@ void AtrialScarView::LoadDICOM() {
                     if (thisFile.contains(".nii", Qt::CaseSensitive)) {
                         if (thisFile.contains("lge", Qt::CaseInsensitive) ||  thisFile.contains("mra", Qt::CaseInsensitive)) {
 
-                            path = niftiFolder.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + thisFile;
+                            path = niftiFolder.absolutePath() + "/" + thisFile;
                             mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
                             std::string key = "dicom.series.SeriesDescription";
                             mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
@@ -281,7 +281,7 @@ void AtrialScarView::ConvertNII() {
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
         type = (ctr==0) ? "LGE":"MRA";
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
+        path = directory + "/dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
@@ -502,8 +502,8 @@ void AtrialScarView::AutomaticAnalysis() {
             cnnIMG->SetVolume(changeFilter->GetOutput()->GetScalarPointer());
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][2] Image registration";
-            QString cnnPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
-            QString laregPath = direct + mitk::IOUtil::GetDirectorySeparator() + "LA-reg.nii";
+            QString cnnPath = direct + "/LA.nii";
+            QString laregPath = direct + "/LA-reg.nii";
 
             mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());
             cmd->ExecuteRegistration(direct, lgePath, mraPath); // rigid.dof is the default name
@@ -537,8 +537,7 @@ void AtrialScarView::AutomaticAnalysis() {
             for (itDUP.GoToBegin(); !itDUP.IsAtEnd(); ++itDUP)
                 if ((int)itDUP.Get() != 0)
                     itDUP.Set(1);
-            QString segCleanPath = direct + mitk::IOUtil::GetDirectorySeparator() +
-                    "prodClean.nii";
+            QString segCleanPath = direct + "/prodClean.nii";
             mitk::IOUtil::Save(mitk::ImportItkImage(duplicator->GetOutput()), segCleanPath.toStdString());
             MITK_INFO << ("[...][3.1] Saved file: "+segCleanPath).toStdString();
 
@@ -789,7 +788,7 @@ void AtrialScarView::AutomaticAnalysis() {
             double mean = 0.0, stdv = 0.0;
             scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
             MITK_INFO << "[...][11.1] Creating Scar map normalised by Mean blood pool.";
-            QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
+            QString prodPath = direct + "/";
             scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
             MITK_INFO << "[...][11.2] Saving to files.";
             double thisThresh, thisPercentage, thisValue;
@@ -875,7 +874,7 @@ void AtrialScarView::SegmentIMGS() {
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(2);
 
                     MITK_INFO << "CNN prediction";
-                    mraPath = directory + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
+                    mraPath = directory + "/test.nii";
                     mitk::IOUtil::Save(image, mraPath.toStdString());
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
 
@@ -906,7 +905,7 @@ void AtrialScarView::SegmentIMGS() {
                     lblShpKpNObjImgFltr->Update();
                     mitk::Image::Pointer segImage = mitk::Image::New();
                     mitk::CastToMitkImage(lblShpKpNObjImgFltr->GetOutput(), segImage);
-                    cnnPath = directory + mitk::IOUtil::GetDirectorySeparator() + "LA.nii";
+                    cnnPath = directory + "/LA.nii";
                     mitk::IOUtil::Save(segImage, cnnPath.toStdString());
                     mitk::IOUtil::Load(cnnPath.toStdString(), *this->GetDataStorage());
                     remove(mraPath.toStdString().c_str());
@@ -957,7 +956,7 @@ void AtrialScarView::NodeAdded(const mitk::DataNode* node) {
                             NULL, tr("Save Segmentation As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
                 if (ok && !fileName.isEmpty() && fileName.endsWith(".nii")) {
                     segNode->SetName(fileName.left(fileName.lastIndexOf(QChar('.'))).toStdString());
-                    path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                    path = directory + "/" + fileName;
                     mitk::IOUtil::Save(image, path.toStdString());
                 } else {
                     fileName = tmpFileName;
@@ -1103,7 +1102,7 @@ void AtrialScarView::Transform() {
             regFileName = QInputDialog::getText(NULL, tr("Save Registration As"), tr("File Name:"), QLineEdit::Normal, regFileName, &ok);
             if (ok && !regFileName.isEmpty() && regFileName.endsWith(".nii")) {
 
-                pathTemp = directory + mitk::IOUtil::GetDirectorySeparator() + "temp.nii";
+                pathTemp = directory + "/temp.nii";
                 mitk::IOUtil::Save(image, pathTemp.toStdString());
 
                 //Commandline call
@@ -1117,7 +1116,7 @@ void AtrialScarView::Transform() {
                 this->BusyCursorOff();
 
                 //Load the new segementation
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + regFileName;
+                path = directory + "/" + regFileName;
                 mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
                 remove(pathTemp.toStdString().c_str());
 
@@ -1221,7 +1220,7 @@ void AtrialScarView::CreateSurf() {
                 //_if
 
                 this->BusyCursorOn();
-                pathTemp = directory + mitk::IOUtil::GetDirectorySeparator() + "temp.nii";
+                pathTemp = directory + "/temp.nii";
                 mitk::IOUtil::Save(image, pathTemp.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(3);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
@@ -1366,7 +1365,7 @@ void AtrialScarView::ClipMitralValve() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Read in and copy
-    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
+    QString path = directory + "/segmentation.vtk";
     mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
     if (surface->GetVtkPolyData() == NULL) {
         QMessageBox::critical(NULL, "Attention", "No mesh was found in the project directory!");
@@ -1378,7 +1377,7 @@ void AtrialScarView::ClipMitralValve() {
     /*
      * Producibility Test
      **/
-    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = directory + "/";
     mitk::IOUtil::Save(pointSet, (prodPath + "prodMVCLandmarks.mps").toStdString());
     /*
      * End Test
@@ -1430,7 +1429,7 @@ void AtrialScarView::ScarMap() {
 
     //Check for mesh in the project directory
     try {
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
+        QString path = directory + "/segmentation.vtk";
         mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
     } catch (...) {
         QMessageBox::critical(NULL, "Attention", "No mesh was found in the project directory!");
@@ -1476,7 +1475,7 @@ void AtrialScarView::ScarMap() {
                     /*
                      * Producibility Test
                      **/
-                    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+                    QString prodPath = directory + "/";
                     ofstream prodFile1;
                     prodFile1.open((prodPath + "prodScarMapInputs.txt").toStdString());
                     prodFile1 << minStep << "\n";
@@ -1496,7 +1495,7 @@ void AtrialScarView::ScarMap() {
                     scar->SetVoxelBasedProjection(voxelBasedProjection);
                     mitk::Image::Pointer scarSegImg;
                     try {
-                        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                        QString path = directory + "/" + fileName;
                         scarSegImg = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
                     } catch (...) {
                         QMessageBox::critical(NULL, "Attention", "The loaded or created segmentation was not found!");
@@ -1527,7 +1526,7 @@ void AtrialScarView::ScarMap() {
                     for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt)
                         if (nodeIt->Value()->GetName().find(nodeSegImgName) != nodeIt->Value()->GetName().npos)
                             this->GetDataStorage()->Remove(nodeIt->Value());
-                    QString savePath = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                    QString savePath = directory + "/" + fileName;
                     mitk::IOUtil::Save(scarSegImg, savePath.toStdString());
 
                     //Projection
@@ -1561,7 +1560,7 @@ void AtrialScarView::ScarMap() {
                     //Save the vtk mesh
                     QString name(imgNode->GetName().c_str());
                     name = name.right(name.length() - name.lastIndexOf("-") - 1);
-                    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + name + "-" + meType + "Scar.vtk";
+                    QString path = directory + "/" + name + "-" + meType + "Scar.vtk";
                     mitk::IOUtil::Save(shell, path.toStdString());
 
                     mitk::ProgressBar::GetInstance()->Progress();
@@ -1591,7 +1590,7 @@ void AtrialScarView::ScarDebug() {
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
     m_Controls.button_deb->setVisible(false);
     //Restore image name
-    //char sep = mitk::IOUtil::GetDirectorySeparator();
+    //char sep = "/";
     //fileName = path.mid(path.lastIndexOf(sep) + 1);
 }
 
@@ -1629,7 +1628,7 @@ void AtrialScarView::Threshold() {
             mitk::CastToItkImage(image, itkImage);
             mitk::CastToMitkImage(itkImage, lgeImage);
             try {
-                QString path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                QString path = directory + "/" + fileName;
                 roi = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
             } catch (...) {
                 QMessageBox::critical(NULL, "Attention", "The loaded or created segmentation was not found!");
@@ -1701,7 +1700,7 @@ void AtrialScarView::Threshold() {
         /*
          * Producibility Test
          **/
-        QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+        QString prodPath = directory + "/";
         ofstream prodFile1;
         prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
         prodFile1 << value << "\n";
@@ -1735,7 +1734,7 @@ void AtrialScarView::Sphericity() {
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     //Read in the mesh
-    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.vtk";
+    QString path = directory + "/segmentation.vtk";
     mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
 
     double result = 0;

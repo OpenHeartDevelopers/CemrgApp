@@ -589,14 +589,14 @@ void CemrgCommonUtils::FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QSt
 
     if(!vtkname.isEmpty()){
         vtkname += (!vtkname.contains(".vtk")) ? ".vtk" : "";
-        QString path = dir + mitk::IOUtil::GetDirectorySeparator()+vtkname;
+        QString path = dir + "/" + vtkname;
         mitk::IOUtil::Save(surf, path.toStdString());
     }
 }
 
 QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename, QString thicknessCalc) {
 
-    QString path2file = dir + mitk::IOUtil::GetDirectorySeparator() + filename;
+    QString path2file = dir + "/" + filename;
     QFile fi(path2file);
 
     if (thicknessCalc.compare("0", Qt::CaseSensitive)!=0 && thicknessCalc.compare("1", Qt::CaseSensitive)!=0) {
@@ -804,14 +804,14 @@ void CemrgCommonUtils::MotionTrackingReport(QString directory, int timePoints) {
     for (int tS=0; tS<timePoints; tS++) {
 
         //Image
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(tS) + ".nii";
+        QString path = directory + "/dcm-" + QString::number(tS) + ".nii";
         mitk::Image::Pointer img3D = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
         int* extent = img3D->GetVtkImageData()->GetExtent();
         mitk::Vector3D spacing = img3D->GetGeometry()->GetSpacing();
         vtkSmartPointer<vtkMatrix4x4> direction = img3D->GetGeometry()->GetVtkMatrix();
 
         //Mesh
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "Model-" + QString::number(tS) + ".vtk";
+        path = directory + "/Model-" + QString::number(tS) + ".vtk";
         mitk::Surface::Pointer sur3D = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
 
         //Window
@@ -896,7 +896,7 @@ void CemrgCommonUtils::MotionTrackingReport(QString directory, int timePoints) {
         windowToImageFilter->FixBoundaryOn();
         windowToImageFilter->Update();
         vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
-        writer->SetFileName((directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(tS).toStdString() + ".png").c_str());
+        writer->SetFileName((directory.toStdString() + "/dcm-" + QString::number(tS).toStdString() + ".png").c_str());
         writer->SetInputConnection(windowToImageFilter->GetOutputPort());
         writer->Write();
     }
@@ -1017,7 +1017,7 @@ void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QStri
 
     if(!dir.isEmpty() && !vtkname.isEmpty()){
         vtkname += (!vtkname.contains(".vtk")) ? ".vtk" : "";
-        QString outPath = dir + mitk::IOUtil::GetDirectorySeparator()+vtkname;
+        QString outPath = dir + "/" + vtkname;
         mitk::IOUtil::Save(surf, outPath.toStdString());
     }
 }
@@ -1406,7 +1406,7 @@ void CemrgCommonUtils::CarpToVtk(QString elemPath, QString ptsPath, QString outp
 
 void CemrgCommonUtils::RectifyFileValues(QString pathToFile, double minVal, double maxVal){
     QFileInfo fi(pathToFile);
-    QString copyName = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + "_copy." + fi.completeSuffix();
+    QString copyName = fi.absolutePath() + "/" + fi.baseName() + "_copy." + fi.completeSuffix();
     MITK_INFO << "Copying path name";
     QFile::rename(pathToFile, copyName);
 

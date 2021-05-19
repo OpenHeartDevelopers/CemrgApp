@@ -220,7 +220,7 @@ void MmcwView::ConvertNII() {
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
         mitk::BaseData::Pointer data = nodes.at(idx)->GetData();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
+        path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
@@ -235,7 +235,7 @@ void MmcwView::ConvertNII() {
 
     //Load first item
     ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
+    path = directory + "/dcm-" + QString::number(ctr) + ".nii";
     mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
@@ -284,7 +284,7 @@ void MmcwView::CropinIMGS() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
         mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
+        path = directory + "/" + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
         mitk::IOUtil::Save(outputImage, path.toStdString());
         mitk::ProgressBar::GetInstance()->Progress();
         this->BusyCursorOff();
@@ -306,7 +306,7 @@ void MmcwView::CropinIMGS() {
             for (int i=1; i<timePoints; i++) {
 
                 mitk::Image::Pointer inputImage;
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
+                path = directory + "/dcm-" + QString::number(i) + ".nii";
                 try {
                     inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
                 } catch(const std::exception&) {
@@ -420,7 +420,7 @@ void MmcwView::ResampIMGS() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 mitk::Image::Pointer outputImage = CemrgCommonUtils::Downsample(image, factor);
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + imgNode->GetName().c_str() + ".nii";
+                path = directory + "/" + imgNode->GetName().c_str() + ".nii";
                 mitk::IOUtil::Save(outputImage, path.toStdString());
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -442,7 +442,7 @@ void MmcwView::ResampIMGS() {
                     for (int i=1; i<timePoints; i++) {
 
                         mitk::Image::Pointer inputImage;
-                        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
+                        path = directory + "/dcm-" + QString::number(i) + ".nii";
                         try {
                             inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
                         } catch(const std::exception&) {
@@ -546,7 +546,7 @@ void MmcwView::CreateSurf() {
         //Test if this data item is an image
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
         if (image) {
-            path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.nii";
+            path = directory + "/segmentation.nii";
             mitk::IOUtil::Save(image, path.toStdString());
             this->GetDataStorage()->Remove(segNode);
         } else
@@ -716,33 +716,28 @@ void MmcwView::Tracking() {
             }
             else {
                 //Absolute path
-                aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
-#if defined(__APPLE__)
-                aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                        mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                        mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
-#endif
+                aPath = QCoreApplication::applicationDirPath() + "/MLib";
             }
 
             bool dcm_path_fix = true;
             if (dcm_path_fix) {
                 MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
-                time = directory + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
+                time = directory + "/imgTimes.lst";
                 file.open(time.toStdString(), ofstream::binary);
                 file << "dcm- .nii\n";
             }
             else {
                 QDir apathd(aPath);
                 if (apathd.mkpath(aPath)) {
-                    // file.open(aPath.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst");
+                    // file.open(aPath.toStdString() + "/imgTimes.lst");
                     QDir mainDirectory(directory);
                     QString aRelativePath = mainDirectory.relativeFilePath(aPath);
-                    time = aPath + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
+                    time = aPath + "/imgTimes.lst";
                     file.open(time.toStdString(), ofstream::binary);
                     if (aRelativePath==".")
                         file << "dcm- .nii\n";
                     else
-                        file << aRelativePath << mitk::IOUtil::GetDirectorySeparator() << "dcm- .nii\n";
+                        file << aRelativePath << "/dcm- .nii\n";
 
                 } else {
                     QMessageBox::warning(NULL, "Attention", "Error creating path:\n" + aPath);
@@ -897,7 +892,7 @@ void MmcwView::Demoings() {
     for (int tS=0; tS<timePoints; tS++) {
 
         //Image
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(tS) + ".nii";
+        path = directory + "/dcm-" + QString::number(tS) + ".nii";
         img3D = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
         //Initialise
         if (tS==0) {
@@ -907,7 +902,7 @@ void MmcwView::Demoings() {
         img4D->SetVolume(mitk::ImageReadAccessor(img3D).GetData(), tS);
 
         //Mesh
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "transformed-" + QString::number(tS) + ".vtk";
+        path = directory + "/transformed-" + QString::number(tS) + ".vtk";
         sur3D = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
         sur4D->SetVtkPolyData(sur3D->GetVtkPolyData(), tS);
 

@@ -81,7 +81,7 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     ItkDeepCopy(scarImage, visitedImage);
 
     //Read in the mesh
-    std::string path = directory + mitk::IOUtil::GetDirectorySeparator() + segname;
+    std::string path = directory + "/" + segname;
     mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path);
     vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
 
@@ -353,7 +353,7 @@ void CemrgScar3D::SaveNormalisedScalars(double divisor, mitk::Surface::Pointer s
 }
 
 void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> values_vector, int threshType, double mean, double stdv, bool printGuide){
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     double thisThresh, thisPercentage, thisValue;
     std::ofstream prodFile1;
     prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
@@ -604,7 +604,7 @@ void CemrgScar3D::SaveScarDebugImage(QString name, QString dir) {
     using WriterType = itk::ImageFileWriter< ImageType >;
     if (!name.contains(".nii", Qt::CaseSensitive))
         name = name + ".nii";
-    QString debugSCARname = dir + mitk::IOUtil::GetDirectorySeparator() + name;
+    QString debugSCARname = dir + "/" + name;
     MITK_INFO << "Saving to: " + debugSCARname.toStdString();
 
     WriterType::Pointer writer = WriterType::New();

@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
         QFileInfo fi(inname);
         QFileInfo bpfi(bloodpname);
 
-        QString path = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator();
+        QString path = fi.absolutePath() + "/";
         QString inputPath = fi.absoluteFilePath();
         QString bpPath = bpfi.absoluteFilePath();
         QString outputPath = path + outname;

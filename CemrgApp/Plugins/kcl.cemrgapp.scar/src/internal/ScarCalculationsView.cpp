@@ -90,22 +90,17 @@ ScarCalculationsView::~ScarCalculationsView() {
 void ScarCalculationsView::SetCalculationsPaths(const QString directory) {
 
     ScarCalculationsView::directory = directory;
-    ScarCalculationsView::predir = directory +
-            mitk::IOUtil::GetDirectorySeparator() + "PRE" +
-            mitk::IOUtil::GetDirectorySeparator() + "ANALYSIS";
-    ScarCalculationsView::postdir = directory +
-            mitk::IOUtil::GetDirectorySeparator() + "POST" +
-            mitk::IOUtil::GetDirectorySeparator() + "ANALYSIS";
-    ScarCalculationsView::advdir = directory +
-            mitk::IOUtil::GetDirectorySeparator() + "ADVANCED_ANALYSIS";
+    ScarCalculationsView::predir = directory + "/PRE/ANALYSIS";
+    ScarCalculationsView::postdir = directory + "/POST/ANALYSIS";
+    ScarCalculationsView::advdir = directory + "/ADVANCED_ANALYSIS";
     ScarCalculationsView::preScarFile = "";
     ScarCalculationsView::postScarFile = "";
 }
 
 bool ScarCalculationsView::CheckForRequiredFiles() {
 
-    QString searchPre = ScarCalculationsView::predir + mitk::IOUtil::GetDirectorySeparator();
-    QString searchPost = ScarCalculationsView::postdir + mitk::IOUtil::GetDirectorySeparator();
+    QString searchPre = ScarCalculationsView::predir + "/";
+    QString searchPost = ScarCalculationsView::postdir + "/";
 
     int responsePre = ScarCalculationsView::SearchDirectory(searchPre);
     int responsePost = ScarCalculationsView::SearchDirectory(searchPost);
@@ -164,7 +159,7 @@ QStringList ScarCalculationsView::CheckForAdvancedDirectoryFiles() {
     // Only checks for MaxScarPre/Post and prodThresholdsPre/Post
     QStringList need2load = {"Pre", "Post"};
     std::vector<int> v;
-    QString searchDir = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString searchDir = ScarCalculationsView::advdir + "/";
     QDirIterator itdir(searchDir, QDirIterator::Subdirectories);
     while(itdir.hasNext()) { // look for .nii LGE and MRA files in pre
         QFileInfo finfo(itdir.next());
@@ -185,7 +180,7 @@ void ScarCalculationsView::GetInputsFromFile() {
     MITK_INFO << "GET INPUTS FROM FILE.\n";
     double data1[5]; //, data2[5];
     QString prodPath = QString();
-    QString prodPathOut = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPathOut = ScarCalculationsView::advdir + "/";
     QDir advd(ScarCalculationsView::advdir);
 
     if (advd.mkdir(ScarCalculationsView::advdir)) {
@@ -208,9 +203,9 @@ void ScarCalculationsView::GetInputsFromFile() {
             MITK_INFO << "Loading " + need2load.at(i) + " files";
 
             if (need2load.at(i).compare("Pre", Qt::CaseSensitive)==0)
-                prodPath = ScarCalculationsView::predir + mitk::IOUtil::GetDirectorySeparator();
+                prodPath = ScarCalculationsView::predir + "/";
             else
-                prodPath = ScarCalculationsView::postdir + mitk::IOUtil::GetDirectorySeparator();
+                prodPath = ScarCalculationsView::postdir + "/";
 
             ifstream prodFileRead;
             ofstream prodFileWrite;
@@ -271,7 +266,7 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
     iniPreSurf();
 
     if (surface.IsNotNull()) {
-        QString prodPathOut = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+        QString prodPathOut = ScarCalculationsView::advdir + "/";
         InitialisePickerObjects();
 
         csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
@@ -337,7 +332,7 @@ void ScarCalculationsView::iniPreSurf() {
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
     ifstream prodFileRead;
-    QString prodPathAdv = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPathAdv = ScarCalculationsView::advdir + "/";
     prodFileRead.open((prodPathAdv + "prodThresholdsPre.txt").toStdString());
 
     MITK_INFO << "Read file: " + (prodPathAdv + "prodThresholdsPre.txt").toStdString();
@@ -354,7 +349,7 @@ void ScarCalculationsView::iniPreSurf() {
 
     // Convert to point data
     QString prename = ScarCalculationsView::preScarFile.isEmpty() ? "MaxScar.vtk" : ScarCalculationsView::preScarFile;
-    QString shellPathPre = ScarCalculationsView::predir +  mitk::IOUtil::GetDirectorySeparator() + prename;
+    QString shellPathPre = ScarCalculationsView::predir +  "/" + prename;
     MITK_INFO << "Shell PRE: " + shellPathPre.toStdString();
     mitk::Surface::Pointer shellpre = mitk::IOUtil::Load<mitk::Surface>(shellPathPre.toStdString());
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
@@ -365,7 +360,7 @@ void ScarCalculationsView::iniPreSurf() {
     mitk::IOUtil::Save(shellpre, (prodPathAdv+"MaxScarPre.vtk").toStdString());
 
     QString postname = ScarCalculationsView::postScarFile.isEmpty() ? "MaxScar.vtk" : ScarCalculationsView::postScarFile;
-    QString shellPathPost = ScarCalculationsView::postdir +  mitk::IOUtil::GetDirectorySeparator() + postname;
+    QString shellPathPost = ScarCalculationsView::postdir +  "/" + postname;
     MITK_INFO << "Shell POST: " + shellPathPost.toStdString();
     mitk::Surface::Pointer shellpost = mitk::IOUtil::Load<mitk::Surface>(shellPathPost.toStdString());
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point2 = vtkSmartPointer<vtkCellDataToPointData>::New();
@@ -551,7 +546,7 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
     ifstream prodFileRead;
-    QString prodPathAdv = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPathAdv = ScarCalculationsView::advdir + "/";
     QString shellpath = prodPathAdv;
 
     if (cb.contains("PRE", Qt::CaseInsensitive)) {
@@ -650,7 +645,7 @@ void ScarCalculationsView::SetNewThreshold(const QString& text) {
         return;
     MITK_INFO << "New threshold selected...";
 
-    QString prodPath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = ScarCalculationsView::advdir + "/";
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
 
@@ -686,7 +681,7 @@ void ScarCalculationsView::SaveNewThreshold() {
     m_Controls.button_cancel->setEnabled(false);
     m_Controls.comboBox->setEnabled(true);
 
-    QString prodPath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = ScarCalculationsView::advdir + "/";
     QString shellpath = prodPath;
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
@@ -748,7 +743,7 @@ void ScarCalculationsView::CancelThresholdEdit() {
         m_Controls.fandi_t3_visualise->setVisible(false);
     }
 
-    QString prodPath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = ScarCalculationsView::advdir + "/";
     QString shellpath = prodPath;
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
@@ -936,7 +931,7 @@ void ScarCalculationsView::GapMeasurementVisualisation(const QString& text) {
     if (!cb.isEmpty()) {
 
         MITK_INFO << ("Current text: " + cb).toStdString();
-        QString prodPath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+        QString prodPath = ScarCalculationsView::advdir + "/";
         QFileInfo fi(prodPath + cb + ".vtk");
         MITK_INFO << ("Changing to file" + fi.absoluteFilePath()).toStdString();
 
@@ -974,7 +969,7 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     QString current = m_Controls.comboBox->currentText();
     double valpre, valpost;
 
-    QString outpath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString outpath = ScarCalculationsView::advdir + "/";
     QString outScarMap = outpath + "MaxScarPost_Aligned.vtk";
 
     QFileInfo txMaxScarPost(outScarMap);
@@ -1027,7 +1022,7 @@ void ScarCalculationsView::BeforeAndAfterComp() {
 void ScarCalculationsView::BeforeAndAfterCompVisualisation() {
 
     MITK_INFO << "Visualisation of pre/post comparison.";
-    QString outpath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString outpath = ScarCalculationsView::advdir + "/";
     QString preMap = outpath + "MaxScarPre_OnPost.vtk";
     QString preThresPath = outpath + "prodThresholdsPre.txt";
     QString postMap = outpath + "MaxScarPost_Aligned.vtk";
@@ -1065,7 +1060,7 @@ void ScarCalculationsView::TransformMeshesForComparison() {
     MITK_INFO << "[ATTENTION] Implementation of alignement routines.";
 
     bool successful;
-    QString outpath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString outpath = ScarCalculationsView::advdir + "/";
     QString sourcename = outpath + "MaxScarPost.vtk";
     QString targetname = outpath + "MaxScarPre.vtk";
     QString alignedname = outpath + "MaxScarPost_Aligned.vtk";
@@ -1149,7 +1144,7 @@ void ScarCalculationsView::SetShortcutLegend() {
 
 void ScarCalculationsView::CopyScalarValues() {
 
-    QString outpath = ScarCalculationsView::advdir + mitk::IOUtil::GetDirectorySeparator();
+    QString outpath = ScarCalculationsView::advdir + "/";
     QString sourcename = outpath + "MaxScarPost_Aligned.vtk";
     QString targetname = outpath + "MaxScarPre.vtk";
 

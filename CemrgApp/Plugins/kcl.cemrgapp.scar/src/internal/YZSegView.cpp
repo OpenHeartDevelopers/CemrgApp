@@ -175,7 +175,7 @@ void YZSegView::ConvertNII() {
             fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
             if (ok && !fileName.isEmpty() && fileName.endsWith(".nii")) {
 
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                path = directory + "/" + fileName;
                 mitk::IOUtil::Save(image, path.toStdString());
                 mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
                 this->GetDataStorage()->Remove(imNode);
@@ -267,7 +267,7 @@ void YZSegView::SaveSEG() {
             fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
             if (ok && !fileName.isEmpty() && fileName.endsWith(".nii")) {
 
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                path = directory + "/" + fileName;
                 mitk::IOUtil::Save(image, path.toStdString());
 
             } else {
@@ -731,7 +731,7 @@ void YZSegView::ScarSeg_save() {
             fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
             if (ok && !fileName.isEmpty() && fileName.endsWith(".nii")) {
 
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + fileName;
+                path = directory + "/" + fileName;
                 mitk::IOUtil::Save(image, path.toStdString());
 
             } else {

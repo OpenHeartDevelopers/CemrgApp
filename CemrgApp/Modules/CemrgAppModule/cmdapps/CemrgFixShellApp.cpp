@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
         if (verbose)
             MITK_INFO << "Performing Scar projection using " + segvtk.toStdString();
 
-        QString prodPath = direct + mitk::IOUtil::GetDirectorySeparator();
+        QString prodPath = direct + "/";
         mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
 
         if (verbose)
