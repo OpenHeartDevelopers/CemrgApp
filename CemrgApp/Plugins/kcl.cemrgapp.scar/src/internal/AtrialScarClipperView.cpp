@@ -208,7 +208,7 @@ void AtrialScarClipperView::iniPreSurf() {
                 //_if
 
                 this->BusyCursorOn();
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + "temp.nii";
+                path = directory + "/temp.nii";
                 mitk::IOUtil::Save(image, path.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(3);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());

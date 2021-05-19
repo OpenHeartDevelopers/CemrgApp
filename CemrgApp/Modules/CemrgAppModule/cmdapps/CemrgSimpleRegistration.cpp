@@ -111,8 +111,8 @@ int main(int argc, char* argv[]) {
     QFileInfo fileinfo(INPUT1);
 
     QString dir = fileinfo.path();
-    QString output = dir + mitk::IOUtil::GetDirectorySeparator() + "rigid.dof";
-    QString mirtk  = aPath + mitk::IOUtil::GetDirectorySeparator() + "register";
+    QString output = dir + "/rigid.dof";
+    QString mirtk  = aPath + "/register";
 
     if (verbose)
       MITK_INFO << "OUTPUT VALUE: " << output.toStdString();

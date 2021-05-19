@@ -634,7 +634,7 @@ void powertransViewPlot::WritePlotToCSV(QString dir) {
         if (ok && !fileName.isEmpty() && fileName.endsWith(".csv")) {
 
             ofstream file;
-            file.open(dir.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+            file.open(dir.toStdString() + "/" + fileName.toStdString());
             std::vector<double> values;
             for (int i=0; i<16; i++) {
                 for (int j=0; j<noFrames*smoothness; j++)
@@ -662,7 +662,7 @@ void powertransViewPlot::WritePlotToVTK(QString dir) {
     mitk::Surface::Pointer surface = strain->FlattenedAHA();
     int frame = (m_Controls.horizontalSlider->value() == noFrames*smoothness) ? 0 : m_Controls.horizontalSlider->value();
     surface->GetVtkPolyData()->GetCellData()->SetScalars(flatPlotScalars.at(frame));
-    QString fileName = dir + mitk::IOUtil::GetDirectorySeparator() + QString::number(frame) + ".vtk";
+    QString fileName = dir + "/" + QString::number(frame) + ".vtk";
     mitk::IOUtil::Save(surface, fileName.toStdString());
     QMessageBox::information(NULL, "Attention", "The plot was saved to a VTK file.");
 }

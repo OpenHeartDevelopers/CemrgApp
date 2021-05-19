@@ -805,7 +805,7 @@ void curvesCalculator() {
                 plotValueVectors = plotValueVectorsLNG;
             }//_if
             ofstream file;
-            file.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+            file.open(directory.toStdString() + "/" + fileName.toStdString());
 
             std::vector<double> values;
             for (int s=0; s<16; s++) {

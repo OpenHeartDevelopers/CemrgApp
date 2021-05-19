@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
         QString direct = fi.absolutePath();
         QString inputPath = fi.absoluteFilePath();
         QString clipPath = fi2.absoluteFilePath();
-        QString outputPath = direct + mitk::IOUtil::GetDirectorySeparator() + outname;
+        QString outputPath = direct + "/" + outname;
 
         MITK_INFO << ("INPUT: " + inputPath).toStdString();
         MITK_INFO << ("OUTPUT: " + outputPath).toStdString();
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 
         if (verbose) {
             MITK_INFO << "[DEBUG] Preliminary output generation.";
-            QString vPath = direct + mitk::IOUtil::GetDirectorySeparator() + "prelim.vtk";
+            QString vPath = direct + "/prelim.vtk";
             shell->SetVtkPolyData(clipper->GetOutput());
             mitk::IOUtil::Save(shell, vPath.toStdString());
         }

@@ -145,7 +145,7 @@ std::vector<double> CemrgStrains::CalculateSqzPlot(int meshNo) {
     sqzValues->SetName("Squeez");
     pd->GetCellData()->AddArray(sqzValues);
     surf->SetVtkPolyData(pd);
-    QString path = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "sqz-" + QString::number(meshNo) + ".vtk";
+    QString path = projectDirectory + "/sqz-" + QString::number(meshNo) + ".vtk";
     //mitk::IOUtil::Save(surf, path.toStdString());
 
     //Average over AHA segments
@@ -811,7 +811,7 @@ mitk::Matrix<double,3,3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cel
 mitk::Surface::Pointer CemrgStrains::ReadVTKMesh(int meshNo) {
 
     //Read a mesh
-    QString meshPath = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "transformed-" + QString::number(meshNo) + ".vtk";
+    QString meshPath = projectDirectory + "/transformed-" + QString::number(meshNo) + ".vtk";
     return CemrgCommonUtils::LoadVTKMesh(meshPath.toStdString());
 }
 

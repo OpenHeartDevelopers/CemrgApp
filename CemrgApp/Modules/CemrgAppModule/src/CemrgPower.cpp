@@ -34,6 +34,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QMessageBox>
 #include <QDebug>
 #include <QFileInfo>
+#include <QCoreApplication>
 
 // VTK
 #include <vtkSmartPointer.h>
@@ -215,7 +216,7 @@ mitk::Surface::Pointer CemrgPower::MapPowerTransmitterToLandmarks(mitk::DataNode
     transformFilter->Update();
 
     // Output EBR mesh for ribSpacingX in project directory
-    QString EBRmeshPath = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "ebr" + QString::number(currentRibSpacing) + ".vtk";
+    QString EBRmeshPath = projectDirectory + "/ebr" + QString::number(currentRibSpacing) + ".vtk";
     vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
     writer->SetFileName(EBRmeshPath.toLocal8Bit().data());
     writer->SetInputData(transformFilter->GetOutput());
@@ -234,7 +235,7 @@ mitk::Surface::Pointer CemrgPower::CalculateAcousticIntensity(mitk::Surface::Poi
     // Read EBR vtk mesh
     vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
     // Same as output mesh from MapPowerTransmitterToLandmarks
-    QString EBRmeshPath = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "ebr" + QString::number(currentRibSpacing) + ".vtk";
+    QString EBRmeshPath = projectDirectory + "/ebr" + QString::number(currentRibSpacing) + ".vtk";
 
     // ################ NEED if loop to check if file exists! //
     reader->SetFileName(EBRmeshPath.toLocal8Bit().data());
@@ -242,7 +243,7 @@ mitk::Surface::Pointer CemrgPower::CalculateAcousticIntensity(mitk::Surface::Poi
     vtkPolyData* ebr_pointSet = reader->GetOutput();
 
     // MITK load Endo Mesh
-    //QString meshPath = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "transformed-" + QString::number(meshNo) + ".vtk";
+    //QString meshPath = projectDirectory + "/transformed-" + QString::number(meshNo) + ".vtk";
     //mitk::Surface::Pointer surf = mitk::IOUtil::Load<mitk::Surface>(meshPath.toStdString());
     //vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
 
@@ -408,7 +409,7 @@ mitk::Surface::Pointer CemrgPower::CalculateAcousticIntensity(mitk::Surface::Poi
     extractSelection->Update();
 
     // Write out new endo mesh only where Intensity>0
-    QString outEndoMeshPath = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "endo" + QString::number(currentRibSpacing) + ".vtk";
+    QString outEndoMeshPath = projectDirectory + "/endo" + QString::number(currentRibSpacing) + ".vtk";
     vtkSmartPointer<vtkUnstructuredGridWriter> writer2 = vtkSmartPointer<vtkUnstructuredGridWriter>::New();
     writer2->SetFileName(outEndoMeshPath.toLocal8Bit().data());
     writer2->SetInputData(extractSelection->GetOutput());

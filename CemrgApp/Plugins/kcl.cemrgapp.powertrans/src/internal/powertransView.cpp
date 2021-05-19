@@ -214,7 +214,7 @@ void powertransView::ConvertNII() {
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
+        path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
         successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
@@ -229,7 +229,7 @@ void powertransView::ConvertNII() {
 
     //Load first item
     ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
+    path = directory + "/dcm-" + QString::number(ctr) + ".nii";
     mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
@@ -265,7 +265,7 @@ void powertransView::CropinIMGS() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
         mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
+        path = directory + "/" + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
         mitk::IOUtil::Save(outputImage, path.toStdString());
         mitk::ProgressBar::GetInstance()->Progress();
         this->BusyCursorOff();
@@ -359,7 +359,7 @@ void powertransView::ResampIMGS() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 mitk::Image::Pointer outputImage = CemrgCommonUtils::Downsample(image, factor);
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + imgNode->GetName().c_str() + ".nii";
+                path = directory + "/" + imgNode->GetName().c_str() + ".nii";
                 mitk::IOUtil::Save(outputImage, path.toStdString());
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -541,7 +541,7 @@ void powertransView::MapPowerTransLM() {
         QMessageBox::warning(NULL, "Attention", "Please select landmarks from the Data Manager to continue!");
         return;
         //} else {
-        //    QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "Ribspace" + ribSpacing + ".csv";
+        //    QString path = directory + "/Ribspace" + ribSpacing + ".csv";
         //    mitk::IOUtil::Save(lmNode, path.toStdString());
     }
     //mitk::DataNode::Pointer lmNode = nodes.front();
@@ -617,7 +617,7 @@ void powertransView::MapPowerTransLM() {
         return;
     } else {
         //mitk::DataNode::Pointer lmNode = nodes.front();
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "Ribspace" + ribSpacing + ".mps";
+        QString path = directory + "/Ribspace" + ribSpacing + ".mps";
         //mitk::IOUtil::Save(nodes.front(), path.toStdString());
     }
 */
@@ -767,8 +767,8 @@ void powertransView::MapAHAfromInput() {
     m_UIAhaInput.setupUi(inputs);
     connect(m_UIAhaInput.pushButton_1, SIGNAL(clicked()), signalMapper, SLOT(map()));
     connect(m_UIAhaInput.pushButton_2, SIGNAL(clicked()), signalMapper, SLOT(map()));
-    signalMapper->setMapping(m_UIAhaInput.pushButton_1, "1"+directory + mitk::IOUtil::GetDirectorySeparator() + "ebr" + QString::number(ribSpacing) + ".vtk");
-    signalMapper->setMapping(m_UIAhaInput.pushButton_2, "2"+directory );
+    signalMapper->setMapping(m_UIAhaInput.pushButton_1, "1" + directory + "/ebr" + QString::number(ribSpacing) + ".vtk");
+    signalMapper->setMapping(m_UIAhaInput.pushButton_2, "2" + directory );
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(BrowseA(const QString&)));
 
     int dialogCode = inputs->exec();
@@ -827,7 +827,7 @@ void powertransView::MapAHA() {
     // to get the name of the file in the Data manager.
     QString name = QString::fromStdString(_2nd->GetName());
     // create path
-    QString path2surface = directory + mitk::IOUtil::GetDirectorySeparator() + name;
+    QString path2surface = directory + "/" + name;
     // load surface
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path2surface.toStdString());
 

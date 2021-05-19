@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
 
         QString direct = fi.absolutePath();
         QString inputPath = fi.absoluteFilePath();
-        QString outputPath = direct + mitk::IOUtil::GetDirectorySeparator() + outname;
+        QString outputPath = direct + "/" + outname;
 
         mitk::Point3D origin;
 

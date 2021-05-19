@@ -108,7 +108,7 @@ QString CemrgCommandLine::ExecuteSurf(QString dir, QString segPath, QString morp
         if (QString::compare(surfOutputPath, "ERROR_IN_PROCESSING")!=0) {
 
             outAbsolutePath = ExecuteSmoothSurface(dir, surfOutputPath, surfOutputPath, smth);
-            remove((dir + mitk::IOUtil::GetDirectorySeparator() + "segmentation.s.nii").toStdString().c_str());
+            remove((dir + "/segmentation.s.nii").toStdString().c_str());
             mitk::ProgressBar::GetInstance()->Progress();
 
         } else {
@@ -132,14 +132,14 @@ QString CemrgCommandLine::ExecuteCreateCGALMesh(QString dir, QString outputName,
         SetDockerImage(QString("alonsojasl/meshtools3d:v1.0"));
     }
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QDir meshtools3dhome(dir);
     QString outAbsolutePath, outputDirectory, segmentationDirectory;
     QStringList arguments;
-    segmentationDirectory = dir + mitk::IOUtil::GetDirectorySeparator();
+    segmentationDirectory = dir + "/";
     outputDirectory = segmentationDirectory + "CGALMeshDir";
-    outAbsolutePath = outputDirectory + mitk::IOUtil::GetDirectorySeparator() + outputName;
+    outAbsolutePath = outputDirectory + "/" + outputName;
     outAbsolutePath += ".vtk"; // many outputs are created with meshtools3d. .vtk is the one used in CemrgApp
 
     if (_useDockerContainers) {
@@ -215,12 +215,12 @@ void CemrgCommandLine::ExecuteTracking(QString dir, QString imgTimes, QString pa
 
     MITK_INFO << "[ATTENTION] Attempting Registration.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName = "register";
     QDir mirtkhome(dir);
     QString imgTimesFilePath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     imgTimesFilePath = imgTimes.contains(dir, Qt::CaseSensitive) ? imgTimes : prodPath + imgTimes;
@@ -298,7 +298,7 @@ void CemrgCommandLine::ExecuteApplying(QString dir, QString inputMesh, double in
         fctTime = 2;
     }
 
-    QString output = dir + mitk::IOUtil::GetDirectorySeparator() + "transformed-";
+    QString output = dir + "/transformed-";
     QString thisOutput;
     for (int i=0; i<noFrames; i++) {
         thisOutput = output + QString::number(i)+".vtk";
@@ -313,12 +313,12 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
     MITK_INFO << "[ATTENTION] Attempting Registration.";
 
     //lge : fixed   ||   mra : moving
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName = "register";
     QDir mirtkhome(dir);
     QString fixedfullpath, movingfullpath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     fixedfullpath = fixed.contains(dir, Qt::CaseSensitive) ? fixed : prodPath + fixed;
@@ -394,12 +394,12 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
 
     MITK_INFO << "[ATTENTION] Attempting Image Transformation.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName = "transform-image";
     QDir mirtkhome(dir);
     QString dofpath, imgNamefullpath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     imgNamefullpath = imgname.contains(dir, Qt::CaseSensitive) ? imgname : prodPath + imgname;
@@ -553,7 +553,7 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
 
     MITK_INFO << "[ATTENTION] Attempting Pointset transformation.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName;
     QStringList arguments;
@@ -573,7 +573,7 @@ QString CemrgCommandLine::ExecuteMorphologicalOperation(QString operation, QStri
 
     QDir mirtkhome(dir);
     QString inputImgFullPath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
 
     inputImgFullPath = segPath.contains(dir, Qt::CaseSensitive) ? segPath : prodPath + segPath;
     outAbsolutePath = outputPath.contains(dir, Qt::CaseSensitive) ? outputPath : prodPath + outputPath;
@@ -640,13 +640,13 @@ QString CemrgCommandLine::ExecuteExtractSurface(QString dir, QString segPath, QS
 
     MITK_INFO << "[ATTENTION] Attempting Surface extraction.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName;
     commandName = "extract-surface";
     QDir mirtkhome(dir);
     QString inputImgFullPath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     inputImgFullPath = segPath.contains(dir, Qt::CaseSensitive) ? segPath : prodPath + segPath;
@@ -720,13 +720,13 @@ QString CemrgCommandLine::ExecuteSmoothSurface(QString dir, QString segPath, QSt
 
     MITK_INFO << "[ATTENTION] Attempting Surface extraction.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName;
     commandName = "smooth-surface";
     QDir mirtkhome(dir);
     QString inputMeshFullPath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     inputMeshFullPath = segPath.contains(dir, Qt::CaseSensitive) ? segPath : prodPath + segPath;
@@ -796,12 +796,12 @@ void CemrgCommandLine::ExecuteTransformationOnPoints(QString dir, QString meshFu
 
     MITK_INFO << "[ATTENTION] Attempting Pointset transformation.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName = "transform-points";
     QDir mirtkhome(dir);
     QString dofpath, inputMeshFullPath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     inputMeshFullPath = meshFullPath.contains(dir, Qt::CaseSensitive) ? meshFullPath : prodPath + meshFullPath;
@@ -882,14 +882,14 @@ void CemrgCommandLine::ExecuteResamplingOnNifti(QString niiFullPath, QString out
 
     MITK_INFO << "[ATTENTION] Attempting Image Transformation.";
 
-    QString executablePath = "";
+    QString executablePath;
     QString executableName;
     QString commandName = "resample-image";
     QFileInfo inputnii(niiFullPath);
     QString dir = inputnii.absolutePath();
     QDir mirtkhome(dir);
     QString dofpath, imgNamefullpath, outAbsolutePath;
-    QString prodPath = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     imgNamefullpath = niiFullPath;
@@ -960,15 +960,15 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
 
     MITK_INFO << "[CEMRGNET] Attempting prediction using Docker";
 
-    QString aPath = "";
+    QString executablePath;
 #if defined(__APPLE__)
-    aPath = "/usr/local/bin/";
+    executablePath = "/usr/local/bin/";
 #endif
     QFileInfo finfo(mra);
     QDir cemrgnethome(finfo.absolutePath());
-    QString inputfilepath = cemrgnethome.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "test.nii";
-    QString tempfilepath = cemrgnethome.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "output.nii";
-    QString outputfilepath = cemrgnethome.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "LA-cemrgnet.nii";
+    QString inputfilepath = cemrgnethome.absolutePath() + "/test.nii";
+    QString tempfilepath = cemrgnethome.absolutePath() + "/output.nii";
+    QString outputfilepath = cemrgnethome.absolutePath() + "/LA-cemrgnet.nii";
     bool test;
     QString res;
 
@@ -986,7 +986,7 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
         process->setWorkingDirectory(cemrgnethome.absolutePath());
 
         //Setup docker
-        QString docker = aPath+"docker";
+        QString docker = executablePath+"docker";
         QString dockerimage = "orodrazeghi/cemrgnet";
         QStringList arguments;
         arguments << "run" << "--rm";
@@ -1035,7 +1035,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
 
     QDir dicomhome(path2dicomfolder);
     QString outAbsolutePath = "ERROR_IN_PROCESSING";
-    QString executablePath = "";
+    QString executablePath;
     QString outPath;
     bool successful = false;
 
@@ -1047,7 +1047,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
 #endif
-        outPath = dicomhome.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "NIIs";
+        outPath = dicomhome.absolutePath() + "/NIIs";
         QString executableName = executablePath+"docker";
 
         QStringList arguments;
@@ -1074,7 +1074,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
 QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
     // Method equivalent to:  meshtool extract surface
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
-    QString executablePath = "";
+    QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
 #endif
@@ -1091,7 +1091,7 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
     arguments << ("-op="+op);
     arguments << ("-surf="+outname);
 
-    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + outname + ".surf.vtx";
+    QString outPath = home.absolutePath() + "/" + outname + ".surf.vtx";
 
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
@@ -1107,7 +1107,7 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
 QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad){
     // Method equivalent to:  meshtool extract surface
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
-    QString executablePath = "";
+    QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
 #endif
@@ -1125,7 +1125,7 @@ QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, Q
         arguments << "-mode=1"; // compute element gradient
     }
 
-    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + odatName + ".grad.vec";
+    QString outPath = home.absolutePath() + "/" + odatName + ".grad.vec";
 
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
@@ -1141,7 +1141,7 @@ QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, Q
 QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax, double hmin, double havg, double surfCorr){
     // Method equivalent to: meshtool resample surfmesh
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
-    QString executablePath = "";
+    QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
 #endif
@@ -1164,7 +1164,7 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
         arguments << ("-surf_corr="+QString::number(surfCorr));
     }
 
-    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + outname + ".vtk";
+    QString outPath = home.absolutePath() + "/" + outname + ".vtk";
 
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
@@ -1201,7 +1201,7 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
 
 QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroName, QStringList oneName, QStringList regionLabels){
     SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
-    QString executablePath = "";
+    QString executablePath;
     #if defined(__APPLE__)
             executablePath = "/usr/local/bin/";
     #endif
@@ -1209,9 +1209,9 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
         QString outAbsolutePath = "ERROR_IN_PROCESSING";
 
         QDir home(dir);
-        QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "fibres_pt_1"+mitk::IOUtil::GetDirectorySeparator()+outName;
+        QString outPath = home.absolutePath() + "/fibres_pt_1/" + outName;
         QDir outDir(outPath);
-        QString outIgbFile = outPath + mitk::IOUtil::GetDirectorySeparator() + "phie.igb";
+        QString outIgbFile = outPath + "/phie.igb";
 
         MITK_INFO(outDir.mkpath(outPath)) << "Output directory created.";
         if(!outDir.exists()){
@@ -1267,7 +1267,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
 
             if (successful) {
                 MITK_INFO << "Laplace solves generation successful. Creating .dat file";
-                QString outPathFile = dir+mitk::IOUtil::GetDirectorySeparator()+meshName+"_"+outName+"_potential.dat";
+                QString outPathFile = "/" + meshName + "_" + outName + "_potential.dat";
 
                 arguments.clear();
                 arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
