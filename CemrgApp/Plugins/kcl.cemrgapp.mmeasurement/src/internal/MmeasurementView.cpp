@@ -559,14 +559,9 @@ void MmeasurementView::Tracking() {
         if (time.isEmpty()) {
             ofstream file;
             //Absolute path
-            QString aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
-#if defined(__APPLE__)
-            aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                    mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                    mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
-#endif
-            file.open(aPath.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst");
-            file << directory << mitk::IOUtil::GetDirectorySeparator() << "dcm- .nii" << endl;
+            QString aPath = QCoreApplication::applicationDirPath() + "/MLib";
+            file.open(aPath.toStdString() + "/imgTimes.lst");
+            file << directory << "/dcm- .nii" << endl;
             for (int i=0; i<timePoints; i++)
                 file << i << " " << i*10 << endl;
             file.close();

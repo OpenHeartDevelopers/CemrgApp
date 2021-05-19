@@ -716,12 +716,7 @@ void MmcwView::Tracking() {
             }
             else {
                 //Absolute path
-                aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
-#if defined(__APPLE__)
-                aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                        mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                        mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
-#endif
+                aPath = QCoreApplication::applicationDirPath() + "/MLib";
             }
 
             bool dcm_path_fix = true;

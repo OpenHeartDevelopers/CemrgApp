@@ -94,12 +94,7 @@ int main(int argc, char* argv[]) {
       MITK_INFO << "Input 2:" << input2;
     }
     std::unique_ptr<QProcess> process(new QProcess());
-    QString aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
-#if defined(__APPLE__)
-    aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-            mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-            mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
-#endif
+    aPath = QCoreApplication::applicationDirPath() + "/MLib";
     process->setProcessChannelMode(QProcess::MergedChannels);
     process->setWorkingDirectory(aPath);
 

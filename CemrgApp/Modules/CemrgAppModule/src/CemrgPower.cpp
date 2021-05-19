@@ -78,7 +78,7 @@ mitk::Surface::Pointer CemrgPower::MapPowerTransmitterToLandmarks(mitk::DataNode
 
     // Read EBR vtk mesh
     QString in_ebr_fname;
-    in_ebr_fname = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "EBR_data" + mitk::IOUtil::GetDirectorySeparator() + "ebr_initial.vtk";
+    in_ebr_fname = QCoreApplication::applicationDirPath() + "/EBR_data/ebr_initial.vtk";
     if (!QFileInfo::exists(in_ebr_fname)) {
         QMessageBox::warning(NULL, "Attention", "Power transmitter template does not exist: Please check that programPath/EBR_data/ebr_initial.vtk exists!");
         return mesh;
