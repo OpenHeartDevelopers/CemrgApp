@@ -98,7 +98,7 @@ public:
     inline void SetAutomaticModeButtonsOn(){SetAutomaticModeButtons(true);};
     inline void SetAutomaticModeButtonsOff(){SetAutomaticModeButtons(false);};
 
-    inline QString Path(QString fnameExt=""){return (directory+mitk::IOUtil::GetDirectorySeparator()+fnameExt);};
+    inline QString Path(QString fnameExt=""){return (directory+"/"+fnameExt);};
     inline std::string StdStringPath(QString fnameExt=""){return (Path(fnameExt).toStdString());};
 
     QString LandmarkFilesCreated(QString defaultName, QString type);

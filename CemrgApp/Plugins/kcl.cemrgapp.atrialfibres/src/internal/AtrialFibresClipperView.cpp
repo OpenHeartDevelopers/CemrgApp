@@ -196,7 +196,7 @@ void AtrialFibresClipperView::SetDirectoryFile(const QString directory, const QS
 
 void AtrialFibresClipperView::iniPreSurf() {
     //Find the selected node
-    QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator() + AtrialFibresClipperView::fileName;
+    QString path = AtrialFibresClipperView::directory + "/" + AtrialFibresClipperView::fileName;
     mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
 
     surface = shell;
@@ -512,7 +512,7 @@ void AtrialFibresClipperView::SaveLabels(){
     }
 
     MITK_INFO << "[SaveLabels] Saving labels to file.";
-    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = directory + "/";
     std::vector<int> ignoredIds;
     int ignored=0, discarded=0;
     ofstream fileLabels, fileIds, fileLabelInShell, fileIgnoreIds, fileDiscardIds;
@@ -627,7 +627,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
     }
 
     MITK_INFO << "[InterPvSpacing] Creating shortest path and corridor";
-    QString prodPathOut = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPathOut = AtrialFibresClipperView::directory + "/";
     // csadv parameters
     bool circleCorridor = false;
     int thickness = 3;
@@ -710,7 +710,7 @@ void AtrialFibresClipperView::ClipPVs(){
 }
 
 void AtrialFibresClipperView::SaveSphereClippers(){
-    QString path = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+    QString path = AtrialFibresClipperView::directory + "/";
     path += "prodClipperIDsAndRadii.txt";
     std::ofstream fo(path.toStdString());
     fo << pvClipperRadii.size() << std::endl;
@@ -1297,7 +1297,7 @@ void AtrialFibresClipperView::UserSelectPvLabel(){
 }
 
 void AtrialFibresClipperView::LoadPickedSeedsFromFile(){
-    QString prodPath = AtrialFibresClipperView::directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = AtrialFibresClipperView::directory + "/";
     QString pointsPath = prodPath + "prodClipperIDsAndRadii.txt";
     QString pickedLabelsPath = prodPath + "prodSeedLabels.txt";
 

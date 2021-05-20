@@ -1148,7 +1148,7 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
     arguments << ("-idat="+idatExt);
     arguments << ("-odat="+odatExt);
 
-    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + odatExt;
+    QString outPath = home.absolutePath() + "/" + odatExt;
 
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
@@ -1185,7 +1185,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
     }
 
     QString fileExt = "";
-    QString outPath = home.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + omsh;
+    QString outPath = home.absolutePath() + "/" + omsh;
     outPath += (ofmt.contains("carp", Qt::CaseInsensitive)) ? ".pts" : ".vtk";
 
     bool successful = ExecuteCommand(executableName, arguments, outPath);

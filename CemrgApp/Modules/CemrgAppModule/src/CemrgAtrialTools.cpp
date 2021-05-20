@@ -195,7 +195,7 @@ void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QStri
 }
 
 ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName){
-    QString inputPath = dir + mitk::IOUtil::GetDirectorySeparator() + segName;
+    QString inputPath = dir + "/" + segName;
     ImageType::Pointer orgSegImage = LoadImage(inputPath);
 
     MITK_INFO << "Extracting clean segmentation.";
@@ -214,7 +214,7 @@ ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QStrin
 }
 
 ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName, QString cleanName){
-    QString inputPath = dir + mitk::IOUtil::GetDirectorySeparator() + segName;
+    QString inputPath = dir + "/" + segName;
     ImageType::Pointer orgSegImage = LoadImage(inputPath);
 
     ImageType::Pointer atriumCoarse = RemoveNoiseFromAutomaticSegmentation(dir, segName);
@@ -395,7 +395,7 @@ void CemrgAtrialTools::ProjectTagsOnSurface(ImageType::Pointer im, QString dir, 
         labelSegIm = SurfSegmentation(im, dir, "segmentation.vtk", th, bl, smth, ds);
     } else{
         mitk::CastToMitkImage(im, labelSegIm);
-        QString path = dir + mitk::IOUtil::GetDirectorySeparator();
+        QString path = dir + "/";
     }
 
     std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
@@ -409,7 +409,7 @@ void CemrgAtrialTools::ProjectTagsOnSurface(ImageType::Pointer im, QString dir, 
     surface->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("elemTag");
     surfLoaded=true;
 
-    QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
+    QString outputPath = dir + "/" + outName;
     mitk::IOUtil::Save(surface, outputPath.toStdString());
     MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
 }
@@ -418,7 +418,7 @@ void CemrgAtrialTools::ProjectTagsOnExistingSurface(ImageType::Pointer im, QStri
     mitk::Image::Pointer labelSegIm = mitk::Image::New();
     mitk::CastToMitkImage(im, labelSegIm);
 
-    QString path = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString path = dir + "/";
     std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
     scar->SetMinStep(-1);
     scar->SetMaxStep(3);
@@ -430,7 +430,7 @@ void CemrgAtrialTools::ProjectTagsOnExistingSurface(ImageType::Pointer im, QStri
     surface->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("elemTag");
     surfLoaded=true;
 
-    QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
+    QString outputPath = dir + "/" + outName;
     mitk::IOUtil::Save(surface, outputPath.toStdString());
     MITK_INFO << ("Saved output shell to " + outputPath).toStdString();
 }
@@ -439,7 +439,7 @@ void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvNameExt, QStri
     MITK_INFO << "[ClipMitralValveAuto]";
     // Make vtk of prodMVI
     MITK_INFO << "Loading Mitral Valve Image (mvi)";
-    QString mviPath = dir + mitk::IOUtil::GetDirectorySeparator() + mvNameExt;
+    QString mviPath = dir + "/" + mvNameExt;
     mitk::Image::Pointer mvi = mitk::IOUtil::Load<mitk::Image>(mviPath.toStdString());
     mitk::MorphologicalOperations::Dilate(mvi, 2, mitk::MorphologicalOperations::StructuralElementType::Ball);
 
@@ -447,7 +447,7 @@ void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvNameExt, QStri
     mitk::Surface::Pointer clipperSurf = CemrgCommonUtils::ExtractSurfaceFromSegmentation(mvi, 0.5, 0, 10);
 
     QFileInfo fi(mviPath);
-    QString mvSurfPath = dir + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + ".vtk";
+    QString mvSurfPath = dir + "/" + fi.baseName() + ".vtk";
     mitk::IOUtil::Save(clipperSurf, mvSurfPath.toStdString());
 
     // Implement code from command line tool
@@ -490,14 +490,14 @@ void CemrgAtrialTools::ClipMitralValveAuto(QString dir, QString mvNameExt, QStri
     surface->SetVtkPolyData(clean->GetOutput());
 
     if(!outName.isEmpty()){
-        QString outPath = dir + mitk::IOUtil::GetDirectorySeparator() + outName;
+        QString outPath = dir + "/" + outName;
         MITK_INFO << ("Saving to file: " + outPath).toStdString();
         mitk::IOUtil::Save(surface, outPath.toStdString());
     }
 }
 
 void CemrgAtrialTools::ProjectShellScalars(QString dir, QString scalarsShellPath, QString outputShellPath){
-    QString prodPathOut = dir + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPathOut = dir + "/";
     QFileInfo fi(outputShellPath);
 
     mitk::Surface::Pointer _scalarsShell = mitk::IOUtil::Load<mitk::Surface>(scalarsShellPath.toStdString());
@@ -553,7 +553,7 @@ void CemrgAtrialTools::ExtractLabelFromShell(QString dir, int label, QString out
     cf->Update();
     cf->SetExtractionModeToLargestRegion();
 
-    QString path = dir + mitk::IOUtil::GetDirectorySeparator() + outName + ".vtk";
+    QString path = dir + "/" + outName + ".vtk";
     outputsurf->SetVtkPolyData(cf->GetOutput());
     mitk::IOUtil::Save(outputsurf, path.toStdString());
 }
@@ -574,7 +574,7 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 
     IteratorType itLMK(im, im->GetRequestedRegion());
     std::vector<std::vector<double>> veinsCentre;
-    QString fcentresPath = directory + mitk::IOUtil::GetDirectorySeparator() + outName + "Centres.txt";
+    QString fcentresPath = directory + "/" + outName + "Centres.txt";
     std::ofstream fcentres(fcentresPath.toStdString());
 
     for (int j=0; j<nveins; j++) {
@@ -614,8 +614,8 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
         pickedSeedLabels.push_back(21);
     }
 
-    QString fidsPath = directory + mitk::IOUtil::GetDirectorySeparator() + outName + "Ids.txt";
-    QString flabelsPath = directory + mitk::IOUtil::GetDirectorySeparator() + outName + "Labels.txt";
+    QString fidsPath = directory + "/" + outName + "Ids.txt";
+    QString flabelsPath = directory + "/" + outName + "Labels.txt";
     std::ofstream fids(fidsPath.toStdString());
     std::ofstream flabels(flabelsPath.toStdString());
 
@@ -747,7 +747,7 @@ ShortImageType::Pointer CemrgAtrialTools::Uint16ToShort(ImageType::Pointer im){
 }
 
 void CemrgAtrialTools::SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName){
-    QString outputPath = dir + mitk::IOUtil::GetDirectorySeparator() + imName;
+    QString outputPath = dir + "/" + imName;
     outputPath += (!imName.contains(".nii")) ? ".nii" : "";
     MITK_INFO << ("Saving image " + imName + " to: " + dir).toStdString();
 

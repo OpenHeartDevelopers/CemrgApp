@@ -187,7 +187,7 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
     }
 
     MITK_INFO << "[SaveRoughPoints] Saving rough points to file.";
-    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = directory + "/";
     QString outname = "prodRoughLandmarks";
     ofstream fileRough, fileRoughLabels;
 
@@ -228,7 +228,7 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     }
 
     MITK_INFO << "[SaveRefinedPoints] Saving refined points to file.";
-    QString prodPath = directory + mitk::IOUtil::GetDirectorySeparator();
+    QString prodPath = directory + "/";
     QString outname = "prodRefinedLandmarks";
     ofstream fileRefined;
     ofstream fileRough, fileRefinedLabels;
@@ -265,7 +265,7 @@ void AtrialFibresLandmarksView::SetDirectoryFile(const QString directory, const 
 
 void AtrialFibresLandmarksView::iniPreSurf() {
     //Find the selected node
-    QString path = AtrialFibresLandmarksView::directory + mitk::IOUtil::GetDirectorySeparator() + AtrialFibresLandmarksView::fileName;
+    QString path = AtrialFibresLandmarksView::directory + "/" + AtrialFibresLandmarksView::fileName;
     // mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
     mitk::Surface::Pointer shell = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
     CemrgCommonUtils::FlipXYPlane(shell, "", "");

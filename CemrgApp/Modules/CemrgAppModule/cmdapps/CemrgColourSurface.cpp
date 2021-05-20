@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
         QFileInfo fi(inname);
 
         QString dir = fi.absolutePath();
-        QString path = dir + mitk::IOUtil::GetDirectorySeparator();
+        QString path = dir + "/";
         QString inputPath = fi.absoluteFilePath();
         QString outputPath = path + outname;
 

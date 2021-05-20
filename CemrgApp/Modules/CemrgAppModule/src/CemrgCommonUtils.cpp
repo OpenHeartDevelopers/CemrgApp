@@ -997,7 +997,7 @@ void CemrgCommonUtils::SaveImageFromSurfaceMesh(QString surfPath, double origin[
 
     if(outputPath.isEmpty()){
         QFileInfo fi(surfPath);
-        out = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + ".nii";
+        out = fi.absolutePath() + "/" + fi.baseName() + ".nii";
     } else{
         out = outputPath;
     }

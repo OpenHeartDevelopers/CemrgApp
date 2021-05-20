@@ -299,7 +299,7 @@ void QmitkCemrgAppCommonTools::PadImageEdgesWithConstant(){
         }
         if(!outputName.isEmpty()){
             QFileInfo fi(pathToImage);
-            outputPath = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + outputName + fi.suffix();
+            outputPath = fi.absolutePath() + "/" + outputName + fi.suffix();
         }
 
         CemrgCommonUtils::SavePadImageWithConstant(pathToImage, outputPath, paddingSize, constantForPadding);
@@ -318,7 +318,7 @@ void QmitkCemrgAppCommonTools::BinariseImage(){
     }
 
     QFileInfo fi(pathToImage);
-    QString outPath = fi.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + fi.baseName() + "-bin" + fi.suffix();
+    QString outPath = fi.absolutePath() + "/" + fi.baseName() + "-bin" + fi.suffix();
 
     mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(pathToImage.toStdString());
     mitk::Image::Pointer outIm = CemrgCommonUtils::ReturnBinarised(im);
