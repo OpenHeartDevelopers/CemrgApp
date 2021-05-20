@@ -1128,8 +1128,8 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
     return outAbsolutePath;
 }
 
-QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, bool isElem){
-    // Method equivalent to: meshtool interpolate Xdata, where X= isElem? elem : node;
+QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType){
+    // Method equivalent to: meshtool interpolate dataType
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
     QString executablePath = "";
 #if defined(__APPLE__)
@@ -1139,24 +1139,30 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
     QString outAbsolutePath = "ERROR_IN_PROCESSING";
 
     QDir home(dir);
-    QString Xdata = isElem ? "elemdata" : "nodedata";
-
-    QStringList arguments = GetDockerArguments(home.absolutePath());
-    arguments << "interpolate" << Xdata;
-    arguments << ("-imsh="+meshname);
-    arguments << ("-omsh="+outmesh);
-    arguments << ("-idat="+idatExt);
-    arguments << ("-odat="+odatExt);
-
-    QString outPath = home.absolutePath() + "/" + odatExt;
-
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
-
-    if (successful) {
-        MITK_INFO << "Interpolating data successful.";
-        outAbsolutePath = outPath;
+    if(!dataType.contains("elemdata") && !dataType.contains("nodedata") && !dataType.contains("clouddata")){
+        MITK_ERROR << "Incorrect parameter seleted";
     } else{
-        MITK_WARN << "Error with MESHTOOL Docker container.";
+        QStringList arguments = GetDockerArguments(home.absolutePath());
+        arguments << "interpolate" << dataType;
+        if(dataType.contains("clouddata")){
+            arguments << ("-pts="+meshname);
+        } else{
+            arguments << ("-imsh="+meshname);
+        }
+        arguments << ("-omsh="+outmesh);
+        arguments << ("-idat="+idatExt);
+        arguments << ("-odat="+odatExt);
+
+        QString outPath = home.absolutePath() + "/" + odatExt;
+
+        bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+        if (successful) {
+            MITK_INFO << "Interpolating data successful.";
+            outAbsolutePath = outPath;
+        } else{
+            MITK_WARN << "Error with MESHTOOL Docker container.";
+        }
     }
     return outAbsolutePath;
 }
