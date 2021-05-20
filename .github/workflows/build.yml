@@ -100,7 +100,7 @@ jobs:
     - name: Clone repos
       run: |
         sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
-        sudo git clone --branch development https://github.com/CemrgAppDevelopers/CemrgApp /CemrgApp
+        sudo git clone --branch master https://github.com/CemrgAppDevelopers/CemrgApp /CemrgApp
     
     - name: Change timestamps of MITK directory
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
@@ -159,7 +159,7 @@ jobs:
       working-directory: c:\
       run: |
         git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git MITK
-        git clone --branch development https://github.com/CemrgAppDevelopers/CemrgApp CemrgApp
+        git clone --branch master https://github.com/CemrgAppDevelopers/CemrgApp CemrgApp
     
     - name: Change timestamps of MITK directory
       working-directory: c:\MITK
@@ -226,7 +226,7 @@ jobs:
       working-directory: /Users/Shared
       run: |
         git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git MITK
-        git clone --branch development https://github.com/CemrgAppDevelopers/CemrgApp CemrgApp
+        git clone --branch master https://github.com/CemrgAppDevelopers/CemrgApp CemrgApp
       
     - name: Patch MITK
       working-directory: /Users/Shared
