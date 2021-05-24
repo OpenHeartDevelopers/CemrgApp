@@ -39,18 +39,17 @@ int main(int argc, char** argv) {
     QSplashScreen splash(pixmap);
     splash.setWindowFlags(Qt::SplashScreen | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
 
-    // std::string version="2.1.1";
     QFile file(":/splash/version.txt");
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
         QTextStream in(&file);
         QString version = in.readLine();
 
         QString msg = "CemrgApp v" + version;
-        msg += "\n Powered by: MITK v2018.04.2";
+        msg += "\nPowered by: MITK v2018.04.2";
 
         splash.show();
-        splash.showMessage(msg, Qt::AlignRight, Qt::black);
-        QTimer::singleShot(3000, &splash, SLOT(close()));
+        splash.showMessage(msg, Qt::AlignLeft, Qt::white);
+        QTimer::singleShot(4000, &splash, SLOT(close()));
     }
 
     // -------------------------------------------------------------------
