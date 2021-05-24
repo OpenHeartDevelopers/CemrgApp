@@ -19,7 +19,13 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkBaseApplication.h>
 
 #include <QStringList>
+#include <QString>
 #include <QVariant>
+#include <QPixmap>
+#include <QTimer>
+#include <QSplashScreen>
+#include <QFile>
+#include <QTextStream>
 
 int main(int argc, char** argv) {
 
@@ -27,6 +33,25 @@ int main(int argc, char** argv) {
     myApp.setSingleMode(true);
     myApp.setApplicationName("CemrgApp v2.1");
     myApp.setOrganizationName("KCL");
+    myApp.initializeQt();
+
+    QPixmap pixmap(":/splash/splashscreen.png");
+    QSplashScreen splash(pixmap);
+    splash.setWindowFlags(Qt::SplashScreen | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+
+    QFile file(":/splash/version.txt");
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        QTextStream in(&file);
+        QString version = in.readLine();
+        QString sha = in.readLine();
+
+        QString msg = "CemrgApp v" + version + " (" + sha +")";
+        msg += "\nPowered by: MITK v2018.04.2";
+
+        splash.show();
+        splash.showMessage(msg, Qt::AlignLeft, Qt::white);
+        QTimer::singleShot(4000, &splash, SLOT(close()));
+    }
 
     // -------------------------------------------------------------------
     // Here you can switch to your customizable application:

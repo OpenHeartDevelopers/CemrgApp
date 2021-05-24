@@ -1,0 +1,277 @@
+name: CemrgApp Build & Deploy
+
+on: 
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  Create-Release:
+    runs-on: ubuntu-18.04
+    needs: [Build-Linux, Build-Windows, Build-macOS]
+    steps:
+    - name: Get the version from tag
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        release_name: Binary Executables for CemrgApp Version ${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          CemrgApp version ${{ steps.get_version.outputs.VERSION }} binary executables are available for Linux, macOS, and Windows machines.
+            - Linux version was built on Ubuntu 18.04 LTS
+            - macOS version was built on Catalina
+            - Windows version was built on Windows 10
+
+    - name: Download packages
+      uses: actions/download-artifact@v2
+      with:
+        name: Packages
+    
+    - name: Upload Linux
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./CemrgApp-Linux.zip
+        asset_name: CemrgApp-Linux-v${{ steps.get_version.outputs.VERSION }}.zip
+        asset_content_type: application/zip
+
+    - name: Upload Windows
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./CemrgApp-Windows.zip
+        asset_name: CemrgApp-Windows-v${{ steps.get_version.outputs.VERSION }}.zip
+        asset_content_type: application/zip
+    
+    - name: Upload macOS
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./CemrgApp-macOS.dmg
+        asset_name: CemrgApp-macOS-v${{ steps.get_version.outputs.VERSION }}.dmg
+        asset_content_type: application/octet-stream
+
+
+  Build-Linux:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Download precompiled Build folder
+      working-directory: /
+      run: |
+        sudo wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EU8n4C0PlPxDgLk6PFrprY8B4KwiDaYotmur5m0q3px81w?download=1
+        sudo 7z x Build.zip
+    
+    - name: Download external libraries
+      working-directory: /
+      run: |
+        sudo wget -q -O Externals.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EX8zGabE-ctDoBnde6ntHR0Bx_1wYis_ql26aAzMoedMzg?download=1
+        sudo 7z x Externals.zip
+      
+    - name: Install missing packages
+      run: |
+        sudo apt update
+        sudo DEBIAN_FRONTEND=noninteractive apt install libxt-dev libtiff5-dev libfontconfig1 mesa-common-dev libglu1-mesa-dev libxcomposite1 libxcursor1 libxrender1 libxi6 libxtst6 libasound2 libnspr4 libnss3 libxkbcommon-dev libxkbcommon-x11-dev doxygen git cmake python3-pip gcc-6 g++-6 -y
+        sudo apt remove --auto-remove icu-devtools libicu-dev -y
+    
+    - name: Install Qt
+      run: |
+        sudo pip3 install aqtinstall
+        sudo aqt install --outputdir /Qt 5.12.10 linux desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
+    
+    - name: Set environment variables
+      run: |
+        echo "CC=gcc-6" >> $GITHUB_ENV
+        echo "CXX=g++-6" >> $GITHUB_ENV
+    
+    - name: Clone repos
+      run: |
+        sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
+        sudo git clone --branch master https://github.com/CemrgAppDevelopers/CemrgApp /CemrgApp
+    
+    - name: Change timestamps of MITK directory
+      run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
+    
+    - name: Build
+      working-directory: /Build
+      run: sudo make -j4
+
+    - name: Package
+      working-directory: /Build/MITK-build
+      run: |
+        sudo make package -j4
+        cd _CPack_Packages/Linux/TGZ
+        sudo mv MITK-v2018.04.2-linux-x86_64 CemrgApp-Linux
+        sudo rm CemrgApp-Linux/Mitk*
+        sudo rm CemrgApp-Linux/bin/MitkWorkbench*
+        sudo mv /Externals/* CemrgApp-Linux/bin/
+        sudo mv /CemrgApp/README.md CemrgApp-Linux/
+        sudo 7z a CemrgApp-Linux.zip CemrgApp-Linux
+        sudo mv CemrgApp-Linux.zip /
+
+    - name: Upload package
+      uses: actions/upload-artifact@v2
+      with:
+        name: Packages
+        path: /CemrgApp-Linux.zip
+
+
+  Build-Windows:
+    runs-on: windows-2016
+    steps:
+    - name: Uninstall NSIS
+      run: |
+        & 'C:/Program Files (x86)/NSIS/uninst-nsis.exe' /S
+      
+    - name: Download precompiled Build folder
+      working-directory: c:\
+      run: |
+        c:\msys64\usr\bin\wget.exe -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EUFa_AWPBI1OnnQwXA_ilu8Bq38U6OjiR4XKDcxDKo5wnw?download=1
+        7z x Build.zip
+
+    - name: Download external libraries
+      working-directory: c:\
+      run: |
+        c:\msys64\usr\bin\wget.exe -q -O Externals.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/Ea8urj-xMS5CoEnt3lS-A9QBLoAi1EXfP3lM26MRn11OrA?download=1
+        7z x Externals.zip
+    
+    - name: Install Qt
+      working-directory: c:\
+      run: |
+        pip install aqtinstall
+        mkdir Qt
+        python -m aqt install --outputdir Qt 5.12.10 windows desktop win64_msvc2017_64 -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
+    
+    - name: Clone repos
+      working-directory: c:\
+      run: |
+        git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git MITK
+        git clone --branch master https://github.com/CemrgAppDevelopers/CemrgApp CemrgApp
+    
+    - name: Change timestamps of MITK directory
+      working-directory: c:\MITK
+      run: dir -R | foreach { $_.LastWriteTime = [DateTime]::ParseExact('01-04-21', 'dd-MM-yy', $null) }
+    
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Build
+      working-directory: c:\Build
+      run: MSBuild MITK-superbuild.sln /p:Configuration=Release /p:Platform=x64 -m:4
+
+    - name: Package
+      working-directory: c:\Build\MITK-build
+      run: |
+        MSBuild PACKAGE.vcxproj /p:Configuration=Release /p:Platform=x64 -m:4
+        cd _CPack_Packages\win64\ZIP
+        ren MITK-v2018.04.2-windows-x86_64 CemrgApp-Windows
+        xcopy /e c:\Externals\* .\CemrgApp-Windows\bin\
+        copy c:\CemrgApp\README.md .\CemrgApp-Windows\
+        del CemrgApp-Windows\bin\MitkWorkbench.*
+        7z a CemrgApp-Windows.zip CemrgApp-Windows
+        move CemrgApp-Windows.zip c:\
+
+    - name: Upload package
+      uses: actions/upload-artifact@v2
+      with:
+        name: Packages
+        path: c:\CemrgApp-Windows.zip
+  
+
+  Build-macOS:
+    runs-on: macos-10.15
+    steps:
+    - name: Download precompiled Build folder
+      working-directory: /Users/Shared
+      run: |
+        wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EVzkObB3qiZLpEQsCLB3pdcBjaGDuzLapXFvujnDP_xr1A?download=1
+        7z x Build.zip
+
+    - name: Download external libraries
+      working-directory: /Users/Shared
+      run: |
+        wget -q -O Externals.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EZh5YUHzdyNEu_m0ZwTfaYUBZBil9eIqLrmJw8lDWQSLag?download=1
+        7z x Externals.zip
+
+    - name: Download patch for MITK
+      working-directory: /Users/Shared
+      run: |
+        wget -q -O Patch.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EQ5LKrqH_fZNt9eGA7RBcC4B9YyyF0SwFeo9hIm9zkqLTQ?download=1
+        7z x Patch.zip
+
+    - name: Install missing packages
+      run: brew install gmp doxygen llvm@9
+
+    - name: Install Qt
+      working-directory: /Users/Shared
+      run: |
+        pip3 install aqtinstall --user
+        mkdir Qt
+        python3 -m aqt install --outputdir Qt 5.12.10 mac desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
+
+    - name: Clone repos
+      working-directory: /Users/Shared
+      run: |
+        git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git MITK
+        git clone --branch master https://github.com/CemrgAppDevelopers/CemrgApp CemrgApp
+      
+    - name: Patch MITK
+      working-directory: /Users/Shared
+      run: |
+        cp Patch/usServiceListeners.cpp MITK/Modules/CppMicroServices/core/src/service/usServiceListeners.cpp
+        cp Patch/usListenerFunctors_p.h MITK/Modules/CppMicroServices/core/src/util/usListenerFunctors_p.h
+    
+    - name: Change timestamps of MITK directory
+      run: find /Users/Shared/MITK/ -exec touch -a -m -t 202104010000 {} \;
+
+    - name: Set environment variables
+      run: |
+        echo "/usr/local/opt/llvm@9/bin:$PATH" >> $GITHUB_PATH
+        echo "LDFLAGS=-L/usr/local/opt/llvm@9/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I/usr/local/opt/llvm@9/include" >> $GITHUB_ENV
+        echo "LLVM_VERSION=9.0" >> $GITHUB_ENV
+        echo "LLVM_DIRECTORY=/usr/local/opt/llvm@9" >> $GITHUB_ENV
+        echo "CC=/usr/local/opt/llvm@9/bin/clang" >> $GITHUB_ENV
+        echo "CXX=/usr/local/opt/llvm@9/bin/clang++" >> $GITHUB_ENV
+        echo "CPLUS_INCLUDE_PATH=/usr/local/opt/llvm@9/include/c++/v1:/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include" >> $GITHUB_ENV
+
+    - name: Build
+      working-directory: /Users/Shared/Build
+      run: make -j6
+
+    - name: Package
+      working-directory: /Users/Shared/Build/MITK-build
+      continue-on-error: true
+      run: make package -j6
+    
+    - name: Create DMG
+      working-directory: /Users/Shared/Build/MITK-build/_CPack_Packages/Darwin/DragNDrop/MITK-v2018.04.2-local_changes-macos-x86_64
+      run: |
+        rsync -au MitkWorkbench.app/Contents/Frameworks/ CemrgApp.app/Contents/Frameworks
+        rsync -au MitkWorkbench.app/Contents/MacOS/ CemrgApp.app/Contents/MacOS
+        cp -R /Users/Shared/Externals/ CemrgApp.app/Contents/MacOS
+        rm CemrgApp.app/Contents/MacOS/MitkWorkbench*
+        mkdir /Users/Shared/CemrgApp-macOS
+        mv CemrgApp.app /Users/Shared/CemrgApp-macOS
+        mv /Users/Shared/CemrgApp/README.md /Users/Shared/CemrgApp-macOS
+        ln -s /Applications/ /Users/Shared/CemrgApp-macOS/Applications
+        hdiutil create -volname CemrgApp -srcfolder /Users/Shared/CemrgApp-macOS -ov -format UDZO $GITHUB_WORKSPACE/CemrgApp-macOS.dmg
+
+    - name: Upload package
+      uses: actions/upload-artifact@v2
+      with:
+        name: Packages
+        path: CemrgApp-macOS.dmg

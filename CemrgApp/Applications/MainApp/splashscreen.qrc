@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/splash">
+        <file>splashscreen.png</file>
+        <file>version.txt</file>
+    </qresource>
+</RCC>
