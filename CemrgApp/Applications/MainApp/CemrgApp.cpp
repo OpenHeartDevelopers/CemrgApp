@@ -43,8 +43,9 @@ int main(int argc, char** argv) {
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
         QTextStream in(&file);
         QString version = in.readLine();
+        QString sha = in.readLine();
 
-        QString msg = "CemrgApp v" + version;
+        QString msg = "CemrgApp v" + version + " (" + sha +")";
         msg += "\nPowered by: MITK v2018.04.2";
 
         splash.show();
