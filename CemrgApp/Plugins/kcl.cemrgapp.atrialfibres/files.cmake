@@ -19,6 +19,7 @@ set(UI_FILES
   src/internal/AtrialFibresClipperViewControls.ui
   src/internal/AtrialFibresClipperViewLabels.ui
   src/internal/AtrialFibresClipperViewUIRadius.ui
+  src/internal/AtrialFibresClipperViewUICorridor.ui
   src/internal/AtrialFibresLandmarksViewControls.ui
   src/internal/AtrialFibresLandmarksViewRough.ui
   src/internal/AtrialFibresLandmarksViewRefined.ui

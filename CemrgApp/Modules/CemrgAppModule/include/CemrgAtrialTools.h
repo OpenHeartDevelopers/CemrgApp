@@ -141,7 +141,7 @@ public:
 
     mitk::Image::Pointer SurfSegmentation(ImageType::Pointer im, QString dir, QString outName, double th, double bl, double smth, double ds);
     void ProjectTagsOnSurface(ImageType::Pointer im, QString dir, QString outName, double th=0.5, double bl=0.8, double smth=3, double ds=0.5, bool createSurface=true);
-    void ProjectTagsOnExistingSurface(ImageType::Pointer im, QString dir, QString outName, QString existingSurfaceName="segmentation.vtk");
+    void ProjectTagsOnExistingSurface(ImageType::Pointer im, QString dir, QString outName, QString existingSurfaceName="segmentation.vtk", int mins=-1, int maxs=3, int meth=2);
     void ClipMitralValveAuto(QString dir, QString mvNameExt, QString outName, bool insideout=true);
 
     void SetSurfaceLabels(QString correctLabels, QString naiveLabels);

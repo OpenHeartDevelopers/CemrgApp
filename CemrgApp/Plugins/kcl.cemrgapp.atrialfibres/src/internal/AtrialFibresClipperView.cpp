@@ -117,7 +117,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     automaticPipeline = AtrialFibresClipperView::isAutomatic;
     SetAutomaticModeButtons(automaticPipeline);
     SetManualModeButtons(!automaticPipeline);
-    corridorMax = 5;
+    corridorMax = 10;
     corridorCount = 0;
     defaultClipperRadius = 9.0;
 
@@ -636,6 +636,8 @@ void AtrialFibresClipperView::InterPvSpacing(){
     tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
     CemrgCommonUtils::SetCellDataToPointData(tempsurf);
 
+    MITK_INFO(QFile::remove(prodPathOut+"corridor.csv")) << "Removed previous corridor";
+
     csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
     csadv->SetOutputFileName((prodPathOut+"corridor.csv").toStdString());
     csadv->SetOutputPath(prodPathOut.toStdString());
@@ -646,6 +648,25 @@ void AtrialFibresClipperView::InterPvSpacing(){
     csadv->CorridorFromPointList(idVectors, circleCorridor);
 
     MITK_INFO << "[InterPvSpacing] Setting values in corridor to atrium body label";
+    QDialog* inputs = new QDialog(0,0);
+    bool userInputAccepted=false;
+    m_UICorridor.setupUi(inputs);
+    connect(m_UICorridor.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_UICorridor.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    int labelInCorridor = 1;
+    if (dialogCode == QDialog::Accepted){
+        bool ok1;
+        labelInCorridor= m_UICorridor.lineEdit_1->text().toInt(&ok1);
+        if (!ok1){
+            labelInCorridor=1;
+        }
+        if (labelInCorridor%2==0 || labelInCorridor>19){
+            labelInCorridor = 1;
+        }
+    }
 
     QString path2corridor = prodPathOut + "corridor.csv";
     std::ifstream fi(path2corridor.toStdString());
@@ -658,6 +679,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
     std::string line, header;
     std::getline(fi, header);
 
+
     while(std::getline(fi, line)){
         QString qline =  QString::fromStdString(line);
         vtkIdType vId;
@@ -668,7 +690,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
 
         surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
         for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
-            cellScalars->SetTuple1(cellIds->GetId(ix), 1);
+            cellScalars->SetTuple1(cellIds->GetId(ix), labelInCorridor);
         }
     }
     fi.close();
@@ -994,7 +1016,7 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                     self->PickCallBack(pvCorridor);
                     self->corridorCount++;
                 } else{
-                    std::string msg = "Select less than 5 points for inter PV corridor!\nPress V to fix another vein.";
+                    std::string msg = "Select less than  points for inter PV corridor!\nPress V to fix another vein.";
                     QMessageBox::warning(NULL, "Attention - too many corridor points", msg.c_str());
                     MITK_INFO << msg;
                 }

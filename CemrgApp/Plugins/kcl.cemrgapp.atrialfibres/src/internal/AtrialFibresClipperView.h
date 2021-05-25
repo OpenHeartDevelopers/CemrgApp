@@ -41,6 +41,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "ui_AtrialFibresClipperViewLabels.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
 #include "ui_AtrialFibresClipperViewUIRadius.h"
+#include "ui_AtrialFibresClipperViewUICorridor.h"
 
 /**
   \brief AtrialFibresClipperView
@@ -111,6 +112,7 @@ protected:
     Ui::AtrialFibresClipperViewLabels m_Labels;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
     Ui::AtrialFibresClipperViewUIRadius m_UIRadius;
+    Ui::AtrialFibresClipperViewUICorridor m_UICorridor;
 
 private:
 

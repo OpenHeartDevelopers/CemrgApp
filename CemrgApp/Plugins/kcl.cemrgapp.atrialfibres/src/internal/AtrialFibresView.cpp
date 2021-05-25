@@ -145,6 +145,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     resurfaceMesh = false;
     uiRemesh_isscalar = false;
     uiRemesh_extractParts = false;
+    userHasSetMeshingParams = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
     // atrium->SetDebugModeOn();
     atrium->SetDebugModeOff();
@@ -364,21 +365,21 @@ void AtrialFibresView::AnalysisChoice(){
             mitk::IOUtil::Save(im, StdStringPath(tagName+".nii"));
             CemrgCommonUtils::AddToStorage(im, tagName.toStdString(), this->GetDataStorage());
 
-            if(resurfaceMesh){
-                QMessageBox::information(NULL, "Attention", "Surface mesh needs to be regenerated.");
-                bool userInputAccepted = GetUserMeshingInputs();
-                if(userInputAccepted){
-                    mitk::Image::Pointer segIm = mitk::IOUtil::Load<mitk::Image>(Path(tagName+".nii").toStdString());
-                    CemrgCommonUtils::Binarise(segIm);
-                    mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
-
-                    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                    cmd->SetUseDockerContainers(true);
-
-                    cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
-
-                }
-            }
+            // if(resurfaceMesh){
+            //     QMessageBox::information(NULL, "Attention", "Surface mesh needs to be regenerated.");
+            //     bool userInputAccepted = GetUserMeshingInputs();
+            //     if(userInputAccepted){
+            //         mitk::Image::Pointer segIm = mitk::IOUtil::Load<mitk::Image>(Path(tagName+".nii").toStdString());
+            //         CemrgCommonUtils::Binarise(segIm);
+            //         mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
+            //
+            //         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+            //         cmd->SetUseDockerContainers(true);
+            //
+            //         cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
+            //
+            //     }
+            // }
 
             SetManualModeButtonsOn();
             SetAutomaticModeButtonsOff();
@@ -714,10 +715,8 @@ void AtrialFibresView::CreateLabelledMesh(){
         MITK_INFO << "[CreateLabelledMesh] Create surface file and projecting tags";
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
-        int iter=1, blur=0, smth=10;
-        double th=0.5;
 
-        cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", iter, th, blur, smth);
+        cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
         atrium->ProjectTagsOnExistingSurface(pveins, directory, tagName+".vtk");
 
         MITK_INFO << "Add the mesh to storage";
@@ -1396,37 +1395,54 @@ bool AtrialFibresView::GetUserAnalysisSelectorInputs(){
 }
 
 bool AtrialFibresView::GetUserMeshingInputs(){
-    QDialog* inputs = new QDialog(0,0);
     bool userInputAccepted=false;
-    m_UIMeshing.setupUi(inputs);
-    connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
-    connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-    int dialogCode = inputs->exec();
 
-    //Act on dialog return code
-    if (dialogCode == QDialog::Accepted) {
+    if(userHasSetMeshingParams){
+        QString msg = "The parameters have been set already, change them?\n";
+        msg += "close iter= " + QString::number(uiMesh_iter) + '\n';
+        msg += "threshold= " + QString::number(uiMesh_th) + '\n';
+        msg += "blur= " + QString::number(uiMesh_bl) + '\n';
+        msg += "smooth iter= " + QString::number(uiMesh_smth);
 
-        bool ok1, ok2, ok3, ok4;
-        uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
-        uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
-        uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
-        uiMesh_iter= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
+        if(Ask("Question", msg.toStdString())==QMessageBox::Yes){
+            userHasSetMeshingParams=false;
+            return GetUserMeshingInputs();
+        } else{
+            userInputAccepted=true;
+        }
+    } else{
+        QDialog* inputs = new QDialog(0,0);
+        m_UIMeshing.setupUi(inputs);
+        connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+        connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+        int dialogCode = inputs->exec();
 
-        //Set default values
-        if (!ok1 || !ok2 || !ok3 || !ok4)
+        //Act on dialog return code
+        if (dialogCode == QDialog::Accepted) {
+
+            bool ok1, ok2, ok3, ok4;
+            uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
+            uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
+            uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
+            uiMesh_iter= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
+
+            //Set default values
+            if (!ok1 || !ok2 || !ok3 || !ok4)
             QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-        if (!ok1) uiMesh_th=0.5;
-        if (!ok2) uiMesh_bl=0.0;
-        if (!ok3) uiMesh_smth=10;
-        if (!ok4) uiMesh_iter=1;
+            if (!ok1) uiMesh_th=0.5;
+            if (!ok2) uiMesh_bl=0.0;
+            if (!ok3) uiMesh_smth=10;
+            if (!ok4) uiMesh_iter=1;
 
-        inputs->deleteLater();
-        userInputAccepted=true;
+            inputs->deleteLater();
+            userInputAccepted=true;
+            userHasSetMeshingParams=true;
 
-    } else if (dialogCode == QDialog::Rejected) {
-        inputs->close();
-        inputs->deleteLater();
-    }//_if
+        } else if (dialogCode == QDialog::Rejected) {
+            inputs->close();
+            inputs->deleteLater();
+        }//_if
+    }
 
     return userInputAccepted;
 }

@@ -153,7 +153,7 @@ private:
     QString fileName, cnnPath;
     QString directory, tagName, refinedSuffix;
     std::unique_ptr<CemrgAtrialTools> atrium;
-    bool automaticPipeline, analysisOnLge, resurfaceMesh;
+    bool automaticPipeline, analysisOnLge, resurfaceMesh, userHasSetMeshingParams;
 
     // user-defined parameters
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
