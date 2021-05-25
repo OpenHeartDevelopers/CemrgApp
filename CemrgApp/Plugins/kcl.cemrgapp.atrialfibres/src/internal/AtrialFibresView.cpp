@@ -693,6 +693,11 @@ void AtrialFibresView::CreateLabelledMesh(){
     QString prodPath =  directory + "/";
 
     ImageType::Pointer pveins = atrium->LoadImage(prodPath+"PVeinsLabelled.nii");
+    if(!tagName.contains("labelled")){
+        std::string msg = "Changing working name from " + tagName.toStdString() + " to 'labelled'";
+        QMessageBox::information(NULL, "Attention", msg.c_str());
+        tagName = "labelled";
+    }
     pveins = atrium->AssignOstiaLabelsToVeins(pveins, directory, tagName);
 
     MITK_INFO << "[CreateLabelledMesh] Create Mesh";

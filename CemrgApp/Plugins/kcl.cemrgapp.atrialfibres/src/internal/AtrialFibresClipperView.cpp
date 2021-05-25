@@ -160,7 +160,6 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     iniPreSurf();
     if (surface.IsNotNull()) {
         InitialisePickerObjects();
-        LoadPickedSeedsFromFile();
         clipper = std::unique_ptr<CemrgAtriaClipper>(new CemrgAtriaClipper(directory, surface));
         Visualiser();
     }
