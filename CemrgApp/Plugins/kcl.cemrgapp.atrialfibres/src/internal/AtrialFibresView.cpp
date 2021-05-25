@@ -359,8 +359,8 @@ void AtrialFibresView::AnalysisChoice(){
             CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing);
             CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
 
-            mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(Path(tagName+".nii").toStdString());
-            CemrgCommonUtils::Binarise(im);
+            mitk::Image::Pointer im = CemrgCommonUtils::ReturnBinarised(mitk::IOUtil::Load<mitk::Image>(StdStringPath(tagName+".nii")));
+            // CemrgCommonUtils::Binarise(im);
             mitk::IOUtil::Save(im, StdStringPath(tagName+".nii"));
             CemrgCommonUtils::AddToStorage(im, tagName.toStdString(), this->GetDataStorage());
 
@@ -692,7 +692,7 @@ void AtrialFibresView::CreateLabelledMesh(){
 
     QString prodPath =  directory + "/";
 
-    ImageType::Pointer pveins = atrium->LoadImage(prodPath+"pVeinsLabelled.nii");
+    ImageType::Pointer pveins = atrium->LoadImage(prodPath+"PVeinsLabelled.nii");
     pveins = atrium->AssignOstiaLabelsToVeins(pveins, directory, tagName);
 
     MITK_INFO << "[CreateLabelledMesh] Create Mesh";
