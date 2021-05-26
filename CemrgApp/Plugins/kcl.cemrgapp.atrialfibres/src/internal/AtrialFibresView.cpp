@@ -134,6 +134,9 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     m_Controls.button_man4_1_Lge->setVisible(false);
     connect(m_Controls.button_man4_1_Lge, SIGNAL(clicked()), this, SLOT(ManualLgeRegistration()));
 
+    m_Controls.button_man4_2_postproc->setVisible(false);
+    connect(m_Controls.button_man4_2_postproc, SIGNAL(clicked()), this, SLOT(SegmentationPostprocessing()));
+
     m_Controls.button_man7_1_landmarks->setVisible(false);
     m_Controls.button_man7_2_clipMV->setVisible(false);
     connect(m_Controls.button_man7_1_landmarks, SIGNAL(clicked()), this, SLOT(SelectMvLandmarks()));
@@ -365,26 +368,11 @@ void AtrialFibresView::AnalysisChoice(){
             mitk::IOUtil::Save(im, StdStringPath(tagName+".nii"));
             CemrgCommonUtils::AddToStorage(im, tagName.toStdString(), this->GetDataStorage());
 
-            // if(resurfaceMesh){
-            //     QMessageBox::information(NULL, "Attention", "Surface mesh needs to be regenerated.");
-            //     bool userInputAccepted = GetUserMeshingInputs();
-            //     if(userInputAccepted){
-            //         mitk::Image::Pointer segIm = mitk::IOUtil::Load<mitk::Image>(Path(tagName+".nii").toStdString());
-            //         CemrgCommonUtils::Binarise(segIm);
-            //         mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
-            //
-            //         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-            //         cmd->SetUseDockerContainers(true);
-            //
-            //         cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
-            //
-            //     }
-            // }
-
             SetManualModeButtonsOn();
             SetAutomaticModeButtonsOff();
             m_Controls.button_man4_segmentation->setEnabled(false);
             m_Controls.button_auto4_meshpreproc->setVisible(true);
+            m_Controls.button_man4_2_postproc->setVisible(true);
         }
     }
 }
@@ -629,6 +617,10 @@ void AtrialFibresView::ManualLgeRegistration(){
             QMessageBox::warning(NULL, "Attention", "Please select the segmentation!");
         }
     }//_if_data
+}
+
+void AtrialFibresView::SegmentationPostprocessing(){    
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentationutilities");
 }
 
 void AtrialFibresView::IdentifyPV(){

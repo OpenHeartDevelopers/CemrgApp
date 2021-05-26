@@ -115,6 +115,7 @@ protected slots:
     // Manual pipeline
     void SegmentIMGS();
     void ManualLgeRegistration();
+    void SegmentationPostprocessing();
     void IdentifyPV();
     void CreateLabelledMesh();
     void ClipperMV();

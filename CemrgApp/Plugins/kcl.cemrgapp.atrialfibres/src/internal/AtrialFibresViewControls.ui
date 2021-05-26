@@ -111,6 +111,16 @@
     </widget>
    </item>
    <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_man4_2_postproc">
+     <property name="styleSheet">
+      <string notr="true"> color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>Postprocess Segmentation</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
     <widget class="QPushButton" name="button_man4_1_Lge">
      <property name="text">
       <string>Register to LGE space</string>
