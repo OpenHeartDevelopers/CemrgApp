@@ -617,7 +617,7 @@ double CemrgScar3D::GetStatisticalMeasure(
         uv.resize(std::distance(uv.begin(), ip));
 
         int maxFreqs = -1, maxIdx=-1;
-        for (int jx = 0; jx < freq_uv.size(); jx++) {
+        for (unsigned int jx = 0; jx < freq_uv.size(); jx++) {
             if(freq_uv.at(jx) > maxFreqs){
                 maxFreqs = freq_uv.at(jx);
                 maxIdx = jx;
