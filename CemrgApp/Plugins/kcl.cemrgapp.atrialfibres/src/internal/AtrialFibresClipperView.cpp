@@ -649,7 +649,6 @@ void AtrialFibresClipperView::InterPvSpacing(){
 
     MITK_INFO << "[InterPvSpacing] Setting values in corridor to atrium body label";
     QDialog* inputs = new QDialog(0,0);
-    bool userInputAccepted=false;
     m_UICorridor.setupUi(inputs);
     connect(m_UICorridor.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_UICorridor.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
