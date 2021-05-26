@@ -422,7 +422,7 @@ void CemrgAtrialTools::ProjectTagsOnExistingSurface(ImageType::Pointer im, QStri
     std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
     scar->SetMinStep(-1);
     scar->SetMaxStep(3);
-    scar->SetMethodType(2);
+    scar->SetMethodType(4); // 2=max, 4=mode
     scar->SetScarSegImage(labelSegIm);
 
     MITK_INFO << "Projection of image labels onto surface";

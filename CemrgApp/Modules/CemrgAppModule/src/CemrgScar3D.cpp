@@ -502,7 +502,11 @@ double CemrgScar3D::GetIntensityAlongNormal(
         //Statistical measure 2 returns max
         insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, 2);
 
-    }//_if
+    } else if(methodType == 4) {
+        // Statistical measure returns mode
+        insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, 4);
+
+    } //_if
 
     return insty;
 }
@@ -579,6 +583,50 @@ double CemrgScar3D::GetStatisticalMeasure(
         }
         returnVal = sum;
     }//_if_sum
+
+    if (measure == 4){
+        std::vector<double> values;
+        for (int i=0; i<size; i++) {
+            pixel_xyz[0] = pointsOnAndAroundNormal.at(i).GetElement(0);
+            pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
+            pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
+
+            greyVal = scarImage->GetPixel(pixel_xyz);
+            if(greyVal!=0){
+                values.push_back(greyVal);
+            }
+        }
+
+
+        std::vector<double> uv(values.begin(), values.end());
+        std::sort(uv.begin(), uv.end());
+
+        std::vector<int> freq_uv;
+        freq_uv.push_back(0);
+        auto prev = uv[0];
+        for (auto const & x : uv){
+            if (prev != x){
+                freq_uv.push_back(0);
+                prev = x;
+            }
+            ++freq_uv.back();
+        }
+
+        std::vector<double>::iterator ip;
+        ip = std::unique(uv.begin(), uv.end());
+        uv.resize(std::distance(uv.begin(), ip));
+
+        int maxFreqs = -1, maxIdx=-1;
+        for (int jx = 0; jx < freq_uv.size(); jx++) {
+            if(freq_uv.at(jx) > maxFreqs){
+                maxFreqs = freq_uv.at(jx);
+                maxIdx = jx;
+            }
+        }
+        returnVal = uv.at(maxIdx);
+        uv.clear();
+        freq_uv.clear();
+    }
 
     return returnVal;
 }
