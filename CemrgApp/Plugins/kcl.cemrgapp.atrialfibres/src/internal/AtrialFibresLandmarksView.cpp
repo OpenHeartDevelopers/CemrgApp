@@ -244,7 +244,7 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
         double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
         fileRefined << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
-        fileRefinedLabels << GetStructureIdFromLabel(true, roughSeedLabels.at(i)) << "\n";
+        fileRefinedLabels << GetStructureIdFromLabel(true, refinedSeedLabels.at(i)) << "\n";
         // points->InsertNextPoint(point);
     }
     fileRefined.close();
