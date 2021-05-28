@@ -77,6 +77,8 @@ public:
     void CreateSphereClipperAndRadiiVectors(bool showOnRenderer);
     void SaveSphereClippers();
     void PrintCorridorIds();
+    void UpdateClipperSeedIds(int newPickedId, int currentId);
+    int GetPickedId();
 
 protected slots:
 
@@ -154,7 +156,7 @@ private:
     std::vector<vtkSmartPointer<vtkActor>> clipperActors;
 
     QDialog* inputs;
-    double maxScalar, minScalar, defaultClipperRadius;
+    double maxScalar, minScalar, defaultClipperRadius, currentRadius;
     int corridorMax, corridorCount;
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkCallbackCommand> callBack;
