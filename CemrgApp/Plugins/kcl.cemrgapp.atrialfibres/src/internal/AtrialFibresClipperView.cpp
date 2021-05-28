@@ -574,12 +574,14 @@ void AtrialFibresClipperView::ShowPvClippers(){
     m_Controls.widget_1->GetRenderWindow()->Render();
 
     m_Controls.slider_auto->setEnabled(true);
-    m_Controls.slider_auto->setRange(5, 15);
+    m_Controls.slider_auto->setRange(5, 20);
     m_Controls.slider_auto->setValue(defaultClipperRadius);
 
     m_Controls.comboBox_auto->setEnabled(true);
 
     m_Controls.button_auto4_clipPv->setEnabled(true);
+
+    QMessageBox::information(NULL, "Attention", "Press 'C' to change centre of the selected PV");
 }
 
 void AtrialFibresClipperView::CreateSphereClipperAndRadiiVectors(bool showOnRenderer){
@@ -748,8 +750,6 @@ void AtrialFibresClipperView::SaveSphereClippers(){
 }
 
 void AtrialFibresClipperView::Visualiser(double opacity){
-    MITK_INFO << "[Visualiser]";
-
     if(automaticPipeline){
         VisualiserAuto(opacity);
     } else{
@@ -811,8 +811,6 @@ void AtrialFibresClipperView::VisualiserAuto(double opacity) {
 }
 
 void AtrialFibresClipperView::VisualiserManual(double opacity) {
-
-    MITK_INFO << "[Visualiser]";
     SphereSourceVisualiser(pickedLineSeeds);
 
     //Create a mapper and actor for surface
@@ -879,13 +877,38 @@ void AtrialFibresClipperView::SphereSourceVisualiser(vtkSmartPointer<vtkPolyData
     renderer->AddActor(glyphActor);
 }
 
-void AtrialFibresClipperView::PickCallBack(bool pvCorridor) {
+void AtrialFibresClipperView::UpdateClipperSeedIds(int newPickedId, int currentIdIndex){
+    if(currentIdIndex==-1){
+        return;
+    }
+    vtkIdType currentId = pvClipperSeedIdx->GetId(currentIdIndex);
+    std::cout << "Current ID: " << currentId << " New picked ID: " << newPickedId << '\n';
 
+    // check new picked id has the correct label in surface
+    vtkFloatArray *scalars = vtkFloatArray::New();
+    mitk::Surface::Pointer tempsurf = mitk::Surface::New();
+    tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
+    CemrgCommonUtils::SetCellDataToPointData(tempsurf);
+    scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
+    int currentLabel = (int) scalars->GetTuple1(currentId);
+    int newLabel = (int) scalars->GetTuple1(newPickedId);
+
+    // update pvClipperSeedIdx list
+    if(currentLabel==newLabel){
+        MITK_INFO << "Changing sphere centre";
+        pvClipperSeedIdx->SetId(currentIdIndex, newPickedId);
+    }
+
+}
+
+int AtrialFibresClipperView::GetPickedId(){
     vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
     picker->SetTolerance(1E-4 * surface->GetVtkPolyData()->GetLength());
     int* eventPosition = interactor->GetEventPosition();
     int result = picker->Pick(float(eventPosition[0]), float(eventPosition[1]), 0.0, renderer);
-    if (result == 0) return;
+    if (result == 0){
+        return -1;
+    }
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
@@ -902,6 +925,15 @@ void AtrialFibresClipperView::PickCallBack(bool pvCorridor) {
     }//_for
     if (pickedSeedId == -1){
         pickedSeedId = pickedCellPointIds->GetId(0);
+    }
+
+    return pickedSeedId;
+}
+
+void AtrialFibresClipperView::PickCallBack(bool pvCorridor) {
+    int pickedSeedId = GetPickedId();
+    if(pickedSeedId==-1){
+        return;
     }
 
     double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedId);
@@ -1038,13 +1070,15 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                 self->corridorSeedIds = newPickedSeedIds;
                 self->corridorCount--;
             }
-        } else if(key == "V"){ // new veins
-            if(self->automaticPipeline){
-                int reply1 = QMessageBox::question(NULL, "Question - different PV",
-                    "Do you want to fix another pair of veins?", QMessageBox::Yes, QMessageBox::No);
-                if(reply1==QMessageBox::Yes){
-                    self->ResetCorridorObjects();
-                }
+        } else if(key == "c" || key == "C"){ // change sphere centre
+            if(self->automaticPipeline && self->m_Controls.comboBox_auto->isEnabled()){
+                int newPickedId = self->GetPickedId();
+                int currentIdIndex = self->m_Controls.comboBox_auto->currentIndex();
+                double currentRadius = self->pvClipperRadii.at(currentIdIndex);
+                self->UpdateClipperSeedIds(newPickedId, currentIdIndex);
+                self->renderer->RemoveAllViewProps();
+                self->Visualiser(0.5);
+                self->VisualiseSphereAtPoint(currentIdIndex, currentRadius);
             }
         } //_if_space
 
