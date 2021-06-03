@@ -40,13 +40,15 @@ PURPOSE.  See the above copyright notices for more information.
 class MITKCEMRGAPPMODULE_EXPORT CemrgMeasure {
 
 public:
+    typedef std::tuple<double, double, double> Point;
+    typedef std::vector<Point> Points;
 
     //Point to Point Tools
     void Convert(QString dir, mitk::DataNode::Pointer);
-    std::vector <std::tuple<double, double, double>> Deconvert(QString dir, int noFile);
-    double CalcDistance(std::vector <std::tuple<double, double, double>>& points);
-    double CalcPerimeter(std::vector <std::tuple<double, double, double>>& points);
-    double CalcArea(std::vector <std::tuple<double, double, double>>& points);
+    Points Deconvert(QString dir, int noFile);
+    double CalcDistance(Points& points);
+    double CalcPerimeter(Points& points);
+    double CalcArea(Points& points);
     mitk::Point3D FindCentre(mitk::PointSet::Pointer pointset);
 
     //Sphericity Tools
@@ -59,9 +61,9 @@ public:
 private:
 
     //Point to Point Tools
-    std::tuple<double, double, double> CalcMean(std::vector <std::tuple<double, double, double>>& points);
-    double CalcDist3D(std::tuple<double, double, double>& pointA, std::tuple<double, double, double>& pointB);
-    double Heron(std::tuple<double, double, double>& pointA, std::tuple<double, double, double>& pointB, std::tuple<double, double, double>& centre);
+    Point CalcMean(Points& points);
+    double CalcDist3D(Point& pointA, Point& pointB);
+    double Heron(Point& pointA, Point& pointB, Point& centre);
     std::vector<std::string>& Split(const std::string& str, std::vector<std::string>& elements);
 
     //Sphericity Tools

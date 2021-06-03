@@ -74,13 +74,13 @@ void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
     file.close();
 }
 
-std::vector <std::tuple<double, double, double>> CemrgMeasure::Deconvert(QString dir, int noFile) {
+CemrgMeasure::Points CemrgMeasure::Deconvert(QString dir, int noFile) {
 
     double x, y, z;
     std::string line;
     unsigned int items;
     std::vector<std::string> tokens;
-    std::vector <std::tuple<double, double, double>> points;
+    Points points;
     ifstream file(dir.toStdString() + "/transformed-" + std::to_string(noFile) + ".vtk");
 
     if (file.is_open()) {
@@ -98,7 +98,7 @@ std::vector <std::tuple<double, double, double>> CemrgMeasure::Deconvert(QString
                 y = std::stod(tokens.at(items + 1)) * -1;
                 z = std::stod(tokens.at(items + 2));
                 items+=3;
-                points.push_back(std::tuple<double, double, double>(x,y,z));
+                points.push_back(Point(x,y,z));
             }
         }
         file.close();
@@ -107,7 +107,7 @@ std::vector <std::tuple<double, double, double>> CemrgMeasure::Deconvert(QString
     return points;
 }
 
-double CemrgMeasure::CalcDistance(std::vector <std::tuple<double, double, double>>& points) {
+double CemrgMeasure::CalcDistance(Points& points) {
 
     double dist = 0;
 
@@ -119,7 +119,7 @@ double CemrgMeasure::CalcDistance(std::vector <std::tuple<double, double, double
     return dist;
 }
 
-double CemrgMeasure::CalcPerimeter(std::vector <std::tuple<double, double, double>>& points) {
+double CemrgMeasure::CalcPerimeter(Points& points) {
 
     double peri = 0;
 
@@ -137,10 +137,10 @@ double CemrgMeasure::CalcPerimeter(std::vector <std::tuple<double, double, doubl
     return peri;
 }
 
-double CemrgMeasure::CalcArea(std::vector<std::tuple<double, double, double>>& points) {
+double CemrgMeasure::CalcArea(Points& points) {
 
     double area = 0;
-    std::tuple<double, double, double> mean = CalcMean(points);
+    Point mean = CalcMean(points);
 
     if (points.size() < 3) {
         area = -1;
@@ -158,21 +158,18 @@ double CemrgMeasure::CalcArea(std::vector<std::tuple<double, double, double>>& p
 
 mitk::Point3D CemrgMeasure::FindCentre(mitk::PointSet::Pointer pointset) {
 
-    std::vector <std::tuple<double, double, double>> points;
+    Points points;
     for (int i=0; i<pointset->GetSize(); i++) {
-
-        std::tuple<double, double, double> point;
-        std::get<0>(point) = pointset->GetPoint(i).GetElement(0);
-        std::get<1>(point) = pointset->GetPoint(i).GetElement(1);
-        std::get<2>(point) = pointset->GetPoint(i).GetElement(2);
-        points.push_back(point);
+        points.push_back(Point {
+            pointset->GetPoint(i).GetElement(0),
+            pointset->GetPoint(i).GetElement(1),
+            pointset->GetPoint(i).GetElement(2)
+        });
     }//_for
 
+    Point centre = CalcMean(points);
     mitk::Point3D centrePoint;
-    std::tuple<double, double, double> centre = CalcMean(points);
-    centrePoint[0] = std::get<0>(centre);
-    centrePoint[1] = std::get<1>(centre);
-    centrePoint[2] = std::get<2>(centre);
+    std::tie(centrePoint[0], centrePoint[1], centrePoint[2]) = centre;
 
     return centrePoint;
 }
@@ -223,7 +220,7 @@ double CemrgMeasure::calcSurfaceMesh(mitk::Surface::Pointer surface) {
  *        Private Members Defintions        *
  ********************************************/
 
-std::tuple<double, double, double> CemrgMeasure::CalcMean(std::vector <std::tuple<double, double, double>>& points) {
+CemrgMeasure::Point CemrgMeasure::CalcMean(Points& points) {
 
     double x_s = 0;
     double y_s = 0;
@@ -239,14 +236,14 @@ std::tuple<double, double, double> CemrgMeasure::CalcMean(std::vector <std::tupl
     y_s /= points.size();
     z_s /= points.size();
     //Mean point
-    std::tuple<double, double, double> mean(x_s, y_s, z_s);
+    Point mean(x_s, y_s, z_s);
 
     return mean;
 }
 
 double CemrgMeasure::CalcDist3D(
-        std::tuple<double, double, double>& pointA,
-        std::tuple<double, double, double>& pointB) {
+        Point& pointA,
+        Point& pointB) {
 
     double x_d = std::get<0>(pointA) - std::get<0>(pointB);
     double y_d = std::get<1>(pointA) - std::get<1>(pointB);
@@ -259,9 +256,9 @@ double CemrgMeasure::CalcDist3D(
 }
 
 double CemrgMeasure::Heron(
-        std::tuple<double, double, double>& pointA,
-        std::tuple<double, double, double>& pointB,
-        std::tuple<double, double, double>& centre) {
+        Point& pointA,
+        Point& pointB,
+        Point& centre) {
 
     //3D distances
     double ab = CalcDist3D(pointA, pointB);
