@@ -847,7 +847,6 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                    cmd->SetUseDockerContainersOff();
                     cmd->ExecuteCreateCGALMesh(directory, meshName, templatePath);
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                     mitk::ProgressBar::GetInstance()->Progress();
