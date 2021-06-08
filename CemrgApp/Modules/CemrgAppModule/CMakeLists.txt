@@ -4,3 +4,4 @@ mitk_create_module(CemrgAppModule
 )
 
 add_subdirectory(cmdapps)
+add_subdirectory(test)
