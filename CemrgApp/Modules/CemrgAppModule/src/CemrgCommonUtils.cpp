@@ -1030,6 +1030,34 @@ void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QStri
     }
 }
 
+double CemrgCommonUtils::GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre){
+    //Retrieve mean and distance of 3 points
+    double x_c = 0;
+    double y_c = 0;
+    double z_c = 0;
+    for(int i=0; i<landmarks->GetSize(); i++) {
+        x_c = x_c + landmarks->GetPoint(i).GetElement(0);
+        y_c = y_c + landmarks->GetPoint(i).GetElement(1);
+        z_c = z_c + landmarks->GetPoint(i).GetElement(2);
+    }//_for
+    x_c /= landmarks->GetSize();
+    y_c /= landmarks->GetSize();
+    z_c /= landmarks->GetSize();
+    double * distance = new double [landmarks->GetSize()];
+    for(int i=0; i<landmarks->GetSize(); i++) {
+        double x_d = landmarks->GetPoint(i).GetElement(0) - x_c;
+        double y_d = landmarks->GetPoint(i).GetElement(1) - y_c;
+        double z_d = landmarks->GetPoint(i).GetElement(2) - z_c;
+        distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+    }//_for
+    double radius = *std::max_element(distance, distance + landmarks->GetSize());
+    centre[0] = x_c;
+    centre[1] = y_c;
+    centre[2] = z_c;
+
+    return radius;
+}
+
 //UTILities for CARP - operations with .elem and .pts files
 void CemrgCommonUtils::OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling){
     if(QFileInfo::exists(imagePath) && QFileInfo::exists(pointPath)){

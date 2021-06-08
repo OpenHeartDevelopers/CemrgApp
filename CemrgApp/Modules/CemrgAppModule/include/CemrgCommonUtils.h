@@ -80,6 +80,7 @@ public:
     static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
     static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="");
     static void FillHoles(mitk::Surface::Pointer surf, QString dir="", QString vtkname="");
+    static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre);
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);

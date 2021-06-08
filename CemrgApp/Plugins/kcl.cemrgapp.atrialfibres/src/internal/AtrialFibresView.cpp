@@ -619,7 +619,7 @@ void AtrialFibresView::ManualLgeRegistration(){
     }//_if_data
 }
 
-void AtrialFibresView::SegmentationPostprocessing(){    
+void AtrialFibresView::SegmentationPostprocessing(){
     this->GetSite()->GetPage()->ShowView("org.mitk.views.segmentationutilities");
 }
 
@@ -839,51 +839,61 @@ void AtrialFibresView::ClipMV(){
     }//_if
 
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!LoadSurfaceChecks()) return;
 
     //Read in and copy
-    QString path = directory + "/" + "segmentation.vtk";
-    mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+    QString path = Path(tagName+".vtk");
+    // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
     if (surface->GetVtkPolyData() == NULL) {
         QMessageBox::critical(NULL, "Attention", "No mesh was found in the project directory!");
         return;
     }//_if
-    QString orgP = path.left(path.lastIndexOf(QChar('.'))) + "-Original.vtk";
-    mitk::IOUtil::Save(mitk::IOUtil::Load<mitk::Surface>(path.toStdString()), orgP.toStdString());
+    // QString orgP = path.left(path.lastIndexOf(QChar('.'))) + "-Original.vtk";
+    // mitk::IOUtil::Save(mitk::IOUtil::Load<mitk::Surface>(path.toStdString()), orgP.toStdString());
 
     /*
      * Producibility Test
      **/
-    QString prodPath = directory + "/";
-    mitk::IOUtil::Save(pointSet, (prodPath + "prodMVCLandmarks.mps").toStdString());
+    mitk::IOUtil::Save(pointSet, StdStringPath("prodMVCLandmarks.mps"));
     /*
      * End Test
      **/
 
-    this->BusyCursorOn();
-    std::unique_ptr<CemrgScar3D> scarObj = std::unique_ptr<CemrgScar3D>(new CemrgScar3D());
-    surface = scarObj->ClipMesh3D(surface, pointSet);
-    this->BusyCursorOff();
+    double mvc_C[3];
+    double mvc_R = 0;
+    mvc_R = CemrgCommonUtils::GetSphereParametersFromLandmarks(pointSet, mvc_C);
+    std::cout << "MITRAL VALVE CLIPPER: ";
+    std::cout << "Centre = (" << mvc_C[0] << ", " << mvc_C[1] << ", " << mvc_C[2] << ") : Radius = " << mvc_R << '\n';
 
-    //Check to remove the previous mesh node
-    mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
-    for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
-        if (nodeIt->Value()->GetName().find("-Mesh") != nodeIt->Value()->GetName().npos)
-            this->GetDataStorage()->Remove(nodeIt->Value());
-        if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
-            this->GetDataStorage()->Remove(nodeIt->Value());
-    }//_for
-    CemrgCommonUtils::AddToStorage(surface, "MVClipped-Mesh", this->GetDataStorage(), false);
+    surface = CemrgCommonUtils::ClipWithSphere(surface, mvc_C[0], mvc_C[1], mvc_C[2], mvc_R);
+    mitk::IOUtil::Save(surface, StdStringPath(tagName+"-clipped.vtk"));
 
-    //Reverse coordination of surface for writing MIRTK style
-    mitk::Surface::Pointer surfCloned = surface->Clone();
-    vtkSmartPointer<vtkPolyData> pd = surfCloned->GetVtkPolyData();
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
-        double* point = pd->GetPoint(i);
-        point[0] = -point[0];
-        point[1] = -point[1];
-        pd->GetPoints()->SetPoint(i, point);
-    }//_for
-    mitk::IOUtil::Save(surfCloned, path.toStdString());
+    // this->BusyCursorOn();
+    // std::unique_ptr<CemrgScar3D> scarObj = std::unique_ptr<CemrgScar3D>(new CemrgScar3D());
+    // surface = scarObj->ClipMesh3D(surface, pointSet);
+    // this->BusyCursorOff();
+    //
+    // //Check to remove the previous mesh node
+    // mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+    // for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+    //     if (nodeIt->Value()->GetName().find("-Mesh") != nodeIt->Value()->GetName().npos)
+    //         this->GetDataStorage()->Remove(nodeIt->Value());
+    //     if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
+    //         this->GetDataStorage()->Remove(nodeIt->Value());
+    // }//_for
+    // CemrgCommonUtils::AddToStorage(surface, "MVClipped-Mesh", this->GetDataStorage(), false);
+    //
+    // //Reverse coordination of surface for writing MIRTK style
+    // mitk::Surface::Pointer surfCloned = surface->Clone();
+    // vtkSmartPointer<vtkPolyData> pd = surfCloned->GetVtkPolyData();
+    // for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    //     double* point = pd->GetPoint(i);
+    //     point[0] = -point[0];
+    //     point[1] = -point[1];
+    //     pd->GetPoints()->SetPoint(i, point);
+    // }//_for
+    // mitk::IOUtil::Save(surfCloned, path.toStdString());
 }
 
 
