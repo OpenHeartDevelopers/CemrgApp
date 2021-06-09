@@ -346,7 +346,7 @@ void RRcalcsAuto() {
 
     std::vector<double> values;
     std::unique_ptr<CemrgMeasure> rr(new CemrgMeasure());
-    std::vector <std::tuple<double, double, double>> points;
+    CemrgMeasure::Points points;
     std::string lineD;
 
     //1

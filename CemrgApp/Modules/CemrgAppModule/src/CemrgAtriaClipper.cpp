@@ -314,11 +314,11 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             vtkSmartPointer<vtkDoubleArray> areas = vtkSmartPointer<vtkDoubleArray>::New();
             areas = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
             double area = areas->GetValue(position);
-            std::vector <std::tuple<double, double, double>> points;
+            CemrgMeasure::Points points;
             for(vtkIdType i=0; i<centreVeinPlane->GetNumberOfPoints(); i++) {
                 double p[3];
                 centreVeinPlane->GetPoints()->GetPoint(i,p);
-                points.push_back(std::tuple<double, double, double>(p[0],p[1],p[2]));
+                points.push_back(CemrgMeasure::Point(p[0],p[1],p[2]));
             }//_for
             std::unique_ptr<CemrgMeasure> morphAnal = std::unique_ptr<CemrgMeasure>(new CemrgMeasure());
             double circ = morphAnal->CalcPerimeter(points);

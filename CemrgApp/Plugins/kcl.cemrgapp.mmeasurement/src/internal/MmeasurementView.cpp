@@ -770,7 +770,7 @@ void MmeasurementView::CalcDistButton() {
     }//_for
 
     std::unique_ptr<CemrgMeasure> rr(new CemrgMeasure());
-    std::vector <std::tuple<double, double, double>> points;
+    CemrgMeasure::Points points;
 
     for (int frame=0; frame<timePoints*smoothness; frame++) {
         points = rr->Deconvert(directory,frame);
@@ -838,7 +838,7 @@ void MmeasurementView::CalcPeriButton() {
     }//_for
 
     std::unique_ptr<CemrgMeasure> rr(new CemrgMeasure());
-    std::vector <std::tuple<double, double, double>> points;
+    CemrgMeasure::Points points;
 
     for (int frame=0; frame<timePoints*smoothness; frame++) {
         points = rr->Deconvert(directory,frame);
@@ -906,7 +906,7 @@ void MmeasurementView::CalcAreaButton() {
     }//_for
 
     std::unique_ptr<CemrgMeasure> rr(new CemrgMeasure());
-    std::vector <std::tuple<double, double, double>> points;
+    CemrgMeasure::Points points;
 
     for (int frame=0; frame<timePoints*smoothness; frame++) {
         points = rr->Deconvert(directory,frame);
