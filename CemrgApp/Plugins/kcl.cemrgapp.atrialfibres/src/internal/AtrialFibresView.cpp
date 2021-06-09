@@ -772,28 +772,13 @@ void AtrialFibresView::SelectMvLandmarks(){
         m_Controls.button_man7_1_landmarks->setText("Select Landmarks");
 
         //Retrieve mean and distance of 3 points
-        double x_c = 0;
-        double y_c = 0;
-        double z_c = 0;
-        for(int i=0; i<pointSet->GetSize(); i++) {
-            x_c = x_c + pointSet->GetPoint(i).GetElement(0);
-            y_c = y_c + pointSet->GetPoint(i).GetElement(1);
-            z_c = z_c + pointSet->GetPoint(i).GetElement(2);
-        }//_for
-        x_c /= pointSet->GetSize();
-        y_c /= pointSet->GetSize();
-        z_c /= pointSet->GetSize();
-        //double distance[pointSet->GetSize()];
-        double * distance = new double[pointSet->GetSize()];
-        for(int i=0; i<pointSet->GetSize(); i++) {
-            double x_d = pointSet->GetPoint(i).GetElement(0) - x_c;
-            double y_d = pointSet->GetPoint(i).GetElement(1) - y_c;
-            double z_d = pointSet->GetPoint(i).GetElement(2) - z_c;
-            distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
-        }//_for
-        double radius = *std::max_element(distance, distance + pointSet->GetSize());
+        double centre[3];
+        double radius = 0;
+        radius = CemrgCommonUtils::GetSphereParametersFromLandmarks(pointSet, centre);
+        double x_c = centre[0];
+        double y_c = centre[1];
+        double z_c = centre[2];
 
-        delete[] distance;
         //Create the clipper geometry
         vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
         sphereSource->SetCenter(x_c, y_c, z_c);
@@ -844,13 +829,12 @@ void AtrialFibresView::ClipMV(){
     //Read in and copy
     QString path = Path(tagName+".vtk");
     // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
-    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(StdStringPath(tagName+".vtk"));
     if (surface->GetVtkPolyData() == NULL) {
         QMessageBox::critical(NULL, "Attention", "No mesh was found in the project directory!");
         return;
     }//_if
-    // QString orgP = path.left(path.lastIndexOf(QChar('.'))) + "-Original.vtk";
-    // mitk::IOUtil::Save(mitk::IOUtil::Load<mitk::Surface>(path.toStdString()), orgP.toStdString());
+    mitk::IOUtil::Save(surface, StdStringPath(tagName+"-Original.vtk"));
 
     /*
      * Producibility Test
@@ -867,33 +851,8 @@ void AtrialFibresView::ClipMV(){
     std::cout << "Centre = (" << mvc_C[0] << ", " << mvc_C[1] << ", " << mvc_C[2] << ") : Radius = " << mvc_R << '\n';
 
     surface = CemrgCommonUtils::ClipWithSphere(surface, mvc_C[0], mvc_C[1], mvc_C[2], mvc_R);
-    mitk::IOUtil::Save(surface, StdStringPath(tagName+"-clipped.vtk"));
+    mitk::IOUtil::Save(surface, StdStringPath(tagName+".vtk"));
 
-    // this->BusyCursorOn();
-    // std::unique_ptr<CemrgScar3D> scarObj = std::unique_ptr<CemrgScar3D>(new CemrgScar3D());
-    // surface = scarObj->ClipMesh3D(surface, pointSet);
-    // this->BusyCursorOff();
-    //
-    // //Check to remove the previous mesh node
-    // mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
-    // for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
-    //     if (nodeIt->Value()->GetName().find("-Mesh") != nodeIt->Value()->GetName().npos)
-    //         this->GetDataStorage()->Remove(nodeIt->Value());
-    //     if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
-    //         this->GetDataStorage()->Remove(nodeIt->Value());
-    // }//_for
-    // CemrgCommonUtils::AddToStorage(surface, "MVClipped-Mesh", this->GetDataStorage(), false);
-    //
-    // //Reverse coordination of surface for writing MIRTK style
-    // mitk::Surface::Pointer surfCloned = surface->Clone();
-    // vtkSmartPointer<vtkPolyData> pd = surfCloned->GetVtkPolyData();
-    // for (int i=0; i<pd->GetNumberOfPoints(); i++) {
-    //     double* point = pd->GetPoint(i);
-    //     point[0] = -point[0];
-    //     point[1] = -point[1];
-    //     pd->GetPoints()->SetPoint(i, point);
-    // }//_for
-    // mitk::IOUtil::Save(surfCloned, path.toStdString());
 }
 
 
