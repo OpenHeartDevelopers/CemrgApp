@@ -79,8 +79,9 @@ public:
     bool GetUserMeshingInputs();
     bool GetUserRemeshingInputs();
     bool GetUserScarProjectionInputs();
-    bool GetUserConvertFormatInputs(QString inname, QString inext);
+    bool GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh=false);
     bool LoadSurfaceChecks();
+    void CleanMeshQuality();
 
     // helper
     void SetManualModeButtons(bool b);

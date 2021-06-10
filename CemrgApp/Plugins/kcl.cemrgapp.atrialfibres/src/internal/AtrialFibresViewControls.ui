@@ -229,6 +229,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_w_cleanmesh">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    StepX: Clean Mesh</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="button_y_vtk2carp">
      <property name="styleSheet">
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>

@@ -117,6 +117,8 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_0_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
 
     // Labelled Mesh to UAC
+
+    connect(m_Controls.button_w_cleanmesh, SIGNAL(clicked()), this, SLOT(CleanMeshQuality()));
     connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
     connect(m_Controls.button_y_vtk2carp, SIGNAL(clicked()), this, SLOT(ConvertFormat()));
     connect(m_Controls.button_0_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
@@ -925,6 +927,32 @@ void AtrialFibresView::SelectLandmarks(){
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibreslandmarksview");
 }
 
+void AtrialFibresView::CleanMeshQuality(){
+    if (!RequestProjectDirectoryFromUser()) return;
+
+    MITK_INFO << "[CleanMeshQuality] Select mesh";
+    QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
+        StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+    cmd->SetUseDockerContainers(true);
+
+    QFileInfo fi(meshPath);
+    QString inExt = (fi.suffix().contains(".elem")) ? "carp_txt" : fi.suffix();
+    bool cleanmesh = true;
+    bool userInputsAccepted = GetUserConvertFormatInputs(fi.baseName(), inExt, cleanmesh);
+
+    if(userInputAccepted){
+        MITK_INFO << "[CleanMeshQuality] Cleaning mesh";
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+
+        cmd->DockerCleanMeshQuality(directory, fi.baseName(), uiFormat_outName, 0.2, inExt, uiFormat_outExt);
+        cmd->DockerCleanMeshQuality(directory, uiFormat_outName, uiFormat_outName, 0.1, "vtk", "vtk_polydata");
+
+    }
+}
+
 void AtrialFibresView::MeshingOptions(){
     if (!RequestProjectDirectoryFromUser()) return;
     if (!LoadSurfaceChecks()) return;
@@ -1003,15 +1031,14 @@ void AtrialFibresView::ConvertFormat(){
     if (!RequestProjectDirectoryFromUser()) return;
 
     QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
-        directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
-
-    QString prodPath = directory + "/";
+        StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
     QFileInfo fi(meshPath);
-    bool userInputsAccepted = GetUserConvertFormatInputs(fi.baseName(), fi.suffix());
+    QString inext = (fi.suffix().contains(".elem")) ? "carp_txt" : fi.suffix();
+    bool userInputsAccepted = GetUserConvertFormatInputs(fi.baseName(), inext);
     if(userInputsAccepted){
         MITK_INFO << "[ConvertFormat] Creating CARP output in microns";
         cmd->DockerConvertMeshFormat(directory, fi.baseName(), "vtk", uiFormat_outName, uiFormat_outExt, uiFormat_scale);
@@ -1202,12 +1229,17 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
     return succesfulAssignment;
 }
 
-bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext){
+bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh){
     QDialog* inputs = new QDialog(0,0);
     bool userInputAccepted=false;
     m_UIFormat.setupUi(inputs);
     connect(m_UIFormat.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_UIFormat.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    if(cleanmesh){
+        m_UIFormat.titleLabel->setText("Clean mesh");
+        m_UIFormat.lineEdit_2scale->setVisible(false);
+    }
+
     m_UIFormat.label_1inname->setText(inname);
     m_UIFormat.label_2inext->setText(inext);
     int dialogCode = inputs->exec();
@@ -1226,6 +1258,7 @@ bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext)
         if(!ok1){
             uiFormat_scale = 1000;
         }
+
         inputs->deleteLater();
         userInputAccepted=true;
 
