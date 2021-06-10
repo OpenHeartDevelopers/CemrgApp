@@ -157,6 +157,8 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     SetManualModeButtonsOff();
     SetAutomaticModeButtonsOff();
+    m_Controls.button_man7_clipMV->setEnabled(false);
+    m_Controls.button_man8_clipPV->setText("    Step8: Clip PVs and/or MV");
 
     uiSelector_pipeline = 0;
     uiSelector_imgauto_skipCemrgNet = false;
