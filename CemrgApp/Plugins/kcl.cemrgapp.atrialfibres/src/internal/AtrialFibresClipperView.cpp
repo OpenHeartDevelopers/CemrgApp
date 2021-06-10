@@ -126,6 +126,9 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     m_Labels.setupUi(inputs);
     connect(m_Labels.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_Labels.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    if(automaticPipeline){
+        m_Labels.radioBtn_default->setText("MV (Optional)");
+    }
 
     //Setup renderer
     surfActor = vtkSmartPointer<vtkActor>::New();
@@ -239,7 +242,7 @@ void AtrialFibresClipperView::CtrLines() {
 
     //Set surface opacity
     renderer->RemoveAllViewProps();
-    Visualiser(0.5);
+    Visualiser(0.75);
 
     //Setup shortcut keys
     std::string sk;
@@ -563,7 +566,7 @@ void AtrialFibresClipperView::SaveLabels(){
 
 void AtrialFibresClipperView::ShowPvClippers(){
     if(pickedSeedLabels.size()==0){
-        MITK_WARN << "[ShowPvClippers] showing clippers error";
+        MITK_WARN << "[ShowPvClippers] No points have been selected";
         return;
     }
 
@@ -574,7 +577,7 @@ void AtrialFibresClipperView::ShowPvClippers(){
     m_Controls.widget_1->GetRenderWindow()->Render();
 
     m_Controls.slider_auto->setEnabled(true);
-    m_Controls.slider_auto->setRange(5, 20);
+    m_Controls.slider_auto->setRange(4, 30);
     m_Controls.slider_auto->setValue(defaultClipperRadius);
 
     m_Controls.comboBox_auto->setEnabled(true);
@@ -594,7 +597,7 @@ void AtrialFibresClipperView::CreateSphereClipperAndRadiiVectors(bool showOnRend
             if (showOnRenderer){
                 VisualiseSphereAtPoint(cboxIndx, defaultClipperRadius);
 
-                QString comboText = "DEFAULT";
+                QString comboText = "MV";
                 if (pickedSeedLabels.at(i) == 11){
                     comboText = "LSPV";
                 } else if (pickedSeedLabels.at(i) == 13){
