@@ -33,7 +33,7 @@ typedef CemrgMeasure::Points Points;
 
 void TestCemrgMeasure::initTestCase() {
     // Create surface data
-    for (int i = 0; i < surfaceData.size(); i++)
+    for (size_t i = 0; i < surfaceData.size(); i++)
         surfaceData[i].second = mitk::IOUtil::Load<mitk::Surface>(surfaceData[i].first);
 }
 
@@ -114,7 +114,7 @@ void TestCemrgMeasure::FindCentre_data() {
     mitk::PointSet::Pointer pointSet = mitk::PointSet::New();
     mitk::Point3D point;
     Point pt, result;
-    for (int i = 0; i < findCentreData.size(); i++) {
+    for (size_t i = 0; i < findCentreData.size(); i++) {
         tie(pt, result) = findCentreData[i];
         pointSet = pointSet->Clone();
         tie(point[0], point[1], point[2]) = pt;
@@ -146,7 +146,7 @@ void TestCemrgMeasure::GetSphericity_data() {
     // To prevent creating a bug in the test code
     QVERIFY(surfaceData.size() == sphericityData.size());
 
-    for (int i = 0; i < sphericityData.size(); i++)
+    for (size_t i = 0; i < sphericityData.size(); i++)
         QTest::newRow(("Test " + QFileInfo(surfaceData[i].first).fileName().toStdString()).c_str()) << surfaceData[i].second->GetVtkPolyData() << sphericityData[i];
 }
 
@@ -172,7 +172,7 @@ void TestCemrgMeasure::calcVolumeMesh_data() {
     // To prevent creating a bug in the test code
     QVERIFY(surfaceData.size() == volumeMeshData.size());
 
-    for (int i = 0; i < volumeMeshData.size(); i++)
+    for (size_t i = 0; i < volumeMeshData.size(); i++)
         QTest::newRow(("Test " + QFileInfo(surfaceData[i].first).fileName().toStdString()).c_str()) << surfaceData[i].second << volumeMeshData[i];
 }
 
@@ -198,7 +198,7 @@ void TestCemrgMeasure::calcSurfaceMesh_data() {
     // To prevent creating a bug in the test code
     QVERIFY(surfaceData.size() == surfaceMeshData.size());
 
-    for (int i = 0; i < surfaceMeshData.size(); i++)
+    for (size_t i = 0; i < surfaceMeshData.size(); i++)
         QTest::newRow(("Test " + QFileInfo(surfaceData[i].first).fileName().toStdString()).c_str()) << surfaceData[i].second << surfaceMeshData[i];
 }
 
@@ -213,7 +213,7 @@ void TestCemrgMeasure::calcSurfaceMesh() {
 /*****************************************************************************************************/
 /***************************************  Conversion Functions ***************************************/
 /*****************************************************************************************************/
-constexpr int conversionDataSize = 5;
+constexpr size_t conversionDataSize = 5;
 
 const array<const string, conversionDataSize> conversionFileData {
     "# vtk DataFile Version 4.2\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS 12 float\n2.84457 7.69388 30.6308 2.89832 7.45175 30.697 2.99997 6.97862 30.814 \n3.08689 6.58059 30.9175 3.12502 6.39859 30.959 3.23261 5.9521 31.1119 \n3.26323 5.83054 31.1584 3.27528 5.77604 31.1731 3.34243 5.48657 31.2628 \n3.43975 5.07282 31.3958 3.54421 4.63671 31.5429 3.61901 4.32759 31.6499 \n",
@@ -240,9 +240,9 @@ void TestCemrgMeasure::Convert_data() {
 
     // Create DataNodes
     array<mitk::DataNode::Pointer, conversionDataSize> dataNode;
-    for (int i = 0; i < conversionDataSize; i++) {
+    for (size_t i = 0; i < conversionDataSize; i++) {
         mitk::PointSet::Pointer pointSet = mitk::PointSet::New();
-        for (int j = 0; j < conversionPointData[i].size(); j++) {
+        for (size_t j = 0; j < conversionPointData[i].size(); j++) {
             mitk::Point3D point;
             tie(point[0], point[1], point[2]) = conversionPointData[i][j];
             pointSet->InsertPoint(point);
@@ -251,7 +251,7 @@ void TestCemrgMeasure::Convert_data() {
         dataNode[i]->SetData(pointSet);
     }
 
-    for (int i = 0; i < conversionDataSize; i++)
+    for (size_t i = 0; i < conversionDataSize; i++)
         QTest::newRow(("Test " + to_string(i + 1)).c_str()) << dir << dataNode[i] << conversionFileData[i];
 }
 
@@ -288,14 +288,14 @@ void TestCemrgMeasure::Deconvert_data() {
     const QString dir = "./";
 
     // Write test data into files
-    for (int i = 0; i < conversionDataSize; i++) {
+    for (size_t i = 0; i < conversionDataSize; i++) {
         ofstream file;
         file.open(dir.toStdString() + "/transformed-" + to_string(i) + ".vtk");
         file << conversionFileData[i];
     }
 
-    for (int i = 0; i < conversionDataSize; i++)
-        QTest::newRow(("Test " + to_string(i + 1)).c_str()) << dir << i << conversionPointData[i];
+    for (size_t i = 0; i < conversionDataSize; i++)
+        QTest::newRow(("Test " + to_string(i + 1)).c_str()) << dir << (int)i << conversionPointData[i];
 }
 
 void TestCemrgMeasure::Deconvert() {
