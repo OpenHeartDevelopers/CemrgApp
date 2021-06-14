@@ -81,7 +81,6 @@ public:
     bool GetUserScarProjectionInputs();
     bool GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh=false);
     bool LoadSurfaceChecks();
-    void CleanMeshQuality();
 
     // helper
     void SetManualModeButtons(bool b);
@@ -127,6 +126,7 @@ protected slots:
     void SelectLandmarks();
 
     // Labelled Mesh to UAC
+    void CleanMeshQuality();
     void MeshingOptions();
     void ConvertFormat();
     void UacCalculation();

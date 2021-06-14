@@ -234,7 +234,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepX: Clean Mesh</string>
+      <string>    StepY: Clean Mesh</string>
      </property>
     </widget>
    </item>
@@ -244,7 +244,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepY: Convert format</string>
+      <string>    StepZ: Convert format</string>
      </property>
     </widget>
    </item>
@@ -254,7 +254,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    StepW: Select Landmarks</string>
+      <string>    Step-: Select Landmarks</string>
      </property>
     </widget>
    </item>
@@ -264,7 +264,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    StepY: Calculate UAC</string>
+      <string>    Step-: Calculate UAC</string>
      </property>
     </widget>
    </item>
@@ -274,7 +274,7 @@
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
-      <string>    StepZ: Refine UAC</string>
+      <string>    Step-: Refine UAC</string>
      </property>
     </widget>
    </item>
@@ -291,7 +291,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepZ: Scar Projection</string>
+      <string>    StepW: Scar Projection</string>
      </property>
     </widget>
    </item>

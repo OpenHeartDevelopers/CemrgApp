@@ -933,6 +933,8 @@ void AtrialFibresView::CleanMeshQuality(){
     if (!RequestProjectDirectoryFromUser()) return;
 
     MITK_INFO << "[CleanMeshQuality] Select mesh";
+    std::string msg = "Open the mesh file (vtk or CARP). \nFor CARP, select the .elem files";
+    QMessageBox::information(NULL, "Open Mesh File", msg.c_str());
     QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
         StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
 
@@ -944,14 +946,13 @@ void AtrialFibresView::CleanMeshQuality(){
     bool cleanmesh = true;
     bool userInputsAccepted = GetUserConvertFormatInputs(fi.baseName(), inExt, cleanmesh);
 
-    if(userInputAccepted){
+    if(userInputsAccepted){
         MITK_INFO << "[CleanMeshQuality] Cleaning mesh";
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
 
         cmd->DockerCleanMeshQuality(directory, fi.baseName(), uiFormat_outName, 0.2, inExt, uiFormat_outExt);
         cmd->DockerCleanMeshQuality(directory, uiFormat_outName, uiFormat_outName, 0.1, "vtk", "vtk_polydata");
-
     }
 }
 

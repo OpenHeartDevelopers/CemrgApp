@@ -75,6 +75,8 @@ public:
     QString DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale=-1);
     QString DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax=1, double hmin=0.98, double havg=0.3, double surfCorr=0.95); // resample surfmesh
     QString DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType);
+    void DockerCleanMeshQuality(QString dir, QString meshname, QString outMesh, double qualityThres, QString ifmt="vtk", QString ofmt="vtk_polydata");
+
     inline QString DockerInterpolatePoint(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, meshname, outmesh, idatExt, odatExt,"nodedata");}; // meshtool interpolate nodedata
     inline QString DockerInterpolateCell(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, meshname, outmesh, idatExt, odatExt,"elemdata");}; // meshtool interpolate elemdata
     inline QString DockerInterpolateCloudPoint(QString dir, QString ptsname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, ptsname, outmesh, idatExt, odatExt,"clouddata");}; // meshtool interpolate clouddata
