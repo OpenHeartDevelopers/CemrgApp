@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>243</width>
-    <height>745</height>
+    <height>881</height>
    </rect>
   </property>
   <property name="font">
@@ -229,22 +229,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_w_cleanmesh">
-     <property name="styleSheet">
-      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
-     </property>
-     <property name="text">
-      <string>    StepY: Clean Mesh</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="button_y_vtk2carp">
      <property name="styleSheet">
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepZ: Convert format</string>
+      <string>    StepY: Convert format</string>
      </property>
     </widget>
    </item>
@@ -291,7 +281,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepW: Scar Projection</string>
+      <string>    StepZ: Scar Projection</string>
      </property>
     </widget>
    </item>

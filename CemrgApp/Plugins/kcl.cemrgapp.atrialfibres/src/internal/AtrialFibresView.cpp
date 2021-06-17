@@ -117,8 +117,6 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_0_landmarks, SIGNAL(clicked()), this, SLOT(SelectLandmarks()));
 
     // Labelled Mesh to UAC
-
-    connect(m_Controls.button_w_cleanmesh, SIGNAL(clicked()), this, SLOT(CleanMeshQuality()));
     connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
     connect(m_Controls.button_y_vtk2carp, SIGNAL(clicked()), this, SLOT(ConvertFormat()));
     connect(m_Controls.button_0_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
@@ -150,6 +148,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     resurfaceMesh = false;
     uiRemesh_isscalar = false;
     uiRemesh_extractParts = false;
+    uiRemesh_cleanmesh = true;
     userHasSetMeshingParams = false;
     atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
     // atrium->SetDebugModeOn();
@@ -958,8 +957,13 @@ void AtrialFibresView::CleanMeshQuality(){
 
 void AtrialFibresView::MeshingOptions(){
     if (!RequestProjectDirectoryFromUser()) return;
-    if (!LoadSurfaceChecks()) return;
 
+    QMessageBox::information(NULL, "Open Mesh File", "Open the mesh file (vtk ONLY)");
+    QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
+        StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+    QFileInfo fi(meshPath);
+
+    QString meshName = fi.baseName();
     QString prodPath = directory + "/";
 
     MITK_INFO << "[MeshingOptions] Remeshing";
@@ -967,33 +971,33 @@ void AtrialFibresView::MeshingOptions(){
     cmd->SetUseDockerContainers(true);
     bool userInputsAccepted = GetUserRemeshingInputs();
     if(userInputsAccepted){
-        QString refinedPath = cmd->DockerRemeshSurface(directory, tagName, tagName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
+        QString refinedPath = cmd->DockerRemeshSurface(directory, meshName, meshName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
 
         if(uiRemesh_isscalar){
-            QString pathNoExt = prodPath+tagName;
+            QString pathNoExt = Path(meshName);
             QString fieldName = "scar";
             CemrgCommonUtils::VtkCellScalarToFile(pathNoExt+".vtk", pathNoExt+"_elem.dat", fieldName);
             CemrgCommonUtils::VtkPointScalarToFile(pathNoExt+".vtk", pathNoExt+"_pts.dat", fieldName);
             std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
             cmd->SetUseDockerContainers(true);
             // convert to carp simple
-            cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName+"-temp", "carp_txt", 1);
-            cmd->DockerConvertMeshFormat(directory, tagName+refinedSuffix, "vtk", tagName+refinedSuffix+"-temp", "carp_txt", 1);
+            cmd->DockerConvertMeshFormat(directory, meshName, "vtk", meshName+"-temp", "carp_txt", 1);
+            cmd->DockerConvertMeshFormat(directory, meshName+refinedSuffix, "vtk", meshName+refinedSuffix+"-temp", "carp_txt", 1);
 
             // new functionality: meshtool interpolate elemdata
-            cmd->DockerInterpolateCell(directory, tagName+"-temp", tagName+refinedSuffix+"-temp", tagName+"_elem.dat", tagName+refinedSuffix+"_elem.dat");
-            cmd->DockerInterpolateCell(directory, tagName+"-temp", tagName+refinedSuffix+"-temp", tagName+"_pts.dat", tagName+refinedSuffix+"_pts.dat");
+            cmd->DockerInterpolateCell(directory, meshName+"-temp", meshName+refinedSuffix+"-temp", meshName+"_elem.dat", meshName+refinedSuffix+"_elem.dat");
+            cmd->DockerInterpolateCell(directory, meshName+"-temp", meshName+refinedSuffix+"-temp", meshName+"_pts.dat", meshName+refinedSuffix+"_pts.dat");
 
-            std::vector<double> refinedCellScalars = CemrgCommonUtils::ReadScalarField(prodPath+tagName+refinedSuffix+"_elem.dat");
-            std::vector<double> refinedPointScalars = CemrgCommonUtils::ReadScalarField(prodPath+tagName+refinedSuffix+"_pts.dat");
+            std::vector<double> refinedCellScalars = CemrgCommonUtils::ReadScalarField(Path(meshName+refinedSuffix+"_elem.dat"));
+            std::vector<double> refinedPointScalars = CemrgCommonUtils::ReadScalarField(Path(meshName+refinedSuffix+"_pts.dat"));
             CemrgCommonUtils::AppendScalarFieldToVtk(refinedPath, fieldName, "POINT", refinedPointScalars, false);
             CemrgCommonUtils::AppendScalarFieldToVtk(refinedPath, fieldName, "CELL", refinedCellScalars, false);
 
             // cleanup
             QStringList exts = {".elem", ".pts", ".lon", ".fcon"};
             for (int ix = 0; ix < exts.size(); ix++) {
-                QFile::remove(prodPath+tagName+"-temp"+exts.at(ix));
-                QFile::remove(prodPath+tagName+refinedSuffix+"-temp"+exts.at(ix));
+                QFile::remove(Path(meshName+"-temp"+exts.at(ix)));
+                QFile::remove(Path(meshName+refinedSuffix+"-temp"+exts.at(ix)));
             }
 
         }
@@ -1007,6 +1011,18 @@ void AtrialFibresView::MeshingOptions(){
             atrium->ExtractLabelFromShell(directory, atrium->RSPV(), "RSPV");
             atrium->ExtractLabelFromShell(directory, atrium->RIPV(), "RIPV");
             atrium->ExtractLabelFromShell(directory, atrium->LAAP(), "LAAP");
+        }
+
+        if(uiRemesh_cleanmesh){
+            QString cleanInName = meshName+refinedSuffix;
+            QString cleanOutName = "clean-"+cleanInName;
+
+            MITK_INFO << "[MeshingOptions] Cleaning up mesh quality";
+            std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+            cmd->SetUseDockerContainers(true);
+
+            cmd->DockerCleanMeshQuality(directory, cleanInName, cleanOutName, 0.2, "vtk", "vtk_polydata");
+            cmd->DockerCleanMeshQuality(directory, cleanOutName, cleanOutName, 0.1, "vtk", "vtk_polydata");
         }
 
         MITK_INFO << "[MeshingOptions] finished";
@@ -1285,6 +1301,7 @@ bool AtrialFibresView::GetUserRemeshingInputs(){
     if (dialogCode == QDialog::Accepted) {
         uiRemesh_isscalar = m_UIRemesh.check_1isscalar->isChecked();
         uiRemesh_extractParts = m_UIRemesh.check_2extractlabels->isChecked();
+        uiRemesh_cleanmesh = m_UIRemesh.check_3meshquality->isChecked();
 
         bool ok1, ok2, ok3, ok4;
         uiRemesh_max= m_UIRemesh.lineEdit_1max->text().toDouble(&ok1);

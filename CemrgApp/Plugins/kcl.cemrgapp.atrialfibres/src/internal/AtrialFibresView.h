@@ -82,6 +82,8 @@ public:
     bool GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh=false);
     bool LoadSurfaceChecks();
 
+    void CleanMeshQuality();
+
     // helper
     void SetManualModeButtons(bool b);
     void SetAutomaticModeButtons(bool b);
@@ -126,7 +128,6 @@ protected slots:
     void SelectLandmarks();
 
     // Labelled Mesh to UAC
-    void CleanMeshQuality();
     void MeshingOptions();
     void ConvertFormat();
     void UacCalculation();
@@ -160,7 +161,7 @@ private:
     // user-defined parameters
     double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
-    bool uiRemesh_isscalar, uiRemesh_extractParts;
+    bool uiRemesh_isscalar, uiRemesh_extractParts, uiRemesh_cleanmesh;
     int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod, uiFormat_scale;
     std::vector<double> uiScar_thresValues;
     QString uiFormat_outExt, uiFormat_outName;
