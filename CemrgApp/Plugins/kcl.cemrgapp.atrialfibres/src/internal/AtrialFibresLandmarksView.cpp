@@ -191,28 +191,26 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
     QString outname = "prodRoughLandmarks";
     ofstream fileRough, fileRoughLabels;
 
-    // vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-    // vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
-
     MITK_INFO << "[SaveRoughPoints] Saving TXT file.";
     fileRough.open((prodPath + outname + ".txt").toStdString());
     fileRoughLabels.open((prodPath + outname + "-Labels.txt").toStdString());
-    for (unsigned int i=0; i<roughSeedLabels.size(); i++){
-        vtkIdType vId = roughSeedIds->GetId(i);
-        double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
-        fileRough << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
-        fileRoughLabels << GetStructureIdFromLabel(false, roughSeedLabels.at(i)) << "\n";
-        // points->InsertNextPoint(point);
+    std::vector<int> roughPointsOrder = {15, 17, 13, 11, 21, 19};
+    for (unsigned int ix = 0; ix<roughPointsOrder.size(); ix++) {
+        int index = GetIndex(roughSeedLabels, roughPointsOrder.at(ix));
+        if(index!=-1){
+            std::cout << GetStructureIdFromLabel(false, roughSeedLabels.at(index)) << '\n';
+
+            vtkIdType vId = roughSeedIds->GetId(index);
+            double* point = surface->GetVtkPolyData()->GetPoint(vId);
+
+            fileRough << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
+            fileRoughLabels << GetStructureIdFromLabel(false, roughSeedLabels.at(index)) << "\n";
+        } else{
+            MITK_WARN << "[SaveRoughPoints] Value not found";
+        }
     }
     fileRough.close();
-
-    // pd->SetPoints(points);
-
-    MITK_INFO << "[SaveRoughPoints] Saving VTK file";
-    // mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
-    // outputPoints->SetVtkPolyData(pd);
-    // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
 
     m_Controls.button_save1_rough->setEnabled(false);
     m_Controls.button_save2_refined->setEnabled(true);
@@ -233,27 +231,27 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     ofstream fileRefined;
     ofstream fileRough, fileRefinedLabels;
 
-    // vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-    // vtkSmartPointer<vtkPolyData> pd = vtkSmartPointer<vtkPolyData>::New();
-
     MITK_INFO << "[SaveRefinedPoints] Saving TXT file.";
     fileRefined.open((prodPath + outname + ".txt").toStdString());
     fileRefinedLabels.open((prodPath + outname + "-Labels.txt").toStdString());
-    for (unsigned int i=0; i<refinedSeedLabels.size(); i++){
-        vtkIdType vId = refinedSeedIds->GetId(i);
-        double* point = surface->GetVtkPolyData()->GetPoint(vId);
 
-        fileRefined << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
-        fileRefinedLabels << GetStructureIdFromLabel(true, refinedSeedLabels.at(i)) << "\n";
-        // points->InsertNextPoint(point);
+    std::vector<int> refinedPointsOrder = {11, 15, 19, 22, 13, 17};
+    for (unsigned int ix = 0; ix<refinedPointsOrder.size(); ix++) {
+        int index = GetIndex(refinedSeedLabels, refinedPointsOrder.at(ix));
+        if(index!=-1){
+            std::cout << GetStructureIdFromLabel(true, refinedSeedLabels.at(index)) << '\n';
+            vtkIdType vId = refinedSeedIds->GetId(index);
+            double* point = surface->GetVtkPolyData()->GetPoint(vId);
+
+            fileRefined << std::setprecision(12) << point[0] << "," << point[1] << "," << point[2] << "\n";
+            fileRefinedLabels << GetStructureIdFromLabel(true, refinedSeedLabels.at(index)) << "\n";
+
+        } else{
+            MITK_WARN << "[SaveRefinedPoints] Value not found";
+        }
     }
     fileRefined.close();
-    // pd->SetPoints(points);
 
-    // MITK_INFO << "[SaveRefinedPoints] Saving VTK file";
-    // mitk::Surface::Pointer outputPoints =  mitk::Surface::New();
-    // outputPoints->SetVtkPolyData(pd);
-    // mitk::IOUtil::Save(outputPoints, (outname+"vtk").toStdString());
     m_Controls.button_save2_refined->setEnabled(false);
     m_Controls.button_guide1->setEnabled(false);
 }
@@ -647,4 +645,13 @@ std::string AtrialFibresLandmarksView::GetStructureIdFromLabel(bool refinedLandm
     }
 
     return res.toStdString();
+}
+
+int AtrialFibresLandmarksView::GetIndex(std::vector<int> v, int value){
+    int index=-1;
+    auto it = std::find(v.begin(), v.end(), value);
+    if(it != v.end()){
+        index = it - v.begin();
+    }
+    return index;
 }

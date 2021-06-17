@@ -68,6 +68,8 @@ public:
     std::string GetRefinedPointsGiude();
     std::string GetStructureIdFromLabel(bool refinedLandmarks, int label);
 
+    int GetIndex(std::vector<int> v, int value);
+
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
