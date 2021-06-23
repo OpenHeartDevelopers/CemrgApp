@@ -54,6 +54,14 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     m_Controls.setupUi(parent);
     connect(m_Controls.button_1, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
     connect(m_Controls.button_2, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
+    connect(m_Controls.button_mirtk, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsSelection);
+    connect(m_Controls.button_mirtk_reg, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsRegister);
+    connect(m_Controls.button_mirtk_tx, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsTransform);
+    connect(m_Controls.button_mirtk_invreg, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsInvRegister);
+
+    m_Controls.button_mirtk_reg->setVisible(false);
+    m_Controls.button_mirtk_tx->setVisible(false);
+    m_Controls.button_mirtk_invreg->setVisible(false);
 }
 
 void QmitkCemrgAppCommonTools::SetFocus() {
@@ -265,4 +273,92 @@ void QmitkCemrgAppCommonTools::ConvertCarpToVtk(){
                     "Append another scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
         }
     }
+}
+
+void QmitkCemrgAppCommonTools::MirtkOptsSelection(){
+    if (m_Controls.button_mirtk_reg->isVisible()){
+        m_Controls.button_mirtk_reg->setVisible(false);
+        m_Controls.button_mirtk_tx->setVisible(false);
+        m_Controls.button_mirtk_invreg->setVisible(false);
+    } else {
+        m_Controls.button_mirtk_reg->setVisible(true);
+        m_Controls.button_mirtk_tx->setVisible(true);
+        m_Controls.button_mirtk_invreg->setVisible(true);
+    }
+}
+
+void QmitkCemrgAppCommonTools::MirtkOptsRegister(){
+    QDialog* inputs = new QDialog(0,0);
+    m_MirtkUIOptions.setupUi(inputs);
+    connect(m_MirtkUIOptions.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_MirtkUIOptions.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+
+    m_MirtkUIOptions.check_tx_points->setVisible(false);
+    QString msgInput1, msgInput2, msgOutput;
+    msgInput1 = "Select input 1 filename (moving image)";
+    msgInput2 = "Select input 2 filename (fixed image)";
+    msgOutput = "Output name for DOF file (no extension, default = modelname)";
+    m_MirtkUIOptions.lineEdit_input1->setPlaceholderText(msgInput1);
+    m_MirtkUIOptions.lineEdit_input2->setPlaceholderText(msgInput2);
+    m_MirtkUIOptions.lineEdit_output->setPlaceholderText(msgOutput);
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+        MITK_INFO << "Accepted";
+    }
+}
+
+void QmitkCemrgAppCommonTools::MirtkOptsTransform(){
+    QDialog* inputs = new QDialog(0,0);
+    m_MirtkUIOptions.setupUi(inputs);
+    connect(m_MirtkUIOptions.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_MirtkUIOptions.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+
+    m_MirtkUIOptions.check_tx_points->setVisible(true);
+    m_MirtkUIOptions.label_reg_model->setVisible(false);
+    m_MirtkUIOptions.combo_reg_model->setVisible(false);
+    QString msgInput1, msgInput2, msgOutput;
+    msgInput1 = "Select input 1 filename (image or point set)";
+    msgInput2 = "Select input 2 filename (Registration file DOF)";
+    msgOutput = "Output image or point set (no extension, default = transformation)";
+    m_MirtkUIOptions.lineEdit_input1->setPlaceholderText(msgInput1);
+    m_MirtkUIOptions.lineEdit_input2->setPlaceholderText(msgInput2);
+    m_MirtkUIOptions.lineEdit_output->setPlaceholderText(msgOutput);
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+        MITK_INFO << "Accepted";
+    }
+}
+
+void QmitkCemrgAppCommonTools::MirtkOptsInvRegister(){
+    QDialog* inputs = new QDialog(0,0);
+    m_MirtkUIOptions.setupUi(inputs);
+    connect(m_MirtkUIOptions.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_MirtkUIOptions.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+
+    m_MirtkUIOptions.check_tx_points->setVisible(false);
+    m_MirtkUIOptions.lineEdit_input2->setVisible(false);
+    m_MirtkUIOptions.button_browse2->setVisible(false);
+    m_MirtkUIOptions.label_reg_model->setVisible(false);
+    m_MirtkUIOptions.combo_reg_model->setVisible(false);
+
+    QString msgInput1, msgOutput;
+    msgInput1 = "Select input 1 filename (dof file)";
+    msgOutput = "Output name for DOF file (no extension, default = inverse_inputname)";
+    m_MirtkUIOptions.lineEdit_input1->setPlaceholderText(msgInput1);
+    m_MirtkUIOptions.lineEdit_input2->setPlaceholderText(msgInput2);
+    m_MirtkUIOptions.lineEdit_output->setPlaceholderText(msgOutput);
+    int dialogCode = inputs->exec();
+
+    //Act on dialog return code
+    if (dialogCode == QDialog::Accepted) {
+        MITK_INFO << "Accepted";
+    }
+}
+
+void QmitkCemrgAppCommonTools::MirtkOptsBrowse(const QString& buttDir){
+    std::cout << "buttDir" << buttDir.toStdString() << '\n';
 }

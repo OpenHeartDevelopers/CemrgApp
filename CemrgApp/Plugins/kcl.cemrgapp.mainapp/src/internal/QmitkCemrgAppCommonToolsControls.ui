@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>222</width>
-    <height>161</height>
+    <height>413</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -57,6 +57,34 @@
     <widget class="QPushButton" name="button_3">
      <property name="text">
       <string>Create VTK from Carp files</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_mirtk">
+     <property name="text">
+      <string>External Tools (MIRTK)</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_mirtk_reg">
+     <property name="text">
+      <string>Register</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_mirtk_tx">
+     <property name="text">
+      <string>Transform</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_mirtk_invreg">
+     <property name="text">
+      <string>Inverse Register</string>
      </property>
     </widget>
    </item>
