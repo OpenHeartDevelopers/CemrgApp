@@ -32,7 +32,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
 #include "ui_QmitkCemrgAppCartoExport.h"
-#include "ui_QmitkCemrgAppMirtkControls.h"
+#include "ui_QmitkCemrgAppMirtkOptions.h"
 #include "ui_QmitkCemrgAppCommonToolsControls.h"
 
 /**

@@ -39,12 +39,15 @@ PURPOSE.  See the above copyright notices for more information.
 
 // CemrgAppModule
 #include <CemrgCommonUtils.h>
+#include <CemrgCommandLine.h>
 #include "QmitkCemrgAppCommonTools.h"
 
 // Qt
 #include <QMessageBox>
+#include <QStringList>
 #include <QFileDialog>
 #include <QSignalMapper>
+#include <QFileInfo>
 
 const std::string QmitkCemrgAppCommonTools::VIEW_ID = "org.mitk.views.cemrgappcommontools";
 
@@ -288,10 +291,20 @@ void QmitkCemrgAppCommonTools::MirtkOptsSelection(){
 }
 
 void QmitkCemrgAppCommonTools::MirtkOptsRegister(){
+    QString directory = QFileDialog::getExistingDirectory(NULL, "Open directory with files",
+        mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+
     QDialog* inputs = new QDialog(0,0);
+    QSignalMapper* signalMapper = new QSignalMapper(this);
+
     m_MirtkUIOptions.setupUi(inputs);
     connect(m_MirtkUIOptions.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_MirtkUIOptions.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    connect(m_MirtkUIOptions.button_browse1, SIGNAL(clicked()), signalMapper, SLOT(map()));
+    connect(m_MirtkUIOptions.button_browse2, SIGNAL(clicked()), signalMapper, SLOT(map()));
+    signalMapper->setMapping(m_MirtkUIOptions.button_browse1, "1,0,"+directory);
+    signalMapper->setMapping(m_MirtkUIOptions.button_browse2, "2,0,"+directory);
+    connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(MirtkOptsBrowse(const QString&)));
 
     m_MirtkUIOptions.check_tx_points->setVisible(false);
     QString msgInput1, msgInput2, msgOutput;
@@ -305,15 +318,43 @@ void QmitkCemrgAppCommonTools::MirtkOptsRegister(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-        MITK_INFO << "Accepted";
+        QString moving = m_MirtkUIOptions.lineEdit_input1->text();
+        QString fixed = m_MirtkUIOptions.lineEdit_input2->text();
+        QString model = m_MirtkUIOptions.combo_reg_model->currentText();
+        QString outputname = m_MirtkUIOptions.lineEdit_output->text();
+
+        if(moving.isEmpty() || fixed.isEmpty()){
+            QMessageBox::information(NULL, "Attention", "Images not selected correctly");
+            return;
+        }
+
+        if(outputname.isEmpty()){
+            int indexOfPlus = model.indexOf("+");
+            outputname = model;
+            outputname.replace(indexOfPlus, 1, "_");
+            MITK_INFO << ("No output name specified, using : " + outputname).toStdString();
+        }
+
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->ExecuteRegistration(directory, fixed, moving, outputname+".dof", model);
     }
 }
 
 void QmitkCemrgAppCommonTools::MirtkOptsTransform(){
+    QString directory = QFileDialog::getExistingDirectory(NULL, "Open directory with files",
+        mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+
     QDialog* inputs = new QDialog(0,0);
+    QSignalMapper* signalMapper = new QSignalMapper(this);
+
     m_MirtkUIOptions.setupUi(inputs);
     connect(m_MirtkUIOptions.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_MirtkUIOptions.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    connect(m_MirtkUIOptions.button_browse1, SIGNAL(clicked()), signalMapper, SLOT(map()));
+    connect(m_MirtkUIOptions.button_browse2, SIGNAL(clicked()), signalMapper, SLOT(map()));
+    signalMapper->setMapping(m_MirtkUIOptions.button_browse1, "1,1,"+directory);
+    signalMapper->setMapping(m_MirtkUIOptions.button_browse2, "2,1,"+directory);
+    connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(MirtkOptsBrowse(const QString&)));
 
     m_MirtkUIOptions.check_tx_points->setVisible(true);
     m_MirtkUIOptions.label_reg_model->setVisible(false);
@@ -329,15 +370,46 @@ void QmitkCemrgAppCommonTools::MirtkOptsTransform(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-        MITK_INFO << "Accepted";
+        QString objectToTransform = m_MirtkUIOptions.lineEdit_input1->text();
+        QString dofFile = m_MirtkUIOptions.lineEdit_input2->text();
+        bool transformPoints = m_MirtkUIOptions.check_tx_points->isChecked();
+        QString outputname = m_MirtkUIOptions.lineEdit_output->text();
+
+        if(objectToTransform.isEmpty() || dofFile.isEmpty()){
+            QMessageBox::warning(NULL, "Attention", "Inputs not selected correctly");
+            return;
+        }
+
+        if(outputname.isEmpty()){
+            QFileInfo fi1(objectToTransform);
+            QFileInfo fi2(dofFile);
+
+            outputname = "tx_" + fi1.baseName() + "-by-" + fi2.baseName();
+            MITK_INFO << ("No output name specified, using : " + outputname).toStdString();
+        }
+
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        if(transformPoints){
+            cmd->ExecuteTransformationOnPoints(directory, objectToTransform, outputname+".vtk", dofFile);
+        } else {
+            cmd->ExecuteTransformation(directory, objectToTransform, outputname+".nii", dofFile);
+        }
     }
 }
 
 void QmitkCemrgAppCommonTools::MirtkOptsInvRegister(){
+    QString directory = QFileDialog::getExistingDirectory(NULL, "Open directory with files",
+        mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+
     QDialog* inputs = new QDialog(0,0);
+    QSignalMapper* signalMapper = new QSignalMapper(this);
+
     m_MirtkUIOptions.setupUi(inputs);
     connect(m_MirtkUIOptions.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_MirtkUIOptions.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    connect(m_MirtkUIOptions.button_browse1, SIGNAL(clicked()), signalMapper, SLOT(map()));
+    signalMapper->setMapping(m_MirtkUIOptions.button_browse1, "1,2,"+directory);
+    connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(MirtkOptsBrowse(const QString&)));
 
     m_MirtkUIOptions.check_tx_points->setVisible(false);
     m_MirtkUIOptions.lineEdit_input2->setVisible(false);
@@ -349,16 +421,81 @@ void QmitkCemrgAppCommonTools::MirtkOptsInvRegister(){
     msgInput1 = "Select input 1 filename (dof file)";
     msgOutput = "Output name for DOF file (no extension, default = inverse_inputname)";
     m_MirtkUIOptions.lineEdit_input1->setPlaceholderText(msgInput1);
-    m_MirtkUIOptions.lineEdit_input2->setPlaceholderText(msgInput2);
     m_MirtkUIOptions.lineEdit_output->setPlaceholderText(msgOutput);
     int dialogCode = inputs->exec();
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-        MITK_INFO << "Accepted";
+        QString inputDof = m_MirtkUIOptions.lineEdit_input1->text();
+        QString outputname = m_MirtkUIOptions.lineEdit_output->text();
+
+        if(inputDof.isEmpty()){
+            QMessageBox::information(NULL, "Attention", "Images not selected correctly");
+            return;
+        }
+
+        if(outputname.isEmpty()){
+            QFileInfo fi(inputDof);
+            outputname = "inverse_" + fi.baseName() + ".dof";
+            MITK_INFO << ("No output name specified, using : " + outputname).toStdString();
+        }
+        outputname += (!outputname.contains(".dof")) ? ".dof" : "";
+
+        QDir home(directory);
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainersOn();
+        cmd->SetDockerImage("biomedia/mirtk:v1.1.0");
+        QStringList arguments = cmd->GetDockerArguments(directory, "invert-dof");
+        arguments << home.relativeFilePath(inputDof);
+        arguments << home.relativeFilePath(outputname);
+
+        QString outputFilePath = directory + "/" + outputname;
+
+        bool successful = cmd->ExecuteCommand("docker", arguments, outputFilePath);
+        MITK_INFO(successful) << "File created successfully";
+
     }
 }
 
 void QmitkCemrgAppCommonTools::MirtkOptsBrowse(const QString& buttDir){
-    std::cout << "buttDir" << buttDir.toStdString() << '\n';
+    MITK_INFO << buttDir.toStdString();
+
+    QStringList list = buttDir.split(",");
+    QString buttonIdx = list.at(0);
+    QString operationIdx = list.at(1);
+    QString dir = list.at(2);
+    QString titlelabel, input1, input2 = "";
+
+    std::string msg1, msg2 = "";
+    switch (operationIdx.toInt()) {
+        case 0: // Registration
+            titlelabel = "Select inputs to register images";
+            msg1 = "Open moving (source) image for registration";
+            msg2 = "Open fixed (target) image for registration";
+            break;
+        case 1: // Transformation
+            titlelabel = "Select inputs to transform image or point set";
+            msg1 = "Open image or point set for transformation";
+            msg2 = "Open DOF file for transformation";
+            break;
+        case 2: // Inverse registration
+            titlelabel = "Select inputs to inverse registration file";
+            msg1 = "Open DOF file to calculate inverse";
+            msg2 = "";
+            break;
+    }
+
+    switch(buttonIdx.toInt()){
+        case 1:
+            QMessageBox::information(NULL, "Attention", msg1.c_str());
+            input1 = QFileDialog::getOpenFileName(NULL, msg1.c_str(), dir, QmitkIOUtil::GetFileOpenFilterString());
+            m_MirtkUIOptions.lineEdit_input1->setText(input1);
+            break;
+        case 2:
+            QMessageBox::information(NULL, "Attention", msg2.c_str());
+            input2 = QFileDialog::getOpenFileName(NULL, msg2.c_str(), dir, QmitkIOUtil::GetFileOpenFilterString());
+            m_MirtkUIOptions.lineEdit_input2->setText(input2);
+            break;
+    }
+    m_MirtkUIOptions.titleLabel->setText(titlelabel);
 }
