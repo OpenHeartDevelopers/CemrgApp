@@ -1,0 +1,27 @@
+name: CemrgApp Code Analysis
+
+on: [pull_request]
+
+jobs:
+  Code-Analysis:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Install missing packages
+      run: |
+        sudo apt update
+        sudo apt install cppcheck -y
+        pip3 install --upgrade setuptools
+        pip3 install pygithub
+
+    - name: Clone CemrgApp
+      uses: actions/checkout@v2
+
+    - name: Code Analysis
+      env:
+        COMMENT_TITLE: Code Analysis Results
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPORT_PR_CHANGES_ONLY: false
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        cppcheck --enable=warning,style,performance,portability --std=c++14 --language=c++ --force --quiet ${{ github.workspace }}/CemrgApp --output-file=analysis.txt
+        python3 ${{ github.workspace }}/.github/code_analysis.py -cc analysis.txt
