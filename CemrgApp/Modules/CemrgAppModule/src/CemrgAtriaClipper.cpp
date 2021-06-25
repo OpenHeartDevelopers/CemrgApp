@@ -561,8 +561,8 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
     clippedSegImage = pvCropped;
 }
 
-void CemrgAtriaClipper::ClipVeinsImageWithPolydata(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage){
-
+void CemrgAtriaClipper::ClipVeinsImageWithPolydata(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage, QString outname){
+    std::cout << "normal: " << cline_normal[0] << ", " << cline_normal[1] << "," << cline_normal[2] << '\n';
     //Type definitions for new cut seg images
     typedef itk::Image<short, 3> ImageType;
     typedef itk::ImageRegionIteratorWithIndex<ImageType> ItType;
@@ -694,13 +694,14 @@ void CemrgAtriaClipper::ClipVeinsImageWithPolydata(vtkSmartPointer<vtkPolyData> 
     lblShpKpNObjImgFltr->Update();
     segItkImage = lblShpKpNObjImgFltr->GetOutput();
 
-    QString path = directory + "/" + "PVeinsCroppedImage.nii";
-    mitk::Image::Pointer pvCropped = mitk::ImportItkImage(segItkImage)->Clone();
+    QString path = directory + "/" + outname + ".nii";
+    // mitk::Image::Pointer pvCropped = mitk::ImportItkImage(segItkImage)->Clone();
+    mitk::Image::Pointer pvCropped = mitk::ImportItkImage(relabeler->GetOutput())->Clone();
     mitk::IOUtil::Save(pvCropped, path.toStdString());
     clippedSegImage = pvCropped;
 }
 
-void CemrgAtriaClipper::ClipVeinsImageFromCutterFile(std::string pathToCutter, std::string pathToNormal, mitk::Image::Pointer segImage){
+void CemrgAtriaClipper::ClipVeinsImageFromCutterFile(std::string pathToCutter, std::string pathToNormal, mitk::Image::Pointer segImage, QString outname){
     mitk::Surface::Pointer cutter = mitk::IOUtil::Load<mitk::Surface>(pathToCutter);
     vtkSmartPointer<vtkPolyData> cutterPd = cutter->GetVtkPolyData();
 
@@ -710,7 +711,7 @@ void CemrgAtriaClipper::ClipVeinsImageFromCutterFile(std::string pathToCutter, s
     cutterNormalFile >> cline_normal[1];
     cutterNormalFile >> cline_normal[2];
 
-    ClipVeinsImageWithPolydata(cutterPd, cline_normal, segImage);
+    ClipVeinsImageWithPolydata(cutterPd, cline_normal, segImage, outname);
 }
 
 void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position) {

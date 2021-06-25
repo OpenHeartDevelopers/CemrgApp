@@ -85,6 +85,7 @@ PURPOSE.  See the above copyright notices for more information.
 //Qt
 #include <QMessageBox>
 #include <QString>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>
@@ -156,6 +157,20 @@ mitk::DataNode::Pointer CemrgCommonUtils::GetImageNode() {
 mitk::DataNode::Pointer CemrgCommonUtils::GetCuttingNode() {
 
     return cuttingNode;
+}
+
+QString CemrgCommonUtils::GetFilePath(QString dir, QString nameSubstring, QString extension){
+QString result = "";
+QDirIterator searchit(dir, QDirIterator::Subdirectories);
+while(searchit.hasNext()) {
+    QFileInfo searchfinfo(searchit.next());
+    if (searchfinfo.fileName().contains(extension, Qt::CaseSensitive)) {
+        if (searchfinfo.fileName().contains((nameSubstring), Qt::CaseSensitive))
+            result = searchfinfo.absoluteFilePath();
+    }
+}//_while
+
+return result;
 }
 
 mitk::Image::Pointer CemrgCommonUtils::Downsample(mitk::Image::Pointer image, int factor) {

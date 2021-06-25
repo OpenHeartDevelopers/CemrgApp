@@ -301,6 +301,26 @@
      </property>
     </widget>
    </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_c_fandi">
+     <property name="styleSheet">
+      <string notr="true">color: rgb(115, 210, 22);</string>
+     </property>
+     <property name="text">
+      <string>Evaluate PVI</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_c_extclippers">
+     <property name="styleSheet">
+      <string notr="true">color: rgb(115, 210, 22);</string>
+     </property>
+     <property name="text">
+      <string>Apply External Clippers</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="Line" name="line_2">
      <property name="orientation">

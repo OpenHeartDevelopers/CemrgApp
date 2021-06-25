@@ -114,6 +114,9 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_z, SIGNAL(clicked()), this, SLOT(ClipperMV()));
     connect(m_Controls.button_s, SIGNAL(clicked()), this, SLOT(Sphericity()));
     connect(m_Controls.button_c, SIGNAL(clicked()), this, SLOT(ExtraCalcs()));
+    connect(m_Controls.button_c_fandi, SIGNAL(clicked()), this, SLOT(ExtraCalcsEvaluatePvi()));
+    connect(m_Controls.button_c_extclippers, SIGNAL(clicked()), this, SLOT(ExtraCalcsApplyExternalClippers()));
+
     connect(m_Controls.button_r, SIGNAL(clicked()), this, SLOT(ResetMain()));
 
     //Sub-buttons signals
@@ -133,6 +136,8 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     m_Controls.button_y->setVisible(false);
     m_Controls.button_z->setVisible(false);
     m_Controls.button_s->setVisible(false);
+    m_Controls.button_c_fandi->setVisible(false);
+    m_Controls.button_c_extclippers->setVisible(false);
 
     //Set visibility of sub-buttons
     m_Controls.button_2_1->setVisible(false);
@@ -1148,7 +1153,17 @@ void AtrialScarView::ClipPVeins() {
     this->GetSite()->GetPage()->ShowView("org.mitk.views.scarclipper");
 }
 
-void AtrialScarView::ExtraCalcs() {
+void AtrialScarView::ExtraCalcs(){
+    if(m_Controls.button_c_fandi->isVisible()){
+        m_Controls.button_c_fandi->setVisible(false);
+        m_Controls.button_c_extclippers->setVisible(false);
+    } else{
+        m_Controls.button_c_fandi->setVisible(true);
+        m_Controls.button_c_extclippers->setVisible(true);
+    }
+}
+
+void AtrialScarView::ExtraCalcsEvaluatePvi() {
     MITK_INFO << "[INFO] Calling view org.mitk.views.scarcalculations" << std::endl;
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
@@ -1163,6 +1178,78 @@ void AtrialScarView::ExtraCalcs() {
     }
     ScarCalculationsView::GetInputsFromFile();
     this->GetSite()->GetPage()->ShowView("org.mitk.views.scarcalculations");
+}
+
+void AtrialScarView::ExtraCalcsApplyExternalClippers(){
+    //Check for selection of images
+    QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+    if (nodes.size() != 1){
+        MITK_WARN << ("[Transform] Problem with selection. Selection size: " + QString::number(nodes.size())).toStdString();
+        QMessageBox::warning(NULL, "Attention", "Please select the corresponding segmentation to transform!");
+        return;
+    }
+
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+    //Find the selected node
+    QString path, pathTemp;
+    mitk::DataNode::Pointer segNode = nodes.at(0);
+    mitk::BaseData::Pointer data = segNode->GetData();
+    if (data) {
+        //Test if this data item is an image
+        mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
+        if (image) {
+            std::string msg = "Select the cutter file (normally called: prodCutterN)";
+            std::string dir = directory.toStdString();
+            QString input1 = QFileDialog::getOpenFileName(NULL, msg.c_str(), dir.c_str(),  QmitkIOUtil::GetFileOpenFilterString());
+            if(!input1.isEmpty()){
+                int reply = Ask("Single Cutter vs Multiple", "Find all available cutters?");
+                int sizeNameAdjust = (reply==QMessageBox::Yes) ? 1 : 0;
+                QFileInfo fi(input1);
+                QString base = fi.baseName().left(fi.baseName().size()-sizeNameAdjust);
+                QDirIterator qiter(fi.absolutePath(), {base+"*.vtk", base+"*TNormals.txt"}, QDir::Files);
+                QStringList cutfiles, normfiles;
+                while (qiter.hasNext()){
+                    QString thisFile = qiter.next();
+                    if(thisFile.contains("TNormals")){
+                        normfiles.push_back(thisFile);
+                    } else{
+                        cutfiles.push_back(thisFile);
+                    }
+                }
+                cutfiles.sort();
+                normfiles.sort();
+
+                mitk::Surface::Pointer shell = mitk::Surface::New();
+                QString segvtk = CemrgCommonUtils::GetFilePath(directory, "segmentation", ".vtk");
+                if (segvtk.isEmpty()){
+                    QString segCleanPath = CemrgCommonUtils::GetFilePath(directory, "LA-reg", ".nii");
+                    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                    segvtk = cmd->ExecuteSurf(directory, segCleanPath, "close", 1, .5, 0, 10);
+                }
+
+                shell = mitk::IOUtil::Load<mitk::Surface>(segvtk.toStdString());
+                vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
+                deci->SetInputData(shell->GetVtkPolyData());
+                deci->SetTargetReduction(0.1);
+                deci->PreserveTopologyOn();
+                deci->Update();
+                shell->SetVtkPolyData(deci->GetOutput());
+
+                std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, shell));
+                for (int ix = 0; ix < cutfiles.size(); ix++) {
+                    std::cout << "Cutter: " << cutfiles.at(ix) << '\n';
+                    std::cout << "Normal: " << normfiles.at(ix) << '\n';
+                    std::string thiscut = cutfiles.at(ix).toStdString();
+                    std::string thisnormal = normfiles.at(ix).toStdString();
+
+                    clipper->ClipVeinsImageFromCutterFile(thiscut, thisnormal, image, "testcutter"+QString::number(ix));
+                }
+
+            }
+        } //if_image
+    } // if_data
+
 }
 
 void AtrialScarView::CreateSurf() {
@@ -1867,4 +1954,8 @@ bool AtrialScarView::RequestProjectDirectoryFromUser() {
     }//_if
 
     return succesfulAssignment;
+}
+
+int AtrialScarView::Ask(std::string title, std::string msg){
+    return QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
 }

@@ -53,8 +53,8 @@ public:
     bool ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels);
     void ClipVeinsMesh(std::vector<int> pickedSeedLabels);
     void ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::Image::Pointer segImage, bool morphAnalysis);
-    void ClipVeinsImageWithPolydata(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage);
-    void ClipVeinsImageFromCutterFile(std::string pathToCutter, std::string pathToNormal, mitk::Image::Pointer segImage);
+    void ClipVeinsImageWithPolydata(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage, QString outname);
+    void ClipVeinsImageFromCutterFile(std::string pathToCutter, std::string pathToNormal, mitk::Image::Pointer segImage, QString outname="PVeinsCroppedImage");
     void CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position);
     void ResetCtrLinesClippingPlanes();
 

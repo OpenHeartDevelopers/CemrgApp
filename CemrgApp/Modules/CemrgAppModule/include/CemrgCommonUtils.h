@@ -79,6 +79,8 @@ public:
     //Generic
     static mitk::DataNode::Pointer AddToStorage(
             mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init=true);
+    static QString GetFilePath(QString dir, QString nameSubstring, QString extension);
+
 
     //Carp Utils
     static void OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling=1000);
