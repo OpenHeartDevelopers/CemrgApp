@@ -1237,15 +1237,7 @@ void AtrialScarView::ExtraCalcsApplyExternalClippers(){
                 shell->SetVtkPolyData(deci->GetOutput());
 
                 std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, shell));
-                for (int ix = 0; ix < cutfiles.size(); ix++) {
-                    std::cout << "Cutter: " << cutfiles.at(ix) << '\n';
-                    std::cout << "Normal: " << normfiles.at(ix) << '\n';
-                    std::string thiscut = cutfiles.at(ix).toStdString();
-                    std::string thisnormal = normfiles.at(ix).toStdString();
-
-                    clipper->ClipVeinsImageFromCutterFile(thiscut, thisnormal, image, "testcutter"+QString::number(ix));
-                }
-
+                clipper->ClipVeinsImgFromFileList(cutfiles, normfiles, image, "PVeins");
             }
         } //if_image
     } // if_data

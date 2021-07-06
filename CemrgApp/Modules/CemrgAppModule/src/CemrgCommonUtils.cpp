@@ -28,6 +28,8 @@ PURPOSE.  See the above copyright notices for more information.
 
 //ITK
 #include <itkNearestNeighborInterpolateImageFunction.h>
+#include <itkAddImageFilter.h>
+#include <itkSubtractImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkImageRegionIteratorWithIndex.h>
 #include <itkResampleImageFilter.h>
@@ -326,6 +328,115 @@ void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QS
     if(!outPath.isEmpty()){
         mitk::IOUtil::Save(outImg, outPath.toStdString());
     }
+}
+
+mitk::Image::Pointer CemrgCommonUtils::Zeros(mitk::Image::Pointer image){
+    using ImageType = itk::Image<short,3>;
+
+    ImageType::Pointer outputImg = ImageType::New();
+    mitk::CastToItkImage(image->Clone(), outputImg);
+
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    IteratorType imIter(outputImg, outputImg->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        imIter.Set(0);
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outim = mitk::Image::New();
+    mitk::CastToMitkImage(outputImg, outim);
+
+    return outim;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::Zeros(int sx, int sy, int sz, int ox, int oy, int oz){
+    using ImageType = itk::Image<short,3>;
+
+    ImageType::Pointer outputImg = ImageType::New();
+    ImageType::IndexType start;
+    start[0] = ox; start[1] = oy; start[2] = oz;
+
+    ImageType::SizeType size;
+    size[0] = sx; size[1] = sy; size[2] = sz;
+
+    ImageType::RegionType region;
+    region.SetSize(size);
+    region.SetIndex(start);
+
+    outputImg->SetRegions(region);
+    outputImg->Allocate();
+
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    IteratorType imIter(outputImg, outputImg->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        imIter.Set(0);
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outim = mitk::Image::New();
+    mitk::CastToMitkImage(outputImg, outim);
+
+    return outim;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::AddImage(mitk::Image::Pointer im1, mitk::Image::Pointer im2){
+    using ImageType = itk::Image<short,3>;
+    using AddFilterType = itk::AddImageFilter<ImageType, ImageType, ImageType>;
+
+    ImageType::Pointer itk1 = ImageType::New();
+    ImageType::Pointer itk2 = ImageType::New();
+    CastToItkImage(im1, itk1);
+    CastToItkImage(im2, itk2);
+
+    AddFilterType::Pointer sum = AddFilterType::New();
+    sum->SetInput1(itk1);
+    sum->SetInput2(itk2);
+    sum->Update();
+
+    mitk::Image::Pointer outputIm = mitk::ImportItkImage(sum->GetOutput())->Clone();
+    return outputIm;
+}
+
+// void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, short threshold, short foreground, short background){
+//     using ImageType = itk::Image<short, 3>;
+//     using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+//
+//     ImageType::Pointer im = ImageType::New();
+//     mitk::CastToItkImage(image, im);
+//
+//     IteratorType imIter(im, im->GetLargestPossibleRegion());
+//
+//     imIter.GoToBegin();
+//     while(!imIter.IsAtEnd()){
+//         float value = (imIter.Get() > threshold) ? foreground : background;
+//         imIter.Set(value);
+//
+//         ++imIter;
+//     }
+//
+//     image = mitk::ImportItkImage(im)->Clone();
+// }
+
+mitk::Image::Pointer CemrgCommonUtils::ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background){
+    using ImageType = itk::Image<short, 3>;
+    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        float value = (imIter.Get() > threshold) ? foreground : background;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    return mitk::ImportItkImage(im)->Clone();
 }
 
 void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath){

@@ -57,6 +57,12 @@ public:
     // Image Analysis Utils
     static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
 
+    static void Binarise(mitk::Image::Pointer image){image = CemrgCommonUtils::ImageThreshold(image, 0, 1, 0);};
+    static mitk::Image::Pointer ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background);
+    static mitk::Image::Pointer Zeros(int sx, int sy, int sz, int ox=0, int oy=0, int oz=0);
+    static mitk::Image::Pointer Zeros(mitk::Image::Pointer image);
+    static mitk::Image::Pointer AddImage(mitk::Image::Pointer im1, mitk::Image::Pointer im2);
+
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
     static void RoundPixelValues(QString pathToImage, QString outputPath="");

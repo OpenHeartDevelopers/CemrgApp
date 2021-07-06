@@ -53,10 +53,13 @@ public:
     bool ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels);
     void ClipVeinsMesh(std::vector<int> pickedSeedLabels);
     void ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::Image::Pointer segImage, bool morphAnalysis);
-    void ClipVeinsImageWithPolydata(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage, QString outname);
-    void ClipVeinsImageFromCutterFile(std::string pathToCutter, std::string pathToNormal, mitk::Image::Pointer segImage, QString outname="PVeinsCroppedImage");
+    void ClipVeinsImgFromFileList(QStringList cutters, QStringList normals, mitk::Image::Pointer im, QString outname);
     void CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position);
     void ResetCtrLinesClippingPlanes();
+
+    mitk::Image::Pointer CreateImageCutter(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage);
+    mitk::Image::Pointer SubtractAndLabel(mitk::Image::Pointer im, mitk::Image::Pointer cutIm);
+    void CreateCroppedAndLabelled(QString dir, mitk::Image::Pointer im, mitk::Image::Pointer pieces, mitk::Image::Pointer labcutters, QString croppedName="PVeinsCroppedImage", QString labelledName="PVeinsLabelled");
 
     inline mitk::Image::Pointer GetClippedSegImage() const{return clippedSegImage;};
     inline mitk::Surface::Pointer GetClippedSurface() const{return clippedSurface;};
