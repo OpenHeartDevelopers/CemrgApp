@@ -319,7 +319,8 @@ void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP
 
     MITK_INFO << "[ATTENTION] Attempting INIT-DOF.";
 
-    QString executablePath, executableName, commandName, sourceMeshPath, targetMeshPath, outAbsolutePath, prodPath;
+    QString executablePath, executableName, commandName, sourceMeshPath, targetMeshPath, outAbsolutePath;
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     commandName = "init-dof"; //simple translation
