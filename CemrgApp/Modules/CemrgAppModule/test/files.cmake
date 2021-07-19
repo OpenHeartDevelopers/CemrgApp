@@ -1,5 +1,6 @@
 set(MOC_H_FILES
   CemrgMeasureTest.hpp
+  CemrgStrainsTest.hpp
 )
 
 set(CPP_FILES
@@ -8,7 +9,8 @@ set(CPP_FILES
 
 set(MODULE_TESTS
   CemrgMeasureTest.cpp
+  CemrgStrainsTest.cpp
 )
 
-SET(MODULE_CUSTOM_TESTS
+set(MODULE_CUSTOM_TESTS
 )

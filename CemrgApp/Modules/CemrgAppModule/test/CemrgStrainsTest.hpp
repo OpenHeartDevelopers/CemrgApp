@@ -26,42 +26,43 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-// C++ Standard
-#include <vector>
-#include <tuple>
-#include <string>
-#include <array>
-#include <utility>
-#include <memory>
-
-// Qt
-#include <QtTest/QtTest>
-#include <QFileInfo>
-
-// MITK
-#include <mitkIOUtil.h>
-#include <mitkTestingConfig.h>
-#include <mitkDataNode.h>
-#include <mitkImageCast.h>
-#include <mitkImagePixelReadAccessor.h>
-
-// VTK
-#include <vtkPolyDataNormals.h>
-#include <vtkLineSource.h>
+// CemrgApp
+#include "CemrgTestCommon.hpp"
+#include <CemrgStrains.h>
 
 using namespace std;
 
-struct CemrgTestData {
-    static constexpr array<const char*, 5> surfacePaths {
-        "Data/Surface/Book.stl",
-        "Data/Surface/ClaronTool.stl",
-        "Data/Surface/EMTool.stl",
-        "Data/Surface/ball.stl",
-        "Data/Surface/binary.stl"
-    };
+class TestCemrgStrains: public QObject {
 
-    static constexpr const char *strainPath = "Data/Strain";
-    static constexpr size_t strainDataSize = 2;
+    Q_OBJECT
 
-    static constexpr const char *registrationPath = "Data/Registration";
+private:
+    unique_ptr<CemrgStrains> cemrgStrains { new CemrgStrains(QFINDTESTDATA(CemrgTestData::strainPath), 0) };
+
+    // Used for preparation of multiple tests
+    mitk::DataNode::Pointer ReferenceAHA(const array<int, 3>& segRatios = { 40, 40, 20 }, bool pacingSite = false);
+
+private slots:
+    void initTestCase();
+    void cleanupTestCase();
+
+    void CalculateGlobalSqzPlot_data();
+    void CalculateGlobalSqzPlot();
+
+    void CalculateSqzPlot_data();
+    void CalculateSqzPlot();
+
+    void CalculateStrainsPlot_data();
+    void CalculateStrainsPlot();
+
+    void CalculateSDI_data();
+    void CalculateSDI();
+
+    void ReferenceGuideLines_data();
+    void ReferenceGuideLines();
 };
+
+Q_DECLARE_METATYPE(vector<double>)
+Q_DECLARE_METATYPE(mitk::DataNode::Pointer)
+Q_DECLARE_METATYPE(vector<vector<double>>)
+Q_DECLARE_METATYPE(vector<mitk::Surface::Pointer>)
