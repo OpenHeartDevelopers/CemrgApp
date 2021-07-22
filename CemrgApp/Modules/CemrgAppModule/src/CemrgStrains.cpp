@@ -46,6 +46,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPlaneSource.h>
 #include <vtkProbeFilter.h>
 #include <vtkRegularPolygonSource.h>
+#include <vtkUnsignedCharArray.h>
 
 // CemrgApp
 #include "CemrgCommonUtils.h"
