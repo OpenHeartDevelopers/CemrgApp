@@ -198,7 +198,7 @@ void AtrialScarView::LoadDICOM() {
             } else {
 
                 MITK_WARN << "Problem with conversion.";
-                QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK Dicom editor?");
+                QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK DICOM browser?");
                 return;
 
             }//_if
@@ -206,8 +206,8 @@ void AtrialScarView::LoadDICOM() {
 
     } else {
 
-        MITK_INFO << "Using MITK DICOM editor";
-        QString editor_id = "org.mitk.editors.dicomeditor";
+        MITK_INFO << "Using MITK DICOM browser";
+        QString editor_id = "org.mitk.editors.dicombrowser";
         berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
         this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 

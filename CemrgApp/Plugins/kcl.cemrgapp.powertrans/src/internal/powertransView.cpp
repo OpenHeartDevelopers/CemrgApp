@@ -130,8 +130,8 @@ void powertransView::OnSelectionChanged(
 
 void powertransView::LoadDICOM() {
 
-    //Use MITK DICOM editor
-    QString editor_id = "org.mitk.editors.dicomeditor";
+    //Use MITK DICOM browser
+    QString editor_id = "org.mitk.editors.dicombrowser";
     berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
     this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 

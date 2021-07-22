@@ -7,7 +7,7 @@ set(target_libraries
 
   org_mitk_gui_qt_datamanager
   org_mitk_gui_qt_basicimageprocessing
-  org_mitk_gui_qt_dicom
+  org_mitk_gui_qt_dicombrowser
   #org_mitk_gui_qt_diffusionimaging
   #org_mitk_gui_qt_diffusionimaging_registration
   org_mitk_gui_qt_pointsetinteraction
