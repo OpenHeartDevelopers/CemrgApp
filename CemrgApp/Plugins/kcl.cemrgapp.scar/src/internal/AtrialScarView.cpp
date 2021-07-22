@@ -1409,6 +1409,7 @@ void AtrialScarView::SelectLandmarks() {
             if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
                 this->GetDataStorage()->Remove(nodeIt->Value());
         CemrgCommonUtils::AddToStorage(mvClipper, "MVClipper", this->GetDataStorage(), false);
+        mitk::IOUtil::Save(mvClipper, (directory+"/prodMVI.vtk").toStdString());
         sob = this->GetDataStorage()->GetAll();
         for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
             if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos) {
