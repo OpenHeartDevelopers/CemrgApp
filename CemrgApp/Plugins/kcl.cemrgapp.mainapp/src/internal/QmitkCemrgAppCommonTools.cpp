@@ -92,7 +92,7 @@ void QmitkCemrgAppCommonTools::ConvertToCarto() {
 
         //Threshold file
         QString tPath = fullPathInfo.absolutePath() + "/prodThresholds.txt";
-        ifstream prodFileRead(tPath.toStdString());
+        std::ifstream prodFileRead(tPath.toStdString());
         if (prodFileRead.is_open()) {
 
             std::string line;

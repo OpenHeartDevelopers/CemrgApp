@@ -709,7 +709,7 @@ void MmcwView::Tracking() {
 
         QString aPath;
         if (time.isEmpty()) {
-            ofstream file;
+            std::ofstream file;
             if (!para.isEmpty()) {
                 QFileInfo fi(para);
                 aPath = fi.absolutePath();
@@ -723,7 +723,7 @@ void MmcwView::Tracking() {
             if (dcm_path_fix) {
                 MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
                 time = directory + "/imgTimes.lst";
-                file.open(time.toStdString(), ofstream::binary);
+                file.open(time.toStdString(), std::ofstream::binary);
                 file << "dcm- .nii\n";
             }
             else {
@@ -733,7 +733,7 @@ void MmcwView::Tracking() {
                     QDir mainDirectory(directory);
                     QString aRelativePath = mainDirectory.relativeFilePath(aPath);
                     time = aPath + "/imgTimes.lst";
-                    file.open(time.toStdString(), ofstream::binary);
+                    file.open(time.toStdString(), std::ofstream::binary);
                     if (aRelativePath==".")
                         file << "dcm- .nii\n";
                     else

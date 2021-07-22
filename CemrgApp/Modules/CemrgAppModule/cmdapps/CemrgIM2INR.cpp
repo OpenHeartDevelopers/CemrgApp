@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
 
                 MITK_INFO(verbose) << "Write to binary file";
                 std::string path = outputPath.toStdString();
-                ofstream myFile(path, ios::out | ios::binary);
+                std::ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
                 myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
                 myFile.close();

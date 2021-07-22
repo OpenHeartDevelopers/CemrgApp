@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
             double sphereLA = morphAnal->GetSphericity(surfLA->GetVtkPolyData());
 
             //Store in text file
-            ofstream morphResult;
+            std::ofstream morphResult;
             QString morphPath = QString::fromStdString(directory) + "/morphResults_AB.txt";
             morphResult.open(morphPath.toStdString(), std::ios_base::app);
             morphResult << "SA" << " " << surfceLA << "\n";

@@ -254,7 +254,7 @@ int main(int argc, char* argv[]) {
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
 
         MITK_INFO(verbose) << "Writing to pordStats file" + prothresfile.toStdString();
-        ofstream prodFile1;
+        std::ofstream prodFile1;
         prodFile1.open((outputFolder + prothresfile).toStdString());
         prodFile1 << methodPref.toStdString() << std::endl;
         prodFile1 << mean << std::endl;

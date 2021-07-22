@@ -652,7 +652,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 double volumeAP = morphAnal->calcVolumeMesh(surfAP);
 
                 //Store in text file
-                ofstream morphResult;
+                std::ofstream morphResult;
                 QString morphPath = directory + "/morphResults.txt";
                 morphResult.open(morphPath.toStdString(), std::ios_base::app);
                 morphResult << "SA" << " " << surfceLA << "\n";
@@ -812,7 +812,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
 
                 //Write to binary file
                 std::string path = (directory + "/converted.inr").toStdString();
-                ofstream myFile(path, ios::out | ios::binary);
+                std::ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
                 myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
                 myFile.close();

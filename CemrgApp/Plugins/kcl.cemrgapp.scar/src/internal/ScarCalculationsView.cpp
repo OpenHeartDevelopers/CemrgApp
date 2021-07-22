@@ -207,8 +207,8 @@ void ScarCalculationsView::GetInputsFromFile() {
             else
                 prodPath = ScarCalculationsView::postdir + "/";
 
-            ifstream prodFileRead;
-            ofstream prodFileWrite;
+            std::ifstream prodFileRead;
+            std::ofstream prodFileWrite;
             prodFileRead.open((prodPath + "prodThresholds.txt").toStdString());
             prodFileWrite.open((prodPathOut + "prodThresholds"+need2load.at(i)+".txt").toStdString());
 
@@ -331,7 +331,7 @@ void ScarCalculationsView::iniPreSurf() {
     // Load file information
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
-    ifstream prodFileRead;
+    std::ifstream prodFileRead;
     QString prodPathAdv = ScarCalculationsView::advdir + "/";
     prodFileRead.open((prodPathAdv + "prodThresholdsPre.txt").toStdString());
 
@@ -545,7 +545,7 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
     // Load file information
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
-    ifstream prodFileRead;
+    std::ifstream prodFileRead;
     QString prodPathAdv = ScarCalculationsView::advdir + "/";
     QString shellpath = prodPathAdv;
 
@@ -1088,7 +1088,7 @@ void ScarCalculationsView::TransformMeshesForComparison() {
 void ScarCalculationsView::GetThresholdValuesFromFile(QString filepath) {
 
     double data1[5];
-    ifstream prodFileRead;
+    std::ifstream prodFileRead;
     prodFileRead.open(filepath.toStdString());
 
     MITK_INFO << "READ FILE: " + filepath;
@@ -1107,7 +1107,7 @@ void ScarCalculationsView::GetThresholdValuesFromFile(QString filepath) {
 void ScarCalculationsView::SetThresholdValuesToFile(QString filepath) {
 
     double data1[5];
-    ofstream prodFileWrite;
+    std::ofstream prodFileWrite;
     prodFileWrite.open(filepath.toStdString());
 
     data1[0] = value;

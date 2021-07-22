@@ -449,7 +449,7 @@ void EASIView::CreateMesh() {
 
                 //Write to binary file
                 std::string path = (directory + "/converted.inr").toStdString();
-                ofstream myFile(path, ios::out | ios::binary);
+                std::ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
                 myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
                 myFile.close();
@@ -580,7 +580,7 @@ void EASIView::ConfrmSITE() {
 void EASIView::Simulation() {
 
     std::string line;
-    ifstream file("/home/or15/Work/Strain/ResolutionStudy/paths.txt");
+    std::ifstream file("/home/or15/Work/Strain/ResolutionStudy/paths.txt");
 
     if (file.is_open()) {
         while (getline(file,line)) {
@@ -622,7 +622,7 @@ void EASIView::Simulation() {
                         fileName = "LV-LNG.csv";
                         plotValueVectors = plotValueVectorsLNG;
                     }//_if
-                    ofstream fileLV;
+                    std::ofstream fileLV;
                     fileLV.open(directory.toStdString() + "/" + fileName.toStdString());
                     std::vector<double> values;
                     for (int s=0; s<16; s++) {
@@ -651,7 +651,7 @@ void EASIView::Simulation() {
                 QString fileName;
                 fileName = "LA-SQZ.csv";
 
-                ofstream fileLA;
+                std::ofstream fileLA;
                 fileLA.open(directory.toStdString() + "/" + fileName.toStdString());
                 std::vector<double> values;
                 for (int f=0; f<10; f++)

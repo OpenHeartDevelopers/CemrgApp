@@ -214,7 +214,7 @@ std::string CemrgScarAdvanced::num2str(double num, int precision) {
 
 void CemrgScarAdvanced::SaveStrToFile(std::string path2file, std::string filename, std::string text){
     MITK_INFO << "[AdvancedScar] Saving to file: " + path2file+filename;
-    ofstream outst;
+    std::ofstream outst;
     std::stringstream ss;
 
     ss << (path2file+filename);
@@ -367,7 +367,7 @@ void CemrgScarAdvanced::ExtractCorridorData(
     std::vector<int> pointIDsInCorridor;
 
     int count=0;
-    ofstream out;
+    std::ofstream out;
     xyz[0]=1e-10; xyz[1]=1e-10; xyz[2]=1e-10;
 
     std::stringstream ss;
