@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     // Add arguments. Unless specified otherwise, each argument is optional.
     parser.addArgument(
-                "directory", "d", mitkCommandLineParser::InputFile,
+                "directory", "d", mitkCommandLineParser::File,
                 "Directory path", "Full path of directory",
                 us::Any(), false);
 

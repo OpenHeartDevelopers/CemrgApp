@@ -90,15 +90,15 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::InputFile,
+    //   "input-path", "p", mitkCommandLineParser::File,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-                "input-vtk", "i", mitkCommandLineParser::InputFile,
+                "input-vtk", "i", mitkCommandLineParser::File,
                 "segmentation (vtk) path", "Full path of segmentation.vtk file.",
                 us::Any(), false);
     parser.addArgument(
-                "output", "o", mitkCommandLineParser::OutputFile,
+                "output", "o", mitkCommandLineParser::File,
                 "Output file", "Where to save the output.",
                 us::Any(), false);
     parser.addArgument(
