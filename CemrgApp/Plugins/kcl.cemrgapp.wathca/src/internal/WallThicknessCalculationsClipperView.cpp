@@ -113,14 +113,14 @@ void WallThicknessCalculationsClipperView::CreateQtPartControl(QWidget *parent) 
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->SetRenderWindow(renderWindow);
-    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->setRenderWindow(renderWindow);
+    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
 
     //Setup keyboard interactor
     callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     callBack->SetCallback(KeyCallBackFunc);
     callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -338,7 +338,7 @@ void WallThicknessCalculationsClipperView::CtrLines() {
         linesActor->GetProperty()->SetColor(1,0,0);
         renderer->AddActor(linesActor);
     }//_for
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 
     //Adjust controllers
     m_Controls.button_1->setEnabled(false);
@@ -405,7 +405,7 @@ void WallThicknessCalculationsClipperView::CtrPlanes() {
             comboText = "APPENDAGE UNCUT";
         m_Controls.comboBox->insertItem(i, comboText);
     }//_for
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 
     //Adjust controllers
     m_Controls.comboBox->setCurrentIndex(0);
@@ -505,7 +505,7 @@ void WallThicknessCalculationsClipperView::CtrPlanesPlacer() {
     clipper->CalcParamsOfPlane(ctrPlane, indexBox, position);
 
     ctrPlane->Update();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void WallThicknessCalculationsClipperView::CtrLinesSelector(int index) {
@@ -545,7 +545,7 @@ void WallThicknessCalculationsClipperView::CtrLinesSelector(int index) {
     m_Controls.slider->setValue(position);
     m_Controls.spinBox->setValue(adjust);
     pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void WallThicknessCalculationsClipperView::Visualiser() {
@@ -605,7 +605,7 @@ void WallThicknessCalculationsClipperView::PickCallBack() {
     double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedId);
     pickedLineSeeds->GetPoints()->InsertNextPoint(point);
     pickedLineSeeds->Modified();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void WallThicknessCalculationsClipperView::ManualCutterCallBack() {
@@ -659,7 +659,7 @@ void WallThicknessCalculationsClipperView::ManualCutterCallBack() {
     double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedId);
     pickedCutterSeeds->GetPoints()->InsertNextPoint(point);
     pickedCutterSeeds->Modified();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*) {
@@ -761,7 +761,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 self->pickedSeedLabels.pop_back();
             }//_if
 
-            self->m_Controls.widget_1->GetRenderWindow()->Render();
+            self->m_Controls.widget_1->renderWindow()->Render();
         }//_if_space
 
     } else if (self->clipper->GetCentreLinePolyPlanes().size() != 0 && !self->m_Controls.button_1->isEnabled() &&
@@ -859,7 +859,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 for (unsigned int i=0; i<self->clipperActors.size(); i++)
                     self->clipperActors.at(i)->GetProperty()->SetOpacity(1.0);
             }//_if
-            self->m_Controls.widget_1->GetRenderWindow()->Render();
+            self->m_Controls.widget_1->renderWindow()->Render();
 
         }//_if_key
 

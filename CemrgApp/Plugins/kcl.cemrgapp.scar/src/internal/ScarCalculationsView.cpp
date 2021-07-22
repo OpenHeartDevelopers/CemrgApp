@@ -250,14 +250,14 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->SetRenderWindow(renderWindow);
-    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->setRenderWindow(renderWindow);
+    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
 
     //Setup keyboard interactor
     callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     callBack->SetCallback(KeyCallBackFunc);
     callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -402,7 +402,7 @@ void ScarCalculationsView::KeyCallBackFunc(
         for (int i=0; i<points->GetNumberOfPoints()-1; i++)
             newPoints->InsertNextPoint(points->GetPoint(i));
         self->pickedLineSeeds->SetPoints(newPoints);
-        self->m_Controls.widget_1->GetRenderWindow()->Render();
+        self->m_Controls.widget_1->renderWindow()->Render();
 
     } else if (key == "r" || key == "R") {
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed R key.\n";
@@ -598,7 +598,7 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
 
     Visualiser();
     csadv->SetMaxScalar(this->maxScalar);
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
     SetShortcutLegend();
 }
 
@@ -636,7 +636,7 @@ void ScarCalculationsView::EditThreshold() {
 
     csadv->ResetValues();
     BinVisualiser();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void ScarCalculationsView::SetNewThreshold(const QString& text) {
@@ -671,7 +671,7 @@ void ScarCalculationsView::SetNewThreshold(const QString& text) {
 
     csadv->ResetValues();
     BinVisualiser();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void ScarCalculationsView::SaveNewThreshold() {
@@ -724,7 +724,7 @@ void ScarCalculationsView::SaveNewThreshold() {
 
     Visualiser();
     csadv->SetMaxScalar(this->maxScalar);
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
     SetShortcutLegend();
 }
 
@@ -784,7 +784,7 @@ void ScarCalculationsView::CancelThresholdEdit() {
 
     Visualiser();
     csadv->SetMaxScalar(this->maxScalar);
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
     SetShortcutLegend();
 }
 
@@ -816,7 +816,7 @@ void ScarCalculationsView::PickCallBack() {
     double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedId);
     pickedLineSeeds->GetPoints()->InsertNextPoint(point);
     pickedLineSeeds->Modified();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 // Button functionalities
@@ -903,7 +903,7 @@ void ScarCalculationsView::GapMeasurement() {
                 renderer->AddActor(this->dijkstraActors[i]);
             }
 
-            m_Controls.widget_1->GetRenderWindow()->Render();
+            m_Controls.widget_1->renderWindow()->Render();
 
             QMessageBox::warning(NULL, "F&I T2 - FINISHED CALCULATION",
                                  (csadv->PrintAblationGapsResults(mean, stdv, value)).c_str());
@@ -947,7 +947,7 @@ void ScarCalculationsView::GapMeasurementVisualisation(const QString& text) {
 
             csadv->ResetValues();
             BinVisualiser();
-            m_Controls.widget_1->GetRenderWindow()->Render();
+            m_Controls.widget_1->renderWindow()->Render();
         }
     } else
         MITK_INFO << "Empty name of file. ";
@@ -1049,7 +1049,7 @@ void ScarCalculationsView::BeforeAndAfterCompVisualisation() {
 
     csadv->ResetValues();
     BinVisualiser();
-    m_Controls.widget_1->GetRenderWindow()->Render();
+    m_Controls.widget_1->renderWindow()->Render();
 }
 
 void ScarCalculationsView::Sphericity() {

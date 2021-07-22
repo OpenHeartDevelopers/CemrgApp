@@ -88,13 +88,13 @@ void MmcwViewPlot::CreateQtPartControl(QWidget *parent) {
     //AHA bullseye plot
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->SetRenderWindow(renderWindow);
+    m_Controls.widget_1->setRenderWindow(renderWindow);
 
     AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
     AHA_renderer->SetBackground(0,0,0);
     m_Controls.horizontalSlider->setMaximum(noFrames*smoothness);
-    m_Controls.widget_1->GetRenderWindow()->AddRenderer(AHA_renderer);
-    AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+    m_Controls.widget_1->renderWindow()->AddRenderer(AHA_renderer);
+    AHA_interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonPressEvent);
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
     AHA_interactor->RemoveObservers(vtkCommand::RightButtonPressEvent);
