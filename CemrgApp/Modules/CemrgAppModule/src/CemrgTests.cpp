@@ -59,6 +59,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolygon.h>
 #include <vtkDelaunay2D.h>
 #include <vtkLookupTable.h>
+#include <vtkCellData.h>
 
 
 void autoNIIconvert() {
