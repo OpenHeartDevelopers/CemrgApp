@@ -49,7 +49,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPointLocator.h>
 #include <mitkBoundingObjectCutter.h>
 #include <itkConformalFlatteningMeshFilter.h>
-#include <mitkMeshUtil.h>
 #include <vtkUnstructuredGridWriter.h>
 #include <vtkUnstructuredGridReader.h>
 #include <vtkExtractUnstructuredGrid.h>
@@ -321,6 +320,7 @@ void polygonCutter() {
     writer->Write();
 }
 
+/**** The MeshUtil class was removed from the MITK ****
 void flattening() {
 
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>("/home/or15/Downloads/LGECART30MIN-Scar.vtk");
@@ -342,6 +342,7 @@ void flattening() {
     surface->SetVtkPolyData(MeshUtil<MeshType>::MeshToPolyData(mesh));
     mitk::IOUtil::Save(surface, "/home/or15/Downloads/test.vtk");
 }
+*/
 
 void RRcalcsAuto() {
 
