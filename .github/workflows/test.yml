@@ -35,6 +35,9 @@ jobs:
     - name: Clone MITK
       run: sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
 
+    - name: Disable tests for CppMicroServices
+      run: sudo sed -i 's/set(US_BUILD_TESTING ON)/set(US_BUILD_TESTING OFF)/' /MITK/Modules/CMakeLists.txt
+
     - name: Clone CemrgApp
       uses: actions/checkout@v2
       with:
