@@ -87,6 +87,12 @@ QDialog* CemrgCommandLine::GetDialog() {
     return dial;
 }
 
+QString CemrgCommandLine::GetMirtkPath(QString commandName){
+    QString res = QCoreApplication::applicationDirPath()+"/MLib";
+    res += (!commandName.isEmpty()) ? ("/"+commandName) : "";
+    return res;
+};
+
 /***************************************************************************
  ****************** Execute Plugin Specific Functions **********************
  ***************************************************************************/

@@ -73,6 +73,7 @@ public:
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
     static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh=0.5, double blur=0.8, double smoothIterations=3, double decimation=0.5);
     static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath="");
+    static void ClipWithPolydata(mitk::Surface::Pointer surface, mitk::Surface::Pointer clipper, QString saveToPath);
     static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname="segmentation.vtk");
     static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);

@@ -1201,6 +1201,7 @@ void AtrialScarView::ExtraCalcsApplyExternalClippers(){
         if (image) {
             std::string msg = "Select the cutter file (normally called: prodCutterN)";
             std::string dir = directory.toStdString();
+            QMessageBox::information(NULL, "Attention!", msg.c_str());
             QString input1 = QFileDialog::getOpenFileName(NULL, msg.c_str(), dir.c_str(),  QmitkIOUtil::GetFileOpenFilterString());
             if(!input1.isEmpty()){
                 int reply = Ask("Single Cutter vs Multiple", "Find all available cutters?");
@@ -1222,9 +1223,10 @@ void AtrialScarView::ExtraCalcsApplyExternalClippers(){
 
                 mitk::Surface::Pointer shell = mitk::Surface::New();
                 QString segvtk = CemrgCommonUtils::GetFilePath(directory, "segmentation", ".vtk");
+                std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+
                 if (segvtk.isEmpty()){
                     QString segCleanPath = CemrgCommonUtils::GetFilePath(directory, "LA-reg", ".nii");
-                    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
                     segvtk = cmd->ExecuteSurf(directory, segCleanPath, "close", 1, .5, 0, 10);
                 }
 
@@ -1238,6 +1240,19 @@ void AtrialScarView::ExtraCalcsApplyExternalClippers(){
 
                 std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, shell));
                 clipper->ClipVeinsImgFromFileList(cutfiles, normfiles, image, "PVeins");
+
+                QString output2 = cmd->ExecuteSurf(directory, (directory+"/PVeinsCroppedImage.nii"), "close", 1, .5, 0, 10);
+                mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
+
+                msg = "Select the mitral valve file (normally called: prodMVI)";
+                QMessageBox::information(NULL, "Attention!", msg.c_str());
+                QString mviPath = QFileDialog::getOpenFileName(NULL, msg.c_str(), dir.c_str(),  QmitkIOUtil::GetFileOpenFilterString());
+                if(!mviPath.isEmpty()){
+                    MITK_INFO << ("Clipping Mitral valve with file: " + mviPath).toStdString();
+                    mitk::Surface::Pointer mvclipper = mitk::IOUtil::Load<mitk::Surface>(mviPath.toStdString());
+                    CemrgCommonUtils::FlipXYPlane(mvclipper, directory, "");
+                    CemrgCommonUtils::ClipWithPolydata(LAShell, mvclipper, directory+"/segmentation.vtk");
+                }
             }
         } //if_image
     } // if_data

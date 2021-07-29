@@ -91,16 +91,6 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLineEdit" name="lineEdit_output">
-      <property name="text">
-       <string/>
-      </property>
-      <property name="placeholderText">
-       <string>Output filename (no extension)</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <widget class="QLineEdit" name="lineEdit_input1">
       <property name="text">
@@ -108,6 +98,13 @@
       </property>
       <property name="placeholderText">
        <string>Input filename 1</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QCheckBox" name="check_tx_points">
+      <property name="text">
+       <string>points?</string>
       </property>
      </widget>
     </item>
@@ -121,10 +118,20 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2">
-     <widget class="QCheckBox" name="check_tx_points">
+    <item row="2" column="0" alignment="Qt::AlignRight">
+     <widget class="QLabel" name="label_reg_model">
       <property name="text">
-       <string>points?</string>
+       <string>Model:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLineEdit" name="lineEdit_output">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="placeholderText">
+       <string>Output filename (no extension)</string>
       </property>
      </widget>
     </item>
@@ -147,10 +154,10 @@
       </item>
      </widget>
     </item>
-    <item row="2" column="0" alignment="Qt::AlignRight">
-     <widget class="QLabel" name="label_reg_model">
+    <item row="0" column="3">
+     <widget class="QCheckBox" name="check_multiple_tx">
       <property name="text">
-       <string>Model:</string>
+       <string>multiple files?</string>
       </property>
      </widget>
     </item>

@@ -47,6 +47,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QStringList>
 #include <QFileDialog>
 #include <QSignalMapper>
+#include <QDirIterator>
 #include <QFileInfo>
 
 const std::string QmitkCemrgAppCommonTools::VIEW_ID = "org.mitk.views.cemrgappcommontools";
@@ -307,6 +308,7 @@ void QmitkCemrgAppCommonTools::MirtkOptsRegister(){
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(MirtkOptsBrowse(const QString&)));
 
     m_MirtkUIOptions.check_tx_points->setVisible(false);
+    m_MirtkUIOptions.check_multiple_tx->setVisible(false);
     QString msgInput1, msgInput2, msgOutput;
     msgInput1 = "Select input 1 filename (moving image)";
     msgInput2 = "Select input 2 filename (fixed image)";
@@ -318,8 +320,9 @@ void QmitkCemrgAppCommonTools::MirtkOptsRegister(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-        QString moving = m_MirtkUIOptions.lineEdit_input1->text();
-        QString fixed = m_MirtkUIOptions.lineEdit_input2->text();
+        QDir home(directory);
+        QString moving = home.relativeFilePath(m_MirtkUIOptions.lineEdit_input1->text());
+        QString fixed = home.relativeFilePath(m_MirtkUIOptions.lineEdit_input2->text());
         QString model = m_MirtkUIOptions.combo_reg_model->currentText();
         QString outputname = m_MirtkUIOptions.lineEdit_output->text();
 
@@ -357,6 +360,7 @@ void QmitkCemrgAppCommonTools::MirtkOptsTransform(){
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(MirtkOptsBrowse(const QString&)));
 
     m_MirtkUIOptions.check_tx_points->setVisible(true);
+    m_MirtkUIOptions.check_multiple_tx->setVisible(true);
     m_MirtkUIOptions.label_reg_model->setVisible(false);
     m_MirtkUIOptions.combo_reg_model->setVisible(false);
     QString msgInput1, msgInput2, msgOutput;
@@ -370,10 +374,14 @@ void QmitkCemrgAppCommonTools::MirtkOptsTransform(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-        QString objectToTransform = m_MirtkUIOptions.lineEdit_input1->text();
-        QString dofFile = m_MirtkUIOptions.lineEdit_input2->text();
+        QDir home(directory);
+        QString objectToTransform = home.relativeFilePath(m_MirtkUIOptions.lineEdit_input1->text());
+        QString dofFile = home.relativeFilePath(m_MirtkUIOptions.lineEdit_input2->text());
         bool transformPoints = m_MirtkUIOptions.check_tx_points->isChecked();
+        bool multipleTransformations = m_MirtkUIOptions.check_multiple_tx->isChecked();
         QString outputname = m_MirtkUIOptions.lineEdit_output->text();
+
+        MITK_INFO << ("objectToTransform = " + objectToTransform).toStdString();
 
         if(objectToTransform.isEmpty() || dofFile.isEmpty()){
             QMessageBox::warning(NULL, "Attention", "Inputs not selected correctly");
@@ -390,7 +398,36 @@ void QmitkCemrgAppCommonTools::MirtkOptsTransform(){
 
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         if(transformPoints){
-            cmd->ExecuteTransformationOnPoints(directory, objectToTransform, outputname+".vtk", dofFile);
+            QStringList objects, outputFiles;
+            if(multipleTransformations){
+                QFileInfo fi(directory+"/"+objectToTransform);
+                QString base = fi.baseName().left(fi.baseName().size()-1);
+                QDir objectdirect(fi.absolutePath());
+                MITK_INFO << ("Search dir: " + fi.absolutePath()).toStdString();
+                QStringList dirEntryList = objectdirect.entryList();
+
+                for (int jx = 0; jx < dirEntryList.size(); jx++) {
+                    QString thisFile = home.relativeFilePath(fi.absolutePath()+"/"+dirEntryList.at(jx));
+
+                    if(thisFile.contains(base) && thisFile.contains(".vtk")){
+                        QFileInfo thisFi(thisFile);
+
+                        objects.push_back(thisFile);
+                        outputFiles.push_back("out_"+thisFi.baseName()+".vtk");
+                    }
+                }
+            } else{
+                objects.push_back(objectToTransform);
+                outputFiles.push_back(outputname+".vtk");
+            }
+
+            MITK_INFO << objects.size();
+            for (int ix = 0; ix < objects.size(); ix++) {
+                MITK_INFO << ("Input: " + objects.at(ix)).toStdString();
+                MITK_INFO << ("Output: " + outputFiles.at(ix)).toStdString();
+                cmd->ExecuteTransformationOnPoints(directory, objects.at(ix), outputFiles.at(ix), dofFile);
+            }
+
         } else {
             cmd->ExecuteTransformation(directory, objectToTransform, outputname+".nii", dofFile);
         }
@@ -412,6 +449,7 @@ void QmitkCemrgAppCommonTools::MirtkOptsInvRegister(){
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(MirtkOptsBrowse(const QString&)));
 
     m_MirtkUIOptions.check_tx_points->setVisible(false);
+    m_MirtkUIOptions.check_multiple_tx->setVisible(false);
     m_MirtkUIOptions.lineEdit_input2->setVisible(false);
     m_MirtkUIOptions.button_browse2->setVisible(false);
     m_MirtkUIOptions.label_reg_model->setVisible(false);

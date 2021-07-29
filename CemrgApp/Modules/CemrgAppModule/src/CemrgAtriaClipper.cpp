@@ -634,7 +634,7 @@ mitk::Image::Pointer CemrgAtriaClipper::CreateImageCutter(vtkSmartPointer<vtkPol
 
     //Image Dilation
     BallType binaryBall;
-    binaryBall.SetRadius(static_cast<unsigned long>(1.5));
+    binaryBall.SetRadius(static_cast<unsigned long>(2.0));
     binaryBall.CreateStructuringElement();
     DilationFilterType::Pointer dilationFilter = DilationFilterType::New();
     dilationFilter->SetInput(cutItkImage);

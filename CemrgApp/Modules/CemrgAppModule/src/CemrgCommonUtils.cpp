@@ -70,6 +70,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCleanPolyData.h>
 #include <vtkCellDataToPointData.h>
 #include <vtkFillHolesFilter.h>
+#include <vtkImplicitPolyDataDistance.h>
 
 //Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -580,6 +581,38 @@ mitk::Surface::Pointer CemrgCommonUtils::ClipWithSphere(mitk::Surface::Pointer s
     surface->SetVtkPolyData(cleaner->GetOutput());
 
     return surface;
+}
+
+void CemrgCommonUtils::ClipWithPolydata(mitk::Surface::Pointer surface, mitk::Surface::Pointer clipper, QString saveToPath){
+
+    vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
+    implicitFn->SetInput(clipper->GetVtkPolyData());
+    vtkMTimeType mtime = implicitFn->GetMTime();
+    std::cout << "MTime: " << mtime<< std::endl ;
+    vtkSmartPointer<vtkClipPolyData> mvclipper = vtkSmartPointer<vtkClipPolyData>::New();
+    mvclipper->SetClipFunction(implicitFn);
+    mvclipper->SetInputData(surface->GetVtkPolyData());
+    mvclipper->InsideOutOff();
+    mvclipper->Update();
+
+    vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+    surfer->SetInputData(mvclipper->GetOutput());
+    surfer->Update();
+
+    vtkSmartPointer<vtkCleanPolyData> clean = vtkSmartPointer<vtkCleanPolyData>::New();
+    clean->SetInputConnection(surfer->GetOutputPort());
+    clean->Update();
+
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    lrgRegion->SetInputConnection(clean->GetOutputPort());
+    lrgRegion->SetExtractionModeToLargestRegion();
+    lrgRegion->Update();
+    clean = vtkSmartPointer<vtkCleanPolyData>::New();
+    clean->SetInputConnection(lrgRegion->GetOutputPort());
+    clean->Update();
+
+    surface->SetVtkPolyData(clean->GetOutput());
+    mitk::IOUtil::Save(surface, saveToPath.toStdString());
 }
 
 void CemrgCommonUtils::FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname){
