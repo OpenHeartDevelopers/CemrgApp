@@ -38,6 +38,9 @@ jobs:
     - name: Disable tests for CppMicroServices
       run: sudo sed -i 's/set(US_BUILD_TESTING ON)/set(US_BUILD_TESTING OFF)/' /MITK/Modules/CMakeLists.txt
 
+    - name: Change timestamps of the MITK directory
+      run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
+
     - name: Clone CemrgApp
       uses: actions/checkout@v2
       with:
