@@ -63,5 +63,5 @@ struct CemrgTestData {
     static constexpr const char *strainPath = "Data/Strain";
     static constexpr size_t strainDataSize = 2;
 
-    static constexpr const char *registrationPath = "Data/Registration";
+    static constexpr const char *cmdLinePath = "Data/CommandLine";
 };
