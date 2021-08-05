@@ -301,7 +301,7 @@
      </property>
     </widget>
    </item>
-   <item alignment="Qt::AlignHCenter">
+   <item>
     <widget class="QPushButton" name="button_c_fandi">
      <property name="styleSheet">
       <string notr="true">color: rgb(115, 210, 22);</string>
@@ -311,7 +311,7 @@
      </property>
     </widget>
    </item>
-   <item alignment="Qt::AlignHCenter">
+   <item>
     <widget class="QPushButton" name="button_c_extclippers">
      <property name="styleSheet">
       <string notr="true">color: rgb(115, 210, 22);</string>
