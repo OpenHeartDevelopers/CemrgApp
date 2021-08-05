@@ -3,7 +3,7 @@ name: CemrgApp Tests and Code Coverage
 on: [push, pull_request]
 
 jobs:
-  Test-Coverage:
+  Test-n-Coverage:
     runs-on: ubuntu-18.04
     steps:
     - name: Download precompiled Build folder
@@ -12,11 +12,18 @@ jobs:
         7z x Build.zip
         rm Build.zip
         sudo mv Build /
+
+    - name: Download external libraries
+      run: |
+        wget -q -O Externals.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EX8zGabE-ctDoBnde6ntHR0Bx_1wYis_ql26aAzMoedMzg?download=1
+        7z x Externals.zip
+        rm Externals.zip
+        sudo mv Externals /
     
     - name: Install missing packages
       run: |
         sudo apt update
-        sudo DEBIAN_FRONTEND=noninteractive apt install libxt-dev libtiff5-dev libfontconfig1 mesa-common-dev libglu1-mesa-dev libxcomposite1 libxcursor1 libxrender1 libxi6 libxtst6 libasound2 libnspr4 libnss3 libxkbcommon-dev libxkbcommon-x11-dev doxygen git cmake python3-pip gcc-6 g++-6 -y
+        sudo DEBIAN_FRONTEND=noninteractive apt install libxt-dev libtiff5-dev libfontconfig1 mesa-common-dev libglu1-mesa-dev libxcomposite1 libxcursor1 libxrender1 libxi6 libxtst6 libasound2 libnspr4 libnss3 libxkbcommon-dev libxkbcommon-x11-dev libtbb2 doxygen git cmake python3-pip gcc-6 g++-6 -y
         sudo apt remove --auto-remove icu-devtools libicu-dev -y
     
     - name: Install Qt
@@ -28,6 +35,12 @@ jobs:
     - name: Clone MITK
       run: sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
 
+    - name: Disable tests for CppMicroServices
+      run: sudo sed -i 's/set(US_BUILD_TESTING ON)/set(US_BUILD_TESTING OFF)/' /MITK/Modules/CMakeLists.txt
+
+    - name: Change timestamps of the MITK directory
+      run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
+
     - name: Clone CemrgApp
       uses: actions/checkout@v2
       with:
@@ -38,10 +51,16 @@ jobs:
     
     - name: Build
       working-directory: /Build
+      env:
+        CC: gcc-6
+        CXX: g++-6
       run: make -j4
 
     - name: Test
       working-directory: /Build/MITK-build
+      env:
+        QT_PLUGIN_PATH: /Qt/5.12.10/gcc_64/plugins
+        QT_QPA_PLATFORM: minimal
       run: ctest -R Cemrg -V
 
     - name: Code Coverage

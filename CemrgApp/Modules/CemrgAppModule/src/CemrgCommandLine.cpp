@@ -302,7 +302,7 @@ void CemrgCommandLine::ExecuteTransformation(QString dir, QString imgname, QStri
         process->setWorkingDirectory(executablePath);
         arguments << imgNamefullpath; //input
         arguments << outAbsolutePath; //output
-        arguments << "-dof" << dofpath;
+        arguments << "-dofin" << dofpath;
         arguments << "-verbose" << "3";
 
     } else {
@@ -319,7 +319,8 @@ void CemrgCommandLine::ExecuteSimpleTranslation(QString dir, QString sourceMeshP
 
     MITK_INFO << "[ATTENTION] Attempting INIT-DOF.";
 
-    QString executablePath, executableName, commandName, sourceMeshPath, targetMeshPath, outAbsolutePath, prodPath;
+    QString executablePath, executableName, commandName, sourceMeshPath, targetMeshPath, outAbsolutePath;
+    QString prodPath = dir + "/";
     QStringList arguments;
 
     commandName = "init-dof"; //simple translation

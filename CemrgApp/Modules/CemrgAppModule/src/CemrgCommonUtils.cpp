@@ -894,6 +894,8 @@ void CemrgCommonUtils::CalculateCentreOfGravity(QString pointPath, QString elemP
         double* pts_array = (double*)malloc(nPts * 3 * sizeof(double));
     	if (pts_array == NULL) {
     		MITK_ERROR << "pts_array malloc FAIL";
+            fclose(pointFileRead);
+            fclose(elemFileRead);
     		return;
     	}
 
