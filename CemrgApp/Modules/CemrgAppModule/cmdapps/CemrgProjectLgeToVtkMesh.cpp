@@ -70,7 +70,7 @@ in the framework.
 typedef itk::Image<short,3> itkImageType;
 void ItkDeepCopy(itkImageType::Pointer input, itkImageType::Pointer output);
 mitk::Surface::Pointer ReadVTKMesh(std::string meshPath);
-double GetIntensityAlongNormal(itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage,   
+double GetIntensityAlongNormal(itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage,
                                double n_x, double n_y, double n_z, double centre_x, double centre_y, double centre_z,int minStep=-3, int maxStep=3);
 
 double GetStatisticalMeasure(itkImageType::Pointer scarSegImage,std::vector<mitk::Point3D> pointsOnAndAroundNormal,
@@ -173,10 +173,7 @@ int main(int argc, char* argv[]) {
     try
     {
         // Code the functionality of the cmd app here.
-        if (verbose)
-        {
-            MITK_INFO << "Verbose mode ON.";
-        }
+        MITK_INFO(verbose) << "Verbose mode ON.";
         MITK_INFO << "The lge input filename:" << lgeFilename;
         MITK_INFO << "The surface input filename:" << surfFilename;
         MITK_INFO << "The output filename:" << outFilename;
@@ -318,10 +315,7 @@ int main(int argc, char* argv[]) {
         writer->SetFileName(outFilename.c_str());
         writer->Write();
 
-        if (verbose)
-        {
-            MITK_INFO << "Goodbye!";
-        }
+        MITK_INFO(verbose) << "Goodbye!";
 
     }
     catch (const std::exception &e)
@@ -546,4 +540,3 @@ double GetStatisticalMeasure(itkImageType::Pointer scarSegImage,std::vector<mitk
 
     return returnVal;
 }
-

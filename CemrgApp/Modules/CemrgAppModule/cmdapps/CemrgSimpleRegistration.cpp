@@ -109,8 +109,7 @@ int main(int argc, char* argv[]) {
     QString output = dir + "/rigid.dof";
     QString mirtk  = aPath + "/register";
 
-    if (verbose)
-      MITK_INFO << "OUTPUT VALUE: " << output.toStdString();
+    MITK_INFO(verbose) << "OUTPUT VALUE: " << output.toStdString();
 
     arguments << INPUT1;
     arguments << INPUT2;
@@ -118,20 +117,16 @@ int main(int argc, char* argv[]) {
     arguments << "-model" << "Rigid";
     arguments << "-verbose" << "3";
 
-    if (verbose)
-      MITK_INFO << "Running command:" <<
+    MITK_INFO(verbose) << "Running command:" <<
         mirtk.toStdString() << std::endl;
 
     process->start(mirtk, arguments);
-    if (verbose)
-      MITK_INFO << "EXIT CODE: " << process->exitCode();
+    MITK_INFO(verbose) << "EXIT CODE: " << process->exitCode();
 
-    if (verbose)
-      MITK_INFO << "Finished working. Output in file:\n\t" <<
+    MITK_INFO(verbose) << "Finished working. Output in file:\n\t" <<
         output.toStdString() << std::endl;
 
-    if (verbose)
-      MITK_INFO << "Closing Process" << std::endl;
+    MITK_INFO(verbose) << "Closing Process" << std::endl;
 
     process->close();
 

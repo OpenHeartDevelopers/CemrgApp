@@ -93,15 +93,13 @@ int main(int argc, char* argv[]) {
 
   try{
     // Code the functionality of the cmd app here.
-    if (verbose)
-      MITK_INFO << "Verbose mode ON.";
+    MITK_INFO(verbose) << "Verbose mode ON.";
 
     MITK_INFO << "The input filename:" << inFilename;
     MITK_INFO << "The output filename:" << outFilename;
     MITK_INFO << "The offset you chose: " << offset;
 
-    if (verbose)
-      MITK_INFO << "Goodbye!";
+    MITK_INFO(verbose) << "Goodbye!";
   }
   catch (const std::exception &e) {
     MITK_ERROR << e.what();

@@ -142,8 +142,7 @@ int main(int argc, char* argv[]) {
 
     try{
         // Code the functionality of the cmd app here.
-        if (verbose)
-            MITK_INFO << "Verbose mode ON.";
+        MITK_INFO(verbose) << "Verbose mode ON.";
 
         // PARSING ARGUMENTS
         // QString direct = QString::fromStdString(inFilename);
@@ -158,8 +157,7 @@ int main(int argc, char* argv[]) {
             segvtk = segvtk + ".vtk";
 
 
-        if (verbose)
-            MITK_INFO << "Obtaining input file path and working directory: ";
+        MITK_INFO(verbose) << "Obtaining input file path and working directory: ";
 
         // OBTAINING directory and lgepath variables
         QFileInfo fi(lgename);
@@ -169,8 +167,7 @@ int main(int argc, char* argv[]) {
         typedef itk::Image<short, 3> ImageTypeSHRT;
 
         //Scar projection
-        if (verbose)
-            MITK_INFO << "Performing Scar projection.";
+        MITK_INFO(verbose) << "Performing Scar projection.";
 
         int minStep = -1;
         int maxStep = 3;
@@ -223,14 +220,12 @@ int main(int argc, char* argv[]) {
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
 
 
-        if (verbose)
-            MITK_INFO << "Performing Scar projection using " + segvtk.toStdString();
+        MITK_INFO(verbose) << "Performing Scar projection using " + segvtk.toStdString();
 
         QString prodPath = direct + "/";
         mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
 
-        if (verbose)
-            MITK_INFO << "Saving new scar map to " + outname.toStdString();
+        MITK_INFO(verbose) << "Saving new scar map to " + outname.toStdString();
 
         mitk::IOUtil::Save(scarShell, (prodPath + outname).toStdString());
         scar->SaveNormalisedScalars(mean, scarShell, prodPath + "Normalised_" + outname);
@@ -238,8 +233,7 @@ int main(int argc, char* argv[]) {
         QFileInfo fi2(prodPath + outname);
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
 
-        if (verbose)
-            MITK_INFO << "Writing to pordStats file" + prothresfile.toStdString();
+        MITK_INFO(verbose) << "Writing to pordStats file" + prothresfile.toStdString();
 
         int method;
         double value, thres, percentage;
@@ -306,8 +300,7 @@ int main(int argc, char* argv[]) {
         MITK_INFO << "Saving debug scar map labels.";
         scar->SaveScarDebugImage("Max", direct);
 
-        if (verbose)
-            MITK_INFO << "Goodbye!";
+        MITK_INFO(verbose) << "Goodbye!";
     }
     catch (const std::exception &e) {
         MITK_ERROR << e.what();
