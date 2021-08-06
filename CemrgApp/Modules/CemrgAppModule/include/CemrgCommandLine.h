@@ -74,6 +74,10 @@ public:
     QString DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad=true); // extract gradient
     QString DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax=1, double hmin=0.98, double havg=0.3, double surfCorr=0.95); // resample surfmesh
 
+    inline void SetDebug(bool b){_debugvar=b;};
+    inline void SetDebugOn(){SetDebug(true);};
+    inline void SetDebugOff(){SetDebug(false);};
+
     //Docker Helper Functions
     void SetUseDockerContainers(bool dockerContainersOnOff);
     inline void SetUseDockerContainersOn() {SetUseDockerContainers(true);};
@@ -105,7 +109,7 @@ private:
     //QProcess
     bool completion;
     QString _dockerimage;
-    bool _useDockerContainers;
+    bool _useDockerContainers, _debugvar;
     std::unique_ptr<QProcess> process;
 };
 

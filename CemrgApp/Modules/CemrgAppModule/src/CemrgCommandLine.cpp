@@ -48,6 +48,7 @@ PURPOSE.  See the above copyright notices for more information.
 CemrgCommandLine::CemrgCommandLine() {
 
     _useDockerContainers = true;
+    _debugvar = false;
     _dockerimage = "biomedia/mirtk:v1.1.0";
 
     //Setup panel
@@ -622,7 +623,6 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
 
     if (test) {
 
-        QString inputRelativePath = cemrgnethome.relativeFilePath(inputfilepath);
         process->setWorkingDirectory(cemrgnethome.absolutePath());
 
         //Setup docker
@@ -633,13 +633,12 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
         arguments << "--volume="+cemrgnethome.absolutePath()+":/data";
         arguments << dockerimage;
 
-        bool debugvar=true;
-        if (debugvar) {
+        if (_debugvar) {
             MITK_INFO << "[DEBUG] Input path:";
             MITK_INFO << inputfilepath.toStdString();
             MITK_INFO << "[DEBUG] Docker command to run:";
-            MITK_INFO << PrintFullCommand(docker, arguments);
         }
+        MITK_INFO << PrintFullCommand(docker, arguments);
 
         completion = false;
         process->start(docker, arguments);
@@ -935,9 +934,8 @@ bool CemrgCommandLine::CheckForStartedProcess() {
     //CHECK FOR STARTED PROCESS
     //This function prevents freezing of the app when something goes wrong with the Qt process.
     bool startedProcess = false;
-    bool debugvar = false;
 
-    if (debugvar) {
+    if (_debugvar) {
         QStringList errinfo = QProcess::systemEnvironment();
         QString errorInfoString = "";
         for (int ix=0; ix < errinfo.size(); ix++)
@@ -995,13 +993,12 @@ bool CemrgCommandLine::IsOutputSuccessful(QString outputFullPath) {
 
     QFileInfo finfo(outputFullPath);
     bool fileExists = finfo.exists();
-    bool fileSizeTest = false;
     bool result = false;
 
     MITK_INFO << (fileExists ? "File exists." : "Output file not found.");
 
     if (fileExists) {
-        fileSizeTest = finfo.size() > 0;
+        bool fileSizeTest = finfo.size() > 0;
         if (fileSizeTest) {
             MITK_INFO << ("File size: " + QString::number(finfo.size())).toStdString();
             result = true;
@@ -1014,13 +1011,12 @@ bool CemrgCommandLine::IsOutputSuccessful(QString outputFullPath) {
 }
 
 std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList arguments) {
-
-    bool debugging = true;
+    SetDebugOn();
     QString argumentList = "";
     for (int ix=0; ix < arguments.size(); ix++)
         argumentList += arguments.at(ix) + " ";
 
-    if (debugging) {
+    if (_debugvar) {
         QString prodPath = QString::fromStdString(mitk::IOUtil::GetProgramPath());
         MITK_INFO << ("Program path: " + prodPath).toStdString();
         ofstream prodFile1;
@@ -1028,6 +1024,7 @@ std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList argu
         prodFile1 << (command + " " + argumentList).toStdString() << "\n";
         prodFile1.close();
     }//_if
+    SetDebugOff();
 
     return (command + " " + argumentList).toStdString();
 }
