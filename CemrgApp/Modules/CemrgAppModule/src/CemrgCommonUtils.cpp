@@ -853,8 +853,8 @@ void CemrgCommonUtils::OriginalCoordinates(QString imagePath, QString pointPath,
         outputFileWrite.open(outputPath.toStdString());
         outputFileWrite << nPts << std::endl;
 
-        double xt=0.0, yt=0.0, zt=0.0;
         for(int iPt=0; iPt < nPts; iPt++){
+            double xt, yt, zt;
             pointFileRead >> x;
             pointFileRead >> y;
             pointFileRead >> z;
@@ -1224,13 +1224,13 @@ void CemrgCommonUtils::RectifyFileValues(QString pathToFile, double minVal, doub
     std::ifstream readInFile(copyName.toStdString());
     std::ofstream writeOutFile(pathToFile.toStdString());
 
-    double valueIn, valueOut;
+    double valueOut;
     int precision = 16;
     int count = 0;
     writeOutFile << std::scientific;
     MITK_INFO << "Rectifying file.";
     while (!readInFile.eof()) {
-        valueIn = -1;
+        double valueIn = -1;
         readInFile >> valueIn;
         if(valueIn > maxVal){
             valueOut = maxVal;
@@ -1333,8 +1333,8 @@ void CemrgCommonUtils::AppendVectorFieldToVtk(QString vtkPath, QString fieldName
     MITK_INFO << ("Appending vector field <<" + fieldName + ">> to VTK file.").toStdString();
     VTKFile << "VECTORS " << fieldName.toStdString() << " FLOAT " << std::endl;
 
-    double x,y,z;
     for (int ix = 0; ix < nElem; ix++) {
+        double x,y,z;
         x = field[ix + 0*nElem];
         y = field[ix + 1*nElem];
         z = field[ix + 2*nElem];
