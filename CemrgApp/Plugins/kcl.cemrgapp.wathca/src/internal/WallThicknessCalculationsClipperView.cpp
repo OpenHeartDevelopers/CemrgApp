@@ -60,7 +60,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkWindowedSincPolyDataFilter.h>
 #include <vtkPolyDataConnectivityFilter.h>
 
-//ITK
+// ITK
 #include <itkAddImageFilter.h>
 #include <itkRelabelComponentImageFilter.h>
 #include <itkConnectedComponentImageFilter.h>
@@ -95,7 +95,7 @@ void WallThicknessCalculationsClipperView::CreateQtPartControl(QWidget *parent) 
     connect(m_Controls.comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(CtrLinesSelector(int)));
 
     //Create GUI widgets
-    inputs = new QDialog(0,0);
+    inputs = new QDialog(0, 0);
     m_Labels.setupUi(inputs);
     connect(m_Labels.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_Labels.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -103,7 +103,7 @@ void WallThicknessCalculationsClipperView::CreateQtPartControl(QWidget *parent) 
     //Setup renderer
     surfActor = vtkSmartPointer<vtkActor>::New();
     renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->SetBackground(0,0,0);
+    renderer->SetBackground(0, 0, 0);
     vtkSmartPointer<vtkTextActor> txtActor = vtkSmartPointer<vtkTextActor>::New();
     std::string shortcuts = "R: reset centrelines\nSpace: add seed point\nDelete: remove seed point";
     txtActor->SetInput(shortcuts.c_str());
@@ -111,8 +111,7 @@ void WallThicknessCalculationsClipperView::CreateQtPartControl(QWidget *parent) 
     txtActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
     renderer->AddActor2D(txtActor);
 
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
-            vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     m_Controls.widget_1->SetRenderWindow(renderWindow);
     m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
@@ -145,27 +144,22 @@ void WallThicknessCalculationsClipperView::CreateQtPartControl(QWidget *parent) 
 }
 
 void WallThicknessCalculationsClipperView::SetFocus() {
-
     m_Controls.button_1->setFocus();
 }
 
-void WallThicknessCalculationsClipperView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*src*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void WallThicknessCalculationsClipperView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*src*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 WallThicknessCalculationsClipperView::~WallThicknessCalculationsClipperView() {
-
     inputs->deleteLater();
 }
 
 void WallThicknessCalculationsClipperView::SetDirectoryFile(const QString directory, const QString fileName) {
-
     WallThicknessCalculationsClipperView::fileName = fileName;
     WallThicknessCalculationsClipperView::directory = directory;
 }
 
 void WallThicknessCalculationsClipperView::iniPreSurf() {
-
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 1) {
@@ -191,7 +185,7 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
             }//_if
 
             //Ask for user input to set the parameters
-            QDialog* inputs = new QDialog(0,0);
+            QDialog* inputs = new QDialog(0, 0);
             m_UIMeshing.setupUi(inputs);
             connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
             connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -209,10 +203,10 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
                 //Set default values
                 if (!ok1 || !ok2 || !ok3 || !ok4)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if (!ok1) th   = 0.5;
-                if (!ok2) bl   = 0.8;
+                if (!ok1) th = 0.5;
+                if (!ok2) bl = 0.8;
                 if (!ok3) smth = 3;
-                if (!ok4) ds   = 0.5;
+                if (!ok4) ds = 0.5;
                 //_if
 
                 //Mesh creation
@@ -235,7 +229,7 @@ void WallThicknessCalculationsClipperView::iniPreSurf() {
                 vtkSmartPointer<vtkPolyData> pd = shell->GetVtkPolyData();
                 pd->SetVerts(nullptr);
                 pd->SetLines(nullptr);
-                for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+                for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
                     double* point = pd->GetPoint(i);
                     point[0] = -point[0];
                     point[1] = -point[1];
@@ -292,7 +286,7 @@ void WallThicknessCalculationsClipperView::CtrLines() {
             QMessageBox::information(NULL, "Attention", "You are using precomputed centrelines!");
 
         this->BusyCursorOn();
-        for (unsigned int i=0; i<clipper->GetCentreLines().size(); i++) {
+        for (unsigned int i = 0; i < clipper->GetCentreLines().size(); i++) {
             if (i == 0) pickedSeedLabels.clear();
             vtkSmartPointer<vtkPolyData> pd = clipper->GetCentreLines().at(i)->GetOutput();
             vtkSmartPointer<vtkIntArray> lb = vtkIntArray::SafeDownCast(pd->GetFieldData()->GetAbstractArray("PickedSeedLabels"));
@@ -328,14 +322,14 @@ void WallThicknessCalculationsClipperView::CtrLines() {
 
     //Create a mapper and actor for centre lines
     std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> ctrLines = clipper->GetCentreLines();
-    for (unsigned int i=0; i<ctrLines.size(); i++) {
+    for (unsigned int i = 0; i < ctrLines.size(); i++) {
         vtkSmartPointer<vtkPolyDataMapper> linesMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         linesMapper->SetInputData(ctrLines.at(i)->GetOutput());
         linesMapper->ScalarVisibilityOff();
         vtkSmartPointer<vtkActor> linesActor = vtkSmartPointer<vtkActor>::New();
         linesActor->SetMapper(linesMapper);
         linesActor->GetProperty()->SetOpacity(1.0);
-        linesActor->GetProperty()->SetColor(1,0,0);
+        linesActor->GetProperty()->SetColor(1, 0, 0);
         renderer->AddActor(linesActor);
     }//_for
     m_Controls.widget_1->GetRenderWindow()->Render();
@@ -372,14 +366,14 @@ void WallThicknessCalculationsClipperView::CtrPlanes() {
     int index = ctrLine->GetOutput()->FindPoint(ctrPlane->GetCenter());
 
     //Create a mapper and actor for centre lines clippers
-    for (unsigned int i=0; i<ctrPlanes.size(); i++) {
+    for (unsigned int i = 0; i < ctrPlanes.size(); i++) {
         vtkSmartPointer<vtkPolyDataMapper> clipperMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         clipperMapper->SetInputConnection(ctrPlanes.at(i)->GetOutputPort());
         clipperMapper->ScalarVisibilityOff();
         vtkSmartPointer<vtkActor> clipperActor = vtkSmartPointer<vtkActor>::New();
         clipperActor->SetMapper(clipperMapper);
         clipperActor->GetProperty()->SetOpacity(1.0);
-        clipperActor->GetProperty()->SetColor(1,1,0);
+        clipperActor->GetProperty()->SetColor(1, 1, 0);
         renderer->AddActor(clipperActor);
         clipperActors.push_back(clipperActor);
         QString comboText = "DEFAULT";
@@ -443,15 +437,15 @@ void WallThicknessCalculationsClipperView::ClipperImage() {
                 bool morphAnalysis = false;
                 if (segNode->GetName().compare(fileName.left(fileName.lastIndexOf(QChar('.'))).toStdString()) == 0) {
                     int reply1 = QMessageBox::question(
-                                NULL, "Question", "Are you sure you want to clip the same segmentation used for creating the visualised mesh?",
-                                QMessageBox::Yes, QMessageBox::No);
+                        NULL, "Question", "Are you sure you want to clip the same segmentation used for creating the visualised mesh?",
+                        QMessageBox::Yes, QMessageBox::No);
                     if (reply1 == QMessageBox::No) {
                         QMessageBox::warning(NULL, "Attention", "Please select the correct segmentation to clip!");
                         return;
                     }//_if_no
                     int reply2 = QMessageBox::question(
-                                NULL, "Question", "Do you want to save PV clipping information for morphological analysis?",
-                                QMessageBox::Yes, QMessageBox::No);
+                        NULL, "Question", "Do you want to save PV clipping information for morphological analysis?",
+                        QMessageBox::Yes, QMessageBox::No);
                     if (reply2 == QMessageBox::Yes) {
                         QMessageBox::information(NULL, "Attention", "Labelled bloodpool image and ostia information will be saved!");
                         morphAnalysis = true;
@@ -519,13 +513,12 @@ void WallThicknessCalculationsClipperView::CtrLinesSelector(int index) {
     int position = line->FindPoint(ctrPlane->GetCenter());
 
     //Find the right radius
-    vtkSmartPointer<vtkDoubleArray> radii = vtkSmartPointer<vtkDoubleArray>::New();
-    radii = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
+    vtkSmartPointer<vtkDoubleArray> radii = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
     double adjust = ctrPlane->GetRadius() / radii->GetValue(position);
 
     //Adjust highlighted clipper
-    for (unsigned int i=0; i<clipperActors.size(); i++)
-        clipperActors.at(i)->GetProperty()->SetOpacity(i==(unsigned)index ? 1.0 : 0.1);
+    for (unsigned int i = 0; i < clipperActors.size(); i++)
+        clipperActors.at(i)->GetProperty()->SetOpacity(i == (unsigned)index ? 1.0 : 0.1);
 
     //Set corresponding label
     int type = clipper->GetManualType().at(index);
@@ -541,7 +534,7 @@ void WallThicknessCalculationsClipperView::CtrLinesSelector(int index) {
     }//_if_type
 
     //Set controllers
-    m_Controls.slider->setRange(0, line->GetNumberOfPoints()-1);
+    m_Controls.slider->setRange(0, line->GetNumberOfPoints() - 1);
     m_Controls.slider->setValue(position);
     m_Controls.spinBox->setValue(adjust);
     pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
@@ -555,7 +548,7 @@ void WallThicknessCalculationsClipperView::Visualiser() {
     glyph3D->SetInputData(pickedLineSeeds);
     glyph3D->SetSourceConnection(glyphSource->GetOutputPort());
     glyph3D->SetScaleModeToDataScalingOff();
-    glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength()*0.01);
+    glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength() * 0.01);
     glyph3D->Update();
 
     //Create a mapper and actor for glyph
@@ -563,7 +556,7 @@ void WallThicknessCalculationsClipperView::Visualiser() {
     glyphMapper->SetInputConnection(glyph3D->GetOutputPort());
     vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
     glyphActor->SetMapper(glyphMapper);
-    glyphActor->GetProperty()->SetColor(1.0,0.0,0.0);
+    glyphActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
     glyphActor->PickableOff();
     renderer->AddActor(glyphActor);
 
@@ -587,12 +580,11 @@ void WallThicknessCalculationsClipperView::PickCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
     int pickedSeedId = -1;
     double minDistance = 1E10;
-    for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
-                    pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
+    for (int i = 0; i < pickedCellPointIds->GetNumberOfIds(); i++) {
+        double distance = vtkMath::Distance2BetweenPoints(
+            pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
             pickedSeedId = pickedCellPointIds->GetId(i);
@@ -617,7 +609,7 @@ void WallThicknessCalculationsClipperView::ManualCutterCallBack() {
         glyph3D->SetInputData(pickedCutterSeeds);
         glyph3D->SetSourceConnection(glyphSource->GetOutputPort());
         glyph3D->SetScaleModeToDataScalingOff();
-        glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength()*0.01);
+        glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength() * 0.01);
         glyph3D->Update();
 
         //Create a mapper and actor for glyph
@@ -625,7 +617,7 @@ void WallThicknessCalculationsClipperView::ManualCutterCallBack() {
         glyphMapper->SetInputConnection(glyph3D->GetOutputPort());
         vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
         glyphActor->SetMapper(glyphMapper);
-        glyphActor->GetProperty()->SetColor(1.0,0.0,0.0);
+        glyphActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
         glyphActor->PickableOff();
         renderer->AddActor(glyphActor);
 
@@ -642,12 +634,11 @@ void WallThicknessCalculationsClipperView::ManualCutterCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
     int pickedSeedId = -1;
     double minDistance = 1E10;
-    for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
-                    pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
+    for (int i = 0; i < pickedCellPointIds->GetNumberOfIds(); i++) {
+        double distance = vtkMath::Distance2BetweenPoints(
+            pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
             pickedSeedId = pickedCellPointIds->GetId(i);
@@ -678,7 +669,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
             QRect screenGeometry = QApplication::desktop()->screenGeometry();
             int x = (screenGeometry.width() - self->inputs->width()) / 2;
             int y = (screenGeometry.height() - self->inputs->height()) / 2;
-            self->inputs->move(x,y);
+            self->inputs->move(x, y);
 
             //Act on dialog return code
             if (dialogCode == QDialog::Accepted) {
@@ -726,13 +717,13 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
             //Clean up last dropped seed point
             vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
             vtkSmartPointer<vtkPoints> points = self->pickedLineSeeds->GetPoints();
-            for (int i=0; i<points->GetNumberOfPoints()-1; i++)
+            for (int i = 0; i < points->GetNumberOfPoints() - 1; i++)
                 newPoints->InsertNextPoint(points->GetPoint(i));
             self->pickedLineSeeds->SetPoints(newPoints);
             vtkSmartPointer<vtkIdList> newPickedSeedIds = vtkSmartPointer<vtkIdList>::New();
             newPickedSeedIds->Initialize();
             vtkSmartPointer<vtkIdList> pickedSeedIds = self->pickedSeedIds;
-            for (int i=0; i<pickedSeedIds->GetNumberOfIds()-1; i++)
+            for (int i = 0; i < pickedSeedIds->GetNumberOfIds() - 1; i++)
                 newPickedSeedIds->InsertNextId(pickedSeedIds->GetId(i));
             self->pickedSeedIds = newPickedSeedIds;
 
@@ -765,7 +756,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
         }//_if_space
 
     } else if (self->clipper->GetCentreLinePolyPlanes().size() != 0 && !self->m_Controls.button_1->isEnabled() &&
-               /*self->m_Controls.button_3->isEnabled() &&*/ self->m_Controls.button_4->isEnabled()) {
+        /*self->m_Controls.button_3->isEnabled() &&*/ self->m_Controls.button_4->isEnabled()) {
 
         double adjustments[2];
         int idxClipper = self->m_Controls.comboBox->currentIndex();
@@ -781,7 +772,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 adjustments[0] = 0.0;
             else
                 adjustments[0] = self->clipper->GetMClipperAngles()[idxClipper][0] + 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
@@ -794,7 +785,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 adjustments[0] = 180.0;
             else
                 adjustments[0] = self->clipper->GetMClipperAngles()[idxClipper][0] - 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
@@ -807,7 +798,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 adjustments[1] = 0.0;
             else
                 adjustments[1] = self->clipper->GetMClipperAngles()[idxClipper][1] + 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
@@ -820,13 +811,13 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 adjustments[1] = 360.0;
             else
                 adjustments[1] = self->clipper->GetMClipperAngles()[idxClipper][1] - 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
         } else if (key == "space") {
 
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1,0,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1, 0, 0);
             self->ManualCutterCallBack();
             self->clipper->SetMClipperSeeds(self->pickedCutterSeeds, self->m_Controls.comboBox->currentIndex());
             self->CtrPlanesPlacer();
@@ -835,7 +826,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
 
             vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
             vtkSmartPointer<vtkPoints> points = self->pickedCutterSeeds->GetPoints();
-            for (int i=0; i<points->GetNumberOfPoints()-1; i++)
+            for (int i = 0; i < points->GetNumberOfPoints() - 1; i++)
                 newPoints->InsertNextPoint(points->GetPoint(i));
             self->pickedCutterSeeds->SetPoints(newPoints);
             self->clipper->SetMClipperSeeds(self->pickedCutterSeeds, self->m_Controls.comboBox->currentIndex());
@@ -847,7 +838,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
             QString style = "QLabel {border-width:1px; border-color:black; border-radius:10px; background-color:yellow;}";
             self->m_Controls.label->setStyleSheet(style);
             self->clipper->SetToAutomaticClipperMode(idxClipper);
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1, 1, 0);
             self->CtrPlanesPlacer();
 
         } else if (key == "o" || key == "O") {
@@ -856,7 +847,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
                 self->surfActor->GetProperty()->SetOpacity(0.5);
             else {
                 self->surfActor->GetProperty()->SetOpacity(1.0);
-                for (unsigned int i=0; i<self->clipperActors.size(); i++)
+                for (unsigned int i = 0; i < self->clipperActors.size(); i++)
                     self->clipperActors.at(i)->GetProperty()->SetOpacity(1.0);
             }//_if
             self->m_Controls.widget_1->GetRenderWindow()->Render();
@@ -865,7 +856,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
 
     } else if (!self->m_Controls.button_1->isEnabled()) {
 
-        if (key == "r" || key =="R") {
+        if (key == "r" || key == "R") {
 
             //Clear renderer
             self->renderer->RemoveAllViewProps();
@@ -889,7 +880,7 @@ void WallThicknessCalculationsClipperView::KeyCallBackFunc(vtkObject*, long unsi
 
             //Reset controls
             self->m_Controls.comboBox->clear();
-            self->m_Controls.slider->setRange(0,2);
+            self->m_Controls.slider->setRange(0, 2);
             self->m_Controls.slider->setValue(0);
             self->m_Controls.spinBox->setValue(2.0);
             self->m_Controls.slider->setEnabled(false);

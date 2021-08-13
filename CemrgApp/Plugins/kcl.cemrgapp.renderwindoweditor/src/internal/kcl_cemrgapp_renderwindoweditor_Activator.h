@@ -32,19 +32,18 @@ PURPOSE.  See the above copyright notices for more information.
 
 #include <ctkPluginActivator.h>
 
-namespace mitk
-{
-  class kcl_cemrgapp_renderwindoweditor_Activator : public QObject, public ctkPluginActivator
-  {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "kcl_cemrgapp_renderwindoweditor")
-    Q_INTERFACES(ctkPluginActivator)
+namespace mitk {
 
-  public:
-    void start(ctkPluginContext *context);
-    void stop(ctkPluginContext *context);
+    class kcl_cemrgapp_renderwindoweditor_Activator: public QObject, public ctkPluginActivator {
+        Q_OBJECT
+        Q_PLUGIN_METADATA(IID "kcl_cemrgapp_renderwindoweditor")
+        Q_INTERFACES(ctkPluginActivator)
 
-  }; // kcl_cemrgapp_renderwindoweditor_Activator
+    public:
+        void start(ctkPluginContext *context);
+        void stop(ctkPluginContext *context);
+
+    }; // kcl_cemrgapp_renderwindoweditor_Activator
 }
 
 #endif // kcl_cemrgapp_renderwindoweditor_Activator_h

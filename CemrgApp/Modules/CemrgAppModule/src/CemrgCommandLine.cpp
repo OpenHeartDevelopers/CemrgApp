@@ -26,11 +26,11 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-//Qmitk
+// Qmitk
 #include <mitkIOUtil.h>
 #include <mitkProgressBar.h>
 
-//Qt
+// Qt
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFile>
@@ -39,7 +39,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QDir>
 #include <QMessageBox>
 
-//Generic
+// C++ Standard
 #include <thread>
 #include <chrono>
 #include <sys/stat.h>

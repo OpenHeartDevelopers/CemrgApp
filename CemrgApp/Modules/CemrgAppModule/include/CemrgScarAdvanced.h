@@ -29,6 +29,12 @@ PURPOSE.  See the above copyright notices for more information.
 #ifndef CemrgScarAdvanced_h
 #define CemrgScarAdvanced_h
 
+// Qmitk
+#include <mitkImage.h>
+#include <mitkPointSet.h>
+#include <vtkFloatArray.h>
+#include <MitkCemrgAppModuleExports.h>
+
 // VTK
 #include <vtkAppendFilter.h>
 #include <vtkUnstructuredGrid.h>
@@ -75,15 +81,11 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCellPicker.h>
 #include <vtkActor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
-#include <string>
-#include <sstream>
 #include <vtkPointPicker.h>
 
-// Qmitk
-#include <mitkImage.h>
-#include <mitkPointSet.h>
-#include <vtkFloatArray.h>
-#include <MitkCemrgAppModuleExports.h>
+// C++ Standard
+#include <string>
+#include <sstream>
 
 class MITKCEMRGAPPMODULE_EXPORT CemrgScarAdvanced {
 
@@ -125,48 +127,48 @@ public:
     std::vector<int> _corridoridarray;
 
     // Getters and setters
-    inline bool IsDebug(){return _debugScarAdvanced;};
+    inline bool IsDebug() { return _debugScarAdvanced; };
 
-    inline bool IsWeighted() {return _weightedcorridor;};
-    inline bool PreScoresExist(){return (fi3_preScarScoreSimple>=0);};
-    inline bool PostScoresExist(){return (fi3_postScarScoreSimple>=0);};
-    inline int GetThresholdValue(){return _fill_threshold;};
-    inline vtkSmartPointer<vtkPolyData> GetSourcePolyData(){return _SourcePolyData;};
+    inline bool IsWeighted() { return _weightedcorridor; };
+    inline bool PreScoresExist() { return (fi3_preScarScoreSimple >= 0); };
+    inline bool PostScoresExist() { return (fi3_postScarScoreSimple >= 0); };
+    inline int GetThresholdValue() { return _fill_threshold; };
+    inline vtkSmartPointer<vtkPolyData> GetSourcePolyData() { return _SourcePolyData; };
 
     QString GetOutputSufix();
     void GetConnectedVertices(vtkSmartPointer<vtkPolyData> mesh, int seed, vtkSmartPointer<vtkIdList> connectedVertices);
 
-    inline void SetDebug(bool db){_debugScarAdvanced = db;};
-    inline void SetDebugOn(){SetDebug(true);};
-    inline void SetDebugOff(){SetDebug(false);};
+    inline void SetDebug(bool db) { _debugScarAdvanced = db; };
+    inline void SetDebugOn() { SetDebug(true); };
+    inline void SetDebugOff() { SetDebug(false); };
 
-    inline void SetWeightedCorridorBool(bool isw){_weightedcorridor = isw;};
-    inline void SetWeightedCorridorOn(){SetWeightedCorridorBool(true);};
-    inline void SetWeightedCorridorOff(){SetWeightedCorridorBool(false);};
+    inline void SetWeightedCorridorBool(bool isw) { _weightedcorridor = isw; };
+    inline void SetWeightedCorridorOn() { SetWeightedCorridorBool(true); };
+    inline void SetWeightedCorridorOff() { SetWeightedCorridorBool(false); };
 
-    inline void SetNeighbourhoodSize(int s){_neighbourhood_size = s;};
-    inline void SetFillThreshold(double s){_fill_threshold = s;};
-    inline void SetMaxScalar(double s){_max_scalar = s;};
-    inline void SetInputData(vtkSmartPointer<vtkPolyData> inputmesh){_SourcePolyData->DeepCopy(inputmesh);};
-    inline void SetOutputFileName(std::string filename){_fileOutName = filename;};
-    inline void SetOutputPath(std::string pathname){_outPath = pathname;};
-    inline void SetLeftRightPrefix(std::string lrpre){_leftrightpre = lrpre;};
-    inline void SetOutputPrefix(std::string prefixname){_prefix = _leftrightpre + prefixname;};
+    inline void SetNeighbourhoodSize(int s) { _neighbourhood_size = s; };
+    inline void SetFillThreshold(double s) { _fill_threshold = s; };
+    inline void SetMaxScalar(double s) { _max_scalar = s; };
+    inline void SetInputData(vtkSmartPointer<vtkPolyData> inputmesh) { _SourcePolyData->DeepCopy(inputmesh); };
+    inline void SetOutputFileName(std::string filename) { _fileOutName = filename; };
+    inline void SetOutputPath(std::string pathname) { _outPath = pathname; };
+    inline void SetLeftRightPrefix(std::string lrpre) { _leftrightpre = lrpre; };
+    inline void SetOutputPrefix(std::string prefixname) { _prefix = _leftrightpre + prefixname; };
 
-    inline void SetSurfaceAreaFilename(std::string fn1){fi1_fname = fn1;};
-    inline void SetGapsFilename(std::string fn2){fi2_fname = fn2;};
-    inline void SetComparisonFilename(std::string fn3){fi3_fname = fn3;};
+    inline void SetSurfaceAreaFilename(std::string fn1) { fi1_fname = fn1; };
+    inline void SetGapsFilename(std::string fn2) { fi2_fname = fn2; };
+    inline void SetComparisonFilename(std::string fn3) { fi3_fname = fn3; };
 
-    inline std::string GetOutputPath(){return _outPath;};
-    inline std::string GetSurfaceAreaFilename(){return fi1_fname;};
-    inline std::string GetGapsFilename(){return fi2_fname;};
-    inline std::string GetComparisonFilename(){return fi3_fname;};
-    inline std::string GetPrefix() {return (_leftrightpre + _prefix);};
-    inline std::string PathAndPrefix() {return (GetOutputPath()+ GetPrefix());};
+    inline std::string GetOutputPath() { return _outPath; };
+    inline std::string GetSurfaceAreaFilename() { return fi1_fname; };
+    inline std::string GetGapsFilename() { return fi2_fname; };
+    inline std::string GetComparisonFilename() { return fi3_fname; };
+    inline std::string GetPrefix() { return (_leftrightpre + _prefix); };
+    inline std::string PathAndPrefix() { return (GetOutputPath() + GetPrefix()); };
 
-    inline bool isPointIDArrayEmpty() {return (_pointidarray.empty());};
+    inline bool isPointIDArrayEmpty() { return (_pointidarray.empty()); };
 
-    inline void ClearLeftRightPrefix(){_leftrightpre = "";};
+    inline void ClearLeftRightPrefix() { _leftrightpre = ""; };
 
     void ResetValues();
 
@@ -179,7 +181,7 @@ public:
     std::string PrintAblationGapsResults(double mean, double stdv, double val);
     std::string PrintThresholdResults(double mean, double stdv, double val);
     std::string PrintScarOverlapResults(double valpre, double valpost);
-    std::string num2str(double num, int precision=2);
+    std::string num2str(double num, int precision = 2);
 
     // F&I T1
     //void GetSurfaceAreaFromThreshold();
@@ -193,7 +195,7 @@ public:
     void GetNeighboursAroundPoint2(int pointID, std::vector<std::pair<int, int>>& pointNeighbourAndOrder, int max_order);
     void getCorridorPoints(std::vector<vtkSmartPointer<vtkDijkstraGraphGeodesicPath>> allShortestPaths);
     bool InsertPointIntoVisitedList2(vtkIdType id, int order);
-    void CorridorFromPointList(std::vector<int> points, bool circleToStart=true);
+    void CorridorFromPointList(std::vector<int> points, bool circleToStart = true);
 
     // F&I T3
     void SetSourceAndTarget(vtkSmartPointer<vtkPolyData> sc, vtkSmartPointer<vtkPolyData> tg);

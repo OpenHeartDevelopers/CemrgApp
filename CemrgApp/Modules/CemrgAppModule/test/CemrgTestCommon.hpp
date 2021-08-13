@@ -38,7 +38,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QtTest/QtTest>
 #include <QFileInfo>
 
-// MITK
+// Qmitk
 #include <mitkIOUtil.h>
 #include <mitkTestingConfig.h>
 #include <mitkDataNode.h>

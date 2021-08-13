@@ -50,7 +50,7 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class WallThicknessCalculationsView : public QmitkAbstractView {
+class WallThicknessCalculationsView: public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -86,18 +86,17 @@ protected:
     virtual void CreateQtPartControl(QWidget *parent) override;
     virtual void SetFocus() override;
     /// \brief called by QmitkFunctionality when DataManager's selection has changed
-    virtual void OnSelectionChanged(
-            berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
+    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
     Ui::WallThicknessCalculationsViewControls m_Controls;
     Ui::WallThicknessCalculationsViewUIMeshing m_UIMeshing;
     Ui::WallThicknessCalculationsViewUIThickness m_Thickness;
 
-private:   
+private:
 
     QString fileName;
     QString directory;
-    const int APPENDAGECUT   = 19;
+    const int APPENDAGECUT = 19;
     const int APPENDAGEUNCUT = 20;
 };
 

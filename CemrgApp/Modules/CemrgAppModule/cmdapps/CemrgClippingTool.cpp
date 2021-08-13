@@ -66,13 +66,15 @@ in the framework.
 #include <QFileInfo>
 #include <QProcess>
 #include <QMessageBox>
-#include <numeric>
 
-#include <CemrgScar3D.h>
-#include <CemrgCommandLine.h>
-
+// C++ Standard
 #include <algorithm>
 #include <string>
+#include <numeric>
+
+// CemrgApp
+#include <CemrgScar3D.h>
+#include <CemrgCommandLine.h>
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -82,7 +84,7 @@ int main(int argc, char* argv[]) {
     parser.setTitle("Clip Clipping Tool Command-line App");
     parser.setContributor("CEMRG, KCL");
     parser.setDescription(
-                "Clip Mitral Valve (or whatever) from any shape (using implicit functions).");
+        "Clip Mitral Valve (or whatever) from any shape (using implicit functions).");
 
     // How should arguments be prefixed
     parser.setArgumentPrefix("--", "-");
@@ -94,19 +96,19 @@ int main(int argc, char* argv[]) {
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-                "input-vtk", "i", mitkCommandLineParser::InputFile,
-                "segmentation (vtk) path", "Full path of segmentation.vtk file.",
-                us::Any(), false);
+        "input-vtk", "i", mitkCommandLineParser::InputFile,
+        "segmentation (vtk) path", "Full path of segmentation.vtk file.",
+        us::Any(), false);
     parser.addArgument(
-                "output", "o", mitkCommandLineParser::OutputFile,
-                "Output file", "Where to save the output.",
-                us::Any(), false);
+        "output", "o", mitkCommandLineParser::OutputFile,
+        "Output file", "Where to save the output.",
+        us::Any(), false);
     parser.addArgument(
-                "clipper", "c", mitkCommandLineParser::String,
-                "Mitral valve file (.nii/.vtk)", "Image (or VTK) of mitral valve to be cut");
+        "clipper", "c", mitkCommandLineParser::String,
+        "Mitral valve file (.nii/.vtk)", "Image (or VTK) of mitral valve to be cut");
     parser.addArgument( // optional
-                        "verbose", "v", mitkCommandLineParser::Bool,
-                        "Verbose Output", "Whether to produce verbose output");
+        "verbose", "v", mitkCommandLineParser::Bool,
+        "Verbose Output", "Whether to produce verbose output");
 
     // Parse arguments.
     // This method returns a mapping of long argument names to their values.
@@ -133,7 +135,7 @@ int main(int argc, char* argv[]) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
 
-    try{
+    try {
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
 
@@ -171,7 +173,7 @@ int main(int argc, char* argv[]) {
 
         MITK_INFO(verbose) << "Creating implicit function.";
 
-        if (whichImplicitFunction==1) {
+        if (whichImplicitFunction == 1) {
             MITK_INFO(verbose) << "Loading Clipper image.";
             mitk::Image::Pointer ClipperImage = mitk::IOUtil::Load<mitk::Image>(clipPath.toStdString());
             vtkSmartPointer<vtkImplicitVolume> implicitFn = vtkSmartPointer<vtkImplicitVolume>::New();
@@ -182,8 +184,7 @@ int main(int argc, char* argv[]) {
 
             MITK_INFO(verbose) << "Creating ClipPolyData object.";
             clipper->SetClipFunction(implicitFn);
-        }
-        else {
+        } else {
             MITK_INFO(verbose) << "Loading Clipper surface.";
             mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(clipPath.toStdString());
             vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
@@ -235,15 +236,11 @@ int main(int argc, char* argv[]) {
         mitk::IOUtil::Save(shell, outputPath.toStdString());
 
         MITK_INFO(verbose) << "Goodbye!";
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         MITK_ERROR << e.what();
         return EXIT_FAILURE;
-    }
-    catch(...) {
+    } catch (...) {
         MITK_ERROR << "Unexpected error";
         return EXIT_FAILURE;
     }
-
-
 }

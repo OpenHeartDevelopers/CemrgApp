@@ -30,12 +30,13 @@ PURPOSE.  See the above copyright notices for more information.
 #include "kcl_cemrgapp_renderwindoweditor_Activator.h"
 #include "QmitkCemrgRenderWindowEditor.h"
 
-namespace mitk
-{
-  void kcl_cemrgapp_renderwindoweditor_Activator::start(ctkPluginContext *context)
-  {
-    BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgRenderWindowEditor, context)
-  }
+namespace mitk {
 
-  void kcl_cemrgapp_renderwindoweditor_Activator::stop(ctkPluginContext *context) { Q_UNUSED(context) }
+    void kcl_cemrgapp_renderwindoweditor_Activator::start(ctkPluginContext *context) {
+        BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgRenderWindowEditor, context)
+    }
+
+    void kcl_cemrgapp_renderwindoweditor_Activator::stop(ctkPluginContext *context) { 
+        Q_UNUSED(context) 
+    }
 }

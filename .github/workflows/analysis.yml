@@ -13,6 +13,11 @@ jobs:
         pip3 install --upgrade setuptools
         pip3 install pygithub
 
+    - name: Install Qt
+      run: |
+        sudo pip3 install aqtinstall
+        sudo aqt install --outputdir /Qt 5.12.10 linux desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
+
     - name: Clone CemrgApp
       uses: actions/checkout@v2
 
@@ -23,5 +28,5 @@ jobs:
         REPORT_PR_CHANGES_ONLY: false
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-        cppcheck --enable=warning,style,performance,portability --std=c++14 --language=c++ --force --quiet ${{ github.workspace }}/CemrgApp --output-file=analysis.txt
+        cppcheck --enable=warning,style,performance,portability --std=c++14 --language=c++ --force --quiet ${{ github.workspace }}/CemrgApp -I /Qt/5.12.10/gcc_64/include --output-file=analysis.txt
         python3 ${{ github.workspace }}/.github/code_analysis.py -cc analysis.txt

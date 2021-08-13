@@ -33,23 +33,19 @@ PURPOSE.  See the above copyright notices for more information.
 
 // Qmitk
 #include "QmitkCemrgRenderWindowEditor.h"
+#include <mitkImage.h>
 
 // Qt
 #include <QMessageBox>
-
-// mitk image
-#include <mitkImage.h>
 
 //const std::string QmitkCemrgRenderWindowEditor::VIEW_ID = "org.mitk.views.renderwindoweditor";
 const std::string QmitkCemrgRenderWindowEditor::EDITOR_ID = "org.mitk.editors.stdmultiwidget";
 
 QmitkCemrgRenderWindowEditor::QmitkCemrgRenderWindowEditor()
-    : m_standrdWindow(0)
-{
+    : m_standrdWindow(0), m_RenderWindow0(0), m_RenderWindow1(0) {
 }
 
-QmitkRenderWindow *QmitkCemrgRenderWindowEditor::GetActiveQmitkRenderWindow() const
-{
+QmitkRenderWindow *QmitkCemrgRenderWindowEditor::GetActiveQmitkRenderWindow() const {
     if (m_standrdWindow) return m_standrdWindow->GetRenderWindow1();
     return 0;
 }
@@ -57,8 +53,7 @@ QmitkRenderWindow *QmitkCemrgRenderWindowEditor::GetActiveQmitkRenderWindow() co
 //*** NEEDS DOUBLE CHECKING ***//
 //*****************************//
 QHash<QString, QmitkRenderWindow*> wnds;
-QHash<QString, QmitkRenderWindow *> QmitkCemrgRenderWindowEditor::GetQmitkRenderWindows() const
-{
+QHash<QString, QmitkRenderWindow *> QmitkCemrgRenderWindowEditor::GetQmitkRenderWindows() const {
     wnds.insert("axial", m_standrdWindow->GetRenderWindow1());
     wnds.insert("sagittal", m_standrdWindow->GetRenderWindow2());
     wnds.insert("coronal", m_standrdWindow->GetRenderWindow3());
@@ -66,92 +61,70 @@ QHash<QString, QmitkRenderWindow *> QmitkCemrgRenderWindowEditor::GetQmitkRender
     return wnds;
 }
 
-QmitkRenderWindow *QmitkCemrgRenderWindowEditor::GetQmitkRenderWindow(const QString &id) const
-{
+QmitkRenderWindow *QmitkCemrgRenderWindowEditor::GetQmitkRenderWindow(const QString &id) const {
     if (wnds.contains(id))
-      return wnds[id];
+        return wnds[id];
     return 0;
 }
 
-mitk::Point3D QmitkCemrgRenderWindowEditor::GetSelectedPosition(const QString & /*id*/) const
-{
+mitk::Point3D QmitkCemrgRenderWindowEditor::GetSelectedPosition(const QString & /*id*/) const {
     return m_standrdWindow->GetCrossPosition();
 }
 
-void QmitkCemrgRenderWindowEditor::SetSelectedPosition(const mitk::Point3D &pos, const QString &/*id*/)
-{
+void QmitkCemrgRenderWindowEditor::SetSelectedPosition(const mitk::Point3D &pos, const QString &/*id*/) {
     m_standrdWindow->MoveCrossToPosition(pos);
 }
 
-void QmitkCemrgRenderWindowEditor::EnableDecorations(bool enable, const QStringList &decorations)
-{
-    if (decorations.isEmpty() || decorations.contains(DECORATION_BORDER))
-    {
-      enable ? m_standrdWindow->EnableColoredRectangles()
-             : m_standrdWindow->DisableColoredRectangles();
+void QmitkCemrgRenderWindowEditor::EnableDecorations(bool enable, const QStringList &decorations) {
+    if (decorations.isEmpty() || decorations.contains(DECORATION_BORDER)) {
+        enable ? m_standrdWindow->EnableColoredRectangles() : m_standrdWindow->DisableColoredRectangles();
     }
-    if (decorations.isEmpty() || decorations.contains(DECORATION_LOGO))
-    {
-      enable ? m_standrdWindow->EnableDepartmentLogo()
-             : m_standrdWindow->DisableDepartmentLogo();
+    if (decorations.isEmpty() || decorations.contains(DECORATION_LOGO)) {
+        enable ? m_standrdWindow->EnableDepartmentLogo() : m_standrdWindow->DisableDepartmentLogo();
     }
-    if (decorations.isEmpty() || decorations.contains(DECORATION_MENU))
-    {
-      m_standrdWindow->ActivateMenuWidget(enable);
+    if (decorations.isEmpty() || decorations.contains(DECORATION_MENU)) {
+        m_standrdWindow->ActivateMenuWidget(enable);
     }
-    if (decorations.isEmpty() || decorations.contains(DECORATION_BACKGROUND))
-    {
-      enable ? m_standrdWindow->EnableGradientBackground()
-             : m_standrdWindow->DisableGradientBackground();
+    if (decorations.isEmpty() || decorations.contains(DECORATION_BACKGROUND)) {
+        enable ? m_standrdWindow->EnableGradientBackground() : m_standrdWindow->DisableGradientBackground();
     }
 }
 
-bool QmitkCemrgRenderWindowEditor::IsDecorationEnabled(const QString &decoration) const
-{
-    if (decoration == DECORATION_BORDER)
-    {
-      return m_standrdWindow->IsColoredRectanglesEnabled();
-    }
-    else if (decoration == DECORATION_LOGO)
-    {
-      return m_standrdWindow->IsColoredRectanglesEnabled();
-    }
-    else if (decoration == DECORATION_MENU)
-    {
-      return m_standrdWindow->IsMenuWidgetEnabled();
-    }
-    else if (decoration == DECORATION_BACKGROUND)
-    {
-      return m_standrdWindow->GetGradientBackgroundFlag();
+bool QmitkCemrgRenderWindowEditor::IsDecorationEnabled(const QString &decoration) const {
+    if (decoration == DECORATION_BORDER) {
+        return m_standrdWindow->IsColoredRectanglesEnabled();
+    } else if (decoration == DECORATION_LOGO) {
+        return m_standrdWindow->IsColoredRectanglesEnabled();
+    } else if (decoration == DECORATION_MENU) {
+        return m_standrdWindow->IsMenuWidgetEnabled();
+    } else if (decoration == DECORATION_BACKGROUND) {
+        return m_standrdWindow->GetGradientBackgroundFlag();
     }
     return false;
 }
 
-QStringList QmitkCemrgRenderWindowEditor::GetDecorations() const
-{
+QStringList QmitkCemrgRenderWindowEditor::GetDecorations() const {
     QStringList decorations;
     decorations << DECORATION_BORDER << DECORATION_LOGO << DECORATION_MENU << DECORATION_BACKGROUND;
     return decorations;
 }
 
-void QmitkCemrgRenderWindowEditor::SetFocus()
-{
+void QmitkCemrgRenderWindowEditor::SetFocus() {
     if (m_standrdWindow != 0)
         m_standrdWindow->setFocus();
 }
 
-void QmitkCemrgRenderWindowEditor::CreateQtPartControl(QWidget* parent)
-{
+void QmitkCemrgRenderWindowEditor::CreateQtPartControl(QWidget* parent) {
     QGridLayout* layout = new QGridLayout(parent);
-    layout->setContentsMargins(0,0,0,0);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     m_standrdWindow = new QmitkStdMultiWidget(parent);
     m_RenderWindow0 = new QmitkRenderWindow(parent);
     m_RenderWindow1 = new QmitkRenderWindow(parent);
 
     layout->addWidget(m_standrdWindow, 0, 0, -1, 1);
-    layout->addWidget(m_RenderWindow0, 0, 1,  1, 1);
-    layout->addWidget(m_RenderWindow1, 1, 1,  1, 1);
+    layout->addWidget(m_RenderWindow0, 0, 1, 1, 1);
+    layout->addWidget(m_RenderWindow1, 1, 1, 1, 1);
 
     mitk::DataStorage::Pointer ds = this->GetDataStorage();
     m_standrdWindow->SetDataStorage(ds);

@@ -40,7 +40,7 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class QmitkCemrgAppCommonTools : public QmitkAbstractView {
+class QmitkCemrgAppCommonTools: public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -63,8 +63,7 @@ protected:
 
     virtual void CreateQtPartControl(QWidget *parent) override;
     virtual void SetFocus() override;
-    virtual void OnSelectionChanged(
-            berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
+    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
     Ui::QmitkCemrgAppCommonToolsControls m_Controls;
     Ui::QmitkCemrgAppCartoExport m_CartoUIThresholding;

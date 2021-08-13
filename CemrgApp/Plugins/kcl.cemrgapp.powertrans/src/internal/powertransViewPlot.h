@@ -57,55 +57,54 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class powertransViewPlot : public QmitkAbstractView {
-  // this is needed for all Qt objects that should have a Qt meta-object
-  // (everything that derives from QObject and wants to have signal/slots)
-  Q_OBJECT
+class powertransViewPlot: public QmitkAbstractView {
+    // this is needed for all Qt objects that should have a Qt meta-object
+    // (everything that derives from QObject and wants to have signal/slots)
+    Q_OBJECT
 
 public:
-  static const std::string VIEW_ID;
-  static void SetDirectory(const QString directory);
-  static void SetRibSpacing(int ribSpacing);
+    static const std::string VIEW_ID;
+    static void SetDirectory(const QString directory);
+    static void SetRibSpacing(int ribSpacing);
 
 protected:
-  virtual void CreateQtPartControl(QWidget *parent) override;
+    virtual void CreateQtPartControl(QWidget *parent) override;
 
-  virtual void SetFocus() override;
+    virtual void SetFocus() override;
 
-  /// \brief called by QmitkFunctionality when DataManager's selection has changed
-  virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source,
-                                  const QList<mitk::DataNode::Pointer>& nodes) override;
+    /// \brief called by QmitkFunctionality when DataManager's selection has changed
+    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
-  Ui::powertransViewPlotControls m_Controls;
+    Ui::powertransViewPlotControls m_Controls;
 
-  /// \brief Called when the user clicks the GUI button
-  void PlotData();
-  void BullPlot();
-  void FilePlot();
-  void ColourAHASegments(int);
+    /// \brief Called when the user clicks the GUI button
+    void PlotData();
+    void BullPlot();
+    void FilePlot();
+    void ColourAHASegments(int);
 
 private:
-  void HandleBullPlot(bool global);
-  void HandleCurvPlot();
-  void DrawAHALines();
-  void DrawAHASegments(int frame, double* range);
-  void DrawAHATextInfo();
-  void WritePlotToCSV(QString dir);
-  void WritePlotToVTK(QString dir);
-  vtkSmartPointer<vtkColorTransferFunction> GetLookupTable(double *range);
+    void HandleBullPlot(bool global);
+    void HandleCurvPlot();
+    void DrawAHALines();
+    void DrawAHASegments(int frame, double* range);
+    void DrawAHATextInfo();
+    void WritePlotToCSV(QString dir);
+    void WritePlotToVTK(QString dir);
+    vtkSmartPointer<vtkColorTransferFunction> GetLookupTable(double *range);
 
-  int cardiCycle;
-  static int noFrames;
-  static int smoothness;
-  static QString directory;
-  std::unique_ptr<QwtLegend> legend;
-  std::unique_ptr<CemrgStrains> strain;
-  vtkSmartPointer<vtkCamera> AHA_camera;
-  vtkSmartPointer<vtkRenderer> AHA_renderer;
-  vtkSmartPointer<vtkRenderWindowInteractor> AHA_interactor;
-  std::vector<std::vector<double>> plotValueVectors;
-  std::vector<vtkSmartPointer<vtkFloatArray>> flatPlotScalars;
-  std::map<int,int> AHA;
+    int cardiCycle;
+    static int noFrames;
+    static int smoothness;
+    static QString directory;
+    std::unique_ptr<QwtLegend> legend;
+    std::unique_ptr<CemrgStrains> strain;
+    vtkSmartPointer<vtkCamera> AHA_camera;
+    vtkSmartPointer<vtkRenderer> AHA_renderer;
+    vtkSmartPointer<vtkRenderWindowInteractor> AHA_interactor;
+    std::vector<std::vector<double>> plotValueVectors;
+    std::vector<vtkSmartPointer<vtkFloatArray>> flatPlotScalars;
+    std::map<int, int> AHA;
 };
 
 #endif // powertransViewPlot_h

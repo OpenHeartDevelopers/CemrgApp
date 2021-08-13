@@ -41,9 +41,8 @@ in the framework.
 #include <itkLabelMapToLabelImageFilter.h>
 #include <itkLabelSelectionLabelMapFilter.h>
 
-// CemrgLib
+// CemrgApp
 #include <CemrgMeasure.h>
-
 
 int main(int argc, char* argv[]) {
 
@@ -58,9 +57,9 @@ int main(int argc, char* argv[]) {
 
     // Add arguments. Unless specified otherwise, each argument is optional.
     parser.addArgument(
-                "directory", "d", mitkCommandLineParser::InputFile,
-                "Directory path", "Full path of directory",
-                us::Any(), false);
+        "directory", "d", mitkCommandLineParser::InputFile,
+        "Directory path", "Full path of directory",
+        us::Any(), false);
 
     // Parse arguments.
     auto parsedArgs = parser.parseArguments(argc, argv);

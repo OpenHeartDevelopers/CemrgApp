@@ -32,7 +32,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <berryIWorkbenchPage.h>
 #include <berryFileEditorInput.h>
 
-//Qmitk
+// Qmitk
 #include <mitkImage.h>
 #include <QmitkIOUtil.h>
 #include <mitkProgressBar.h>
@@ -52,8 +52,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include "WallThicknessCalculationsView.h"
 #include "WallThicknessCalculationsClipperView.h"
 
-//Micro services
+// Micro services
 #include <usModuleRegistry.h>
+
 #ifdef _WIN32
 // _WIN32 = we're in windows
 #include <winsock2.h>
@@ -62,14 +63,14 @@ PURPOSE.  See the above copyright notices for more information.
 #include <arpa/inet.h>
 #endif
 
-//VTK
+// VTK
 #include <vtkFieldData.h>
 #include <vtkCleanPolyData.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
 
-//ITK
+// ITK
 #include <itkAddImageFilter.h>
 #include <itkRelabelComponentImageFilter.h>
 #include <itkConnectedComponentImageFilter.h>
@@ -80,12 +81,12 @@ PURPOSE.  See the above copyright notices for more information.
 #include "itkLabelMapToLabelImageFilter.h"
 #include "itkLabelSelectionLabelMapFilter.h"
 
-//Qt
+// Qt
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QInputDialog>
 
-//CemrgAppModule
+// CemrgAppModule
 #include <CemrgCommonUtils.h>
 #include <CemrgCommandLine.h>
 #include <CemrgMeasure.h>
@@ -184,15 +185,13 @@ void WallThicknessCalculationsView::ConvertNII() {
     //Generic Conversion to nii
     int ctr = 0;
     QString path;
-    bool successfulNitfi, resampleImage, reorientToRAI;
-    resampleImage = false;
-    reorientToRAI = true;
+    bool resampleImage = false, reorientToRAI = true;
 
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(nodes.size());
     foreach (mitk::DataNode::Pointer node, nodes) {
         path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path, resampleImage, reorientToRAI);
+        bool successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(node);
         } else {
@@ -814,7 +813,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                 std::string path = (directory + "/converted.inr").toStdString();
                 ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
-                myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
+                myFile.write((char*)pv, dimensions * sizeof(uint8_t));
                 myFile.close();
 
                 //Ask for user input to set the parameters

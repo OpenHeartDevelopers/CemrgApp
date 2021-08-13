@@ -26,16 +26,16 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-//Vtk
+// VTK
 #include <vtkPolyData.h>
 #include <vtkMath.h>
 #include <vtkIdList.h>
 #include <vtkMassProperties.h>
 
-//Qmitk
+// Qmitk
 #include <mitkIOUtil.h>
 
-//Qt
+// Qt
 #include "CemrgMeasure.h"
 
 void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
@@ -49,7 +49,6 @@ void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
     }
 
     ofstream file;
-    double x, y, z;
     file.open(dir.toStdString() + "/input.vtk");
 
     //Header
@@ -62,13 +61,13 @@ void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
     //Body
     items = 0;
     for (mitk::PointSet::PointsIterator it = set->Begin(); it != set->End(); ++it) {
-        x = it.Value().GetElement(0) * -1;
-        y = it.Value().GetElement(1) * -1;
-        z = it.Value().GetElement(2);
-        items+=3;
+        double x = it.Value().GetElement(0) * -1;
+        double y = it.Value().GetElement(1) * -1;
+        double z = it.Value().GetElement(2);
+        items += 3;
 
         file << x << " " << y << " " << z << " ";
-        if (items%9==0)
+        if (items % 9 == 0)
             file << endl;
     }//for
     file.close();
@@ -76,9 +75,7 @@ void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
 
 CemrgMeasure::Points CemrgMeasure::Deconvert(QString dir, int noFile) {
 
-    double x, y, z;
     std::string line;
-    unsigned int items;
     std::vector<std::string> tokens;
     Points points;
     ifstream file(dir.toStdString() + "/transformed-" + std::to_string(noFile) + ".vtk");
@@ -86,19 +83,19 @@ CemrgMeasure::Points CemrgMeasure::Deconvert(QString dir, int noFile) {
     if (file.is_open()) {
 
         //Skip header
-        for (int i=0; i<5; i++)
-            getline(file,line);
+        for (int i = 0; i < 5; i++)
+            getline(file, line);
 
         //Read main
-        while (getline(file,line)) {
-            items = 0;
-            tokens = Split(line,tokens);
-            while (items<tokens.size()) {
-                x = std::stod(tokens.at(items + 0)) * -1;
-                y = std::stod(tokens.at(items + 1)) * -1;
-                z = std::stod(tokens.at(items + 2));
-                items+=3;
-                points.push_back(Point(x,y,z));
+        while (getline(file, line)) {
+            unsigned int items = 0;
+            tokens = Split(line, tokens);
+            while (items < tokens.size()) {
+                double x = std::stod(tokens.at(items + 0)) * -1;
+                double y = std::stod(tokens.at(items + 1)) * -1;
+                double z = std::stod(tokens.at(items + 2));
+                items += 3;
+                points.push_back(Point(x, y, z));
             }
         }
         file.close();
@@ -126,9 +123,9 @@ double CemrgMeasure::CalcPerimeter(Points& points) {
     if (points.size() < 3) {
         peri = -1;
     } else {
-        for (unsigned int i=0; i<points.size(); i++) {
+        for (unsigned int i = 0; i < points.size(); i++) {
             if (i < points.size() - 1)
-                peri = peri + CalcDist3D(points.at(i), points.at(i+1));
+                peri = peri + CalcDist3D(points.at(i), points.at(i + 1));
             else
                 peri = peri + 0; //CalcDist3D(points.at(i), points.at(0)); closed chain perimeter
         }//_for
@@ -145,9 +142,9 @@ double CemrgMeasure::CalcArea(Points& points) {
     if (points.size() < 3) {
         area = -1;
     } else {
-        for(unsigned int i=0; i<points.size(); i++) {
+        for (unsigned int i = 0; i < points.size(); i++) {
             if (i < points.size() - 1)
-                area = area + Heron(points.at(i), points.at(i+1), mean);
+                area = area + Heron(points.at(i), points.at(i + 1), mean);
             else
                 area = area + Heron(points.at(i), points.at(0), mean);
         }//_for
@@ -159,12 +156,12 @@ double CemrgMeasure::CalcArea(Points& points) {
 mitk::Point3D CemrgMeasure::FindCentre(mitk::PointSet::Pointer pointset) {
 
     Points points;
-    for (int i=0; i<pointset->GetSize(); i++) {
+    for (int i = 0; i < pointset->GetSize(); i++) {
         points.push_back(Point {
             pointset->GetPoint(i).GetElement(0),
             pointset->GetPoint(i).GetElement(1),
             pointset->GetPoint(i).GetElement(2)
-        });
+            });
     }//_for
 
     Point centre = CalcMean(points);
@@ -185,7 +182,7 @@ double CemrgMeasure::GetSphericity(vtkPolyData* LAC_poly) {
     double* TiA;
 
     TiMC = new double*[LAC_poly->GetNumberOfCells()];
-    for (int i=0; i<LAC_poly->GetNumberOfCells(); i++) {
+    for (int i = 0; i < LAC_poly->GetNumberOfCells(); i++) {
         TiMC[i] = new double[3];
     }
 
@@ -194,7 +191,7 @@ double CemrgMeasure::GetSphericity(vtkPolyData* LAC_poly) {
     GetCentreOfMassOfEachT(LAC_poly, TiMC);
     GetArea(LAC_poly, TiA, LACA);
     GetCentreOfMass(TiMC, TiA, LAC_poly->GetNumberOfCells(), LACA, LAC_mc);
-    GetAverageRadius(TiMC, TiA, LAC_poly->GetNumberOfCells(), LAC_mc,  LACA, AR);
+    GetAverageRadius(TiMC, TiA, LAC_poly->GetNumberOfCells(), LAC_mc, LACA, AR);
     LASphericity(TiMC, TiA, LAC_poly->GetNumberOfCells(), LAC_mc, LACA, AR, sigma, Sphericity);
 
     return Sphericity;
@@ -226,7 +223,7 @@ CemrgMeasure::Point CemrgMeasure::CalcMean(Points& points) {
     double y_s = 0;
     double z_s = 0;
 
-    for(unsigned int i=0; i<points.size(); i++) {
+    for (unsigned int i = 0; i < points.size(); i++) {
         x_s = x_s + std::get<0>(points.at(i));
         y_s = y_s + std::get<1>(points.at(i));
         z_s = z_s + std::get<2>(points.at(i));
@@ -242,23 +239,23 @@ CemrgMeasure::Point CemrgMeasure::CalcMean(Points& points) {
 }
 
 double CemrgMeasure::CalcDist3D(
-        Point& pointA,
-        Point& pointB) {
+    Point& pointA,
+    Point& pointB) {
 
     double x_d = std::get<0>(pointA) - std::get<0>(pointB);
     double y_d = std::get<1>(pointA) - std::get<1>(pointB);
     double z_d = std::get<2>(pointA) - std::get<2>(pointB);
 
     //Distance between two points
-    double distance = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+    double distance = sqrt(pow(x_d, 2) + pow(y_d, 2) + pow(z_d, 2));
 
     return distance;
 }
 
 double CemrgMeasure::Heron(
-        Point& pointA,
-        Point& pointB,
-        Point& centre) {
+    Point& pointA,
+    Point& pointB,
+    Point& centre) {
 
     //3D distances
     double ab = CalcDist3D(pointA, pointB);
@@ -266,8 +263,8 @@ double CemrgMeasure::Heron(
     double bc = CalcDist3D(pointB, centre);
 
     //Calculate area of triangle
-    double speri = (ab+ac+bc) / 2;
-    double tArea = sqrt(speri*(speri-ab)*(speri-ac)*(speri-bc));
+    double speri = (ab + ac + bc) / 2;
+    double tArea = sqrt(speri * (speri - ab) * (speri - ac) * (speri - bc));
 
     return tArea;
 }
@@ -291,26 +288,26 @@ void CemrgMeasure::GetArea(vtkPolyData* polys, double* TiA, double& LACA) {
     LACA = 0;
     vtkSmartPointer<vtkIdList> cell_points = vtkSmartPointer<vtkIdList>::New();
 
-    for (int i=0; i<polys->GetNumberOfCells(); i++) {
+    for (int i = 0; i < polys->GetNumberOfCells(); i++) {
 
         //vtkIdType neighbor_point;
         polys->GetCellPoints(i, cell_points);
 
         // Get all three vertices
         vtkIdType neighbor_point_id = cell_points->GetId(0);
-        polys->GetPoint( neighbor_point_id, p1);
+        polys->GetPoint(neighbor_point_id, p1);
 
         neighbor_point_id = cell_points->GetId(1);
-        polys->GetPoint( neighbor_point_id, p2);
+        polys->GetPoint(neighbor_point_id, p2);
 
         neighbor_point_id = cell_points->GetId(2);
-        polys->GetPoint( neighbor_point_id, p3);
+        polys->GetPoint(neighbor_point_id, p3);
 
         vtkMath::Subtract(p1, p2, p1_p2);
         vtkMath::Subtract(p2, p3, p2_p3);
 
         vtkMath::Cross(p1_p2, p2_p3, crossProduct);
-        TiA[i] = 0.5*vtkMath::Norm(crossProduct);
+        TiA[i] = 0.5 * vtkMath::Norm(crossProduct);
         LACA += TiA[i];
     }
     cout << "Total area LACA = " << LACA << endl;
@@ -319,44 +316,37 @@ void CemrgMeasure::GetArea(vtkPolyData* polys, double* TiA, double& LACA) {
 void CemrgMeasure::GetCentreOfMass(double** TiMC, double* TiA, int TiMC_size, double LACA, double* LAC_mc) {
 
     LAC_mc[0] = 0; LAC_mc[1] = 0; LAC_mc[2] = 0;
-    double contrib;
 
-    for (int i=0; i<TiMC_size; i++) {
-
-        contrib = TiA[i]/LACA;
-        LAC_mc[0]+=(contrib)*TiMC[i][0];
-        LAC_mc[1]+=(contrib)*TiMC[i][1];
-        LAC_mc[2]+=(contrib)*TiMC[i][2];
+    for (int i = 0; i < TiMC_size; i++) {
+        double contrib = TiA[i] / LACA;
+        LAC_mc[0] += (contrib)*TiMC[i][0];
+        LAC_mc[1] += (contrib)*TiMC[i][1];
+        LAC_mc[2] += (contrib)*TiMC[i][2];
     }
 }
 
 void CemrgMeasure::GetCentreOfMassOfEachT(vtkPolyData* polys, double** TiMC) {
 
-    int num_points = 0;
-    vtkIdType num_cell_points;
-    double cX, cY, cZ;
-    double cP[3];
     vtkSmartPointer<vtkIdList> cell_points = vtkSmartPointer<vtkIdList>::New();
 
-    for (int i=0; i<polys->GetNumberOfCells(); i++) {
-
-        cX=0; cY=0; cZ=0; num_points=0;
-        vtkIdType neighbor_point;
+    for (int i = 0; i < polys->GetNumberOfCells(); i++) {
+        double cX = 0, cY = 0, cZ = 0;
+        int num_points = 0;
         polys->GetCellPoints(i, cell_points);
-        num_cell_points = cell_points->GetNumberOfIds();
+        vtkIdType num_cell_points = cell_points->GetNumberOfIds();
 
-        for (neighbor_point = 0; neighbor_point < num_cell_points; ++neighbor_point) {
-
+        for (vtkIdType neighbor_point = 0; neighbor_point < num_cell_points; ++neighbor_point) {
+            double cP[3];
             // Get the neighbour point id
             vtkIdType neighbor_point_id = cell_points->GetId(neighbor_point);
             // Get the neighbour point position
-            polys->GetPoint( neighbor_point_id, cP );
-            cX+=cP[0]; cY+=cP[1]; cZ+=cP[2];
+            polys->GetPoint(neighbor_point_id, cP);
+            cX += cP[0]; cY += cP[1]; cZ += cP[2];
             num_points++;
         }
-        cX/=num_points;
-        cY/=num_points;
-        cZ/=num_points;
+        cX /= num_points;
+        cY /= num_points;
+        cZ /= num_points;
         TiMC[i][0] = cX;
         TiMC[i][1] = cY;
         TiMC[i][2] = cZ;
@@ -365,38 +355,33 @@ void CemrgMeasure::GetCentreOfMassOfEachT(vtkPolyData* polys, double** TiMC) {
 
 void CemrgMeasure::GetAverageRadius(double** TiMC, double* TiA, double TiMC_size, double* LAC_mc, double LACA, double& AR) {
 
-    double contrib;
-    double a[3], b[3], a_minus_b[3];
     AR = 0;
 
-    for (int i=0; i<TiMC_size; i++) {
-
-        a[0] = LAC_mc[0]; a[1] = LAC_mc[1]; a[2] = LAC_mc[2];
-        b[0] = TiMC[i][0]; b[1] = TiMC[i][1]; b[2] = TiMC[i][2];
-        vtkMath::Subtract(a,b,a_minus_b);
-        contrib = TiA[i]/LACA;
-        AR += contrib*vtkMath::Norm(a_minus_b);
+    for (int i = 0; i < TiMC_size; i++) {
+        double a[3] = {LAC_mc[0], LAC_mc[1], LAC_mc[2]};
+        double b[3] = {TiMC[i][0], TiMC[i][1], TiMC[i][2]};
+        double a_minus_b[3];
+        vtkMath::Subtract(a, b, a_minus_b);
+        double contrib = TiA[i] / LACA;
+        AR += contrib * vtkMath::Norm(a_minus_b);
     }
 }
 
-void CemrgMeasure::LASphericity(
-        double** TiMC, double* TiA, double TiMC_size, double* LAC_mc, double LACA, double AR, double& sigma, double& Sphericity) {
+void CemrgMeasure::LASphericity(double** TiMC, double* TiA, double TiMC_size, double* LAC_mc, double LACA, double AR, double& sigma, double& Sphericity) {
 
-    double contrib;
-    double a[3], b[3], a_minus_b[3];
-    double phi=0, eps=0, CVS=0;
+    double eps = 0;
 
-    for (int i=0; i<TiMC_size; i++) {
-
-        contrib = TiA[i]/LACA;
-        a[0] = LAC_mc[0]; a[1] = LAC_mc[1]; a[2] = LAC_mc[2];
-        b[0] = TiMC[i][0]; b[1] = TiMC[i][1]; b[2] = TiMC[i][2];
-        vtkMath::Subtract(a,b,a_minus_b);
-        phi = (vtkMath::Norm(a_minus_b) - AR)*(vtkMath::Norm(a_minus_b) - AR);
-        eps += contrib*phi;
+    for (int i = 0; i < TiMC_size; i++) {
+        double contrib = TiA[i] / LACA;
+        double a[3] = {LAC_mc[0], LAC_mc[1], LAC_mc[2]};
+        double b[3] = {TiMC[i][0], TiMC[i][1], TiMC[i][2]};
+        double a_minus_b[3];
+        vtkMath::Subtract(a, b, a_minus_b);
+        double phi = (vtkMath::Norm(a_minus_b) - AR) * (vtkMath::Norm(a_minus_b) - AR);
+        eps += contrib * phi;
     }
 
     sigma = sqrt(eps);
-    CVS = sigma/AR;
-    Sphericity = 100*(1-CVS);
+    double CVS = sigma / AR;
+    Sphericity = 100 * (1 - CVS);
 }

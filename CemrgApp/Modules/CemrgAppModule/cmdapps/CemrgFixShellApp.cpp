@@ -59,13 +59,15 @@ in the framework.
 #include <QFileInfo>
 #include <QProcess>
 #include <QMessageBox>
-#include <numeric>
 
-#include <CemrgScar3D.h>
-#include <CemrgCommandLine.h>
-
+// C++ Standard
 #include <algorithm>
 #include <string>
+#include <numeric>
+
+// CemrgApp
+#include <CemrgScar3D.h>
+#include <CemrgCommandLine.h>
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -75,7 +77,7 @@ int main(int argc, char* argv[]) {
     parser.setTitle("Fix-Shells Command-line App");
     parser.setContributor("CEMRG, KCL");
     parser.setDescription(
-                "Fix Scar Map shells with incorrectly assigned zeros.");
+        "Fix Scar Map shells with incorrectly assigned zeros.");
 
     // How should arguments be prefixed
     parser.setArgumentPrefix("--", "-");
@@ -87,22 +89,22 @@ int main(int argc, char* argv[]) {
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-                "input-lge", "i", mitkCommandLineParser::InputFile,
-                "LGE path", "Full path of LGE.nii file.",
-                us::Any(), false);
+        "input-lge", "i", mitkCommandLineParser::InputFile,
+        "LGE path", "Full path of LGE.nii file.",
+        us::Any(), false);
     parser.addArgument(
-                "output", "o", mitkCommandLineParser::OutputFile,
-                "Output file", "Where to save the output.",
-                us::Any(), false);
+        "output", "o", mitkCommandLineParser::OutputFile,
+        "Output file", "Where to save the output.",
+        us::Any(), false);
     parser.addArgument( // optional
-                        "segmentation-ref", "s", mitkCommandLineParser::String,
-                        "Segmentation Reference VTK shell", "(Not supported) Segmentation VTK to create ScarMap.");
+        "segmentation-ref", "s", mitkCommandLineParser::String,
+        "Segmentation Reference VTK shell", "(Not supported) Segmentation VTK to create ScarMap.");
     parser.addArgument( // optional
-                        "multi-thresholds", "t", mitkCommandLineParser::Bool,
-                        "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1, 2, 2.3, 3.3, 4 and 5\n\t (V*IIR) V = 0.86,0.97, 1.16, 1.2 and 1.32");
+        "multi-thresholds", "t", mitkCommandLineParser::Bool,
+        "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1, 2, 2.3, 3.3, 4 and 5\n\t (V*IIR) V = 0.86,0.97, 1.16, 1.2 and 1.32");
     parser.addArgument( // optional
-                        "verbose", "v", mitkCommandLineParser::Bool,
-                        "Verbose Output", "Whether to produce verbose output");
+        "verbose", "v", mitkCommandLineParser::Bool,
+        "Verbose Output", "Whether to produce verbose output");
 
     // Parse arguments.
     // This method returns a mapping of long argument names to their values.
@@ -112,8 +114,8 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
 
     if (//parsedArgs["input-path"].Empty() ||
-            parsedArgs["input-lge"].Empty() ||
-            parsedArgs["output"].Empty() ) {
+        parsedArgs["input-lge"].Empty() ||
+        parsedArgs["output"].Empty()) {
         MITK_INFO << parser.helpText();
         return EXIT_FAILURE;
     }
@@ -140,7 +142,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    try{
+    try {
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
 
@@ -219,7 +221,6 @@ int main(int argc, char* argv[]) {
         double mean = 0.0, stdv = 0.0;
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
 
-
         MITK_INFO(verbose) << "Performing Scar projection using " + segvtk.toStdString();
 
         QString prodPath = direct + "/";
@@ -245,11 +246,11 @@ int main(int argc, char* argv[]) {
         MITK_INFO << "READ FILE: " + fileRead.toStdString();
 
         if (!verbose)
-            for(int i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++)
                 prodFileRead >> data1[i];
         else {
-            MITK_INFO <<  "Data READ:";
-            for(int i = 0; i < 5; i++) {
+            MITK_INFO << "Data READ:";
+            for (int i = 0; i < 5; i++) {
                 prodFileRead >> data1[i];
                 MITK_INFO << data1[i];
             }
@@ -277,20 +278,20 @@ int main(int argc, char* argv[]) {
             prodFile1 << "MULTIPLE SCORES:" << std::endl;
             if (method == 2) {
                 double manyvalues[6] = {1, 2, 2.3, 3.3, 4, 5};
-                for(int i = 0; i < 6; i++) {
-                    double thisthres = mean + manyvalues[i]*stdv;
+                for (int i = 0; i < 6; i++) {
+                    double thisthres = mean + manyvalues[i] * stdv;
                     double thispercentage = scar->Thresholding(thisthres);
                     prodFile1 << "V = " << manyvalues[i] <<
-                                 ", SCORE:" << thispercentage << "%" << std::endl;
+                        ", SCORE:" << thispercentage << "%" << std::endl;
                 }
             } // mean + V*stdv
             else {
                 double manyvalues[5] = {0.86, 0.97, 1.16, 1.2, 1.32};
-                for(int i = 0; i < 5; i++) {
-                    double thisthres = mean*manyvalues[i];
+                for (int i = 0; i < 5; i++) {
+                    double thisthres = mean * manyvalues[i];
                     double thispercentage = scar->Thresholding(thisthres);
                     prodFile1 << "V = " << manyvalues[i] <<
-                                 ", SCORE:" << thispercentage << "%" << std::endl;
+                        ", SCORE:" << thispercentage << "%" << std::endl;
                 }
             } // V*IIR
         }
@@ -301,15 +302,11 @@ int main(int argc, char* argv[]) {
         scar->SaveScarDebugImage("Max", direct);
 
         MITK_INFO(verbose) << "Goodbye!";
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         MITK_ERROR << e.what();
         return EXIT_FAILURE;
-    }
-    catch(...) {
+    } catch (...) {
         MITK_ERROR << "Unexpected error";
         return EXIT_FAILURE;
     }
-
-
 }
