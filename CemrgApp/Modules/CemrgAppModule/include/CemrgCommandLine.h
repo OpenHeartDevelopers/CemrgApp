@@ -68,6 +68,7 @@ public:
     QString DockerCemrgNetPrediction(QString mra);
     QString DockerDicom2Nifti(QString path2dicomfolder);
     QString OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroNames, QStringList oneNames, QStringList regionLabels);
+    QString OpenCarpDocker(QString dir, QString paramfile, QString simID);
 
     // meshtool routines
     QString DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix); // extract surface

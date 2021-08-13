@@ -666,6 +666,53 @@ QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename
     }
 }
 
+QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filename, QString meshname, QString zeroBoundaryName, QString oneBoundaryName){
+    QString path2file = dir + "/" + filename;
+    QDir home(dir);
+    QFile fi(path2file);
+
+    if (fi.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream out(&fi);
+
+        out << "meshname " << "= " << meshname;
+        out << "num_imp_regions " << "= " << " 1";
+        out << "imp_region[0].im " << "= " << " MBRDR";
+        out << "bidomain " << "= " << " 1";
+        out << "experiment " << "= " << " 2";
+        out << "num_gregions " << "= " << " 1";
+
+        out << "gregion[0].g_et " << "= " << " 1";
+        out << "gregion[0].g_el " << "= " << " 1";
+        out << "gregion[0].g_en " << "= " << " 1";
+        out << "gregion[0].g_il " << "= " << " 1";
+        out << "gregion[0].g_it " << "= " << " 1";
+        out << "gregion[0].g_in " << "= " << " 1";
+        out << "gregion[0].num_IDs " << "= " << " 1";
+        out << "gregion[0].ID[0] " << "= " << " 2";
+
+        out << "ellip_use_pt " << "= " << " 1";
+        out << "parab_use_pt " << "= " << " 1";
+
+        out << "num_stim " << "= " << " 2";
+        out << "stimulus[0].start " << "= " << " 0";
+        out << "stimulus[0].duration " << "= " << " 1";
+        out << "stimulus[0].strength " << "= " << " 1";
+        out << "stimulus[0].stimtype " << "= " << " 3";
+        out << "stimulus[0].vtx_file " << "= " << zeroBoundaryName;
+        out << "stimulus[1].start " << "= " << " 0";
+        out << "stimulus[1].duration " << "= " << " 1";
+        out << "stimulus[1].strength " << "= " << " 1";
+        out << "stimulus[1].stimtype " << "= " << " 2";
+        out << "stimulus[1].vtx_file " << "= " << oneBoundaryName;
+
+        return path2file;
+
+    } else {
+        MITK_WARN << ("File " + path2file + "not created.").toStdString();
+        return "ERROR_IN_PROCESSING";
+    }
+}
+
 bool CemrgCommonUtils::ConvertToCarto(
         std::string vtkPath, std::vector<double> thresholds, double meanBP, double stdvBP, int methodType, bool discreteScheme) {
 

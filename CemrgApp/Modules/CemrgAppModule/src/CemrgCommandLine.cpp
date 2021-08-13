@@ -1043,6 +1043,42 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
         return outAbsolutePath;
 }
 
+QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString simID){
+    SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
+    QString executablePath;
+    #if defined(__APPLE__)
+            executablePath = "/usr/local/bin/";
+    #endif
+        QString executableName = executablePath+"docker";
+        QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+        QDir home(dir);
+        QString outPath = home.absolutePath() + "/" + simID;
+        QString outPhieFilePath = outPath + "/phie.igb";
+        QDir outDir(outPath);
+
+        MITK_INFO(outDir.mkpath(outPath)) << "Output directory created.";
+        if(!outDir.exists()){
+            MITK_INFO << ("Error creating directory: " + outPath).toStdString();
+        } else{
+            QStringList arguments;
+            arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
+            arguments << "docker.opencarp.org/opencarp/opencarp:latest";
+            arguments << "openCARP";
+            arguments << "+F" << home.relativeFilePath(paramfile);
+            arguments << "-simID" << home.relativeFilePath(outPath);
+
+            bool successful = ExecuteCommand(executableName, arguments, outPhieFilePath);
+            if (successful) {
+                outAbsolutePath =  outPathFile;
+            } else{
+                MITK_WARN << "Error with openCARP LAPLACE SOLVES Docker container.";
+            }
+        }
+
+        return outAbsolutePath;
+}
+
 /***************************************************************************
  **************************** Helper Functions *****************************
  ***************************************************************************/
