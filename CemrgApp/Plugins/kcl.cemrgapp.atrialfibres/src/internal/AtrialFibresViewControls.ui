@@ -259,7 +259,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_0_refineUac">
+    <widget class="QPushButton" name="button_0_fibreMapUac">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>

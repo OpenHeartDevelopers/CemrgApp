@@ -120,7 +120,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_x_meshtools, SIGNAL(clicked()), this, SLOT(MeshingOptions()));
     connect(m_Controls.button_y_vtk2carp, SIGNAL(clicked()), this, SLOT(ConvertFormat()));
     connect(m_Controls.button_0_calculateUac, SIGNAL(clicked()), this, SLOT(UacCalculation()));
-    connect(m_Controls.button_0_refineUac, SIGNAL(clicked()), this, SLOT(UacMeshRefinement()));
+    connect(m_Controls.button_0_fibreMapUac, SIGNAL(clicked()), this, SLOT(UacFibreMapping()));
 
     // Scar analysis
     connect(m_Controls.button_z_scar, SIGNAL(clicked()), this, SLOT(ScarProjection()));
@@ -1040,10 +1040,45 @@ void AtrialFibresView::UacCalculation(){
         return;
     }
 
+    bool userInputAccepted = GetUserUacOptionsInputs();
+    if(userInputAccepted){
+        MITK_INFO << "[UacCalculation] User Input accepted";
+        QString uac_anatomy = "6"; // might change later
+        QString uac_position = uiUac_position_endo ? "Endo" : "Epi";
+        QString uac_type = uiUac_type.at(uiUac_typeIndex);
+        QString uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
+
+        uac_fibreField = uac_position + "/Labelled_" + uac_anatomy + "_" + uac_fibre;
+        uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
+        if(uiUac_fibreFileIndex==7){ // chosen Avg
+            uac_fibreField = uac_position + "/Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
+        }
+
+        std::cout << "[uac_fibreField]" << uac_fibreField.toStdString() << '\n';
+        std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
+
+        // Do Rough UAC code from Docker
+
+        // Create Laplace Solve files for LR and PA SOLVES
+
+        // Do Laplace Solves using Docker
+
+    }
 }
 
-void AtrialFibresView::UacMeshRefinement(){
+void AtrialFibresView::UacFibreMapping(){
+    QString metadata = Path("prodUacMetadata.txt");
+    if(!QFile::exists(metadata)){
+        MITK_INFO << "[UacFibreMapping] UAC Metadata not found. Use the UacCalculation";
 
+        std::string msg = "File prodUacMetadata.txt not found.\n";
+        msg += "Use the Calculate UAC button.";
+
+        QMessageBox::information(NULL, "File not found", msg.c_str());
+        return;
+    }
+
+    
 }
 
 void AtrialFibresView::ConvertFormat(){
@@ -1285,6 +1320,58 @@ bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext,
         inputs->close();
         inputs->deleteLater();
     }//_if
+
+    return userInputAccepted;
+}
+
+bool AtrialFibresView::GetUserUacOptionsInputs(){
+    QString metadata = Path("prodUacMetadata.txt");
+    bool userInputAccepted=false;
+
+    uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A";
+    uiUac_type << "LA" << "RA";
+
+    if(QFile::exists(metadata)){
+        int reply0 = Ask("Metadata Found", "Load previous analysis metadata found?");
+        if(reply0==QMessageBox::Yes){
+            std::ifstream fi(metadata.toStdString());
+            fi >> uiUac_position_endo;
+            fi >> uiUac_typeIndex;
+            fi >> uiUac_fibreFileIndex;
+            fi.close();
+
+            userInputAccepted=true;
+
+            MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
+        }
+    }
+
+    if(!userInputAccepted){
+        QDialog* inputs = new QDialog(0,0);
+        bool userInputAccepted=false;
+        m_UIUac.setupUi(inputs);
+        connect(m_UIUac.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+        connect(m_UIUac.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+        int dialogCode = inputs->exec();
+
+        //Act on dialog return code
+        if (dialogCode == QDialog::Accepted) {
+            userInputAccepted = true;
+            uiUac_position_endo = m_UIUac.radio_uac_endo->isChecked();
+            uiUac_typeIndex = m_UIUac.combo_uac_type->currentIndex();
+            uiUac_fibreFileIndex = m_UIUac.combo_uac_fibrefile->currentIndex();
+
+            std::ofstream fo(metadata.toStdString());
+            fo << uiUac_position_endo << std::endl;
+            fo << uiUac_typeIndex << std::endl;
+            fo << uiUac_fibreFileIndex << std::endl;
+            fo.close();
+
+        } else if (dialogCode == QDialog::Rejected) {
+            inputs->close();
+            inputs->deleteLater();
+        }//_if
+    }
 
     return userInputAccepted;
 }
@@ -1596,7 +1683,7 @@ void AtrialFibresView::SetManualModeButtons(bool b){
         m_Controls.button_auto4_meshpreproc->setText("    Step7: Mesh Preprocessing");
         m_Controls.button_0_landmarks->setText("    Step10: Select Landmarks");
         m_Controls.button_0_calculateUac->setText("    Step11: Calculate UAC");
-        m_Controls.button_0_refineUac->setText("    Step12: Refine UAC");
+        m_Controls.button_0_fibreMapUac->setText("    Step12: Fibre Mapping");
     } else{
         m_Controls.button_auto4_meshpreproc->setText("    Step4: Mesh Preprocessing");
     }
@@ -1610,7 +1697,7 @@ void AtrialFibresView::SetAutomaticModeButtons(bool b){
     if(b){
         m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
         m_Controls.button_0_calculateUac->setText("    Step7: Calculate UAC");
-        m_Controls.button_0_refineUac->setText("    Step8: Refine UAC");
+        m_Controls.button_0_fibreMapUac->setText("    Step8: Fibre Mapping");
     }
 }
 

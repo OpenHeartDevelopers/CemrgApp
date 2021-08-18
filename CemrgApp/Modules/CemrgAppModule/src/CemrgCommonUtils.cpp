@@ -91,6 +91,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QString>
 #include <QFile>
 #include <QFileInfo>
+#include <QDir>
 #include <QTextStream>
 #include "CemrgCommonUtils.h"
 

@@ -1070,7 +1070,7 @@ QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString
 
             bool successful = ExecuteCommand(executableName, arguments, outPhieFilePath);
             if (successful) {
-                outAbsolutePath =  outPathFile;
+                outAbsolutePath =  outPhieFilePath;
             } else{
                 MITK_WARN << "Error with openCARP LAPLACE SOLVES Docker container.";
             }

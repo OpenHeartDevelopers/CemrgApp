@@ -33,6 +33,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkSurface.h>
 #include "ui_AtrialFibresViewControls.h"
 #include "ui_AtrialFibresViewUIAnalysisSelector.h"
+#include "ui_AtrialFibresViewUIUacSelector.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
 #include "ui_AtrialFibresViewUIRemesh.h"
 #include "ui_AtrialFibresViewUIConvert.h"
@@ -80,6 +81,7 @@ public:
     bool GetUserRemeshingInputs();
     bool GetUserScarProjectionInputs();
     bool GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh=false);
+    bool GetUserUacOptionsInputs();
     bool LoadSurfaceChecks();
 
     void CleanMeshQuality();
@@ -131,7 +133,7 @@ protected slots:
     void MeshingOptions();
     void ConvertFormat();
     void UacCalculation();
-    void UacMeshRefinement();
+    void UacFibreMapping();
 
     void ScarProjection();
     void Reset();
@@ -146,6 +148,7 @@ protected:
 
     Ui::AtrialFibresViewControls m_Controls;
     Ui::AtrialFibresViewUIAnalysisSelector m_UISelector;
+    Ui::AtrialFibresViewUIUacSelector m_UIUac;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
     Ui::AtrialFibresViewUIRemesh m_UIRemesh;
     Ui::AtrialFibresViewUIConvert m_UIFormat;
@@ -167,6 +170,10 @@ private:
     QString uiFormat_outExt, uiFormat_outName;
     int uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
     bool uiSelector_imgauto_skipCemrgNet, uiSelector_imgauto_skipLabel, uiSelector_img_scar, uiSelector_man_useCemrgNet;
+    bool uiUac_position_endo;
+    int uiUac_typeIndex, uiUac_fibreFileIndex;
+    QStringList uiUac_fibreFile, uiUac_type;
+    QString uac_fibreField, uac_fibreFieldOutputName;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;
