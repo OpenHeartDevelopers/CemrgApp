@@ -1078,7 +1078,7 @@ void AtrialFibresView::UacFibreMapping(){
         return;
     }
 
-    
+
 }
 
 void AtrialFibresView::ConvertFormat(){
@@ -1804,12 +1804,11 @@ void AtrialFibresView::CheckLoadedMeshQuality(){
     QString prodPath = directory + "/";
     QString meshinput = prodPath + tagName + ".vtk";
 
-    int reply = Ask("Question", "Are you sure your loaded surface is a VTK polydata?");
-    if(reply == QMessageBox::No){
-        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-        cmd->SetUseDockerContainers(true);
-        meshinput = cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName, "vtk_polydata", 1);
-    }
+    MITK_INFO << "Safety check: converting file to polydata: ";
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+    cmd->SetUseDockerContainers(true);
+    meshinput = cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName, "vtk_polydata", 1);
+    MITK_INFO << "Safety check: finished";
 
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
 
