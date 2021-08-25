@@ -710,6 +710,43 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QString meshname, QStringList cmdargs, QString landmarks, QString outnameext){
+    SetDockerImageUac();
+    QString executablePath;
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << uaccmd;
+    arguments << meshname;
+
+    for (int ix = 0; ix < cmdargs.size(); ix++) {
+        arguments << cmdargs.at(ix);
+    }
+
+    if(!landmarks.isEmpty()){
+        arguments << home.relativeFilePath(landmarks);
+    }
+
+    // output filename checked when running ExecuteCommand
+    QString outPath = home.absolutePath() + "/" + outnameext;
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if(successful){
+        MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << ("Error running UAC command: " + uaccmd).toStdString();
+    }
+
+    return outAbsolutePath;
+}
+
 QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
     // Method equivalent to:  meshtool extract surface
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");

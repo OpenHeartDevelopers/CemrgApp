@@ -67,6 +67,9 @@ public:
     //Execute Docker Specific Functions
     QString DockerCemrgNetPrediction(QString mra);
     QString DockerDicom2Nifti(QString path2dicomfolder);
+    QString DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QString meshname, QStringList cmdargs, QString landmarks, QString outnameext);
+
+    // openCARP docker
     QString OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroNames, QStringList oneNames, QStringList regionLabels);
     QString OpenCarpDocker(QString dir, QString paramfile, QString simID);
 
@@ -87,6 +90,8 @@ public:
     inline void SetUseDockerContainersOn() {SetUseDockerContainers(true);};
     inline void SetUseDockerContainersOff() {SetUseDockerContainers(false);};
     inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
+    inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
+    inline void SetDockerImageUac(){_dockerimage = "cemrg-uac";};// modify when docker image has been pushed to hub
     inline QString GetDockerImage() {return _dockerimage;};
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
 

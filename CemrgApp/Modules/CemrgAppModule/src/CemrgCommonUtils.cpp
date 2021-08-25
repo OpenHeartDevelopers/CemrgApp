@@ -676,10 +676,11 @@ QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filena
         QTextStream out(&fi);
 
         out << "meshname " << "= " << meshname;
+        out << "experiment " << "= " << " 2";
+        out << "bidomain " << "= " << " 1";
+
         out << "num_imp_regions " << "= " << " 1";
         out << "imp_region[0].im " << "= " << " MBRDR";
-        out << "bidomain " << "= " << " 1";
-        out << "experiment " << "= " << " 2";
         out << "num_gregions " << "= " << " 1";
 
         out << "gregion[0].g_et " << "= " << " 1";
@@ -694,17 +695,21 @@ QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filena
         out << "ellip_use_pt " << "= " << " 1";
         out << "parab_use_pt " << "= " << " 1";
 
-        out << "num_stim " << "= " << " 2";
-        out << "stimulus[0].start " << "= " << " 0";
-        out << "stimulus[0].duration " << "= " << " 1";
-        out << "stimulus[0].strength " << "= " << " 1";
-        out << "stimulus[0].stimtype " << "= " << " 3";
-        out << "stimulus[0].vtx_file " << "= " << zeroBoundaryName;
-        out << "stimulus[1].start " << "= " << " 0";
-        out << "stimulus[1].duration " << "= " << " 1";
-        out << "stimulus[1].strength " << "= " << " 1";
-        out << "stimulus[1].stimtype " << "= " << " 2";
-        out << "stimulus[1].vtx_file " << "= " << oneBoundaryName;
+        int ix = 0;
+        if(zeroBoundaryName.isEmpty()){
+            out << "num_stim " << "= " << " 1";
+
+        } else {
+            out << "num_stim " << "= " << " 2";
+            out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 3";
+            out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << zeroBoundaryName;
+            ix++;
+        }
+
+        out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 2";
+        out << "stimulus["+ QString::number(ix)+"].duration " << "= " << " 1";
+        out << "stimulus["+ QString::number(ix)+"].strength " << "= " << " 1.0";
+        out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << oneBoundaryName;
 
         return path2file;
 

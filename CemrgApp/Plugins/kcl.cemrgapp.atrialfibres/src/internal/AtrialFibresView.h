@@ -106,6 +106,7 @@ public:
     inline std::string StdStringPath(QString fnameExt=""){return (Path(fnameExt).toStdString());};
 
     QString LandmarkFilesCreated(QString defaultName, QString type);
+    QString UacCheckOutputFiles(QString dir, QStringList filenames);
 
 protected slots:
 
