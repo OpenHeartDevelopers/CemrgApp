@@ -143,7 +143,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_man7_2_clipMV, SIGNAL(clicked()), this, SLOT(ClipMV()));
 
     // Set default variables
-    tagName = "labelled";
+    tagName = "Labelled";
     refinedSuffix = "-refined";
     resurfaceMesh = false;
     uiRemesh_isscalar = false;
@@ -692,7 +692,7 @@ void AtrialFibresView::CreateLabelledMesh(){
     if(!tagName.contains("labelled")){
         std::string msg = "Changing working name from " + tagName.toStdString() + " to 'labelled'";
         QMessageBox::information(NULL, "Attention", msg.c_str());
-        tagName = "labelled";
+        tagName = "Labelled";
     }
     pveins = atrium->AssignOstiaLabelsToVeins(pveins, directory, tagName);
 
@@ -1069,7 +1069,7 @@ void AtrialFibresView::UacCalculation(){
         labels << "11" << "13" << "21" << "23" << "25" << "27";
         QString landmarks = "Landmarks.txt";
         cmd->SetDockerImageUac();
-        QString uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, landmarks, "");
+        QString uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, pathRoughLandmark, "");
 
         QFileInfo fi(uacOutput);
         QStringList outputFiles;
@@ -1101,7 +1101,7 @@ void AtrialFibresView::UacCalculation(){
         outputFiles << "Ant_Strength_Test_PA1.vtx" << "Ant_Strength_Test_LS1.vtx";
         outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, landmarks, "");
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, pathRefinedLandmark, "");
         checkOutputMsg = UacCheckOutputFiles(directory, outputFiles);
 
         if (!checkOutputMsg.isEmpty()){
@@ -1166,7 +1166,7 @@ QString AtrialFibresView::UacCheckOutputFiles(QString dir, QStringList filenames
 void AtrialFibresView::UacFibreMapping(){
     QString metadata = Path("prodUacMetadata.txt");
     if(!QFile::exists(metadata)){
-        MITK_INFO << "[UacFibreMapping] UAC Metadata not found. Use the UacCalculation";
+        MITK_INFO << "[UacFibreMapping] UAC Metadata not found. Use the UAC Calculation Button";
 
         std::string msg = "File prodUacMetadata.txt not found.\n";
         msg += "Use the Calculate UAC button.";
