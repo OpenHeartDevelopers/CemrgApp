@@ -1041,8 +1041,9 @@ void AtrialFibresView::UacCalculation(){
     }
 
     bool userInputAccepted = GetUserUacOptionsInputs();
+    MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
+
     if(userInputAccepted){
-        MITK_INFO << "[UacCalculation] User Input accepted";
         QString uac_anatomy = "6"; // might change later
         QString uac_position = uiUac_position_endo ? "Endo" : "Epi";
         QString uac_type = uiUac_type.at(uiUac_typeIndex);
@@ -1051,7 +1052,7 @@ void AtrialFibresView::UacCalculation(){
         uac_fibreField = "/Labelled_" + uac_anatomy + "_" + uac_fibre;
         uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
         if(uiUac_fibreFileIndex==7){ // chosen Avg
-            uac_fibreField = "/Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
+            uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
         }
 
         std::cout << "[uac_Position] " << uac_position <<'\n';
@@ -1068,10 +1069,8 @@ void AtrialFibresView::UacCalculation(){
         labels << "11" << "13" << "21" << "23" << "25" << "27";
         QString landmarks = "Landmarks.txt";
         cmd->SetDockerImageUac();
-        QString uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, landmarks, "LSbc1.vtx");
+        QString uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, landmarks, "");
 
-
-        bool okLS1, okLS2, okPA1, okPA2;
         QFileInfo fi(uacOutput);
         QStringList outputFiles;
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
@@ -1087,8 +1086,8 @@ void AtrialFibresView::UacCalculation(){
 
         MITK_INFO << "Create Laplace Solve files for LR and PA SOLVES";
         QString lr_par, pa_par;
-        lr_par = CemrgCommonUtils::OpenCarpParamFileGenerator(dir, "carpf_laplace_LS.par", tagName, "LSbc1", "LSbc2");
-        pa_par = CemrgCommonUtils::OpenCarpParamFileGenerator(dir, "carpf_laplace_PA.par", tagName, "PAbc1", "PAbc2");
+        lr_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_LS.par", tagName, "LSbc1", "LSbc2");
+        pa_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_PA.par", tagName, "PAbc1", "PAbc2");
 
         MITK_INFO << "Do Laplace Solves using Docker";
         cmd->SetDockerImageOpenCarp();
@@ -1100,9 +1099,9 @@ void AtrialFibresView::UacCalculation(){
         outputFiles.clear();
         outputFiles << "AnteriorMesh.elem" << "PosteriorMesh.elem";
         outputFiles << "Ant_Strength_Test_PA1.vtx" << "Ant_Strength_Test_LS1.vtx";
-        outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx"
+        outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, landmarks, "Ant_Strength_Test_PA1.vtx");
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, landmarks, "");
         checkOutputMsg = UacCheckOutputFiles(directory, outputFiles);
 
         if (!checkOutputMsg.isEmpty()){
@@ -1113,13 +1112,14 @@ void AtrialFibresView::UacCalculation(){
         }
 
         QString lrp_par, udp_par, lra_par, uda_par;
-        lrp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(dir, "carpf_laplace_single_LR_P.par", "PosteriorMesh", "", "Post_Strength_Test_LS1");
-        udp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(dir, "carpf_laplace_single_UD_P.par", "PosteriorMesh", "", "Post_Strength_Test_PA1");
-        lra_par = CemrgCommonUtils::OpenCarpParamFileGenerator(dir, "carpf_laplace_single_LR_A.par", "AnteriorMesh", "", "Ant_Strength_Test_LS1");
-        uda_par = CemrgCommonUtils::OpenCarpParamFileGenerator(dir, "carpf_laplace_single_UD_A.par", "AnteriorMesh", "", "Ant_Strength_Test_PA1");
+        lrp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_LR_P.par", "PosteriorMesh", "", "Post_Strength_Test_LS1");
+        udp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_UD_P.par", "PosteriorMesh", "", "Post_Strength_Test_PA1");
+        lra_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_LR_A.par", "AnteriorMesh", "", "Ant_Strength_Test_LS1");
+        uda_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_UD_A.par", "AnteriorMesh", "", "Ant_Strength_Test_PA1");
 
         cmd->SetDockerImageOpenCarp();
 
+        QString lrpLapSolve, udpLapSolve, lraLapSolve, udaLapSolve;
         lrpLapSolve = cmd->OpenCarpDocker(directory, lrp_par, "LR_Post_UAC");
         udpLapSolve = cmd->OpenCarpDocker(directory, udp_par, "UD_Post_UAC");
         lraLapSolve = cmd->OpenCarpDocker(directory, lra_par, "LR_Ant_UAC");
@@ -1130,22 +1130,7 @@ void AtrialFibresView::UacCalculation(){
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.elem" << "Labelled_Coords_2D_Rescaling_v3_C.pts";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, "", "Labelled_Coords_2D_Rescaling_v3_C.vtk");
-        checkOutputMsg = UacCheckOutputFiles(directory, outputFiles);
-
-        if (!checkOutputMsg.isEmpty()){
-            std::string msg = checkOutputMsg.toStdString();
-            QMessageBox::warning(NULL, "Warning", msg.c_str());
-
-            return;
-        }
-
-        uaccmd = "UAC_FibreMapping";
-        outputFiles.clear();
-        outputFiles << "Fibre_1.vtk";
-        QStringList cmdargs;
-        cmdargs << (uac_fibreField+".lon") << uac_fibreFieldOutputName;
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, cmdargs, "", "Fibre_1.vtk");
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, labels, "", "");
         checkOutputMsg = UacCheckOutputFiles(directory, outputFiles);
 
         if (!checkOutputMsg.isEmpty()){
@@ -1170,7 +1155,7 @@ QString AtrialFibresView::UacCheckOutputFiles(QString dir, QStringList filenames
         if (!okSingleTest){
             MITK_ERROR << ("File(s) not created - " + filenames.at(ix)).toStdString();
             countfails++;
-            msg += (countfails==1) ? "File(s) not created: ";
+            msg += (countfails==1) ? "File(s) not created: " : "";
             msg += "\n " + filenames.at(ix);
         }
     }
@@ -1190,6 +1175,40 @@ void AtrialFibresView::UacFibreMapping(){
         return;
     }
 
+    QStringList outputFiles;
+    outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
+    outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.elem" << "Labelled_Coords_2D_Rescaling_v3_C.pts";
+    QString checkOutputMsg = UacCheckOutputFiles(directory, outputFiles);
+
+    if (!checkOutputMsg.isEmpty()){
+        std::string msg = checkOutputMsg.toStdString();
+        QMessageBox::warning(NULL, "Warning", msg.c_str());
+
+        return;
+    }
+
+    std::cout << "[uac_fibreField]" << uac_fibreField.toStdString() << '\n';
+    std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
+
+    QString uaccmd, uacOutput;
+    uaccmd = "UAC_FibreMapping";
+
+    outputFiles.clear();
+    outputFiles << "Fibre_1.vpts";
+
+    QStringList cmdargs;
+    cmdargs << (uac_fibreField+".lon") << uac_fibreFieldOutputName;
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+    cmd->SetDockerImageUac();
+    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, tagName, cmdargs, "", "Fibre_1.vpts");
+    checkOutputMsg = UacCheckOutputFiles(directory, outputFiles);
+
+    if (!checkOutputMsg.isEmpty()){
+        std::string msg = checkOutputMsg.toStdString();
+        QMessageBox::warning(NULL, "Warning", msg.c_str());
+
+        return;
+    }
 
 }
 
@@ -1460,7 +1479,6 @@ bool AtrialFibresView::GetUserUacOptionsInputs(){
 
     if(!userInputAccepted){
         QDialog* inputs = new QDialog(0,0);
-        bool userInputAccepted=false;
         m_UIUac.setupUi(inputs);
         connect(m_UIUac.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
         connect(m_UIUac.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));

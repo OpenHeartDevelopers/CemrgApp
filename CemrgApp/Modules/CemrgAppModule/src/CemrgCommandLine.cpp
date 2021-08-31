@@ -734,8 +734,7 @@ QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString 
 
     // output filename checked when running ExecuteCommand
     QString outPath = home.absolutePath() + "/" + outnameext;
-
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, outnameext.isEmpty());
 
     if(successful){
         MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
@@ -1091,7 +1090,7 @@ QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString
 
         QDir home(dir);
         QString outPath = home.absolutePath() + "/" + simID;
-        QString outPhieFilePath = outPath + "/phie.igb";
+        QString outPhieFilePath = outPath; // + "/phie.igb";
         QDir outDir(outPath);
 
         MITK_INFO(outDir.mkpath(outPath)) << "Output directory created.";
@@ -1105,7 +1104,7 @@ QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString
             arguments << "+F" << home.relativeFilePath(paramfile);
             arguments << "-simID" << home.relativeFilePath(outPath);
 
-            bool successful = ExecuteCommand(executableName, arguments, outPhieFilePath);
+            bool successful = ExecuteCommand(executableName, arguments, outPhieFilePath, false);
             if (successful) {
                 outAbsolutePath =  outPhieFilePath;
             } else{

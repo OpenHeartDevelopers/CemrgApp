@@ -675,41 +675,41 @@ QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filena
     if (fi.open(QFile::WriteOnly | QFile::Truncate)) {
         QTextStream out(&fi);
 
-        out << "meshname " << "= " << meshname;
-        out << "experiment " << "= " << " 2";
-        out << "bidomain " << "= " << " 1";
+        out << "meshname " << "= " << meshname << "\n"; 
+        out << "experiment " << "= " << " 2" << "\n";
+        out << "bidomain " << "= " << " 1" << "\n";
 
-        out << "num_imp_regions " << "= " << " 1";
-        out << "imp_region[0].im " << "= " << " MBRDR";
-        out << "num_gregions " << "= " << " 1";
+        out << "num_imp_regions " << "= " << " 1" << "\n";
+        out << "imp_region[0].im " << "= " << " MBRDR" << "\n";
+        out << "num_gregions " << "= " << " 1" << "\n";
 
-        out << "gregion[0].g_et " << "= " << " 1";
-        out << "gregion[0].g_el " << "= " << " 1";
-        out << "gregion[0].g_en " << "= " << " 1";
-        out << "gregion[0].g_il " << "= " << " 1";
-        out << "gregion[0].g_it " << "= " << " 1";
-        out << "gregion[0].g_in " << "= " << " 1";
-        out << "gregion[0].num_IDs " << "= " << " 1";
-        out << "gregion[0].ID[0] " << "= " << " 2";
+        out << "gregion[0].g_et " << "= " << " 1" << "\n";
+        out << "gregion[0].g_el " << "= " << " 1" << "\n";
+        out << "gregion[0].g_en " << "= " << " 1" << "\n";
+        out << "gregion[0].g_il " << "= " << " 1" << "\n";
+        out << "gregion[0].g_it " << "= " << " 1" << "\n";
+        out << "gregion[0].g_in " << "= " << " 1" << "\n";
+        out << "gregion[0].num_IDs " << "= " << " 1" << "\n";
+        out << "gregion[0].ID[0] " << "= " << " 2" << "\n";
 
-        out << "ellip_use_pt " << "= " << " 1";
-        out << "parab_use_pt " << "= " << " 1";
+        out << "ellip_use_pt " << "= " << " 1" << "\n";
+        out << "parab_use_pt " << "= " << " 1" << "\n";
 
         int ix = 0;
         if(zeroBoundaryName.isEmpty()){
-            out << "num_stim " << "= " << " 1";
+            out << "num_stim " << "= " << " 1" << "\n";
 
         } else {
-            out << "num_stim " << "= " << " 2";
-            out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 3";
-            out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << zeroBoundaryName;
+            out << "num_stim " << "= " << " 2" << "\n";
+            out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 3" << "\n";
+            out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << zeroBoundaryName << "\n";
             ix++;
         }
 
-        out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 2";
-        out << "stimulus["+ QString::number(ix)+"].duration " << "= " << " 1";
-        out << "stimulus["+ QString::number(ix)+"].strength " << "= " << " 1.0";
-        out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << oneBoundaryName;
+        out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 2" << "\n";
+        out << "stimulus["+ QString::number(ix)+"].duration " << "= " << " 1" << "\n";
+        out << "stimulus["+ QString::number(ix)+"].strength " << "= " << " 1.0" << "\n";
+        out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << oneBoundaryName << "\n";
 
         return path2file;
 
