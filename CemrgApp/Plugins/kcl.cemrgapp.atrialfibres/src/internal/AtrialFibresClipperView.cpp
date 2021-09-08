@@ -707,13 +707,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
 
     ResetCorridorObjects();
     Visualiser();
-
-
-    int reply = QMessageBox::question(NULL, "Finish fixing mesh corridors?", "Finish fixing mesh corridors?", QMessageBox::Yes, QMessageBox::No);
-    if(reply == QMessageBox::Yes){
-        m_Controls.button_auto3_spacing->setEnabled(false);
-    }
-
+    
 }
 
 void AtrialFibresClipperView::ClipPVs(){

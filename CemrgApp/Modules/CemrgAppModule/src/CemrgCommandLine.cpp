@@ -710,7 +710,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
     return outAbsolutePath;
 }
 
-QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QString meshname, QStringList cmdargs, QString landmarks, QString outnameext){
+QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QStringList fibreAtlas, QString meshname, QStringList cmdargs, QString landmarks, QString outnameext){
     SetDockerImageUac();
     QString executablePath;
 #if defined(__APPLE__)
@@ -722,10 +722,19 @@ QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString 
     QDir home(dir);
     QStringList arguments = GetDockerArguments(home.absolutePath());
     arguments << uaccmd;
+
+    if (!fibreAtlas.isEmpty()){
+        for (int jx = 0; jx < fibreAtlas.size(); jx++) {
+            arguments << fibreAtlas.at(jx);
+        }
+    }
+
     arguments << meshname;
 
-    for (int ix = 0; ix < cmdargs.size(); ix++) {
-        arguments << cmdargs.at(ix);
+    if (!cmdargs.isEmpty()){
+        for (int ix = 0; ix < cmdargs.size(); ix++) {
+            arguments << cmdargs.at(ix);
+        }
     }
 
     if(!landmarks.isEmpty()){

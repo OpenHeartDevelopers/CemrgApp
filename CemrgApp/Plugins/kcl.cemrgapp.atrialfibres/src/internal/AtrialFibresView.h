@@ -33,6 +33,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkSurface.h>
 #include "ui_AtrialFibresViewControls.h"
 #include "ui_AtrialFibresViewUIAnalysisSelector.h"
+#include "ui_AtrialFibresViewUIEditLabels.h"
 #include "ui_AtrialFibresViewUIUacSelector.h"
 #include "ui_AtrialFibresViewUIMeshing.h"
 #include "ui_AtrialFibresViewUIRemesh.h"
@@ -82,6 +83,7 @@ public:
     bool GetUserScarProjectionInputs();
     bool GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh=false);
     bool GetUserUacOptionsInputs();
+    bool GetUserEditLabelsInputs();
     bool LoadSurfaceChecks();
 
     void CleanMeshQuality();
@@ -106,7 +108,7 @@ public:
     inline std::string StdStringPath(QString fnameExt=""){return (Path(fnameExt).toStdString());};
 
     QString LandmarkFilesCreated(QString defaultName, QString type);
-    QString UacCheckOutputFiles(QString dir, QStringList filenames);
+    bool IsUacOutputCorrect(QString dir, QStringList filenames);
 
 protected slots:
 
@@ -149,6 +151,7 @@ protected:
 
     Ui::AtrialFibresViewControls m_Controls;
     Ui::AtrialFibresViewUIAnalysisSelector m_UISelector;
+    Ui::AtrialFibresViewUIEditLabels m_UIEditLabels;
     Ui::AtrialFibresViewUIUacSelector m_UIUac;
     Ui::AtrialFibresViewUIMeshing m_UIMeshing;
     Ui::AtrialFibresViewUIRemesh m_UIRemesh;
@@ -171,10 +174,11 @@ private:
     QString uiFormat_outExt, uiFormat_outName;
     int uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
     bool uiSelector_imgauto_skipCemrgNet, uiSelector_imgauto_skipLabel, uiSelector_img_scar, uiSelector_man_useCemrgNet;
-    bool uiUac_position_endo;
-    int uiUac_typeIndex, uiUac_fibreFileIndex;
-    QStringList uiUac_fibreFile, uiUac_type;
+    bool uiUac_meshtype_labelled;
+    int uiUac_typeIndex, uiUac_fibreFileIndex, uiUac_surftypeIndex;
+    QStringList uiUac_fibreFile, uiUac_type, uiUac_surftype;
     QString uac_fibreField, uac_fibreFieldOutputName;
+    QStringList uiLabels;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

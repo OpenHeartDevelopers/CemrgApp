@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>471</width>
-    <height>218</height>
+    <width>615</width>
+    <height>254</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,18 +86,24 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout_2">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="styleSheet">
-        <string notr="true">border-width: 1px;
-border-color: black;
-border-radius: 10px;
-background-color: yellow;</string>
+     <item row="1" column="1">
+      <widget class="QSlider" name="slider_auto">
+       <property name="maximum">
+        <number>2</number>
        </property>
-       <property name="text">
-        <string> Automatic </string>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="tickPosition">
+        <enum>QSlider::TicksBelow</enum>
        </property>
       </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QComboBox" name="comboBox_auto"/>
+     </item>
+     <item row="0" column="3">
+      <widget class="QComboBox" name="comboBox"/>
      </item>
      <item row="0" column="4">
       <widget class="QCheckBox" name="checkBox">
@@ -106,6 +112,13 @@ background-color: yellow;</string>
        </property>
        <property name="checked">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="4">
+      <widget class="QPushButton" name="button_auto4_clipPv">
+       <property name="text">
+        <string>Save clippers</string>
        </property>
       </widget>
      </item>
@@ -125,8 +138,25 @@ background-color: yellow;</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="3">
-      <widget class="QComboBox" name="comboBox"/>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_auto_slider">
+       <property name="text">
+        <string>PV clipper size</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="styleSheet">
+        <string notr="true">border-width: 1px;
+border-color: black;
+border-radius: 10px;
+background-color: yellow;</string>
+       </property>
+       <property name="text">
+        <string> Automatic </string>
+       </property>
+      </widget>
      </item>
      <item row="0" column="1">
       <widget class="QSlider" name="slider">
@@ -138,36 +168,6 @@ background-color: yellow;</string>
        </property>
        <property name="tickPosition">
         <enum>QSlider::TicksBelow</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QSlider" name="slider_auto">
-       <property name="maximum">
-        <number>2</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="tickPosition">
-        <enum>QSlider::TicksBelow</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_auto_slider">
-       <property name="text">
-        <string>PV clipper size</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QComboBox" name="comboBox_auto"/>
-     </item>
-     <item row="1" column="4">
-      <widget class="QPushButton" name="button_auto4_clipPv">
-       <property name="text">
-        <string>Save clippers</string>
        </property>
       </widget>
      </item>

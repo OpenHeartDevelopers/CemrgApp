@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>442</width>
-    <height>280</height>
+    <width>520</width>
+    <height>292</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -69,53 +69,22 @@
     <rect>
      <x>30</x>
      <y>60</y>
-     <width>301</width>
-     <height>141</height>
+     <width>461</width>
+     <height>152</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="3" column="1">
-     <widget class="QRadioButton" name="radio_uac_endo">
+    <item row="1" column="2">
+     <widget class="QCheckBox" name="check_uac_meshtype_labelled">
       <property name="text">
-       <string>Epi</string>
+       <string>Labelled PVs</string>
       </property>
       <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label">
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="text">
-       <string>Fibre file: </string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QComboBox" name="combo_uac_type">
-      <item>
-       <property name="text">
-        <string>Left Atrium (LA)</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Right Atrium (RA)</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>Analysis type:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
+    <item row="3" column="1">
      <widget class="QComboBox" name="combo_uac_fibrefile">
       <property name="currentText">
        <string>1</string>
@@ -162,11 +131,61 @@
       </item>
      </widget>
     </item>
-    <item row="4" column="1">
-     <widget class="QRadioButton" name="radio_uac_epi">
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
       <property name="text">
-       <string>Endo</string>
+       <string>Analysis type:</string>
       </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="text">
+       <string>Fibre file: </string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_3">
+      <property name="text">
+       <string>Position</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QComboBox" name="combo_uac_surftype">
+      <item>
+       <property name="text">
+        <string>Endo</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Epi</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Bilayer</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QComboBox" name="combo_uac_type">
+      <item>
+       <property name="text">
+        <string>Left Atrium (LA)</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Right Atrium (RA)</string>
+       </property>
+      </item>
      </widget>
     </item>
    </layout>
