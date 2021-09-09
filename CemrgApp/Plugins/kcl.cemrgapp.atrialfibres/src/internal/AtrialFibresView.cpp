@@ -1184,7 +1184,7 @@ void AtrialFibresView::UacFibreMapping(){
     outputFiles << "Fibre_1.vpts";
 
     QStringList cmdargs;
-    cmdargs << (uac_fibreField+".lon")
+    cmdargs << (uac_fibreField+".lon");
     cmdargs << uac_fibreFieldOutputName;// output of fibremapping
 
     fibreAtlas << "_" + uac_type + "_" + uac_surftype;
