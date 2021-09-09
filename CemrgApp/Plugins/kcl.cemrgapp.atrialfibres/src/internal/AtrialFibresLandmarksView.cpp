@@ -235,7 +235,7 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     fileRefined.open((prodPath + outname + ".txt").toStdString());
     fileRefinedLabels.open((prodPath + outname + "-Labels.txt").toStdString());
 
-    std::vector<int> refinedPointsOrder = {11, 15, 19, 22, 13, 17};
+    std::vector<int> refinedPointsOrder = {19, 22, 13, 17};
     for (unsigned int ix = 0; ix<refinedPointsOrder.size(); ix++) {
         int index = GetIndex(refinedSeedLabels, refinedPointsOrder.at(ix));
         if(index!=-1){
@@ -523,12 +523,10 @@ std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
 
 std::string AtrialFibresLandmarksView::GetRefinedPointsGiude(){
     std::string res = "REFINED LANDMARKS GUIDE\n Select specific locations for: \n";
-    res += "LSPV. At the junction of the LSPV with the LA body, at the height of the roof\n";
-    res += "LSPV posterior. Assign the posterior section of the LSPV/LA junction.\n";
-    res += "RSPV. At the junction of the RSPV with the LA body, at the height of the roof\n";
-    res += "RSPV posterior. Assign the posterior section of the RSPV/LA junction\n";
-    res += "LAA. Rotate geometry and select a point between LSPV and mitral valve, away from the LAA.\n";
-    res += "FO. Select a point on the septal wall, close to the mitral valve, follow line from RSPV down to valve.\n";
+    res += "Lateral wall (LAA) - Between LSPV and MV, away from LAA\n";
+    res += "Septal wall (FO)\n";
+    res += "Posterior segment of LSPV/LA junction\n";
+    res += "Posterior segment of RSPV/LA junction\n";
 
     return res;
 }
