@@ -1046,7 +1046,6 @@ void AtrialFibresView::MeshingOptions(){
 }
 
 bool  AtrialFibresView::UserSelectUacMesh(){
-    bool success = false;
     if(uacMeshName.isEmpty()){
         QMessageBox::information(NULL, "Open Mesh File", "Open the CARP mesh file (pts ONLY)");
         QString meshPath = QFileDialog::getOpenFileName(NULL, "Open the CARP mesh file (pts ONLY)",
