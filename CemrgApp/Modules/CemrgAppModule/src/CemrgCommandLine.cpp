@@ -925,9 +925,10 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
 
     QString fileExt = "";
     QString outPath = home.absolutePath() + "/" + omsh;
-    outPath += (ofmt.contains("carp", Qt::CaseInsensitive)) ? ".pts" : ".vtk";
+    bool isConvertToCarp = ofmt.contains("carp", Qt::CaseInsensitive);
+    outPath += (isConvertToCarp) ? ".pts" : ".vtk";
 
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, !isConvertToCarp);
 
     if (successful) {
         MITK_INFO << "Surface remeshing successful.";
@@ -939,7 +940,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
 }
 
 void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QString outMesh, double qualityThres, QString ifmt, QString ofmt){
-    // Method equivalent to: meshtool convert
+    // Method equivalent to: meshtool clean quality
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
     QString executablePath = "";
 #if defined(__APPLE__)

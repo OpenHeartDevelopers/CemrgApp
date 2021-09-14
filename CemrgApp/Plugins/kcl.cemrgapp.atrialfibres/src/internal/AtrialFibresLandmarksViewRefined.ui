@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>305</width>
+    <width>310</width>
     <height>248</height>
    </rect>
   </property>
@@ -41,10 +41,38 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="0">
-      <widget class="QRadioButton" name="radioBtn_LSPV">
+     <item row="3" column="0">
+      <widget class="QRadioButton" name="radioBtn_LAA">
        <property name="text">
-        <string>Left Superior PV</string>
+        <string>Lateral wall (LAA)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QRadioButton" name="radioBtn_RIPV">
+       <property name="text">
+        <string>RSPV/body junction</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QRadioButton" name="radioBtn_LIPV">
+       <property name="text">
+        <string>LSPV/body junction</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
@@ -55,48 +83,23 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="Line" name="line_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QRadioButton" name="radioBtn_LAA">
-       <property name="text">
-        <string>Appendage</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="Line" name="line">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QRadioButton" name="radioBtn_RIPV">
-       <property name="text">
-        <string>Right Superior (Posterior)</string>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="1">
       <widget class="QRadioButton" name="radioBtn_FO">
        <property name="text">
-        <string>Fossa Ovalis</string>
+        <string>Septal Wall (FOO)</string>
        </property>
        <property name="checked">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QRadioButton" name="radioBtn_LIPV">
+     <item row="1" column="0">
+      <widget class="QRadioButton" name="radioBtn_LSPV">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="text">
-        <string>Left Superior (Posterior)</string>
+        <string>Left Superior PV</string>
        </property>
       </widget>
      </item>

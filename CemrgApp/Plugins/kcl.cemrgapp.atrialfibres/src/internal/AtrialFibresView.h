@@ -93,6 +93,7 @@ public:
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
     void UserLoadSurface();
+    bool UserSelectUacMesh();
     void CheckLoadedMeshQuality();
     void SetLgeAnalysis(bool b);
     QString UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer seg);
@@ -177,7 +178,7 @@ private:
     bool uiUac_meshtype_labelled;
     int uiUac_typeIndex, uiUac_fibreFileIndex, uiUac_surftypeIndex;
     QStringList uiUac_fibreFile, uiUac_type, uiUac_surftype;
-    QString uac_fibreField, uac_fibreFieldOutputName;
+    QString uac_fibreField, uac_fibreFieldOutputName, uacMeshName;
     QStringList uiLabels;
 
     const int APPENDAGECUT   = 19;

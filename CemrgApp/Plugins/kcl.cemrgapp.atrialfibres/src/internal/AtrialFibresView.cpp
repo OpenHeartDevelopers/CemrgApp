@@ -973,6 +973,16 @@ void AtrialFibresView::MeshingOptions(){
     if(userInputsAccepted){
         QString refinedPath = cmd->DockerRemeshSurface(directory, meshName, meshName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
 
+        if(QFile::exists(Path(meshName+refinedSuffix+".fcon"))){
+            MITK_INFO(QFile::remove(Path(meshName+refinedSuffix+".fcon"))) << "Removed .fcon file";
+        }
+
+        if(!cmd->IsOutputSuccessful(refinedPath)){
+            QMessageBox::warning(NULL, "Attention", "Surface remeshing output unsuccessful");
+            MITK_ERROR << "Surface remeshing output unsuccessful";
+            return;
+        }
+
         if(uiRemesh_isscalar){
             QString pathNoExt = Path(meshName);
             QString fieldName = "scar";
@@ -1023,15 +1033,37 @@ void AtrialFibresView::MeshingOptions(){
 
             cmd->DockerCleanMeshQuality(directory, cleanInName, cleanOutName, 0.2, "vtk", "vtk_polydata");
             cmd->DockerCleanMeshQuality(directory, cleanOutName, cleanOutName, 0.1, "vtk", "vtk_polydata");
+
+            if(!cmd->IsOutputSuccessful(Path(cleanOutName+".vtk"))){
+                QMessageBox::warning(NULL, "Attention", "Clean output unsuccessful");
+                MITK_ERROR << "Clean output unsuccessful";
+                return;
+            }
         }
 
         MITK_INFO << "[MeshingOptions] finished";
     }
 }
 
+bool  AtrialFibresView::UserSelectUacMesh(){
+    bool success = false;
+    if(uacMeshName.isEmpty()){
+        QMessageBox::information(NULL, "Open Mesh File", "Open the CARP mesh file (pts ONLY)");
+        QString meshPath = QFileDialog::getOpenFileName(NULL, "Open the CARP mesh file (pts ONLY)",
+            StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        QFileInfo fi(meshPath);
+
+        uacMeshName = fi.baseName();
+    }
+
+    int reply = Ask("Check correct filename", ("Is file: " + uacMeshName + " correct?").toStdString());
+    return (reply==QMessageBox::Yes);
+}
+
 
 void AtrialFibresView::UacCalculation(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if(!UserSelectUacMesh()) return;
 
     QString pathRoughLandmark = LandmarkFilesCreated("prodRoughLandmarks", "ROUGH");
     QString pathRefinedLandmark = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
@@ -1078,7 +1110,7 @@ void AtrialFibresView::UacCalculation(){
 
         fibreAtlas << ("_" + uac_type + "_" + uac_surftype);
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, tagName, uiLabels, pathRoughLandmark);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, pathRoughLandmark);
 
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
         outputFiles << "PAbc1.vtx" << "PAbc2.vtx";
@@ -1087,8 +1119,8 @@ void AtrialFibresView::UacCalculation(){
 
         MITK_INFO << "Create Laplace Solve files for LR and PA SOLVES";
         QString lr_par, pa_par;
-        lr_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_LS.par", tagName, "LSbc1", "LSbc2");
-        pa_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_PA.par", tagName, "PAbc1", "PAbc2");
+        lr_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_LS.par", uacMeshName, "LSbc1", "LSbc2");
+        pa_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_PA.par", uacMeshName, "PAbc1", "PAbc2");
 
         MITK_INFO << "Do Laplace Solves using Docker";
         cmd->SetDockerImageOpenCarp();
@@ -1104,7 +1136,7 @@ void AtrialFibresView::UacCalculation(){
         outputFiles << "Ant_Strength_Test_PA1.vtx" << "Ant_Strength_Test_LS1.vtx";
         outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, tagName, uiLabels, pathRefinedLandmark);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, pathRefinedLandmark);
 
         if (!IsUacOutputCorrect(directory, outputFiles)) return;
 
@@ -1130,7 +1162,7 @@ void AtrialFibresView::UacCalculation(){
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.elem";
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.pts";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, tagName, uiLabels, "");
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, "");
 
         MITK_ERROR(!IsUacOutputCorrect(directory, outputFiles)) << ("Problem with " + uaccmd).toStdString();
 
@@ -1139,6 +1171,7 @@ void AtrialFibresView::UacCalculation(){
 
 void AtrialFibresView::UacFibreMapping(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if(!UserSelectUacMesh()) return;
 
     QString metadata = Path("prodUacMetadata.txt");
     if(!QFile::exists(metadata)){
@@ -1194,7 +1227,7 @@ void AtrialFibresView::UacFibreMapping(){
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetDockerImageUac();
-    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, tagName, cmdargs, "", "Fibre_1.vpts");
+    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, "", "Fibre_1.vpts");
 
     if(!cmd->IsOutputSuccessful(uacOutput)){
         MITK_ERROR << "FibreMapping Output not successful";
