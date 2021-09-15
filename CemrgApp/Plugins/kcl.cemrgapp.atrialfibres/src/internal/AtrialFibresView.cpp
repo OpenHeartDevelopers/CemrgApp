@@ -973,10 +973,6 @@ void AtrialFibresView::MeshingOptions(){
     if(userInputsAccepted){
         QString refinedPath = cmd->DockerRemeshSurface(directory, meshName, meshName+refinedSuffix, uiRemesh_max, uiRemesh_min, uiRemesh_avrg, uiRemesh_surfcorr);
 
-        if(QFile::exists(Path(meshName+refinedSuffix+".fcon"))){
-            MITK_INFO(QFile::remove(Path(meshName+refinedSuffix+".fcon"))) << "Removed .fcon file";
-        }
-
         if(!cmd->IsOutputSuccessful(refinedPath)){
             QMessageBox::warning(NULL, "Attention", "Surface remeshing output unsuccessful");
             MITK_ERROR << "Surface remeshing output unsuccessful";
@@ -1026,6 +1022,8 @@ void AtrialFibresView::MeshingOptions(){
         if(uiRemesh_cleanmesh){
             QString cleanInName = meshName+refinedSuffix;
             QString cleanOutName = "clean-"+cleanInName;
+
+            MITK_INFO(QFile::remove(Path(cleanInName+".fcon"))) << "Removed .fcon file";
 
             MITK_INFO << "[MeshingOptions] Cleaning up mesh quality";
             std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
@@ -1170,7 +1168,7 @@ void AtrialFibresView::UacCalculation(){
 
 void AtrialFibresView::UacFibreMapping(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
-    if(!UserSelectUacMesh()) return;
+    if (!UserSelectUacMesh()) return;
 
     QString metadata = Path("prodUacMetadata.txt");
     if(!QFile::exists(metadata)){
