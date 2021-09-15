@@ -1549,8 +1549,6 @@ bool AtrialFibresView::GetUserUacOptionsInputs(){
             fi.close();
 
             userInputAccepted=true;
-
-            MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
         }
     }
 
