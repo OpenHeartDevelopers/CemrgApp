@@ -1161,7 +1161,11 @@ void AtrialFibresView::UacCalculation(){
         cmd->SetDockerImageUac();
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, "");
 
-        MITK_ERROR(!IsUacOutputCorrect(directory, outputFiles)) << ("Problem with " + uaccmd).toStdString();
+        bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
+        MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
+        std::string msg = "UAC Calculation ";
+        msg += (uacOutputSuccess) ? "successful" : "failed";
+        QMessageBox::information(NULL, "Attention", msg.c_str());
 
     }
 }
@@ -1226,7 +1230,13 @@ void AtrialFibresView::UacFibreMapping(){
     cmd->SetDockerImageUac();
     uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, "", "Fibre_1.vpts");
 
-    if(!cmd->IsOutputSuccessful(uacOutput)){
+    bool uacOutputSuccess = cmd->IsOutputSuccessful(uacOutput);
+    MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
+    std::string msg = "UAC Fibre Mapping ";
+    msg += (uacOutputSuccess) ? "successful" : "failed";
+    QMessageBox::information(NULL, "Attention", msg.c_str());
+
+    if(!uacOutputSuccess){
         MITK_ERROR << "FibreMapping Output not successful";
         return;
     }
