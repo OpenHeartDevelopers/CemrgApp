@@ -142,6 +142,11 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_man7_1_landmarks, SIGNAL(clicked()), this, SLOT(SelectMvLandmarks()));
     connect(m_Controls.button_man7_2_clipMV, SIGNAL(clicked()), this, SLOT(ClipMV()));
 
+    m_Controls.button_0_1_uacRough->setVisible(false);
+    m_Controls.button_0_2_uacRefined->setVisible(false);
+    connect(m_Controls.button_0_1_uacRough, SIGNAL(clicked()), this, SLOT(UacCalculationRough()));
+    connect(m_Controls.button_0_2_uacRefined, SIGNAL(clicked()), this, SLOT(UacCalculationRefined()));
+
     // Set default variables
     tagName = "Labelled";
     refinedSuffix = "-refined";
@@ -1088,12 +1093,59 @@ void AtrialFibresView::UacCalculation(){
             uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
         }
 
-        uiLabels.clear();
-        if(uiUac_meshtype_labelled){
-            QMessageBox::information(NULL, "Attention", "Check the labels are correct");
-            if(!GetUserEditLabelsInputs()){
-                MITK_INFO << "labels not checked. Stopping";
-                return;
+        if(uiLabels.isEmpty()){
+            uiLabels.clear();
+            if(uiUac_meshtype_labelled){
+                QMessageBox::information(NULL, "Attention", "Check the labels are correct");
+                if(!GetUserEditLabelsInputs()){
+                    MITK_INFO << "labels not checked. Stopping";
+                    return;
+                }
+            }
+        }
+
+        m_Controls.button_0_1_uacRough->setVisible(true);
+        m_Controls.button_0_2_uacRefined->setVisible(true);
+    }
+}
+
+void AtrialFibresView::UacCalculationRough(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!UserSelectUacMesh()) return;
+
+    QString pathRoughLandmark = LandmarkFilesCreated("prodRoughLandmarks", "ROUGH");
+
+    if(pathRoughLandmark.compare("FILE_NOT_FOUND")==0){
+        return;
+    }
+
+    bool userInputAccepted = GetUserUacOptionsInputs();
+    MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
+
+    if(userInputAccepted){
+        QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd, uacOutput;
+        QStringList fibreAtlas, outputFiles;
+
+        MITK_INFO << "Set variables based on UAC user-defined parameters";
+        uac_anatomy = "6"; // might change later
+        uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
+        uac_type = uiUac_type.at(uiUac_typeIndex);
+        uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
+
+        uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
+        uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
+        if(uiUac_fibreFileIndex==7){ // chosen Avg
+            uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
+        }
+
+        if(uiLabels.isEmpty()){
+            uiLabels.clear();
+            if(uiUac_meshtype_labelled){
+                QMessageBox::information(NULL, "Attention", "Check the labels are correct");
+                if(!GetUserEditLabelsInputs()){
+                    MITK_INFO << "labels not checked. Stopping";
+                    return;
+                }
             }
         }
 
@@ -1124,6 +1176,59 @@ void AtrialFibresView::UacCalculation(){
         QString lrLapSolve, paLapSolve;
         lrLapSolve = cmd->OpenCarpDocker(directory, lr_par, "LR_UAC_N2");
         paLapSolve = cmd->OpenCarpDocker(directory, pa_par, "PA_UAC_N2");
+
+        bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
+        MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
+        std::string msg = "UAC Calculation ";
+        msg += (uacOutputSuccess) ? "successful" : "failed";
+        QMessageBox::information(NULL, "Attention", msg.c_str());
+    }
+}
+
+void AtrialFibresView::UacCalculationRefined(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!UserSelectUacMesh()) return;
+
+    QString pathRefinedLandmark = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+
+    if(pathRefinedLandmark.compare("FILE_NOT_FOUND")==0){
+        return;
+    }
+
+    bool userInputAccepted = GetUserUacOptionsInputs();
+    MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
+
+    if(userInputAccepted){
+        QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd, uacOutput;
+        QStringList fibreAtlas, outputFiles;
+
+        MITK_INFO << "Set variables based on UAC user-defined parameters";
+        uac_anatomy = "6"; // might change later
+        uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
+        uac_type = uiUac_type.at(uiUac_typeIndex);
+        uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
+
+        uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
+        uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
+        if(uiUac_fibreFileIndex==7){ // chosen Avg
+            uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
+        }
+
+        if(uiLabels.isEmpty()){
+            uiLabels.clear();
+            if(uiUac_meshtype_labelled){
+                QMessageBox::information(NULL, "Attention", "Check the labels are correct");
+                if(!GetUserEditLabelsInputs()){
+                    MITK_INFO << "labels not checked. Stopping";
+                    return;
+                }
+            }
+        }
+
+        // Cemrg CMD
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+        MITK_INFO << "Do Rough UAC code from Docker";
 
         uaccmd = "UAC_2A_" + uac_type;
         uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
@@ -1163,7 +1268,7 @@ void AtrialFibresView::UacCalculation(){
 
         bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
-        std::string msg = "UAC Calculation ";
+        std::string msg = "UAC Calculation - Refined ";
         msg += (uacOutputSuccess) ? "successful" : "failed";
         QMessageBox::information(NULL, "Attention", msg.c_str());
 

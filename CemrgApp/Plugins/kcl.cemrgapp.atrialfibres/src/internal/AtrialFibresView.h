@@ -137,6 +137,8 @@ protected slots:
     void MeshingOptions();
     void ConvertFormat();
     void UacCalculation();
+    void UacCalculationRough();
+    void UacCalculationRefined();
     void UacFibreMapping();
 
     void ScarProjection();

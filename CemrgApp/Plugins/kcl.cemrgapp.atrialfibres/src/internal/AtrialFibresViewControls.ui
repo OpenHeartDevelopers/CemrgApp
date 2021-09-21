@@ -258,6 +258,20 @@
      </property>
     </widget>
    </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_0_1_uacRough">
+     <property name="text">
+      <string>Rough UAC</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_0_2_uacRefined">
+     <property name="text">
+      <string>Refined UAC</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="QPushButton" name="button_0_fibreMapUac">
      <property name="styleSheet">
