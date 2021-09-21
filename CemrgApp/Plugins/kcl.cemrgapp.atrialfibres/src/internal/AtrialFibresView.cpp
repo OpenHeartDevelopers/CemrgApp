@@ -1067,13 +1067,6 @@ void AtrialFibresView::UacCalculation(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if(!UserSelectUacMesh()) return;
 
-    QString pathRoughLandmark = LandmarkFilesCreated("prodRoughLandmarks", "ROUGH");
-    QString pathRefinedLandmark = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
-
-    if(pathRoughLandmark.compare("FILE_NOT_FOUND")==0 || pathRefinedLandmark.compare("FILE_NOT_FOUND")==0){
-        return;
-    }
-
     bool userInputAccepted = GetUserUacOptionsInputs();
     MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
 
@@ -1113,9 +1106,10 @@ void AtrialFibresView::UacCalculationRough(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
-    QString pathRoughLandmark = LandmarkFilesCreated("prodRoughLandmarks", "ROUGH");
+    // at least in LA, the uac codes need the refined landmarks for both stages
+    QString path2landmarks = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
 
-    if(pathRoughLandmark.compare("FILE_NOT_FOUND")==0){
+    if(path2landmarks.compare("FILE_NOT_FOUND")==0){
         return;
     }
 
@@ -1159,7 +1153,7 @@ void AtrialFibresView::UacCalculationRough(){
 
         fibreAtlas << ("_" + uac_type + "_" + uac_surftype);
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, pathRoughLandmark);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
 
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
         outputFiles << "PAbc1.vtx" << "PAbc2.vtx";
@@ -1189,9 +1183,9 @@ void AtrialFibresView::UacCalculationRefined(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
-    QString pathRefinedLandmark = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+    QString path2landmarks = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
 
-    if(pathRefinedLandmark.compare("FILE_NOT_FOUND")==0){
+    if(path2landmarks.compare("FILE_NOT_FOUND")==0){
         return;
     }
 
@@ -1238,7 +1232,7 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "Ant_Strength_Test_PA1.vtx" << "Ant_Strength_Test_LS1.vtx";
         outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, pathRefinedLandmark);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
 
         if (!IsUacOutputCorrect(directory, outputFiles)) return;
 
