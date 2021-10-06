@@ -694,8 +694,8 @@ void AtrialFibresView::CreateLabelledMesh(){
     QString prodPath =  directory + "/";
 
     ImageType::Pointer pveins = atrium->LoadImage(prodPath+"PVeinsLabelled.nii");
-    if(!tagName.contains("labelled")){
-        std::string msg = "Changing working name from " + tagName.toStdString() + " to 'labelled'";
+    if(!tagName.contains("Labelled")){
+        std::string msg = "Changing working name from " + tagName.toStdString() + " to 'Labelled'";
         QMessageBox::information(NULL, "Attention", msg.c_str());
         tagName = "Labelled";
     }

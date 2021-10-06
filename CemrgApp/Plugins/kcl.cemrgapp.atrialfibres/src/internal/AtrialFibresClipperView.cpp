@@ -96,7 +96,7 @@ bool AtrialFibresClipperView::isAutomatic;
 const std::string AtrialFibresClipperView::VIEW_ID = "org.mitk.views.atrialfibresclipperview";
 
 void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
-
+    MITK_INFO << "[AtrialFibresClipperView] Plugin start ";
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
     connect(m_Controls.button_man1_ctrlines, SIGNAL(clicked()), this, SLOT(CtrLines()));
@@ -115,13 +115,14 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
 
     // Display correct buttons
     automaticPipeline = AtrialFibresClipperView::isAutomatic;
+    debugging = false;
     SetAutomaticModeButtons(automaticPipeline);
     SetManualModeButtons(!automaticPipeline);
-    corridorMax = 10;
+    corridorMax = 20;
     corridorCount = 0;
     defaultClipperRadius = 9.0;
 
-    //Create GUI widgets
+    MITK_INFO <<"Create GUI widgets";
     inputs = new QDialog(0,0);
     m_Labels.setupUi(inputs);
     connect(m_Labels.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
@@ -130,7 +131,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
         m_Labels.radioBtn_default->setText("MV (Optional)");
     }
 
-    //Setup renderer
+    MITK_INFO <<"Setup renderer";
     surfActor = vtkSmartPointer<vtkActor>::New();
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->SetBackground(0.5,0.5,0.5);
@@ -150,7 +151,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     m_Controls.widget_1->SetRenderWindow(renderWindow);
     m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
-    //Setup keyboard interactor
+    MITK_INFO << "Setup keyboard interactor";
     callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     callBack->SetCallback(KeyCallBackFunc);
     callBack->SetClientData(this);
@@ -159,12 +160,14 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
 
-    //Initialisation
+    MITK_INFO << "Initialisation";
     iniPreSurf();
     if (surface.IsNotNull()) {
         InitialisePickerObjects();
         clipper = std::unique_ptr<CemrgAtriaClipper>(new CemrgAtriaClipper(directory, surface));
+        SetDebugOn();
         Visualiser();
+        SetDebugOff();
     }
     if(automaticPipeline){
         m_Controls.button_auto2_clippers->setEnabled(false);
@@ -201,6 +204,7 @@ void AtrialFibresClipperView::iniPreSurf() {
     QString path = AtrialFibresClipperView::directory + "/" + AtrialFibresClipperView::fileName;
     mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
 
+    MITK_INFO << ("[iniPreSurf] Opened file: " + path).toStdString();
     surface = shell;
 }
 
@@ -707,7 +711,7 @@ void AtrialFibresClipperView::InterPvSpacing(){
 
     ResetCorridorObjects();
     Visualiser();
-    
+
 }
 
 void AtrialFibresClipperView::ClipPVs(){
@@ -747,6 +751,7 @@ void AtrialFibresClipperView::SaveSphereClippers(){
 }
 
 void AtrialFibresClipperView::Visualiser(double opacity){
+    MITK_INFO(debugging) << "Visualiser";
     if(automaticPipeline){
         VisualiserAuto(opacity);
     } else{
@@ -755,18 +760,30 @@ void AtrialFibresClipperView::Visualiser(double opacity){
 }
 
 void AtrialFibresClipperView::VisualiserAuto(double opacity) {
+    double max_scalar=-1, min_scalar=1e9, s;
+    try{
+        vtkFloatArray *scalars = vtkFloatArray::New();
+        scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
 
-    double max_scalar=-1, min_scalar=1e9,s;
-    vtkFloatArray *scalars = vtkFloatArray::New();
-    vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
-    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
-        s = scalars->GetTuple1(i);
-        if (s > max_scalar)
-            max_scalar = s;
-        if (s < min_scalar)
-            min_scalar = s;
+        int numScalars = surface->GetVtkPolyData()->GetNumberOfCells();
+        MITK_INFO(debugging) << ("Created scalars vector. Number: " + QString::number(numScalars)).toStdString();
+
+        for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
+            s = scalars->GetTuple1(i);
+            if (s > max_scalar)
+                max_scalar = s;
+            if (s < min_scalar)
+                min_scalar = s;
+        }
+    } catch (...) {
+        std::string msg = "Problem detected in shell's scalars.";
+        msg += "\nMight cause problems later.";
+        msg += "\n\nContinue with default scalar values.";
+        QMessageBox::warning(NULL, "Warning", msg.c_str());
+        max_scalar=22;
+        min_scalar=0;
     }
+
     this->maxScalar = max_scalar;
     this->minScalar = min_scalar;
 
@@ -774,6 +791,7 @@ void AtrialFibresClipperView::VisualiserAuto(double opacity) {
     SphereSourceVisualiser(corridorLineSeeds, "0.0,0.0,1.0");
 
     //Create a mapper and actor for surface
+    vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
     vtkSmartPointer<vtkPolyDataMapper> surfMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     surfMapper->SetInputData(surface->GetVtkPolyData());
     surfMapper->SetScalarRange(min_scalar, max_scalar);
@@ -1044,7 +1062,7 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                     self->PickCallBack(pvCorridor);
                     self->corridorCount++;
                 } else{
-                    std::string msg = "Select less than  points for inter PV corridor!\nPress V to fix another vein.";
+                    std::string msg = "Maximum number of control points reached.";
                     QMessageBox::warning(NULL, "Attention - too many corridor points", msg.c_str());
                     MITK_INFO << msg;
                 }

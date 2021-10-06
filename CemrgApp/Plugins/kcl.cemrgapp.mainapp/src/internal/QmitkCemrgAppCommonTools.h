@@ -61,6 +61,7 @@ protected slots:
     void ConvertCarpToVtk();
     void PadImageEdgesWithConstant();
     void BinariseImage();
+    void ResampleReorientConvert();
 
 protected:
 

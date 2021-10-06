@@ -57,6 +57,7 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_3, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertCarpToVtk);
     connect(m_Controls.button_4, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::PadImageEdgesWithConstant);
     connect(m_Controls.button_5, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::BinariseImage);
+    connect(m_Controls.button_6, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ResampleReorientConvert);
 }
 
 void QmitkCemrgAppCommonTools::SetFocus() {
@@ -324,4 +325,22 @@ void QmitkCemrgAppCommonTools::BinariseImage(){
     mitk::Image::Pointer outIm = CemrgCommonUtils::ReturnBinarised(im);
 
     mitk::IOUtil::Save(outIm, outPath.toStdString());
+}
+
+void QmitkCemrgAppCommonTools::ResampleReorientConvert(){
+    QString pathToImage = "";
+    pathToImage = QFileDialog::getOpenFileName(NULL, "Open image file");
+    if (pathToImage.isEmpty()) {
+        QMessageBox::warning(NULL, "Attention", "Incorrect input!");
+        return;
+    }
+
+    bool resamplebool=true, reorientbool=true;
+    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool);
+
+    QFileInfo fi(pathToImage);
+    QString outPath = fi.absolutePath() + "/" + fi.baseName() + ".nii";
+    mitk::IOUtil::Save(image, outPath.toStdString());
+
+    QMessageBox::information(NULL, "Attention", "Image resampled, reoriented and converted to NIFTI");
 }

@@ -80,6 +80,10 @@ public:
     void UpdateClipperSeedIds(int newPickedId, int currentId);
     int GetPickedId();
 
+    inline void SetDebug(bool b){debugging = b;};
+    inline void SetDebugOn(){SetDebug(true);};
+    inline void SetDebugOff(){SetDebug(false);};
+
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
@@ -136,7 +140,7 @@ private:
     static QString directory;
     static bool isAutomatic;
 
-    bool automaticPipeline;
+    bool automaticPipeline, debugging;
 
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;

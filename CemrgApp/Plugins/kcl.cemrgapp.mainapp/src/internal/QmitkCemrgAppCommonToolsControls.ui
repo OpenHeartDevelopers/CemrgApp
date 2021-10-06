@@ -75,6 +75,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_6">
+     <property name="text">
+      <string>Convert to Nifti (resample)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="spacer1">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
