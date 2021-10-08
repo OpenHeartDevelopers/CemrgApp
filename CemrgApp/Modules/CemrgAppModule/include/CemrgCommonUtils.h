@@ -51,8 +51,8 @@ public:
 
     //Sampling Utils
     static mitk::Image::Pointer Downsample(mitk::Image::Pointer image, int factor);
-    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=false, bool reorientToRAI=false);
-    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=false, bool reorientToRAI=false);
+    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=false, bool reorientToRAI=false, bool isBinary=false);
+    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=false, bool reorientToRAI=false, bool isBinary=false);
 
     // Image Analysis Utils
     static void Binarise(mitk::Image::Pointer image, float background=0);

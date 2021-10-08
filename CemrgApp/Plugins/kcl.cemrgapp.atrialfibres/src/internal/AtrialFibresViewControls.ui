@@ -212,6 +212,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_0_landmarks">
+     <property name="styleSheet">
+      <string notr="true">text-align: left;</string>
+     </property>
+     <property name="text">
+      <string>    Step-: Select Landmarks</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="button_x_meshtools">
      <property name="font">
       <font>
@@ -235,16 +245,6 @@
      </property>
      <property name="text">
       <string>    StepY: Convert format</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="button_0_landmarks">
-     <property name="styleSheet">
-      <string notr="true">text-align: left;</string>
-     </property>
-     <property name="text">
-      <string>    Step-: Select Landmarks</string>
      </property>
     </widget>
    </item>

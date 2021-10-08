@@ -195,25 +195,32 @@ mitk::Image::Pointer CemrgCommonUtils::Downsample(mitk::Image::Pointer image, in
     return image;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Pointer image, bool resample, bool reorientToRAI) {
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Pointer image, bool resample, bool reorientToRAI, bool isBinary) {
 
     MITK_INFO(resample) << "Resampling image to be isometric.";
     MITK_INFO(reorientToRAI) << "Doing a reorientation to RAI.";
 
     typedef itk::Image<short,3> ImageType;
     typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
-    typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
     ImageType::Pointer itkInputImage = ImageType::New();
     ImageType::Pointer resampleOutput = ImageType::New();
     ImageType::Pointer outputImage = ImageType::New();
     mitk::CastToItkImage(image, itkInputImage);
 
     if (resample) {
-
         ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
-        BSplineInterpolatorType::Pointer binterp = BSplineInterpolatorType::New();
-        binterp->SetSplineOrder(3);
-        resampler->SetInterpolator(binterp);
+
+        if(isBinary){
+            typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
+            BSplineInterpolatorType::Pointer bsplineInterp = BSplineInterpolatorType::New();
+            bsplineInterp->SetSplineOrder(3);
+            resampler->SetInterpolator(bsplineInterp);
+        } else{
+            typedef itk::NearestNeighborInterpolateImageFunction<ImageType, double> NearestInterpolatorType;
+            NearestInterpolatorType::Pointer nnInterp = NearestInterpolatorType::New();
+            resampler->SetInterpolator(nnInterp);
+        }
+
         resampler->SetInput(itkInputImage);
         resampler->SetOutputOrigin(itkInputImage->GetOrigin());
         ImageType::SizeType input_size = itkInputImage->GetLargestPossibleRegion().GetSize();
@@ -254,9 +261,9 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
     return image;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, bool resample,  bool reorientToRAI) {
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, bool resample,  bool reorientToRAI, bool isBinary) {
 
-    return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI);
+    return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI, isBinary);
 }
 
 void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
@@ -675,7 +682,7 @@ QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filena
     if (fi.open(QFile::WriteOnly | QFile::Truncate)) {
         QTextStream out(&fi);
 
-        out << "meshname " << "= " << meshname << "\n"; 
+        out << "meshname " << "= " << meshname << "\n";
         out << "experiment " << "= " << " 2" << "\n";
         out << "bidomain " << "= " << " 1" << "\n";
 

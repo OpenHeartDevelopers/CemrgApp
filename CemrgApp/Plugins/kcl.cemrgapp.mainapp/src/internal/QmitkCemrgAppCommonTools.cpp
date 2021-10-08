@@ -335,8 +335,16 @@ void QmitkCemrgAppCommonTools::ResampleReorientConvert(){
         return;
     }
 
-    bool resamplebool=true, reorientbool=true;
-    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool);
+    std::string title, msg;
+    title = "Choose Image Type";
+    msg = "Is this a binary image (i.e a segmentation)?";
+    int replyImBinary = QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+
+    bool resamplebool=true, reorientbool=true, isBinary=(replyImBinary==QMessageBox::Yes);
+    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool, isBinary);
+    if(isBinary){
+        image = CemrgCommonUtils::ReturnBinarised(image);
+    }
 
     QFileInfo fi(pathToImage);
     QString outPath = fi.absolutePath() + "/" + fi.baseName() + ".nii";

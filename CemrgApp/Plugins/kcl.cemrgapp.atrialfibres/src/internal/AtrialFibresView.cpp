@@ -357,6 +357,7 @@ void AtrialFibresView::AnalysisChoice(){
             SetAutomaticModeButtonsOff();
             m_Controls.button_man4_segmentation->setEnabled(true);
             m_Controls.button_auto4_meshpreproc->setVisible(true);
+            m_Controls.button_man4_2_postproc->setVisible(true);
 
         } else if(uiSelector_pipeline==2){ // Surface Pipeline (manual)
             MITK_INFO << "[AnalysisChoice] Analysis starting from surface";
@@ -1226,6 +1227,7 @@ void AtrialFibresView::UacCalculationRefined(){
 
         uaccmd = "UAC_2A_" + uac_type;
         uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
+        fibreAtlas << ("_" + uac_type + "_" + uac_surftype);
 
         outputFiles.clear();
         outputFiles << "AnteriorMesh.elem" << "PosteriorMesh.elem";
