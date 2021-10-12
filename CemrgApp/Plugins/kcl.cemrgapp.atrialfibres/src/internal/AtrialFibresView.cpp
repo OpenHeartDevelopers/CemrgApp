@@ -1313,13 +1313,16 @@ void AtrialFibresView::UacFibreMapping(){
     std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
 
     uaccmd = "UAC_FibreMapping";
-    uaccmd += (uiUac_surftypeIndex==2) ? "_Bilayer" : "";
 
     outputFiles.clear();
     outputFiles << "Fibre_1.vpts";
 
     QStringList cmdargs;
-    cmdargs << (uac_fibreField+".lon") << (uac_fibreField+".lon");
+    cmdargs << (uac_fibreField+".lon");
+    if(uiUac_surftypeIndex==2){
+        cmdargs << (uac_fibreField+".lon");
+        uaccmd += "_Bilayer";
+    }
     cmdargs << uac_fibreFieldOutputName;// output of fibremapping
 
     fibreAtlas << "_" + uac_type + "_" + uac_surftype;
