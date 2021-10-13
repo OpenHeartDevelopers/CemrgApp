@@ -68,7 +68,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCellDataToPointData.h>
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkClipPolyData.h>
-#include <vtkThreshold.h>
 
 //ITK
 #include <itkAddImageFilter.h>
@@ -520,7 +519,7 @@ void AtrialFibresClipperView::SaveLabels(){
     }
 
     std::vector<int> incorrectLabels;
-    if(CheckLabelConnectivity(incorrectLabels)){
+    if(!CheckLabelConnectivity(incorrectLabels)){
         msg = "Make sure there's no holes in the meshes.\n";
         msg += "Use 'X' on your keyboard and the 'Fix mesh labelling' button \n";
         msg += "on following labels: \n\n";
@@ -1325,29 +1324,24 @@ bool AtrialFibresClipperView::CheckLabelConnectivity(std::vector<int> &labelsVec
         v.push_back(pickedSeedLabels.at(ix));
     }
 
-    int currentNumRegions, totalWrongLabels=0;
-    double currentLabel;
+    int currentLabel, currentNumRegions, totalWrongLabels=0;
     for (unsigned int jx = 0; jx < v.size(); jx++) {
-        currentLabel = (double) v.at(jx);
-        vtkSmartPointer<vtkThreshold> thres = vtkSmartPointer<vtkThreshold>::New();
-        thres->ThresholdBetween(currentLabel, currentLabel);
-        thres->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-        thres->SetInputData(surface->GetVtkPolyData());
-        thres->Update();
-
-        vtkSmartPointer<vtkConnectivityFilter> cf = vtkSmartPointer<vtkConnectivityFilter>::New();
-        cf->SetInputConnection(thres->GetOutputPort());
+        currentLabel = v.at(jx);
+        vtkSmartPointer<vtkPolyDataConnectivityFilter> cf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+        cf->SetInputData(surface->GetVtkPolyData());
+        cf->ScalarConnectivityOn();
+        cf->FullScalarConnectivityOn();
+        cf->SetScalarRange(currentLabel, currentLabel);
         cf->Update();
-        cf->SetExtractionModeToLargestRegion();
-        cf->Update();
+        cf->SetExtractionModeToAllRegions();
         currentNumRegions = cf->GetNumberOfExtractedRegions();
         if(currentNumRegions>1){
             totalWrongLabels++;
             labelsVector.push_back(currentLabel);
-            std::cout << "label incorrect: " << currentLabel << " num regions: " << currentNumRegions<< '\n';
+            std::cout << "label incorrect: " << currentLabel << '\n';
         }
     }
-    std::cout << "Number of wrong labels: " << totalWrongLabels << '\n';
+    std::cout << "totalWrongLabels: " << totalWrongLabels << '\n';
     return (totalWrongLabels>0);
 }
 

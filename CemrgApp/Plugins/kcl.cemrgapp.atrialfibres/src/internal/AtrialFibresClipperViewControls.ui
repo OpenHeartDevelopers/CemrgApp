@@ -68,7 +68,7 @@
      <item row="3" column="1">
       <widget class="QPushButton" name="button_auto3_spacing">
        <property name="text">
-        <string>Fix inter PV spacing</string>
+        <string>Fix mesh labelling</string>
        </property>
       </widget>
      </item>

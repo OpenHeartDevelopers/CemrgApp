@@ -72,6 +72,7 @@ public:
     std::string GetShortcuts();
     bool IsPointSelectionControlsAvailable();
     bool IsClipperManualControlsAvailable();
+    bool CheckLabelConnectivity(std::vector<int> &labelsVector);
     void UserSelectPvLabel();
     void LoadPickedSeedsFromFile();
     void CreateSphereClipperAndRadiiVectors(bool showOnRenderer);

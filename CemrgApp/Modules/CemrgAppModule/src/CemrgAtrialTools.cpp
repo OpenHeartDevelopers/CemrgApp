@@ -629,6 +629,43 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 
 }
 
+bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer surface, QStringList labelsToCheck, std::vector<int> &labelsVector){
+    std::vector<int> v;
+    v.push_back(1);
+    for (unsigned int ix = 0; ix < labelsToCheck.size(); ix++) {
+        bool ok;
+        int labelAtThis = labelsToCheck.at(ix).toInt(&ok);
+        if(ok){
+            v.push_back(labelAtThis);
+        }
+    }
+
+    int currentNumRegions, totalWrongLabels=0;
+    double currentLabel;
+    for (unsigned int jx = 0; jx < v.size(); jx++) {
+        currentLabel = (double) v.at(jx);
+        vtkSmartPointer<vtkThreshold> thres = vtkSmartPointer<vtkThreshold>::New();
+        thres->ThresholdBetween(currentLabel, currentLabel);
+        thres->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
+        thres->SetInputData(surface->GetVtkPolyData());
+        thres->Update();
+
+        vtkSmartPointer<vtkConnectivityFilter> cf = vtkSmartPointer<vtkConnectivityFilter>::New();
+        cf->SetInputConnection(thres->GetOutputPort());
+        cf->Update();
+        cf->SetExtractionModeToLargestRegion();
+        cf->Update();
+        currentNumRegions = cf->GetNumberOfExtractedRegions();
+        if(currentNumRegions>1){
+            totalWrongLabels++;
+            labelsVector.push_back(currentLabel);
+            std::cout << "label incorrect: " << currentLabel << " num regions: " << currentNumRegions<< '\n';
+        }
+    }
+    std::cout << "Number of wrong labels: " << totalWrongLabels << '\n';
+    return (totalWrongLabels>0);
+}
+
 //helper functions
 ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius, int maxNumObjects){
     MITK_INFO << ("Thresholding " + tag + " from clean segmentation").toStdString();

@@ -146,6 +146,7 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
     m_Controls.button_0_2_uacRefined->setVisible(false);
     connect(m_Controls.button_0_1_uacRough, SIGNAL(clicked()), this, SLOT(UacCalculationRough()));
     connect(m_Controls.button_0_2_uacRefined, SIGNAL(clicked()), this, SLOT(UacCalculationRefined()));
+    connect(m_Controls.button_0_3_checkLabels, SIGNAL(clicked()), this, SLOT(UacCalculationVerifyLabels()));
 
     // Set default variables
     tagName = "Labelled";
@@ -1369,6 +1370,16 @@ void AtrialFibresView::UacFibreMapping(){
 
     MITK_INFO(count==clearFiles.size()) << "All aux Files cleared successfully";
 
+}
+
+void AtrialFibresView::UacCalculationVerifyLabels(){
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if(!GetUserEditLabelsInputs()){
+        MITK_INFO << "labels not checked. Stopping";
+        return;
+    }
+
+    
 }
 
 bool AtrialFibresView::IsUacOutputCorrect(QString dir, QStringList filenames){

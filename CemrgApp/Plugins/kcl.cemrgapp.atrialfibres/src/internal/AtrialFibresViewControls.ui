@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>243</width>
-    <height>881</height>
+    <height>887</height>
    </rect>
   </property>
   <property name="font">
@@ -255,6 +255,16 @@
      </property>
      <property name="text">
       <string>    Step-: Calculate UAC</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="button_0_3_checklabels">
+     <property name="styleSheet">
+      <string notr="true">color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>(Optional) Verify Labels</string>
      </property>
     </widget>
    </item>
