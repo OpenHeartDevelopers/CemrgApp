@@ -88,6 +88,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 // CemrgAppModule
 #include <CemrgAtriaClipper.h>
+#include <CemrgAtrialTools.h>
 #include <CemrgCommandLine.h>
 #include <CemrgCommonUtils.h>
 
@@ -507,7 +508,6 @@ void AtrialFibresClipperView::PvClipperSelector(int index){
 
 }
 
-
 // Automatic pipeline
 void AtrialFibresClipperView::SaveLabels(){
     std::string msg;
@@ -518,9 +518,13 @@ void AtrialFibresClipperView::SaveLabels(){
 
         return;
     }
-
+    QStringList thisLabels;
+    for (unsigned int ix = 0; ix < pickedSeedLabels.size(); ix++) {
+        thisLabels << QString::number(pickedSeedLabels.at(ix));
+    }
     std::vector<int> incorrectLabels;
-    if(CheckLabelConnectivity(incorrectLabels)){
+    std::unique_ptr<CemrgAtrialTools> atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
+    if(atrium->CheckLabelConnectivity(surface, thisLabels, incorrectLabels)){
         msg = "Make sure there's no holes in the meshes.\n";
         msg += "Use 'X' on your keyboard and the 'Fix mesh labelling' button \n";
         msg += "on following labels: \n\n";
@@ -674,6 +678,49 @@ void AtrialFibresClipperView::InterPvSpacing(){
     csadv->CorridorFromPointList(idVectors, circleCorridor);
 
     MITK_INFO << "[InterPvSpacing] Setting values in corridor to atrium body label";
+    int labelInCorridor = GetUserFixMeshingLabel();
+    if(labelInCorridor>0){
+        QString path2corridor = prodPathOut + "corridor.csv";
+        std::ifstream fi(path2corridor.toStdString());
+        MITK_INFO << ("[InterPvSpacing] Opened file :" + path2corridor).toStdString();
+
+        MITK_INFO << "[InterPvSpacing] Update shell and save it";
+        vtkFloatArray *cellScalars = vtkFloatArray::New();
+        cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+
+        std::string line, header;
+        std::getline(fi, header);
+
+
+        while(std::getline(fi, line)){
+            QString qline =  QString::fromStdString(line);
+            vtkIdType vId;
+            vId = qline.section(',', 1, 1).toInt();
+
+            vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+            cellIds->Initialize();
+
+            surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
+            for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
+                cellScalars->SetTuple1(cellIds->GetId(ix), labelInCorridor);
+            }
+        }
+        fi.close();
+
+        surface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
+
+        MITK_INFO << "[InterPvSpacing] Set new scalar vector into surface.";
+        mitk::IOUtil::Save(surface, (prodPathOut+AtrialFibresClipperView::fileName).toStdString());
+        MITK_INFO << "[InterPvSpacing] Saved surface";
+    }
+
+    ResetCorridorObjects();
+    Visualiser();
+
+}
+
+int AtrialFibresClipperView::GetUserFixMeshingLabel(){
+    // returns the label to fix in the corridor (or -1 to cancel)
     QDialog* inputs = new QDialog(0,0);
     m_UICorridor.setupUi(inputs);
     connect(m_UICorridor.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
@@ -681,54 +728,17 @@ void AtrialFibresClipperView::InterPvSpacing(){
     int dialogCode = inputs->exec();
 
     //Act on dialog return code
-    int labelInCorridor = 1;
+    int labelInCorridor = -1;
     if (dialogCode == QDialog::Accepted){
-        bool ok1;
-        labelInCorridor= m_UICorridor.lineEdit_1->text().toInt(&ok1);
-        if (!ok1){
-            labelInCorridor=1;
-        }
-        if (labelInCorridor%2==0 || labelInCorridor>19){
-            labelInCorridor = 1;
-        }
+        labelInCorridor = m_UICorridor.radio_body->isChecked() ? 1 : labelInCorridor;
+        labelInCorridor = m_UICorridor.radio_lspv->isChecked() ? 11 : labelInCorridor;
+        labelInCorridor = m_UICorridor.radio_lipv->isChecked() ? 13 : labelInCorridor;
+        labelInCorridor = m_UICorridor.radio_rspv->isChecked() ? 15 : labelInCorridor;
+        labelInCorridor = m_UICorridor.radio_ripv->isChecked() ? 17 : labelInCorridor;
+        labelInCorridor = m_UICorridor.radio_laa->isChecked() ? 19 : labelInCorridor;
     }
 
-    QString path2corridor = prodPathOut + "corridor.csv";
-    std::ifstream fi(path2corridor.toStdString());
-    MITK_INFO << ("[InterPvSpacing] Opened file :" + path2corridor).toStdString();
-
-    MITK_INFO << "[InterPvSpacing] Update shell and save it";
-    vtkFloatArray *cellScalars = vtkFloatArray::New();
-    cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
-
-    std::string line, header;
-    std::getline(fi, header);
-
-
-    while(std::getline(fi, line)){
-        QString qline =  QString::fromStdString(line);
-        vtkIdType vId;
-        vId = qline.section(',', 1, 1).toInt();
-
-        vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-        cellIds->Initialize();
-
-        surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
-        for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
-            cellScalars->SetTuple1(cellIds->GetId(ix), labelInCorridor);
-        }
-    }
-    fi.close();
-
-    surface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
-
-    MITK_INFO << "[InterPvSpacing] Set new scalar vector into surface.";
-    mitk::IOUtil::Save(surface, (prodPathOut+AtrialFibresClipperView::fileName).toStdString());
-    MITK_INFO << "[InterPvSpacing] Saved surface";
-
-    ResetCorridorObjects();
-    Visualiser();
-
+    return labelInCorridor;
 }
 
 void AtrialFibresClipperView::ClipPVs(){
@@ -1316,39 +1326,6 @@ std::string AtrialFibresClipperView::GetShortcuts(){
         res += "R: reset centrelines\nSpace: add seed point\nDelete: remove seed point";
     }
     return res;
-}
-
-bool AtrialFibresClipperView::CheckLabelConnectivity(std::vector<int> &labelsVector){
-    std::vector<int> v;
-    v.push_back(1);
-    for (unsigned int ix = 0; ix < pickedSeedLabels.size(); ix++) {
-        v.push_back(pickedSeedLabels.at(ix));
-    }
-
-    int currentNumRegions, totalWrongLabels=0;
-    double currentLabel;
-    for (unsigned int jx = 0; jx < v.size(); jx++) {
-        currentLabel = (double) v.at(jx);
-        vtkSmartPointer<vtkThreshold> thres = vtkSmartPointer<vtkThreshold>::New();
-        thres->ThresholdBetween(currentLabel, currentLabel);
-        thres->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-        thres->SetInputData(surface->GetVtkPolyData());
-        thres->Update();
-
-        vtkSmartPointer<vtkConnectivityFilter> cf = vtkSmartPointer<vtkConnectivityFilter>::New();
-        cf->SetInputConnection(thres->GetOutputPort());
-        cf->Update();
-        cf->SetExtractionModeToLargestRegion();
-        cf->Update();
-        currentNumRegions = cf->GetNumberOfExtractedRegions();
-        if(currentNumRegions>1){
-            totalWrongLabels++;
-            labelsVector.push_back(currentLabel);
-            std::cout << "label incorrect: " << currentLabel << " num regions: " << currentNumRegions<< '\n';
-        }
-    }
-    std::cout << "Number of wrong labels: " << totalWrongLabels << '\n';
-    return (totalWrongLabels>0);
 }
 
 void AtrialFibresClipperView::SetManualModeButtons(bool b){

@@ -72,7 +72,6 @@ public:
     std::string GetShortcuts();
     bool IsPointSelectionControlsAvailable();
     bool IsClipperManualControlsAvailable();
-    bool CheckLabelConnectivity(std::vector<int> &labelsVector);
     void UserSelectPvLabel();
     void LoadPickedSeedsFromFile();
     void CreateSphereClipperAndRadiiVectors(bool showOnRenderer);
@@ -80,6 +79,7 @@ public:
     void PrintCorridorIds();
     void UpdateClipperSeedIds(int newPickedId, int currentId);
     int GetPickedId();
+    int GetUserFixMeshingLabel();
 
     inline void SetDebug(bool b){debugging = b;};
     inline void SetDebugOn(){SetDebug(true);};

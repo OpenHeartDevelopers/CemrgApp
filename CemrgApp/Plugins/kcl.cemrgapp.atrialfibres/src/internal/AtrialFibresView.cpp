@@ -144,9 +144,10 @@ void AtrialFibresView::CreateQtPartControl(QWidget *parent) {
 
     m_Controls.button_0_1_uacRough->setVisible(false);
     m_Controls.button_0_2_uacRefined->setVisible(false);
+
     connect(m_Controls.button_0_1_uacRough, SIGNAL(clicked()), this, SLOT(UacCalculationRough()));
     connect(m_Controls.button_0_2_uacRefined, SIGNAL(clicked()), this, SLOT(UacCalculationRefined()));
-    connect(m_Controls.button_0_3_checkLabels, SIGNAL(clicked()), this, SLOT(UacCalculationVerifyLabels()));
+    connect(m_Controls.button_0_3_checklabels, SIGNAL(clicked()), this, SLOT(UacCalculationVerifyLabels()));
 
     // Set default variables
     tagName = "Labelled";
@@ -1379,7 +1380,30 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
         return;
     }
 
-    
+    MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
+    std::string title, msg;
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(StdStringPath(tagName+".vtk"));
+    std::vector<int> incorrectLabels;
+    if(atrium->CheckLabelConnectivity(surface, uiLabels, incorrectLabels)){
+        title = "Label connectivity verification - failure";
+        msg = "Make sure label connectivity is correct.\n";
+        msg += "Go back to Step7: Mesh Preprocessing \n\n";
+        msg += "Fix following labels: \n";
+        for (unsigned int ix = 0; ix < incorrectLabels.size(); ix++) {
+            msg += std::to_string(incorrectLabels.at(ix));
+            msg += (ix+1<incorrectLabels.size()) ? ", " : "";
+        };
+        QMessageBox::warning(NULL, title.c_str(), msg.c_str());
+        MITK_WARN << msg;
+
+        return;
+    } else{
+        title = "Label connectivity verification - success";
+        msg = "No connectivity problems found on labels";
+
+        QMessageBox::information(NULL, title.c_str(), msg.c_str());
+        MITK_INFO << msg;
+    }
 }
 
 bool AtrialFibresView::IsUacOutputCorrect(QString dir, QStringList filenames){

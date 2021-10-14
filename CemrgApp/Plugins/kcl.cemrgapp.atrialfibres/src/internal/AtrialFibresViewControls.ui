@@ -249,22 +249,22 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_0_3_checklabels">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    StepZ: Verify Labels</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="button_0_calculateUac">
      <property name="styleSheet">
       <string notr="true">text-align: left;</string>
      </property>
      <property name="text">
       <string>    Step-: Calculate UAC</string>
-     </property>
-    </widget>
-   </item>
-   <item alignment="Qt::AlignHCenter">
-    <widget class="QPushButton" name="button_0_3_checklabels">
-     <property name="styleSheet">
-      <string notr="true">color: rgb(132, 174, 235);</string>
-     </property>
-     <property name="text">
-      <string>(Optional) Verify Labels</string>
      </property>
     </widget>
    </item>
@@ -305,7 +305,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepZ: Scar Projection</string>
+      <string>    StepW: Scar Projection</string>
      </property>
     </widget>
    </item>

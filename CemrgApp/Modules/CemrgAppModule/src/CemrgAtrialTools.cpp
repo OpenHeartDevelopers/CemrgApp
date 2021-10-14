@@ -92,7 +92,7 @@ CemrgAtrialTools::CemrgAtrialTools() {
     this->debugMessages = false;
     this->surfLoaded = false;
     this->atriumSegmentation = ImageType::New();
-    this->tagSegName = "labelled.nii";
+    this->tagSegName = "Labelled.nii";
 
     SetDefaultSegmentationTags();
 }
@@ -631,13 +631,19 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 
 bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer surface, QStringList labelsToCheck, std::vector<int> &labelsVector){
     std::vector<int> v;
-    v.push_back(1);
+    bool foundBodyLabel=false;
     for (unsigned int ix = 0; ix < labelsToCheck.size(); ix++) {
         bool ok;
         int labelAtThis = labelsToCheck.at(ix).toInt(&ok);
         if(ok){
             v.push_back(labelAtThis);
+            if (labelAtThis==abody){
+                foundBodyLabel = true;
+            }
         }
+    }
+    if (!foundBodyLabel){
+        v.push_back(abody);
     }
 
     int currentNumRegions, totalWrongLabels=0;

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>233</width>
+    <width>285</width>
     <height>223</height>
    </rect>
   </property>
@@ -44,101 +44,10 @@
     <string notr="true">QLabel { color: rgb(255, 0, 0) }</string>
    </property>
    <property name="text">
-    <string>Enter Label for Corridor</string>
+    <string>Select Label for Corridor</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>28</y>
-     <width>141</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>LA body - 1 (default)</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>47</y>
-     <width>91</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>LSPV - 11</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>66</y>
-     <width>81</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>LIPV - 13</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>85</y>
-     <width>91</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>RSPV - 15</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>104</y>
-     <width>81</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>RIPV - 17</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_7">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>123</y>
-     <width>81</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>LAAP - 19</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="lineEdit_1">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>142</y>
-     <width>204</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="placeholderText">
-    <string>Label (default = 1)</string>
    </property>
   </widget>
   <widget class="QDialogButtonBox" name="buttonBox">
@@ -162,6 +71,63 @@
    <property name="centerButtons">
     <bool>true</bool>
    </property>
+  </widget>
+  <widget class="QWidget" name="gridLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>30</y>
+     <width>251</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QRadioButton" name="radio_lipv">
+      <property name="text">
+       <string>LIPV</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QRadioButton" name="radio_rspv">
+      <property name="text">
+       <string>RSPV</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QRadioButton" name="radio_ripv">
+      <property name="text">
+       <string>RIPV</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QRadioButton" name="radio_body">
+      <property name="text">
+       <string>LA Body</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QRadioButton" name="radio_laa">
+      <property name="text">
+       <string>Appendage</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QRadioButton" name="radio_lspv">
+      <property name="text">
+       <string>LSPV</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
