@@ -632,7 +632,7 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer surface, QStringList labelsToCheck, std::vector<int> &labelsVector){
     std::vector<int> v;
     bool foundBodyLabel=false;
-    for (unsigned int ix = 0; ix < labelsToCheck.size(); ix++) {
+    for (int ix = 0; ix < labelsToCheck.size(); ix++) {
         bool ok;
         int labelAtThis = labelsToCheck.at(ix).toInt(&ok);
         if(ok){
