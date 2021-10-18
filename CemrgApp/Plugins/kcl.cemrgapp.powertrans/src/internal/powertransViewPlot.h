@@ -67,6 +67,8 @@ public:
     static void SetDirectory(const QString directory);
     static void SetRibSpacing(int ribSpacing);
 
+    powertransViewPlot();
+
 protected:
     virtual void CreateQtPartControl(QWidget *parent) override;
 

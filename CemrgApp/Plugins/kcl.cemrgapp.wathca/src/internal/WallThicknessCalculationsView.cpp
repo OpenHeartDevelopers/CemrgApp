@@ -93,6 +93,11 @@ PURPOSE.  See the above copyright notices for more information.
 
 const std::string WallThicknessCalculationsView::VIEW_ID = "org.mitk.views.wathcaview";
 
+WallThicknessCalculationsView::WallThicknessCalculationsView(){
+    this->fileName = "";
+    this->directory = "";
+}
+
 void WallThicknessCalculationsView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file

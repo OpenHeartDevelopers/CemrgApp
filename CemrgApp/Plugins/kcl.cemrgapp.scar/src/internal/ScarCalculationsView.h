@@ -71,6 +71,7 @@ public:
     static void GetInputsFromFile();
     static bool CheckForRequiredFiles();
     static int SearchDirectory(QString searchDir);
+    ScarCalculationsView();
     ~ScarCalculationsView();
 
 protected slots:

@@ -53,6 +53,7 @@ class MmeasurementView: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    MmeasurementView();
 
 protected slots:
 

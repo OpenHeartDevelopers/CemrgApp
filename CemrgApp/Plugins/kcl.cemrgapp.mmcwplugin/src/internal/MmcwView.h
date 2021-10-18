@@ -52,6 +52,7 @@ class MmcwView: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    MmcwView();
 
 protected slots:
 

@@ -64,6 +64,12 @@ PURPOSE.  See the above copyright notices for more information.
 
 const std::string MmeasurementView::VIEW_ID = "org.mitk.views.motionmeasurement";
 
+MmeasurementView::MmeasurementView() {
+    this->timePoints = 0;
+    this->smoothness = 0;
+    this->directory = "";
+}
+
 void MmeasurementView::CreateQtPartControl(QWidget *parent) {
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);

@@ -66,6 +66,16 @@ int MmcwViewPlot::noFrames = 10;
 int MmcwViewPlot::smoothness = 1;
 const std::string MmcwViewPlot::VIEW_ID = "org.mitk.views.mmcwplot";
 
+MmcwViewPlot::MmcwViewPlot() {
+    this->cardiCycle = 0;
+
+    this->legend = std::unique_ptr<QwtLegend>(new QwtLegend());
+    this->strain = std::unique_ptr<CemrgStrains>(new CemrgStrains());;
+    this->AHA_camera = vtkSmartPointer<vtkCamera>::New();
+    this->AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
+    this->AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+}
+
 void MmcwViewPlot::SetFocus() {
 }
 

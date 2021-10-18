@@ -71,6 +71,16 @@ QString powertransViewPlot::directory;
 int powertransViewPlot::ribSpacing = 5;
 const std::string powertransViewPlot::VIEW_ID = "org.mitk.views.powertransplot";
 
+powertransViewPlot::powertransViewPlot(){
+    this->cardiCycle = 0;
+
+    this->legend = std::unique_ptr<QwtLegend>(new QwtLegend());
+    this->strain = std::unique_ptr<CemrgStrains>(new CemrgStrains());;
+    this->AHA_camera = vtkSmartPointer<vtkCamera>::New();
+    this->AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
+    this->AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+}
+
 void powertransViewPlot::SetFocus() {
 }
 

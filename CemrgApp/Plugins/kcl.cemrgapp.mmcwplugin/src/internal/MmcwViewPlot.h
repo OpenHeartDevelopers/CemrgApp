@@ -65,6 +65,8 @@ public:
     static void SetDirectory(const QString directory);
     static void SetNoFrames(int frames, int smoothness);
 
+    MmcwViewPlot();
+
 protected:
 
     virtual void CreateQtPartControl(QWidget *parent) override;

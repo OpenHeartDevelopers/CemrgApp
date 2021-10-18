@@ -63,6 +63,7 @@ public:
 
     static const std::string VIEW_ID;
     static void SetDirectoryFile(const QString directory, const QString fileName);
+    AtrialScarClipperView();
     ~AtrialScarClipperView();
 
 protected slots:

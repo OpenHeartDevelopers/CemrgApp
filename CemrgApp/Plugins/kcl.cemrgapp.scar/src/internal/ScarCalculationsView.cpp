@@ -83,6 +83,9 @@ QString ScarCalculationsView::postScarFile;
 
 const std::string ScarCalculationsView::VIEW_ID = "org.mitk.views.scarcalculations";
 
+ScarCalculationsView::ScarCalculationsView() {
+    
+}
 ScarCalculationsView::~ScarCalculationsView() {
     //inputs->deleteLater();
 }
@@ -198,7 +201,7 @@ void ScarCalculationsView::GetInputsFromFile() {
         for (int i = 0; i < need2load.size(); ++i) {
             MITK_INFO << "Loading " + need2load.at(i) + " files";
             QString prodPath;
-            
+
             if (need2load.at(i).compare("Pre", Qt::CaseSensitive) == 0)
                 prodPath = ScarCalculationsView::predir + "/";
             else

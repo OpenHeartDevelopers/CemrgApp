@@ -100,6 +100,13 @@ PURPOSE.  See the above copyright notices for more information.
 
 const std::string AtrialScarView::VIEW_ID = "org.mitk.views.scar";
 
+AtrialScarView::AtrialScarView(){
+    this->fileName = "";
+    this->directory = "";
+    this->debugSCARname = "";
+    this->alternativeNiftiFolder = "";
+}
+
 void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);

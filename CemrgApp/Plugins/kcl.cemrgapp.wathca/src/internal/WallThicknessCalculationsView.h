@@ -59,6 +59,7 @@ class WallThicknessCalculationsView: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    WallThicknessCalculationsView();
 
 protected slots:
 

@@ -73,6 +73,11 @@ PURPOSE.  See the above copyright notices for more information.
 
 const std::string MmcwView::VIEW_ID = "org.mitk.views.mmcw";
 
+MmcwView::MmcwView() {
+    this->timePoints = 0;
+    this->directory = "";
+}
+
 void MmcwView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file

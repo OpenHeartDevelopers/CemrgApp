@@ -72,6 +72,10 @@ QString AtrialScarClipperView::fileName;
 QString AtrialScarClipperView::directory;
 const std::string AtrialScarClipperView::VIEW_ID = "org.mitk.views.scarclipper";
 
+AtrialScarClipperView::AtrialScarClipperView(){
+
+}
+
 void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file
