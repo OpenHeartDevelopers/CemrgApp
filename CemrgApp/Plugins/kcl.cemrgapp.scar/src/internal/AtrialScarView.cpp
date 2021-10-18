@@ -494,7 +494,7 @@ void AtrialScarView::AutomaticAnalysis() {
             cnnIMG->SetVolume(changeFilter->GetOutput()->GetScalarPointer());
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][2] Image registration";
-            QString cnnPath = direct + "/LA.nii";
+            cnnPath = direct + "/LA.nii";
             QString laregPath = direct + "/LA-reg.nii";
 
             mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());

@@ -713,31 +713,11 @@ void MmcwView::Tracking() {
                 aPath = QCoreApplication::applicationDirPath() + "/MLib";
             }
 
-            bool dcm_path_fix = true;
-            if (dcm_path_fix) {
-                MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
-                time = directory + "/imgTimes.lst";
-                file.open(time.toStdString(), ofstream::binary);
-                file << "dcm- .nii\n";
-            } else {
-                QDir apathd(aPath);
-                if (apathd.mkpath(aPath)) {
-                    // file.open(aPath.toStdString() + "/imgTimes.lst");
-                    QDir mainDirectory(directory);
-                    QString aRelativePath = mainDirectory.relativeFilePath(aPath);
-                    time = aPath + "/imgTimes.lst";
-                    file.open(time.toStdString(), ofstream::binary);
-                    if (aRelativePath == ".")
-                        file << "dcm- .nii\n";
-                    else
-                        file << aRelativePath << "/dcm- .nii\n";
+            MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
+            time = directory + "/imgTimes.lst";
+            file.open(time.toStdString(), ofstream::binary);
+            file << "dcm- .nii\n";
 
-                } else {
-                    QMessageBox::warning(NULL, "Attention", "Error creating path:\n" + aPath);
-                    directory = QString();
-                    return;
-                }
-            }
             for (int i = 0; i < timePoints; i++) {
                 MITK_INFO << "File contents: " << i << " " << i * 10 << "\n";
                 file << i << " " << i * 10 << "\n";

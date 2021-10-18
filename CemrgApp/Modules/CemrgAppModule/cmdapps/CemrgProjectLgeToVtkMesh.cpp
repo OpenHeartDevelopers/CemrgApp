@@ -255,25 +255,23 @@ int main(int argc, char* argv[]) {
             /**
          * @brief tickbox GUI for this
          */
-            int _ONLY_POSITIVE_STDEVS = 1;
-            int _SCAR_AS_STANDARD_DEVIATION = 1;
-            int _SCAR_MIP = 1;
+            MITK_INFO(verbose) << "int _SCAR_AS_STANDARD_DEVIATION = 1";
+            MITK_INFO(verbose) << "int _ONLY_POSITIVE_STDEVS = 1";
+            MITK_INFO(verbose) << "int _SCAR_MIP = 1";
             /**
          * @brief end
          */
 
-            if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
+            // if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
+            if (sdev < 0) sdev = 0;
 
             //For default scalar to plot
             double scalarToPlot = (scalar - mean) / sqrt(var);
 
             if (scalarToPlot <= 0) scalarToPlot = 0;
 
-            if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
-                scalars->InsertTuple1(i, scalarToPlot);
-            } else {
-                scalars->InsertTuple1(i, scalar);
-            }
+            scalars->InsertTuple1(i, scalarToPlot); // if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1)
+            //else: scalars->InsertTuple1(i, scalar);
         }//_for
         itkImageType::Pointer scarDebugLabel = visitedImage;
         pd->GetCellData()->SetScalars(scalars);
@@ -402,13 +400,7 @@ double GetIntensityAlongNormal(itkImageType::Pointer scarImage, itkImageType::Po
     }//_for
 
     double insty = 0;
-    if (methodType == 1) {
-        // Statistical measure 1 returns mean
-        insty = GetStatisticalMeasure(scarImage, pointsOnAndAroundNormal, scarImage, visitedImage, 1);
-    } else if (methodType == 2) {
-        // Statistical measure 2 returns max
-        insty = GetStatisticalMeasure(scarImage, pointsOnAndAroundNormal, scarImage, visitedImage, 2);
-    }//_if
+    insty = GetStatisticalMeasure(scarImage, pointsOnAndAroundNormal, scarImage, visitedImage, methodType);
 
     return insty;
 }

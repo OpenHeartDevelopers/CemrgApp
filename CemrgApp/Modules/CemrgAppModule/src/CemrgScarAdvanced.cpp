@@ -397,7 +397,7 @@ void CemrgScarAdvanced::ExtractCorridorData(
 
     MITK_INFO << ("[INFO] There were a total of " + QString::number(vertex_ids.size()) + " vertices in the shortest path you have selected").toStdString();
 
-    for (it_type iterator = vertex_ids.begin(); iterator != vertex_ids.end(); iterator++) {
+    for (it_type iterator = vertex_ids.begin(); iterator != vertex_ids.end(); ++iterator) {
 
         double scalar = -1;
 
@@ -640,7 +640,7 @@ void CemrgScarAdvanced::getCorridorPoints(
             vertex_ids.insert(std::make_pair(vertices_in_shortest_path->GetId(j), -1));
     }
 
-    for (it_type iterator = vertex_ids.begin(); iterator != vertex_ids.end(); iterator++) {
+    for (it_type iterator = vertex_ids.begin(); iterator != vertex_ids.end(); ++iterator) {
         GetNeighboursAroundPoint2(iterator->first, pointNeighbours, order);
 
         for (unsigned int j = 0; j < pointNeighbours.size(); j++)

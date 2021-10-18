@@ -439,9 +439,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
 
         //Image Dilation
         BallType binaryBall;
-        // TODO: Fix this line
-        // The problem is: Same value in both branches of ternary operator
-        binaryBall.SetRadius(manuals[i] == 1 ? static_cast<unsigned long>(1.0) : static_cast<unsigned long>(1.5));
+        binaryBall.SetRadius(manuals[i] == 1 ? 1 : 1.5); // manuals[i] == 1 ? 1 : 1.5
         binaryBall.CreateStructuringElement();
         DilationFilterType::Pointer dilationFilter = DilationFilterType::New();
         dilationFilter->SetInput(cutItkImage);

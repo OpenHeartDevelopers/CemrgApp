@@ -60,11 +60,15 @@ public:
     void SetScarSegImage(const mitk::Image::Pointer image);
     void SetVoxelBasedProjection(bool value);
 
+    inline void SetDebug(bool b){debugging=b;};
+    inline void SetDebugOn(){SetDebug(true);};
+    inline void SetDebugOff(){SetDebug(false);};
+
 private:
 
     int methodType;
     int minStep, maxStep;
-    bool voxelBasedProjection;
+    bool voxelBasedProjection, debugging;
     double minScalar, maxScalar;
     vtkSmartPointer<vtkFloatArray> scalars;
 

@@ -71,6 +71,7 @@ CemrgScar3D::CemrgScar3D() {
     this->minStep = -3, this->maxStep = 3;
     this->minScalar = 1E10, this->maxScalar = -1;
     this->voxelBasedProjection = false;
+    this->debugging = false;
     this->scalars = vtkSmartPointer<vtkFloatArray>::New();
 }
 
@@ -171,14 +172,15 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         /**
          * @brief tickbox GUI for this
          */
-        int _ONLY_POSITIVE_STDEVS = 1;
-        int _SCAR_AS_STANDARD_DEVIATION = 1;
-        int _SCAR_MIP = 1;
+        MITK_INFO(debugging) << "int _ONLY_POSITIVE_STDEVS = 1";
+        MITK_INFO(debugging) << "int _SCAR_AS_STANDARD_DEVIATION = 1";
+        MITK_INFO(debugging) << "int _SCAR_MIP = 1";
         /**
          * @brief end
          */
 
-        if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
+        // if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
+        if (sdev < 0) sdev = 0;
 
         scalarsOnlyStDev->InsertTuple1(i, sdev);
         scalarsOnlyIntensity->InsertTuple1(i, scalar);
@@ -189,16 +191,12 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
 
         if (scalarToPlot <= 0) scalarToPlot = 0;
 
-        if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
-
-            scalars->InsertTuple1(i, scalarToPlot);
-            allScalarsInShell.push_back(scalarToPlot);
-
-        } else {
-
-            scalars->InsertTuple1(i, scalar);
-            allScalarsInShell.push_back(scalar);
-        }
+        // if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
+        scalars->InsertTuple1(i, scalarToPlot);
+        allScalarsInShell.push_back(scalarToPlot);
+        // } else {
+        // scalars->InsertTuple1(i, scalar);
+        // allScalarsInShell.push_back(scalar); }
     }//_for
 
     scarDebugLabel = visitedImage;

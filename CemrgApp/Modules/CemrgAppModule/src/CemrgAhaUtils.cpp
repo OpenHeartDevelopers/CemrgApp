@@ -107,6 +107,7 @@ mitk::Surface::Pointer CemrgAhaUtils::ReferenceAHA(mitk::DataNode::Pointer lmNod
         RVangle1 = atan2(RIV2.GetElement(1), RIV2.GetElement(0));
         RVangle2 = atan2(RIV1.GetElement(1), RIV1.GetElement(0));
     }
+    MITK_INFO << ("RVangles: (1) " + QString::number(RVangle1) + ", (2) " + QString::number(RVangle2)).toStdString();
 
     if ((LandMarks.size() == 6)) { // only do this for manual segmentation, with 6 points
         appendAngle = -RVangle1;
