@@ -84,7 +84,14 @@ QString ScarCalculationsView::postScarFile;
 const std::string ScarCalculationsView::VIEW_ID = "org.mitk.views.scarcalculations";
 
 ScarCalculationsView::ScarCalculationsView() {
-    
+    this->inputs = new QDialog(0, 0);
+    this->method = -1;
+    this->value = -1;
+    this->mean = -1;
+    this->stdv = -1;
+    this->thres = -1;
+    this->maxScalar = 200;
+    this->minScalar = 0;
 }
 ScarCalculationsView::~ScarCalculationsView() {
     //inputs->deleteLater();

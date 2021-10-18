@@ -710,13 +710,6 @@ void MmcwView::Tracking() {
         QString aPath;
         if (time.isEmpty()) {
             ofstream file;
-            if (!para.isEmpty()) {
-                QFileInfo fi(para);
-                aPath = fi.absolutePath();
-            } else {
-                //Absolute path
-                aPath = QCoreApplication::applicationDirPath() + "/MLib";
-            }
 
             MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
             time = directory + "/imgTimes.lst";

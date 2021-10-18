@@ -108,7 +108,6 @@ private:
     QString alternativeNiftiFolder;
     std::unique_ptr<CemrgScar3D> scar;
     bool _useDockerInPlugin = false; // change to FALSE to use MIRTK static libraries
-    bool _usingAlternativeDicomReader;
 };
 
 #endif // AtrialScarView_h

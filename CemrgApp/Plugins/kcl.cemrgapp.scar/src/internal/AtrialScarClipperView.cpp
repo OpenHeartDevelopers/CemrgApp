@@ -73,7 +73,7 @@ QString AtrialScarClipperView::directory;
 const std::string AtrialScarClipperView::VIEW_ID = "org.mitk.views.scarclipper";
 
 AtrialScarClipperView::AtrialScarClipperView(){
-
+    this->inputs = new QDialog(0, 0);
 }
 
 void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {

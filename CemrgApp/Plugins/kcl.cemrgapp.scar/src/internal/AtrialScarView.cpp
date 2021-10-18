@@ -160,12 +160,8 @@ void AtrialScarView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*
 
 void AtrialScarView::LoadDICOM() {
 
-    int reply = QMessageBox::No;
-#if defined(__APPLE__)
     MITK_INFO << "Ask user about alternative DICOM reader";
-    reply = QMessageBox::question(NULL, "Question",
-        "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
-#endif
+    int reply = QMessageBox::question(NULL, "Question", "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
 
     if (reply == QMessageBox::Yes) {
 

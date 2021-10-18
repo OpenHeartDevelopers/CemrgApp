@@ -83,6 +83,10 @@ QString WallThicknessCalculationsClipperView::fileName;
 QString WallThicknessCalculationsClipperView::directory;
 const std::string WallThicknessCalculationsClipperView::VIEW_ID = "org.mitk.views.wathcaclipperview";
 
+WallThicknessCalculationsClipperView::WallThicknessCalculationsClipperView() {
+    this->inputs = new QDialog(0, 0);
+}
+
 void WallThicknessCalculationsClipperView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file
