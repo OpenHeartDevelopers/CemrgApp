@@ -63,11 +63,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFileDialog>
 #include <QInputDialog>
 
-//Define the Image type and ITK iterator types
-typedef itk::Image<short, 3> ImageType;
-typedef itk::ImageRegionConstIterator< ImageType > ConstIteratorType;
-typedef itk::ImageRegionIterator< ImageType> IteratorType;
-
 const std::string YZSegView::VIEW_ID = "org.mitk.views.scaryzseg";
 
 void YZSegView::CreateQtPartControl(QWidget *parent) {
@@ -360,10 +355,6 @@ void YZSegView::ScarSeg_FWHM() {
                 }//_if
             }
 
-            //Function definitions can be found at the end of the script, here we are only declearing them
-            double FWMH_getPeak_SORT(ImageType::Pointer x);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double t_min); //, double t_max, int label);
-
             //Find the maximum infart value within LV
             double max_inf = FWMH_getPeak_SORT(LV);
 
@@ -478,10 +469,6 @@ void YZSegView::ScarSeg_4SD() {
                 }
             }//_for
 
-            //Declear the functions
-            double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
-
             double mean = GetStats(itkImage, itkMyo, 1);
             double std = GetStats(itkImage, itkMyo, 2);
             double max = GetStats(itkImage, LV, 3);
@@ -568,10 +555,6 @@ void YZSegView::ScarSeg_6SD() {
                     outLV.Set(0);
                 }
             }//_for
-
-            // declear the functions
-            double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
 
             double mean = GetStats(itkImage, itkMyo, 1);
             double std = GetStats(itkImage, itkMyo, 2);
@@ -661,10 +644,6 @@ void YZSegView::ScarSeg_CustomisedSD() {
                 }
             }//_for
 
-            //Declear the functions
-            double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
-
             double mean = GetStats(itkImage, itkMyo, 1);
             double std = GetStats(itkImage, itkMyo, 2);
             double max = GetStats(itkImage, LV, 3);
@@ -747,7 +726,7 @@ void YZSegView::ScarSeg_save() {
  * @param x
  * @return
  */
-double FWMH_getPeak_SORT(ImageType::Pointer x) {
+double YZSegView::FWMH_getPeak_SORT(ImageType::Pointer x) {
 
     //Copy all the intensity values to a temporary 1D array arr, which will be sorted later
     int m = 0;
@@ -770,7 +749,6 @@ double FWMH_getPeak_SORT(ImageType::Pointer x) {
     }
 
     //Sort the temporary array arr in the ascending order
-    void insertion_sort(int array[], int l);
     insertion_sort(arr, m);
 
     //Find the average value of the top 5% of the intensity values
@@ -784,7 +762,7 @@ double FWMH_getPeak_SORT(ImageType::Pointer x) {
     return max;
 }
 
-void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold) {
+void YZSegView::thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold) {
 
     //Create two iterators for the image and the mask
     IteratorType in_img(img, img->GetRequestedRegion());
@@ -803,7 +781,7 @@ void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double thre
     }//_for
 }
 
-void insertion_sort(int array[], int l) {
+void YZSegView::insertion_sort(int array[], int l) {
 
     for (int i = 0; i < l; i++) {
         int j = i;
@@ -816,7 +794,7 @@ void insertion_sort(int array[], int l) {
     }//_for
 }
 
-double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a) {
+double YZSegView::GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a) {
 
     int n = 0;
     double sum = 0;

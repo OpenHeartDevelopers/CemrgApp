@@ -32,8 +32,20 @@ PURPOSE.  See the above copyright notices for more information.
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
 #include <mitkSurface.h>
+
+// ITK
+#include <itkResampleImageFilter.h>
+#include <itkImageRegionIterator.h>
+#include <itkImageRegionConstIterator.h>
+#include <itkImage.h>
+
 #include <CemrgScar3D.h>
 #include "ui_YZSegViewControls.h"
+
+//Define the Image type and ITK iterator types
+typedef itk::Image<short, 3> ImageType;
+typedef itk::ImageRegionConstIterator< ImageType > ConstIteratorType;
+typedef itk::ImageRegionIterator< ImageType> IteratorType;
 
 /**
   \brief YZSegView
@@ -52,6 +64,13 @@ class YZSegView: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+
+    double FWMH_getPeak_SORT(ImageType::Pointer x);
+    double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
+
+    void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
+    void insertion_sort(int array[], int l);
+
 
 protected slots:
 
