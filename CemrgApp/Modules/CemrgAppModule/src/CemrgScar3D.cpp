@@ -171,17 +171,23 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         if (maxSratio < sratio) maxSratio = sratio;
 
         /**
-         * @brief tickbox GUI for this
-         */
-        MITK_INFO(debugging) << "int _ONLY_POSITIVE_STDEVS = 1";
-        MITK_INFO(debugging) << "int _SCAR_AS_STANDARD_DEVIATION = 1";
-        MITK_INFO(debugging) << "int _SCAR_MIP = 1";
-        /**
-         * @brief end
+         * Placeholder variables for potential GUI options.
+         * We removed them in favour of a simplified functionality
+         *
+        int _ONLY_POSITIVE_STDEVS = 1;
+        int _SCAR_AS_STANDARD_DEVIATION = 1;
+        int _SCAR_MIP = 1;
+        *
+        * Comments that refer to this are identified with the following:
+        * [placeholder]
+         *
          */
 
-        // if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
+        // [placeholder] simplified functionality without placeholder variables
         if (sdev < 0) sdev = 0;
+
+        // [placeholder] comlete functionality with placeholder variables
+        // if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
 
         scalarsOnlyStDev->InsertTuple1(i, sdev);
         scalarsOnlyIntensity->InsertTuple1(i, scalar);
@@ -192,12 +198,17 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
 
         if (scalarToPlot <= 0) scalarToPlot = 0;
 
-        // if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
+        // [placeholder] simplified functionality without placeholder variables
         scalars->InsertTuple1(i, scalarToPlot);
         allScalarsInShell.push_back(scalarToPlot);
+
+        // [placeholder] comlete functionality with placeholder variables
+        // if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
+        //      scalars->InsertTuple1(i, scalarToPlot);
+        //      allScalarsInShell.push_back(scalarToPlot);
         // } else {
-        // scalars->InsertTuple1(i, scalar);
-        // allScalarsInShell.push_back(scalar); }
+        //      scalars->InsertTuple1(i, scalar);
+        //      allScalarsInShell.push_back(scalar); }
     }//_for
 
     scarDebugLabel = visitedImage;
