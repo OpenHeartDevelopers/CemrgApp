@@ -59,25 +59,17 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
 void QmitkCemrgAppCommonTools::SetFocus() {
 }
 
-void QmitkCemrgAppCommonTools::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void QmitkCemrgAppCommonTools::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void QmitkCemrgAppCommonTools::LoadMesh() {
-
-    QString path = "";
-    path = QFileDialog::getOpenFileName(
-                NULL, "Open Mesh Data File", QmitkIOUtil::GetFileOpenFilterString());
-    CemrgCommonUtils::AddToStorage(
-                CemrgCommonUtils::LoadVTKMesh(path.toStdString()), "Mesh", this->GetDataStorage());
+    QString path = QFileDialog::getOpenFileName(NULL, "Open Mesh Data File", QmitkIOUtil::GetFileOpenFilterString());
+    CemrgCommonUtils::AddToStorage(CemrgCommonUtils::LoadVTKMesh(path.toStdString()), "Mesh", this->GetDataStorage());
 }
 
 void QmitkCemrgAppCommonTools::ConvertToCarto() {
 
-    QString path = "";
-    path = QFileDialog::getOpenFileName(
-                NULL, "Open Mesh Data File", QmitkIOUtil::GetFileOpenFilterString());
-
+    QString path = QFileDialog::getOpenFileName(NULL, "Open Mesh Data File", QmitkIOUtil::GetFileOpenFilterString());
     if (path.isEmpty() || !path.endsWith(".vtk")) {
         QMessageBox::warning(NULL, "Attention", "Select Correct Input File!");
         return;
@@ -89,9 +81,8 @@ void QmitkCemrgAppCommonTools::ConvertToCarto() {
     bool threshFileExist = false;
     QFileInfo fullPathInfo(path);
     if (fullPathInfo.dir().exists("prodThresholds.txt")) {
-
         //Threshold file
-        QString tPath = fullPathInfo.absolutePath() + mitk::IOUtil::GetDirectorySeparator() + "prodThresholds.txt";
+        QString tPath = fullPathInfo.absolutePath() + "/prodThresholds.txt";
         ifstream prodFileRead(tPath.toStdString());
         if (prodFileRead.is_open()) {
 
@@ -108,7 +99,7 @@ void QmitkCemrgAppCommonTools::ConvertToCarto() {
     }//_if
 
     //Ask for user input to set the parameters
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     m_CartoUIThresholding.setupUi(inputs);
     connect(m_CartoUIThresholding.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_CartoUIThresholding.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -130,19 +121,19 @@ void QmitkCemrgAppCommonTools::ConvertToCarto() {
         std::vector<double> thresholds;
         QRegExp separator("(\\ |\\,|\\;|\\:|\\t)");
         QStringList thresholdsInput = m_CartoUIThresholding.lineEdit_1->text().trimmed().split(separator);
-        for (QString item:thresholdsInput)
+        for (QString item : thresholdsInput)
             if (item.isEmpty())
                 thresholdsInput.removeOne(item);
-        if (discreteScheme && thresholdsInput.size()==0) {
+        if (discreteScheme && thresholdsInput.size() == 0) {
             QMessageBox::warning(NULL, "Attention", "Reverting to default threshold values!");
             thresholds.push_back(methodType == 1 ? 1.20 : 3.0);
             thresholds.push_back(methodType == 1 ? 1.32 : 4.0);
-        } else if (discreteScheme && thresholdsInput.count()>2) {
+        } else if (discreteScheme && thresholdsInput.count() > 2) {
             QMessageBox::warning(NULL, "Attention", "Parsing thresholds failed!\nReverting to default values.");
             thresholds.push_back(methodType == 1 ? 1.20 : 3.0);
             thresholds.push_back(methodType == 1 ? 1.32 : 4.0);
         } else {
-            for (QString item:thresholdsInput) {
+            for (QString item : thresholdsInput) {
                 double thresh = item.toDouble(&ok0);
                 if (!ok0) {
                     QMessageBox::warning(NULL, "Attention", "Parsing thresholds failed!\nReverting to default values.");
@@ -209,60 +200,51 @@ void QmitkCemrgAppCommonTools::ConvertToCartoUITextUpdate() {
         m_CartoUIThresholding.lineEdit_1->setPlaceholderText("3; 4");
 }
 
-void QmitkCemrgAppCommonTools::ConvertCarpToVtk(){
-    QString pathElem = "";
-    QString pathPts = "";
-    pathElem = QFileDialog::getOpenFileName(NULL, "Open Mesh .elem File");
+void QmitkCemrgAppCommonTools::ConvertCarpToVtk() {
+    QString pathElem = QFileDialog::getOpenFileName(NULL, "Open Mesh .elem File");
     if (pathElem.isEmpty() || !pathElem.endsWith(".elem")) {
         QMessageBox::warning(NULL, "Attention", "Select Correct Input (.elem) File!");
         return;
     }
     QFileInfo fi(pathElem);
     QString dir = fi.absolutePath();
-    QString vtkPath = dir + mitk::IOUtil::GetDirectorySeparator() +  fi.baseName() + ".vtk";
+    QString vtkPath = dir + "/" + fi.baseName() + ".vtk";
 
-    pathPts = QFileDialog::getOpenFileName(NULL, "Open Mesh .pts File", dir.toStdString().c_str());
-
+    QString pathPts = QFileDialog::getOpenFileName(NULL, "Open Mesh .pts File", dir.toStdString().c_str());
     if (pathPts.isEmpty() || !pathPts.endsWith(".pts")) {
         QMessageBox::warning(NULL, "Attention", "Select Correct Input (.pts) File!");
         return;
     }
 
-    int regionScalarsReply = QMessageBox::question(NULL, "Question",
-            "Include region as (cell) scalar field?", QMessageBox::Yes, QMessageBox::No);
+    int regionScalarsReply = QMessageBox::question(NULL, "Question", "Include region as (cell) scalar field?", QMessageBox::Yes, QMessageBox::No);
+    CemrgCommonUtils::CarpToVtk(pathElem, pathPts, vtkPath, (regionScalarsReply == QMessageBox::Yes));
 
-    CemrgCommonUtils::CarpToVtk(pathElem, pathPts, vtkPath, (regionScalarsReply==QMessageBox::Yes));
-
-    int appendScalarFieldReply = QMessageBox::question(NULL, "Question",
-            "Append a scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
-
-    if (appendScalarFieldReply==QMessageBox::Yes){
-        QString path="";
-        QString typeData="";
+    int appendScalarFieldReply = QMessageBox::question(NULL, "Question", "Append a scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
+    if (appendScalarFieldReply == QMessageBox::Yes) {
+        QString typeData = "";
         int nElem = CemrgCommonUtils::GetTotalFromCarpFile(pathElem);
         int nPts = CemrgCommonUtils::GetTotalFromCarpFile(pathPts);
-        int nField;
-        int countFields=0;
+        int countFields = 0;
 
-        while (appendScalarFieldReply==QMessageBox::Yes){
-            path = QFileDialog::getOpenFileName(NULL, "Open Scalar field (.dat) file", dir.toStdString().c_str());
+        while (appendScalarFieldReply == QMessageBox::Yes) {
+            QString path = QFileDialog::getOpenFileName(NULL, "Open Scalar field (.dat) file", dir.toStdString().c_str());
             QFileInfo fi2(path);
             std::vector<double> field = CemrgCommonUtils::ReadScalarField(path);
 
-            nField = field.size();
+            int nField = field.size();
             MITK_INFO << ("FieldSize: " + QString::number(nField)).toStdString();
-            if(nField==nElem){
+            if (nField == nElem) {
                 typeData = "CELL";
-            } else if(nField==nPts){
+            } else if (nField == nPts) {
                 typeData = "POINT";
             } else {
                 MITK_INFO << "Inconsistent file size";
                 break;
             }
-            CemrgCommonUtils::AppendScalarFieldToVtk(vtkPath, fi2.baseName(), typeData, field, (countFields==0));
+            CemrgCommonUtils::AppendScalarFieldToVtk(vtkPath, fi2.baseName(), typeData, field, (countFields == 0));
             countFields++;
             appendScalarFieldReply = QMessageBox::question(NULL, "Question",
-                    "Append another scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
+                "Append another scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
         }
     }
 }

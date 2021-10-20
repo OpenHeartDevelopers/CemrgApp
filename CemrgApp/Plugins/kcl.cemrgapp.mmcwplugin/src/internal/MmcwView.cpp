@@ -73,6 +73,11 @@ PURPOSE.  See the above copyright notices for more information.
 
 const std::string MmcwView::VIEW_ID = "org.mitk.views.mmcw";
 
+MmcwView::MmcwView() {
+    this->timePoints = 0;
+    this->directory = "";
+}
+
 void MmcwView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file
@@ -112,7 +117,7 @@ void MmcwView::SetFocus() {
 }
 
 void MmcwView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+    berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 /**
@@ -162,16 +167,16 @@ void MmcwView::ConvertNII() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != timePoints) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please load and select all images from the Data Manager before starting this step!");
+            NULL, "Attention",
+            "Please load and select all images from the Data Manager before starting this step!");
         return;
     }//_if
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -184,7 +189,7 @@ void MmcwView::ConvertNII() {
     std::string seriesDescription;
     foreach (mitk::DataNode::Pointer node, nodes) {
         node->GetData()->GetPropertyList()->GetStringProperty("dicom.series.SeriesDescription", seriesDescription);
-        if (seriesDescription.find("90.0%")      != seriesDescription.npos) indexNodes.push_back(9);
+        if (seriesDescription.find("90.0%") != seriesDescription.npos) indexNodes.push_back(9);
         else if (seriesDescription.find("80.0%") != seriesDescription.npos) indexNodes.push_back(8);
         else if (seriesDescription.find("70.0%") != seriesDescription.npos) indexNodes.push_back(7);
         else if (seriesDescription.find("60.0%") != seriesDescription.npos) indexNodes.push_back(6);
@@ -193,20 +198,20 @@ void MmcwView::ConvertNII() {
         else if (seriesDescription.find("30.0%") != seriesDescription.npos) indexNodes.push_back(3);
         else if (seriesDescription.find("20.0%") != seriesDescription.npos) indexNodes.push_back(2);
         else if (seriesDescription.find("10.0%") != seriesDescription.npos) indexNodes.push_back(1);
-        else if (seriesDescription.find("0.0%")  != seriesDescription.npos) indexNodes.push_back(0);
+        else if (seriesDescription.find("0.0%") != seriesDescription.npos) indexNodes.push_back(0);
     }//_for
     //Sort indexes based on comparing values
     std::vector<int> index(indexNodes.size());
     std::iota(index.begin(), index.end(), 0);
-    std::sort(index.begin(), index.end(), [&](int i1, int i2) {return indexNodes[i1]<indexNodes[i2];});
+    std::sort(index.begin(), index.end(), [&](int i1, int i2) {return indexNodes[i1] < indexNodes[i2]; });
 
     //Warning for cases when order is not found
     size_t length1 = nodes.size();
     size_t length2 = indexNodes.size();
     if (length1 != length2) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Cannot find the order of images automatically. Revert to user order and selections in the data manager!");
+            NULL, "Attention",
+            "Cannot find the order of images automatically. Revert to user order and selections in the data manager!");
         index.resize(nodes.size());
         std::iota(index.begin(), index.end(), 0);
     }//_if
@@ -214,14 +219,13 @@ void MmcwView::ConvertNII() {
     //Convert to Nifti
     int ctr = 0;
     QString path;
-    bool successfulNitfi;
 
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
         mitk::BaseData::Pointer data = nodes.at(idx)->GetData();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
+        path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
+        bool successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
         } else {
@@ -235,7 +239,7 @@ void MmcwView::ConvertNII() {
 
     //Load first item
     ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
+    path = directory + "/dcm-" + QString::number(ctr) + ".nii";
     mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
@@ -249,8 +253,8 @@ void MmcwView::CropinIMGS() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty()) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select an image from the Data Manager to perform cropping!");
+            NULL, "Attention",
+            "Please select an image from the Data Manager to perform cropping!");
         return;
     }//_if
 
@@ -261,8 +265,8 @@ void MmcwView::CropinIMGS() {
         //Ask the user for a dir to locate data
         if (directory.isEmpty()) {
             directory = QFileDialog::getExistingDirectory(
-                        NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                        QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+                NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+                QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
             if (directory.isEmpty() || directory.simplified().contains(" ")) {
                 QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
                 directory = QString();
@@ -284,7 +288,7 @@ void MmcwView::CropinIMGS() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
         mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
+        path = directory + "/" + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
         mitk::IOUtil::Save(outputImage, path.toStdString());
         mitk::ProgressBar::GetInstance()->Progress();
         this->BusyCursorOff();
@@ -297,19 +301,19 @@ void MmcwView::CropinIMGS() {
 
         //Cut rest of images
         int reply = QMessageBox::question(
-                    NULL, "Question", "Would you like to automate cropping of other images in the cycle?",
-                    QMessageBox::Yes, QMessageBox::No);
+            NULL, "Question", "Would you like to automate cropping of other images in the cycle?",
+            QMessageBox::Yes, QMessageBox::No);
         if (reply == QMessageBox::Yes) {
 
             this->BusyCursorOn();
-            mitk::ProgressBar::GetInstance()->AddStepsToDo(timePoints-1);
-            for (int i=1; i<timePoints; i++) {
+            mitk::ProgressBar::GetInstance()->AddStepsToDo(timePoints - 1);
+            for (int i = 1; i < timePoints; i++) {
 
                 mitk::Image::Pointer inputImage;
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
+                path = directory + "/dcm-" + QString::number(i) + ".nii";
                 try {
                     inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
-                } catch(const std::exception& e) {
+                } catch (const std::exception&) {
                     mitk::ProgressBar::GetInstance()->Progress();
                     continue;
                 }//_try
@@ -375,16 +379,16 @@ void MmcwView::ResampIMGS() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty()) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select an image from the Data Manager to perform downsampling!");
+            NULL, "Attention",
+            "Please select an image from the Data Manager to perform downsampling!");
         return;
     }
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -407,20 +411,16 @@ void MmcwView::ResampIMGS() {
     mitk::DataNode::Pointer imgNode = nodes.at(0);
     mitk::BaseData::Pointer data = imgNode->GetData();
     if (data) {
-
         //Test if this data item is an image
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
         if (image) {
-
-            bool ok;
             int factor = QInputDialog::getInt(NULL, tr("Downsampling"), tr("By factor of:"), 3, 1, 5, 1, &ok);
             if (ok) {
-
                 //Downsample selected image
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 mitk::Image::Pointer outputImage = CemrgCommonUtils::Downsample(image, factor);
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + imgNode->GetName().c_str() + ".nii";
+                path = directory + "/" + imgNode->GetName().c_str() + ".nii";
                 mitk::IOUtil::Save(outputImage, path.toStdString());
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -432,20 +432,20 @@ void MmcwView::ResampIMGS() {
 
                 //Downsample rest of images
                 int reply = QMessageBox::question(
-                            NULL, "Question", "Would you like to automate downsampling of other images in the cycle?",
-                            QMessageBox::Yes, QMessageBox::No);
+                    NULL, "Question", "Would you like to automate downsampling of other images in the cycle?",
+                    QMessageBox::Yes, QMessageBox::No);
 
                 if (reply == QMessageBox::Yes) {
 
                     this->BusyCursorOn();
-                    mitk::ProgressBar::GetInstance()->AddStepsToDo(timePoints-1);
-                    for (int i=1; i<timePoints; i++) {
+                    mitk::ProgressBar::GetInstance()->AddStepsToDo(timePoints - 1);
+                    for (int i = 1; i < timePoints; i++) {
 
                         mitk::Image::Pointer inputImage;
-                        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(i) + ".nii";
+                        path = directory + "/dcm-" + QString::number(i) + ".nii";
                         try {
                             inputImage = dynamic_cast<mitk::Image*>(mitk::IOUtil::Load(path.toStdString()).front().GetPointer());
-                        } catch(const std::exception& e) {
+                        } catch (const std::exception&) {
                             mitk::ProgressBar::GetInstance()->Progress();
                             continue;
                         }//_try
@@ -471,16 +471,16 @@ void MmcwView::ResampIMGS() {
 void MmcwView::SegmentIMGS() {
 
     int reply = QMessageBox::question(
-                NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
+        NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
     if (reply == QMessageBox::Yes) {
 
         QString path = QFileDialog::getOpenFileName(
-                    NULL, "Open Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty())
             return;
 
         int cropReply = QMessageBox::question(
-                    NULL, "Question", "Do you want to crop your segmentation?", QMessageBox::Yes, QMessageBox::No);
+            NULL, "Question", "Do you want to crop your segmentation?", QMessageBox::Yes, QMessageBox::No);
         if (cropReply == QMessageBox::Yes) {
 
             this->BusyCursorOn();
@@ -521,16 +521,16 @@ void MmcwView::CreateSurf() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty()) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select a segmentation from the Data Manager to create a surface!");
+            NULL, "Attention",
+            "Please select a segmentation from the Data Manager to create a surface!");
         return;
     }
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -546,7 +546,7 @@ void MmcwView::CreateSurf() {
         //Test if this data item is an image
         mitk::Image::Pointer image = dynamic_cast<mitk::Image*>(data.GetPointer());
         if (image) {
-            path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.nii";
+            path = directory + "/segmentation.nii";
             mitk::IOUtil::Save(image, path.toStdString());
             this->GetDataStorage()->Remove(segNode);
         } else
@@ -555,7 +555,7 @@ void MmcwView::CreateSurf() {
         return;
 
     //Ask for user input to set the parameters
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     m_UIMeshing.setupUi(inputs);
     connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -574,7 +574,7 @@ void MmcwView::CreateSurf() {
         if (!ok1 || !ok2 || !ok3 || !ok4)
             QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
         if (!ok1) iter = 1;
-        if (!ok2) th   = 0.5;
+        if (!ok2) th = 0.5;
         if (!ok3) blur = 0;
         if (!ok4) smth = 10;
         //_if
@@ -582,13 +582,13 @@ void MmcwView::CreateSurf() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(3);
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-        QString output = cmd->ExecuteSurf(directory, path, "close",iter, th, blur, smth);
+        QString output = cmd->ExecuteSurf(directory, path, "close", iter, th, blur, smth);
         QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
         this->BusyCursorOff();
 
         //Add the mesh to storage
         CemrgCommonUtils::AddToStorage(
-                    CemrgCommonUtils::LoadVTKMesh(output.toStdString()), "Segmented Mesh", this->GetDataStorage());
+            CemrgCommonUtils::LoadVTKMesh(output.toStdString()), "Segmented Mesh", this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
         inputs->deleteLater();
 
@@ -616,20 +616,20 @@ void MmcwView::BrowseT(const QString& buttDir) {
 
     QString time, para = "";
     QString buttID = buttDir.left(1);
-    QString direct = buttDir.right(buttDir.size()-1);
+    QString direct = buttDir.right(buttDir.size() - 1);
 
     //Load target, time and parameter files
     switch (buttID.toInt()) {
     case 1:
         time = QFileDialog::getOpenFileName(
-                    NULL, "Open text file containing time points of source images",
-                    direct, QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open text file containing time points of source images",
+            direct, QmitkIOUtil::GetFileOpenFilterString());
         m_UITracking.lineEdit_1->setText(time);
         break;
     case 2:
         para = QFileDialog::getOpenFileName(
-                    NULL, "Open text file containing parameters",
-                    direct, QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open text file containing parameters",
+            direct, QmitkIOUtil::GetFileOpenFilterString());
         m_UITracking.lineEdit_2->setText(para);
         break;
     }//_switch
@@ -639,20 +639,20 @@ void MmcwView::BrowseA(const QString& buttDir) {
 
     QString input, dofin = "";
     QString buttID = buttDir.left(1);
-    QString direct = buttDir.right(buttDir.size()-1);
+    QString direct = buttDir.right(buttDir.size() - 1);
 
     //Load input mesh, dofin file
     switch (buttID.toInt()) {
     case 1:
         input = QFileDialog::getOpenFileName(
-                    NULL, "Open the input mesh",
-                    direct, QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open the input mesh",
+            direct, QmitkIOUtil::GetFileOpenFilterString());
         m_UIApplying.lineEdit_1->setText(input);
         break;
     case 2:
         dofin = QFileDialog::getOpenFileName(
-                    NULL, "Open the transformation file",
-                    direct, QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open the transformation file",
+            direct, QmitkIOUtil::GetFileOpenFilterString());
         m_UIApplying.lineEdit_3->setText(dofin);
         break;
     }//_switch
@@ -663,8 +663,8 @@ void MmcwView::Tracking() {
     //Ask the user for a dir to locate data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -683,7 +683,7 @@ void MmcwView::Tracking() {
     }//_if
 
     //Ask for user input to set the parameters
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     QSignalMapper* signalMapper = new QSignalMapper(this);
 
     m_UITracking.setupUi(inputs);
@@ -691,8 +691,8 @@ void MmcwView::Tracking() {
     connect(m_UITracking.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
     connect(m_UITracking.pushButton_1, SIGNAL(clicked()), signalMapper, SLOT(map()));
     connect(m_UITracking.pushButton_2, SIGNAL(clicked()), signalMapper, SLOT(map()));
-    signalMapper->setMapping(m_UITracking.pushButton_1, "1"+directory);
-    signalMapper->setMapping(m_UITracking.pushButton_2, "2"+directory);
+    signalMapper->setMapping(m_UITracking.pushButton_1, "1" + directory);
+    signalMapper->setMapping(m_UITracking.pushButton_2, "2" + directory);
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(BrowseT(const QString&)));
 
     int dialogCode = inputs->exec();
@@ -710,49 +710,15 @@ void MmcwView::Tracking() {
         QString aPath;
         if (time.isEmpty()) {
             ofstream file;
-            if (!para.isEmpty()) {
-                QFileInfo fi(para);
-                aPath = fi.absolutePath();
-            }
-            else {
-                //Absolute path
-                aPath = QString::fromStdString(mitk::IOUtil::GetProgramPath()) + mitk::IOUtil::GetDirectorySeparator() + "MLib";
-#if defined(__APPLE__)
-                aPath = mitk::IOUtil::GetDirectorySeparator() + QString("Applications") +
-                        mitk::IOUtil::GetDirectorySeparator() + QString("CemrgApp") +
-                        mitk::IOUtil::GetDirectorySeparator() + QString("MLib");
-#endif
-            }
 
-            bool dcm_path_fix = true;
-            if (dcm_path_fix) {
-                MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
-                time = directory + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
-                file.open(time.toStdString(), ofstream::binary);
-                file << "dcm- .nii\n";
-            }
-            else {
-                QDir apathd(aPath);
-                if (apathd.mkpath(aPath)) {
-                    // file.open(aPath.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst");
-                    QDir mainDirectory(directory);
-                    QString aRelativePath = mainDirectory.relativeFilePath(aPath);
-                    time = aPath + mitk::IOUtil::GetDirectorySeparator() + "imgTimes.lst";
-                    file.open(time.toStdString(), ofstream::binary);
-                    if (aRelativePath==".")
-                        file << "dcm- .nii\n";
-                    else
-                        file << aRelativePath << mitk::IOUtil::GetDirectorySeparator() << "dcm- .nii\n";
+            MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
+            time = directory + "/imgTimes.lst";
+            file.open(time.toStdString(), ofstream::binary);
+            file << "dcm- .nii\n";
 
-                } else {
-                    QMessageBox::warning(NULL, "Attention", "Error creating path:\n" + aPath);
-                    directory = QString();
-                    return;
-                }
-            }
-            for (int i=0; i<timePoints; i++) {
-                MITK_INFO << "File contents: " << i << " " << i*10 << "\n";
-                file << i << " " << i*10 << "\n";
+            for (int i = 0; i < timePoints; i++) {
+                MITK_INFO << "File contents: " << i << " " << i * 10 << "\n";
+                file << i << " " << i * 10 << "\n";
             }
             file.close();
         }//_if
@@ -778,8 +744,8 @@ void MmcwView::Applying() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -798,7 +764,7 @@ void MmcwView::Applying() {
     }//_if
 
     //Ask for user input to set the parameters
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     QSignalMapper* signalMapper = new QSignalMapper(this);
 
     m_UIApplying.setupUi(inputs);
@@ -806,8 +772,8 @@ void MmcwView::Applying() {
     connect(m_UIApplying.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
     connect(m_UIApplying.pushButton_1, SIGNAL(clicked()), signalMapper, SLOT(map()));
     connect(m_UIApplying.pushButton_2, SIGNAL(clicked()), signalMapper, SLOT(map()));
-    signalMapper->setMapping(m_UIApplying.pushButton_1, "1"+directory);
-    signalMapper->setMapping(m_UIApplying.pushButton_2, "2"+directory);
+    signalMapper->setMapping(m_UIApplying.pushButton_1, "1" + directory);
+    signalMapper->setMapping(m_UIApplying.pushButton_2, "2" + directory);
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(BrowseA(const QString&)));
     m_UIApplying.lineEdit_4->setPlaceholderText("Enter Number of Frames (default = " + QString::number(timePoints) + ")");
 
@@ -844,7 +810,7 @@ void MmcwView::Applying() {
 
         //Commandline execution
         this->BusyCursorOn();
-        mitk::ProgressBar::GetInstance()->AddStepsToDo(frames*smoothness);
+        mitk::ProgressBar::GetInstance()->AddStepsToDo(frames * smoothness);
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->ExecuteApplying(directory, input, iniTime, dofin, frames, smoothness);
         QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
@@ -865,8 +831,8 @@ void MmcwView::Demoings() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -894,20 +860,20 @@ void MmcwView::Demoings() {
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(timePoints);
 
-    for (int tS=0; tS<timePoints; tS++) {
+    for (int tS = 0; tS < timePoints; tS++) {
 
         //Image
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(tS) + ".nii";
+        path = directory + "/dcm-" + QString::number(tS) + ".nii";
         img3D = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
         //Initialise
-        if (tS==0) {
+        if (tS == 0) {
             mitk::ImageDescriptor::Pointer dsc = img3D->GetImageDescriptor();
             img4D->Initialize(dsc->GetChannelDescriptor(0).GetPixelType(), *img3D->GetGeometry(), dsc->GetNumberOfChannels(), timePoints);
         }//_if
         img4D->SetVolume(mitk::ImageReadAccessor(img3D).GetData(), tS);
 
         //Mesh
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "transformed-" + QString::number(tS) + ".vtk";
+        path = directory + "/transformed-" + QString::number(tS) + ".vtk";
         sur3D = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
         sur4D->SetVtkPolyData(sur3D->GetVtkPolyData(), tS);
 
@@ -915,7 +881,7 @@ void MmcwView::Demoings() {
     }//_for
 
     //Fix bounds
-    for(int i=0; i<timePoints; i++)
+    for (int i = 0; i < timePoints; i++)
         sur4D->GetGeometry(i)->SetBounds(sur3D->GetGeometry()->GetBounds());
     this->BusyCursorOff();
 
@@ -933,8 +899,8 @@ void MmcwView::LandmarkSelection() {
 
     //Show the plugin
     QMessageBox::information(
-                NULL, "Attention",
-                "Please select 6 points in order:\n\n1 on the Apex\n3 on the Mitral Valve surface\n2 on the Right Ventricle cusps\n");
+        NULL, "Attention",
+        "Please select 6 points in order:\n\n1 on the Apex\n3 on the Mitral Valve surface\n2 on the Right Ventricle cusps\n");
     this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
 }
 
@@ -978,8 +944,8 @@ void MmcwView::Reset() {
 
         //Check if we got the default datastorage and if there is anything else then helper object in the storage
         if (dataStorageRef->IsDefault() && dataStorage->GetSubset(
-                    mitk::NodePredicateNot::New(
-                        mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true))))->empty())
+            mitk::NodePredicateNot::New(
+                mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true))))->empty())
             return;
 
         //Remove everything
@@ -992,7 +958,7 @@ void MmcwView::Reset() {
         //Close all editors with this data storage as input
         mitk::DataStorageEditorInput::Pointer dsInput(new mitk::DataStorageEditorInput(dataStorageRef));
         QList<berry::IEditorReference::Pointer> dsEditors =
-                this->GetSite()->GetPage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
+            this->GetSite()->GetPage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
 
         if (!dsEditors.empty()) {
             QList<berry::IEditorReference::Pointer> editorsToClose = dsEditors;

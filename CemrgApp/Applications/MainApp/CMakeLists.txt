@@ -66,6 +66,8 @@ if(MITK_BUILD_APP_CemrgApp)
     CemrgApp.cpp
   )
 
+  qt5_add_resources(_src_files splashscreen.qrc)
+
   mitkFunctionCreateBlueBerryApplication(
     NAME ${MY_APP_NAME}
     DESCRIPTION "MITK - ${MY_APP_NAME} Application"

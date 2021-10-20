@@ -47,7 +47,7 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class AtrialScarView : public QmitkAbstractView {
+class AtrialScarView: public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -56,6 +56,7 @@ class AtrialScarView : public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    AtrialScarView();
 
 protected slots:
 
@@ -82,8 +83,7 @@ protected slots:
 
 protected:
 
-    virtual void OnSelectionChanged(
-            berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
+    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
     virtual void CreateQtPartControl(QWidget *parent) override;
     virtual void SetFocus() override;
     virtual void NodeAdded(const mitk::DataNode* node);
@@ -107,8 +107,7 @@ private:
     QString debugSCARname;
     QString alternativeNiftiFolder;
     std::unique_ptr<CemrgScar3D> scar;
-    bool _useDockerInPlugin = true; // change to FALSE to use MIRTK static libraries
-    bool _usingAlternativeDicomReader;
+    bool _useDockerInPlugin = false; // change to FALSE to use MIRTK static libraries
 };
 
 #endif // AtrialScarView_h

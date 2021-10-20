@@ -62,14 +62,14 @@ PURPOSE.  See the above copyright notices for more information.
 
 
 void autoNIIconvert() {
-    
+
     std::string frames;
     ifstream file0("/home/or15/Desktop/MRI/process/frames.txt");
     if (file0.is_open())
-        getline(file0,frames);
+        getline(file0, frames);
     file0.close();
 
-    for (int i=1; i<=QString::fromStdString(frames).toInt(); i++) {
+    for (int i = 1; i <= QString::fromStdString(frames).toInt(); i++) {
 
         unsigned int slices = 0;
         mitk::Image::Pointer img3D = mitk::Image::New();
@@ -77,21 +77,21 @@ void autoNIIconvert() {
         std::string line;
         ifstream file1("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
         if (file1.is_open()) {
-            getline(file1,line);
-            while (getline(file1,line)) {
-                if (line=="path.txt")
+            getline(file1, line);
+            while (getline(file1, line)) {
+                if (line == "path.txt")
                     break;
                 slices++;
             }
         }
         file1.close();
-        int ctr = 0;
-        bool first = true;
         ifstream file2("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
         if (file2.is_open()) {
-            getline(file2,line);
-            while (getline(file2,line)) {
-                if (line=="path.txt")
+            bool first = true;
+            int ctr = 0;
+            getline(file2, line);
+            while (getline(file2, line)) {
+                if (line == "path.txt")
                     break;
                 mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/" + line);
                 if (first) {
@@ -99,40 +99,40 @@ void autoNIIconvert() {
                     img3D->Initialize(dsc->GetChannelDescriptor(0).GetPixelType(), *image->GetGeometry(), slices, 1);
                     first = false;
                 }
-                img3D->SetVolume(mitk::ImageReadAccessor(image).GetData(),0,ctr);
+                img3D->SetVolume(mitk::ImageReadAccessor(image).GetData(), 0, ctr);
                 ctr++;
             }
         }
         file2.close();
 
-        mitk::IOUtil::Save(img3D, "/home/or15/Desktop/MRI/process/dcm-" + QString::number(i-1).toStdString() + ".nii");
+        mitk::IOUtil::Save(img3D, "/home/or15/Desktop/MRI/process/dcm-" + QString::number(i - 1).toStdString() + ".nii");
     }//for
 }
 
-int ctr = -5;
 void CreateSyntImage() {
+    int ctr = -5;
 
     //Prepare empty image
     vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
-    double spacing[3] = {0.83,0.83,0.83};
+    double spacing[3] = {0.83, 0.83, 0.83};
     whiteImage->SetSpacing(spacing);
-    int dimensions[3] = {25,25,25};
+    int dimensions[3] = {25, 25, 25};
     whiteImage->SetDimensions(dimensions);
-    int extents[3] = {dimensions[0]-1, dimensions[1]-1, dimensions[2]-1};
+    int extents[3] = {dimensions[0] - 1, dimensions[1] - 1, dimensions[2] - 1};
     whiteImage->SetExtent(0, extents[0], 0, extents[1], 0, extents[2]);
-    double origin[3] = {0,0,0};
+    double origin[3] = {0, 0, 0};
     whiteImage->SetOrigin(origin);
-    whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR,1);
+    whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
 
     //Colouring
     for (vtkIdType i = 0; i < whiteImage->GetNumberOfPoints(); ++i)
         whiteImage->GetPointData()->GetScalars()->SetTuple1(i, 0);
 
     //Tracking test
-    ctr+=5;
-    for(int x=10; x<15; x++) {
-        for(int y=10+ctr; y<15+ctr; y++) {
-            for(int z=10+ctr; z<15+ctr; z++) {
+    ctr += 5;
+    for (int x = 10; x < 15; x++) {
+        for (int y = 10 + ctr; y < 15 + ctr; y++) {
+            for (int z = 10 + ctr; z < 15 + ctr; z++) {
                 vtkIdType idx = x + dimensions[0] * (y + dimensions[1] * z);
                 whiteImage->GetPointData()->GetScalars()->SetTuple1(idx, 50);
             }
@@ -167,7 +167,7 @@ void CreateSyntImage() {
 
 void ColourMesh() {
 
-    for (int m=0; m<10; m++) {
+    for (int m = 0; m < 10; m++) {
         mitk::Surface::Pointer mesh;
         mesh = mitk::IOUtil::Load<mitk::Surface>("/home/or15/Downloads/SqzMeshes/Mesh" + QString::number(m).toStdString() + ".vtk");
         vtkSmartPointer<vtkUnsignedCharArray> segmentColors = vtkSmartPointer<vtkUnsignedCharArray>::New();
@@ -184,12 +184,12 @@ void ColourMesh() {
         colors->SetNumberOfComponents(3);
         colors->SetName("Colors");
         colors->SetNumberOfTuples(mesh->GetVtkPolyData()->GetNumberOfCells());
-        for (int i=0; i<mesh->GetVtkPolyData()->GetNumberOfCells(); i++) {
+        for (int i = 0; i < mesh->GetVtkPolyData()->GetNumberOfCells(); i++) {
             double sqz = mesh->GetVtkPolyData()->GetCellData()->GetScalars()->GetTuple1(i);
             double dcolor[3];
             colorLookupTable->GetColor(sqz, dcolor);
             unsigned char color[3];
-            for(unsigned int j = 0; j < 3; j++)
+            for (unsigned int j = 0; j < 3; j++)
                 color[j] = static_cast<unsigned char>(255.0 * dcolor[j]);
             colors->InsertTuple3(i, color[0], color[1], color[2]);
         }//_for
@@ -222,7 +222,7 @@ void binariseImage() {
 
 void MeshError() {
 
-    for (int i=1; i<=6; i++) {
+    for (int i = 1; i <= 6; i++) {
         //if (i==4) continue;
         QString pathImage = "/home/or15/Desktop/Proj/RZ/StrainsWork/MeshError/N" + QString::number(i) + "/segmentation.nii";
         typedef itk::Image<unsigned char, 3> ImageType;
@@ -239,11 +239,11 @@ void MeshError() {
         QString pathMesh = "/home/or15/Desktop/Proj/RZ/StrainsWork/MeshError/N" + QString::number(i) + "/segmentation.vtk";
         mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(pathMesh.toStdString());
         vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
-        for (int i=0; i<pd->GetNumberOfPoints(); i++) {
-            double* point = pd->GetPoint(i);
+        for (int j = 0; j < pd->GetNumberOfPoints(); j++) {
+            double* point = pd->GetPoint(j);
             point[0] = -point[0];
             point[1] = -point[1];
-            pd->GetPoints()->SetPoint(i, point);
+            pd->GetPoints()->SetPoint(j, point);
         }//_for
         vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
         pointLocator->SetDataSet(pd);
@@ -265,16 +265,16 @@ void MeshError() {
                 double x_d = imgPoint[0] - mshPoint[0];
                 double y_d = imgPoint[1] - mshPoint[1];
                 double z_d = imgPoint[2] - mshPoint[2];
-                distances.push_back(sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2)));
+                distances.push_back(sqrt(pow(x_d, 2) + pow(y_d, 2) + pow(z_d, 2)));
             }//_if
         }//_for
 
         ofstream file;
         QString pathOutput = "/home/or15/Desktop/Proj/RZ/StrainsWork/MeshError/N" + QString::number(i) + "/distances.csv";
         file.open(pathOutput.toStdString());
-        for (size_t j=0; j<distances.size(); j++) {
+        for (size_t j = 0; j < distances.size(); j++) {
             file << distances.at(j);
-            if (j == distances.size()-1) file << endl;
+            if (j == distances.size() - 1) file << endl;
             else file << ",";
         }
         qDebug() << "Case" << i;
@@ -334,7 +334,7 @@ void flattening() {
     //filter->SetScale(scale);
     try {
         filter->Update();
-    } catch(itk::ExceptionObject & excp) {
+    } catch (itk::ExceptionObject&) {
     }
     MeshType::Pointer mesh = filter->GetOutput();
 
@@ -346,42 +346,42 @@ void RRcalcsAuto() {
 
     std::vector<double> values;
     std::unique_ptr<CemrgMeasure> rr(new CemrgMeasure());
-    std::vector <std::tuple<double, double, double>> points;
+    CemrgMeasure::Points points;
     std::string lineD;
 
     //1
     ifstream dirc("/home/or15/Desktop/Proj/RZ/StrainsWork/TrackTSFFD/Transforms/dirPaths.txt");
-    std::vector<int> DS = {2,5,6,8,9,10,12,13,16,17};
+    std::vector<int> DS = {2, 5, 6, 8, 9, 10, 12, 13, 16, 17};
 
     if (dirc.is_open()) {
-        for (int ds=0; ds<10; ds++) {
+        for (int ds = 0; ds < 10; ds++) {
             dirc.clear();
             dirc.seekg(0, ios::beg);
-            while (getline(dirc,lineD)) {
+            while (getline(dirc, lineD)) {
 
                 //2
                 std::string prePath;
                 auto const posSL2 = lineD.find_last_of('/');
-                auto const posSL1 = lineD.find_last_of('/',posSL2-10);
-                prePath = std::string(lineD.substr(0, posSL1+1).c_str()) + "GridSearchBE6SW/Dataset" + std::to_string(DS.at(ds)) + lineD.substr(posSL2);
+                auto const posSL1 = lineD.find_last_of('/', posSL2 - 10);
+                prePath = std::string(lineD.substr(0, posSL1 + 1).c_str()) + "GridSearchBE6SW/Dataset" + std::to_string(DS.at(ds)) + lineD.substr(posSL2);
 
                 //3
-                for (int i=0; i<1; i++) {
-                    for (int j=0; j<101; j++) {
+                for (int i = 0; i < 1; i++) {
+                    for (int j = 0; j < 101; j++) {
 
                         //4
                         std::stringstream stream;
                         //stream << "/Perm-RG" << std::fixed << std::setprecision(1) << j/10.0;
-                        stream << "/Perm-BE" << std::fixed << std::setprecision(2) << i/100.0 << "-SW" << std::fixed << std::setprecision(2) << j/100.0;
+                        stream << "/Perm-BE" << std::fixed << std::setprecision(2) << i / 100.0 << "-SW" << std::fixed << std::setprecision(2) << j / 100.0;
                         std::string permStr = stream.str();
 
-                        for (int frame=0; frame<10; frame++) {
+                        for (int frame = 0; frame < 10; frame++) {
                             QString path = QString::fromStdString(prePath) + QString::fromStdString(permStr);
                             qDebug() << path;
                             points = rr->Deconvert(path, frame);
-                            if (QString::fromStdString(prePath).endsWith("PP",Qt::CaseInsensitive))
+                            if (QString::fromStdString(prePath).endsWith("PP", Qt::CaseInsensitive))
                                 values.push_back(rr->CalcPerimeter(points));
-                            else if (QString::fromStdString(prePath).endsWith("MAA",Qt::CaseInsensitive))
+                            else if (QString::fromStdString(prePath).endsWith("MAA", Qt::CaseInsensitive))
                                 values.push_back(rr->CalcArea(points));
                             else
                                 values.push_back(rr->CalcDistance(points));
@@ -389,9 +389,9 @@ void RRcalcsAuto() {
                         ofstream file;
                         QString path = QString::fromStdString(prePath) + QString::fromStdString(permStr) + ".csv";
                         file.open(path.toStdString());
-                        for (size_t z=0; z<values.size(); z++) {
+                        for (size_t z = 0; z < values.size(); z++) {
                             file << values.at(z);
-                            if (z == values.size()-1) file << endl;
+                            if (z == values.size() - 1) file << endl;
                             else file << ",";
                         }
                         values.clear();
@@ -411,9 +411,9 @@ void RRcnvrtAuto() {
     ifstream file("/home/or15/Desktop/Proj/Tom/Points/Tools/filPaths.txt");
     ifstream dirc("/home/or15/Desktop/Proj/Tom/Points/Tools/dirPaths.txt");
     if (file.is_open() && dirc.is_open()) {
-        while (getline(file,lineF)) {
+        while (getline(file, lineF)) {
 
-            getline(dirc,lineD);
+            getline(dirc, lineD);
             mitk::PointSet::Pointer MIPS = mitk::IOUtil::Load<mitk::PointSet>(lineF);
             mitk::DataNode::Pointer node = mitk::DataNode::New();
             node->SetData(MIPS);
@@ -438,7 +438,7 @@ void MeshReader() {
     mitk::BaseData::Pointer meshData = mitk::IOUtil::Load(inputFilename).at(0);
     mitk::UnstructuredGrid::Pointer mitkVtkGrid = dynamic_cast<mitk::UnstructuredGrid*>(meshData.GetPointer());
     vtkSmartPointer<vtkUnstructuredGrid> vtkGrid = mitkVtkGrid->GetVtkUnstructuredGrid();
-    for (vtkIdType i=0; i<vtkGrid->GetNumberOfPoints(); i++) {
+    for (vtkIdType i = 0; i < vtkGrid->GetNumberOfPoints(); i++) {
         double* point = vtkGrid->GetPoint(i);
         point[0] = -point[0];
         point[1] = -point[1];
@@ -567,7 +567,7 @@ void StrainsTests() {
         reader->SetFileName(inputFilename.c_str());
         reader->Update();
         vtkPolyData* output = reader->GetPolyDataOutput();
-        for (int i=0; i<output->GetNumberOfPoints(); i++) {
+        for (int i = 0; i < output->GetNumberOfPoints(); i++) {
             double* point = output->GetPoint(i);
             point[0] = -point[0];
             point[1] = -point[1];
@@ -579,7 +579,7 @@ void StrainsTests() {
         double bounds[6];
         output->GetBounds(bounds);
 
-        double voxel=1;
+        double voxel = 1;
         double spacing[3]; // desired volume spacing
         spacing[0] = voxel;
         spacing[1] = voxel;
@@ -599,7 +599,7 @@ void StrainsTests() {
         origin[1] = bounds[2] + spacing[1] / 2;
         origin[2] = bounds[4] + spacing[2] / 2;
         whiteImage->SetOrigin(origin);
-        whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR,1);
+        whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
 
         // fill the image with foreground voxels:
         unsigned char inval = 1;
@@ -657,10 +657,10 @@ void StrainsTests() {
       * Tom Tec tests
       **/
     if (false) {
-        for (int i=0; i<11; i++) {
+        for (int i = 0; i < 11; i++) {
             mitk::BaseData::Pointer meshData = mitk::IOUtil::Load(
-                        "/home/or15/Desktop/Proj/JB/TomTec/transformed-"+
-                        QString::number(i).toStdString()+".vtk").at(0);
+                "/home/or15/Desktop/Proj/JB/TomTec/transformed-" +
+                QString::number(i).toStdString() + ".vtk").at(0);
             mitk::UnstructuredGrid::Pointer mitkVtkGrid = dynamic_cast<mitk::UnstructuredGrid*>(meshData.GetPointer());
             vtkSmartPointer<vtkUnstructuredGrid> vtkGrid = mitkVtkGrid->GetVtkUnstructuredGrid();
 
@@ -671,8 +671,8 @@ void StrainsTests() {
             mitk::Surface::Pointer converted = mitk::Surface::New();
             converted->SetVtkPolyData(polydata);
             mitk::IOUtil::Save(converted,
-                               "/home/or15/Desktop/Proj/JB/TomTec/transformed-"+
-                               QString::number(i).toStdString()+".vtk");
+                "/home/or15/Desktop/Proj/JB/TomTec/transformed-" +
+                QString::number(i).toStdString() + ".vtk");
         }
     }
     /**
@@ -690,17 +690,17 @@ void StrainsTests() {
         mitk::PointSet::Pointer s7 = dynamic_cast<mitk::PointSet*>(nodes.at(7)->GetData());
         mitk::PointSet::Pointer s8 = dynamic_cast<mitk::PointSet*>(nodes.at(8)->GetData());
         mitk::PointSet::Pointer s9 = dynamic_cast<mitk::PointSet*>(nodes.at(9)->GetData());
-        std::tuple<double,double,double> set0(s0->GetPoint(0).GetElement(0),s0->GetPoint(0).GetElement(1),s0->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set1(s1->GetPoint(0).GetElement(0),s1->GetPoint(0).GetElement(1),s1->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set2(s2->GetPoint(0).GetElement(0),s2->GetPoint(0).GetElement(1),s2->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set3(s3->GetPoint(0).GetElement(0),s3->GetPoint(0).GetElement(1),s3->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set4(s4->GetPoint(0).GetElement(0),s4->GetPoint(0).GetElement(1),s4->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set5(s5->GetPoint(0).GetElement(0),s5->GetPoint(0).GetElement(1),s5->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set6(s6->GetPoint(0).GetElement(0),s6->GetPoint(0).GetElement(1),s6->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set7(s7->GetPoint(0).GetElement(0),s7->GetPoint(0).GetElement(1),s7->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set8(s8->GetPoint(0).GetElement(0),s8->GetPoint(0).GetElement(1),s8->GetPoint(0).GetElement(2));
-        std::tuple<double,double,double> set9(s9->GetPoint(0).GetElement(0),s9->GetPoint(0).GetElement(1),s9->GetPoint(0).GetElement(2));
-        QString path = "/home/or15/Desktop/Proj/JB/OrodNormals/n1/TrackingPoints";
+        std::tuple<double, double, double> set0(s0->GetPoint(0).GetElement(0), s0->GetPoint(0).GetElement(1), s0->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set1(s1->GetPoint(0).GetElement(0), s1->GetPoint(0).GetElement(1), s1->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set2(s2->GetPoint(0).GetElement(0), s2->GetPoint(0).GetElement(1), s2->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set3(s3->GetPoint(0).GetElement(0), s3->GetPoint(0).GetElement(1), s3->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set4(s4->GetPoint(0).GetElement(0), s4->GetPoint(0).GetElement(1), s4->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set5(s5->GetPoint(0).GetElement(0), s5->GetPoint(0).GetElement(1), s5->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set6(s6->GetPoint(0).GetElement(0), s6->GetPoint(0).GetElement(1), s6->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set7(s7->GetPoint(0).GetElement(0), s7->GetPoint(0).GetElement(1), s7->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set8(s8->GetPoint(0).GetElement(0), s8->GetPoint(0).GetElement(1), s8->GetPoint(0).GetElement(2));
+        std::tuple<double, double, double> set9(s9->GetPoint(0).GetElement(0), s9->GetPoint(0).GetElement(1), s9->GetPoint(0).GetElement(2));
+        // QString path = "/home/or15/Desktop/Proj/JB/OrodNormals/n1/TrackingPoints";
         // CemrgMeasure* measure = new CemrgMeasure();
         // std::tuple<double,double,double> tra0 = measure->Deconvert(path,0).at(0);
         // std::tuple<double,double,double> tra1 = measure->Deconvert(path,1).at(0);
@@ -730,7 +730,7 @@ void StrainsTests() {
         //sanity check
         vtkSmartPointer<vtkCubeSource> mCT = vtkSmartPointer<vtkCubeSource>::New(); mCT->Update();
         vtkSmartPointer<vtkCubeSource> aCT = vtkSmartPointer<vtkCubeSource>::New(); aCT->Update();
-        for (int i=0; i<4; i++) {
+        for (int i = 0; i < 4; i++) {
             double* point = mCT->GetOutput()->GetPoint(i);
             point[0] = point[0] * .5;
             point[1] = point[2] * .5;
@@ -755,7 +755,7 @@ void StrainsTests() {
         vtkSmartPointer<vtkPolyData> rPD = booleanOperation->GetOutput();
         mitk::Surface::Pointer rS = mitk::Surface::New();
         rS->SetVtkPolyData(rPD);
-        mitk::IOUtil::Save(rS,"/home/or15/Desktop/Proj/JB/OrodNormals/n1/Manuals/res-segmentation.vtk");
+        mitk::IOUtil::Save(rS, "/home/or15/Desktop/Proj/JB/OrodNormals/n1/Manuals/res-segmentation.vtk");
         qDebug() << "Filter Done!";
 
         //double areaM = 0;
@@ -771,7 +771,7 @@ void StrainsTests() {
 
 void curvesCalculator() {
 
-    for (int i=0; i<10; i++) {
+    for (int i = 0; i < 10; i++) {
 
         QString directory = "/home/or15/Work/Strain/LR/case0" + QString::number(i);
         mitk::DataNode::Pointer lmNode = mitk::IOUtil::Load<mitk::DataNode>((directory + "/PointSet.mps").toStdString());
@@ -784,20 +784,20 @@ void curvesCalculator() {
         std::vector<std::vector<double>> plotValueVectorsCRC;
         std::vector<std::vector<double>> plotValueVectorsLNG;
 
-        for (int j=0; j<10; j++) {
+        for (int j = 0; j < 10; j++) {
             plotValueVectorsSQZ.push_back(strain->CalculateSqzPlot(j));
             plotValueVectorsCRC.push_back(strain->CalculateStrainsPlot(j, lmNode, 3));
             plotValueVectorsLNG.push_back(strain->CalculateStrainsPlot(j, lmNode, 4));
         }
 
-        for (int j=0; j<3; j++) {
+        for (int j = 0; j < 3; j++) {
 
             QString fileName;
             std::vector<std::vector<double>> plotValueVectors;
-            if (j==0) {
+            if (j == 0) {
                 fileName = "SQZ.csv";
                 plotValueVectors = plotValueVectorsSQZ;
-            } else if (j==1) {
+            } else if (j == 1) {
                 fileName = "CRC.csv";
                 plotValueVectors = plotValueVectorsCRC;
             } else {
@@ -805,16 +805,16 @@ void curvesCalculator() {
                 plotValueVectors = plotValueVectorsLNG;
             }//_if
             ofstream file;
-            file.open(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + fileName.toStdString());
+            file.open(directory.toStdString() + "/" + fileName.toStdString());
 
             std::vector<double> values;
-            for (int s=0; s<16; s++) {
-                for (int f=0; f<10; f++)
+            for (int s = 0; s < 16; s++) {
+                for (int f = 0; f < 10; f++)
                     values.push_back(plotValueVectors[f][s]);
                 //Append the curve to the file
-                for (size_t z=0; z<values.size(); z++) {
+                for (size_t z = 0; z < values.size(); z++) {
                     file << values.at(z);
-                    if (z == values.size()-1) file << endl;
+                    if (z == values.size() - 1) file << endl;
                     else file << ",";
                 }
                 values.clear();

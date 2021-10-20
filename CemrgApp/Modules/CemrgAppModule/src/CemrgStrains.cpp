@@ -26,7 +26,7 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-//Qmitk
+// Qmitk
 #include <mitkIOUtil.h>
 #include <mitkProperties.h>
 
@@ -47,12 +47,12 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkProbeFilter.h>
 #include <vtkRegularPolygonSource.h>
 
+// C++ Standard
+#include <numeric>
+
 // CemrgApp
 #include "CemrgCommonUtils.h"
 #include "CemrgStrains.h"
-
-// Generic
-#include <numeric>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -120,7 +120,7 @@ std::vector<double> CemrgStrains::CalculateSqzPlot(int meshNo) {
 
     //Calculate squeeze
     int index = 0;
-    std::vector<double> squeeze(16,0);
+    std::vector<double> squeeze(16, 0);
     for (vtkIdType cellID = 0; cellID < pd->GetNumberOfCells(); cellID++) {
 
         //Ignore non AHA segments
@@ -132,7 +132,7 @@ std::vector<double> CemrgStrains::CalculateSqzPlot(int meshNo) {
         double area = GetCellArea(pd, cellID);
         double sqze = (area - refArea.at(index)) / refArea.at(index);
         double wsqz = area * sqze;
-        squeeze.at(refCellLabels[cellID]-1) += wsqz;
+        squeeze.at(refCellLabels[cellID] - 1) += wsqz;
 
         //Global maps
         flatSurfScalars->InsertTuple1(index, wsqz);
@@ -145,11 +145,11 @@ std::vector<double> CemrgStrains::CalculateSqzPlot(int meshNo) {
     sqzValues->SetName("Squeez");
     pd->GetCellData()->AddArray(sqzValues);
     surf->SetVtkPolyData(pd);
-    QString path = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "sqz-" + QString::number(meshNo) + ".vtk";
-    //mitk::IOUtil::Save(surf, path.toStdString());
+    // QString path = projectDirectory + "/sqz-" + QString::number(meshNo) + ".vtk";
+    // mitk::IOUtil::Save(surf, path.toStdString());
 
     //Average over AHA segments
-    for (int i=0; i<16; i++)
+    for (int i = 0; i < 16; i++)
         squeeze.at(i) /= refAhaArea.at(i);
 
     return squeeze;
@@ -168,18 +168,18 @@ std::vector<double> CemrgStrains::CalculateStrainsPlot(int meshNo, mitk::DataNod
     // Only do this for the manually marked landmark points (ap_3mv_2rv.mps)
     if (lm.size() == 6) {
         RIV2 = lm.at(5);
-        centre = Circlefit3d(ZeroPoint(lm.at(0),lm.at(1)), ZeroPoint(lm.at(0),lm.at(2)), ZeroPoint(lm.at(0),lm.at(3)));
+        centre = Circlefit3d(ZeroPoint(lm.at(0), lm.at(1)), ZeroPoint(lm.at(0), lm.at(2)), ZeroPoint(lm.at(0), lm.at(3)));
     } else {
         RIV2 = lm.at(3);
-        centre = ZeroPoint(lm.at(0),lm.at(1));
+        centre = ZeroPoint(lm.at(0), lm.at(1));
     }
 
-    mitk::Matrix<double,3,3> rotationMat = CalcRotationMatrix(centre, ZeroPoint(lm.at(0),RIV2)); RotateVTKMesh(rotationMat, surf);
+    mitk::Matrix<double, 3, 3> rotationMat = CalcRotationMatrix(centre, ZeroPoint(lm.at(0), RIV2)); RotateVTKMesh(rotationMat, surf);
     vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
 
     //Radial, Circumferential, and Longitudinal strains for each AHA segment
     int index = 0;
-    std::vector<double> strainRCL(16,0);
+    std::vector<double> strainRCL(16, 0);
 
     for (vtkIdType cellID = 0; cellID < pd->GetNumberOfCells(); cellID++) {
 
@@ -197,18 +197,18 @@ std::vector<double> CemrgStrains::CalculateStrainsPlot(int meshNo, mitk::DataNod
 
         //Coordinate system: vectors of the triangle
         mitk::Point3D vc1, vc2, vc3;
-        vc1.SetElement(0, pt2[0]-pt1[0]);
-        vc1.SetElement(1, pt2[1]-pt1[1]);
-        vc1.SetElement(2, pt2[2]-pt1[2]);
-        vc2.SetElement(0, pt3[0]-pt1[0]);
-        vc2.SetElement(1, pt3[1]-pt1[1]);
-        vc2.SetElement(2, pt3[2]-pt1[2]);
-        vc3.SetElement(0, Cross(vc1,vc2).GetElement(0)/Norm(Cross(vc1,vc2)));
-        vc3.SetElement(1, Cross(vc1,vc2).GetElement(1)/Norm(Cross(vc1,vc2)));
-        vc3.SetElement(2, Cross(vc1,vc2).GetElement(2)/Norm(Cross(vc1,vc2)));
+        vc1.SetElement(0, pt2[0] - pt1[0]);
+        vc1.SetElement(1, pt2[1] - pt1[1]);
+        vc1.SetElement(2, pt2[2] - pt1[2]);
+        vc2.SetElement(0, pt3[0] - pt1[0]);
+        vc2.SetElement(1, pt3[1] - pt1[1]);
+        vc2.SetElement(2, pt3[2] - pt1[2]);
+        vc3.SetElement(0, Cross(vc1, vc2).GetElement(0) / Norm(Cross(vc1, vc2)));
+        vc3.SetElement(1, Cross(vc1, vc2).GetElement(1) / Norm(Cross(vc1, vc2)));
+        vc3.SetElement(2, Cross(vc1, vc2).GetElement(2) / Norm(Cross(vc1, vc2)));
 
         //Assemble K matrix
-        mitk::Matrix<double,3,3> K;
+        mitk::Matrix<double, 3, 3> K;
         K[0][0] = vc1.GetElement(0);
         K[0][1] = vc2.GetElement(0);
         K[0][2] = vc3.GetElement(0);
@@ -220,12 +220,12 @@ std::vector<double> CemrgStrains::CalculateStrainsPlot(int meshNo, mitk::DataNod
         K[2][2] = vc3.GetElement(2);
 
         //Calculate deformation gradient
-        mitk::Matrix<double,3,3> F;
+        mitk::Matrix<double, 3, 3> F;
         F = K * refJ.at(index).GetInverse();
 
         //Calculate Strain Tensors
-        mitk::Matrix<double,3,3> ET;
-        mitk::Matrix<double,3,3> EYE; EYE.SetIdentity();
+        mitk::Matrix<double, 3, 3> ET;
+        mitk::Matrix<double, 3, 3> EYE; EYE.SetIdentity();
 
         //Green-Lagrange or Engineering
         if (flag > 2)
@@ -234,42 +234,42 @@ std::vector<double> CemrgStrains::CalculateStrainsPlot(int meshNo, mitk::DataNod
             ET = 0.5 * (F.GetVnlMatrix() + F.GetTranspose()) - EYE.GetVnlMatrix();
 
         //Rotate Green-Lagrange strain
-        mitk::Matrix<double,3,3> E;
+        mitk::Matrix<double, 3, 3> E;
         E = refQ.at(index) * ET * refQ.at(index).GetTranspose();
 
         //Store symmetric Green-Lagrange strain in Voigt notation
-        mitk::Matrix<double,1,3> EV;
-        EV[0][0] = E(0,0);
-        EV[0][1] = E(1,1);
-        EV[0][2] = E(2,2);
+        mitk::Matrix<double, 1, 3> EV;
+        EV[0][0] = E(0, 0);
+        EV[0][1] = E(1, 1);
+        EV[0][2] = E(2, 2);
 
         //Prepare plot values
-        strainRCL.at(refCellLabels[cellID]-1) += EV[0][(flag>2)?flag-2:flag];
-        flatSurfScalars->InsertTuple1(index, EV[0][(flag>2)?flag-2:flag]);
+        strainRCL.at(refCellLabels[cellID] - 1) += EV[0][(flag > 2) ? flag - 2 : flag];
+        flatSurfScalars->InsertTuple1(index, EV[0][(flag > 2) ? flag - 2 : flag]);
 
         index++;
     }//_for
 
-    for (int i=0; i<16; i++)
-        strainRCL.at(i) /= std::count(refCellLabels.begin(), refCellLabels.end(), i+1);
+    for (int i = 0; i < 16; i++)
+        strainRCL.at(i) /= std::count(refCellLabels.begin(), refCellLabels.end(), i + 1);
 
     return strainRCL;
 }
 
 double CemrgStrains::CalculateSDI(std::vector<std::vector<double>> valueVectors, int cycleLengths, int noFrames) {
 
-    if (valueVectors.size()==0)
+    if (valueVectors.size() == 0)
         return 0.0;
 
-    std::vector<double> T2Ps(16,0.0);
-    std::vector<double> values(noFrames,0.0);
+    std::vector<double> T2Ps(16, 0.0);
+    std::vector<double> values(noFrames, 0.0);
 
     //Find time to peak values
-    for (int i=0; i<16; i++) {
-        for (int j=0; j<noFrames; j++)
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < noFrames; j++)
             values[j] = valueVectors[j][i];
         int index = std::distance(values.begin(), std::min_element(values.begin(), values.end()));
-        double time2peak = index * (cycleLengths/noFrames);
+        double time2peak = index * (cycleLengths / noFrames);
         //T2Ps as a percentage of the cardiac cycle
         double t2p = (time2peak * 100) / cycleLengths;
         T2Ps.push_back(t2p);
@@ -279,9 +279,9 @@ double CemrgStrains::CalculateSDI(std::vector<std::vector<double>> valueVectors,
     double sumDeviation = 0.0;
     double sum = std::accumulate(T2Ps.begin(), T2Ps.end(), 0.0);
     double mean = sum / T2Ps.size();
-    for (unsigned int i=0; i<T2Ps.size(); i++)
-        sumDeviation += (T2Ps[i]-mean) * (T2Ps[i]-mean);
-    return std::sqrt(sumDeviation/T2Ps.size());
+    for (unsigned int i = 0; i < T2Ps.size(); i++)
+        sumDeviation += (T2Ps[i] - mean) * (T2Ps[i] - mean);
+    return std::sqrt(sumDeviation / T2Ps.size());
 }
 
 std::vector<mitk::Surface::Pointer> CemrgStrains::ReferenceGuideLines(mitk::DataNode::Pointer lmNode) {
@@ -301,7 +301,7 @@ std::vector<mitk::Surface::Pointer> CemrgStrains::ReferenceGuideLines(mitk::Data
         //Calcaulte a circle through the mitral valve points
         CNTR = Circlefit3d(MIV1, MIV2, MIV3);
 
-    } else if ( LandMarks.size() == 4) {
+    } else if (LandMarks.size() == 4) {
 
         APEX = LandMarks.at(0);
         CNTR = LandMarks.at(1);
@@ -315,12 +315,12 @@ std::vector<mitk::Surface::Pointer> CemrgStrains::ReferenceGuideLines(mitk::Data
     A1 = RIV1 - APEX;
     A2 = RIV2 - APEX;
     AB = CNTR - APEX;
-    PNT1.SetElement(0, APEX.GetElement(0) + Dot(A1,AB) / Dot(AB,AB) * AB.GetElement(0));
-    PNT1.SetElement(1, APEX.GetElement(1) + Dot(A1,AB) / Dot(AB,AB) * AB.GetElement(1));
-    PNT1.SetElement(2, APEX.GetElement(2) + Dot(A1,AB) / Dot(AB,AB) * AB.GetElement(2));
-    PNT2.SetElement(0, APEX.GetElement(0) + Dot(A2,AB) / Dot(AB,AB) * AB.GetElement(0));
-    PNT2.SetElement(1, APEX.GetElement(1) + Dot(A2,AB) / Dot(AB,AB) * AB.GetElement(1));
-    PNT2.SetElement(2, APEX.GetElement(2) + Dot(A2,AB) / Dot(AB,AB) * AB.GetElement(2));
+    PNT1.SetElement(0, APEX.GetElement(0) + Dot(A1, AB) / Dot(AB, AB) * AB.GetElement(0));
+    PNT1.SetElement(1, APEX.GetElement(1) + Dot(A1, AB) / Dot(AB, AB) * AB.GetElement(1));
+    PNT1.SetElement(2, APEX.GetElement(2) + Dot(A1, AB) / Dot(AB, AB) * AB.GetElement(2));
+    PNT2.SetElement(0, APEX.GetElement(0) + Dot(A2, AB) / Dot(AB, AB) * AB.GetElement(0));
+    PNT2.SetElement(1, APEX.GetElement(1) + Dot(A2, AB) / Dot(AB, AB) * AB.GetElement(1));
+    PNT2.SetElement(2, APEX.GetElement(2) + Dot(A2, AB) / Dot(AB, AB) * AB.GetElement(2));
 
     //Draw guidelines
     mitk::Surface::Pointer line1 = mitk::Surface::New();
@@ -393,7 +393,7 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
         RIV1 = LandMarks.at(4);
         RIV2 = LandMarks.at(5);
         // Calcaulte a circle through the mitral valve points
-        centre = Circlefit3d(ZeroPoint(APEX,MIV1), ZeroPoint(APEX,MIV2), ZeroPoint(APEX,MIV3));
+        centre = Circlefit3d(ZeroPoint(APEX, MIV1), ZeroPoint(APEX, MIV2), ZeroPoint(APEX, MIV3));
 
     } else if (LandMarks.size() == 4) {
 
@@ -407,14 +407,14 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     //Zero all points relative to apex
     RIV1 = ZeroPoint(APEX, RIV1);
     RIV2 = ZeroPoint(APEX, RIV2);
-    ZeroVTKMesh(APEX,refSurface);
+    ZeroVTKMesh(APEX, refSurface);
     APEX = ZeroPoint(APEX, APEX);
 
     //Calculate a circle through the mitral valve points
     mitk::Point3D RCTR;
 
     //Define Rotation matrix
-    mitk::Matrix<double,3,3> rotationMat = CalcRotationMatrix(centre, RIV2);
+    mitk::Matrix<double, 3, 3> rotationMat = CalcRotationMatrix(centre, RIV2);
 
     //Rotate points to new frame
     if (LandMarks.size() >= 6) {
@@ -429,9 +429,9 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     /**
       TEST
       **/
-    //qDebug() << "RCTR IS " << RCTR.GetElement(0) << RCTR.GetElement(1) << RCTR.GetElement(2);
+      //qDebug() << "RCTR IS " << RCTR.GetElement(0) << RCTR.GetElement(1) << RCTR.GetElement(2);
 
-    //Rotate mesh to new frame
+      //Rotate mesh to new frame
     RotateVTKMesh(rotationMat, refSurface);
 
     //Find the mesh Z range
@@ -442,9 +442,9 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     double RangeZ = (max - min) * 1.0; //0.99;
 
     //Top, mid, and base segments heights
-    double TOP = RangeZ * (segRatios[0]/100.00 + segRatios[1]/100.00 + segRatios[2]/100.0) + min;
-    double MID = RangeZ * (segRatios[1]/100.00 + segRatios[2]/100.0) + min;
-    double BAS = RangeZ * (segRatios[2]/100.0) + min;
+    double TOP = RangeZ * (segRatios[0] / 100.00 + segRatios[1] / 100.00 + segRatios[2] / 100.0) + min;
+    double MID = RangeZ * (segRatios[1] / 100.00 + segRatios[2] / 100.0) + min;
+    double BAS = RangeZ * (segRatios[2] / 100.0) + min;
 
     //Angle RV cusp 2
     double RVangle1 = atan2(RIV1.GetElement(1), RIV1.GetElement(0));
@@ -454,25 +454,25 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     double appendAngle;
     double sepA, freeA;
 
-    if ((LandMarks.size() == 6) && (pacingSite==false)) {
+    if ((LandMarks.size() == 6) && (pacingSite == false)) {
 
         // only do this for manual segmentation, with 6 points
-        sepA  = (RVangle2 - RVangle1) / 2;
+        sepA = (RVangle2 - RVangle1) / 2;
         freeA = (2 * M_PI - (RVangle2 - RVangle1)) / 4;
-        appendAngle = - RVangle1;
+        appendAngle = -RVangle1;
         //appendAngle -= freeA - ( M_PI / 3 );
 
     } else {
 
-        sepA  = (2 * M_PI) / 6;
+        sepA = (2 * M_PI) / 6;
         freeA = (2 * M_PI) / 6;
-        if ( RVangle1 > 0 ) {
-            appendAngle = - ( (M_PI-RVangle1)/2 + RVangle1 ) + M_PI/3;
+        if (RVangle1 > 0) {
+            appendAngle = -((M_PI - RVangle1) / 2 + RVangle1) + M_PI / 3;
         } else {
-            appendAngle = - RVangle1/2  + M_PI/3;
+            appendAngle = -RVangle1 / 2 + M_PI / 3;
         }//_if
-        if (pacingSite==true) {
-            appendAngle += M_PI/6;
+        if (pacingSite == true) {
+            appendAngle += M_PI / 6;
         }
 
     }//_if
@@ -480,11 +480,11 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
 
     //Point angles
     std::vector<double> pAngles;
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         double pAngle;
         double* pt = pd->GetPoint(i);
         pAngle = atan2(pt[1], pt[0]) + appendAngle;
-        pAngle = pAngle * (pAngle>0?1:0) + (2*M_PI+pAngle) * (pAngle<0?1:0);
+        pAngle = pAngle * (pAngle > 0 ? 1 : 0) + (2 * M_PI + pAngle) * (pAngle < 0 ? 1 : 0);
         pAngles.push_back(pAngle);
     }
 
@@ -494,7 +494,7 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
         double cAngle;
         mitk::Point3D ctrT = GetCellCenter(pd, cellID);
         cAngle = atan2(ctrT.GetElement(1), ctrT.GetElement(0)) + appendAngle;
-        cAngle = cAngle * (cAngle>0?1:0) + (2*M_PI+cAngle) * (cAngle<0?1:0);
+        cAngle = cAngle * (cAngle > 0 ? 1 : 0) + (2 * M_PI + cAngle) * (cAngle < 0 ? 1 : 0);
         cAngles.push_back(cAngle);
     }
 
@@ -502,11 +502,11 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     std::vector<int> pBindex;
     std::vector<int> pMindex;
     std::vector<int> pAindex;
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         double* pt = pd->GetPoint(i);
-        pBindex.push_back((pt[2]>=MID?1:0) * (pt[2]<=TOP?1:0));
-        pMindex.push_back((pt[2]>=BAS?1:0) * (pt[2]<MID?1:0));
-        pAindex.push_back((pt[2]<BAS?1:0));
+        pBindex.push_back((pt[2] >= MID ? 1 : 0) * (pt[2] <= TOP ? 1 : 0));
+        pMindex.push_back((pt[2] >= BAS ? 1 : 0) * (pt[2] < MID ? 1 : 0));
+        pAindex.push_back((pt[2] < BAS ? 1 : 0));
     }
 
     //Centre points
@@ -515,18 +515,18 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     std::vector<int> cAindex;
     for (vtkIdType cellID = 0; cellID < pd->GetNumberOfCells(); cellID++) {
         mitk::Point3D ctrT = GetCellCenter(pd, cellID);
-        cBindex.push_back((ctrT.GetElement(2)>=MID?1:0) * (ctrT.GetElement(2)<TOP?1:0));
-        cMindex.push_back((ctrT.GetElement(2)>=BAS?1:0) * (ctrT.GetElement(2)<MID?1:0));
-        cAindex.push_back((ctrT.GetElement(2)<BAS?1:0));
+        cBindex.push_back((ctrT.GetElement(2) >= MID ? 1 : 0) * (ctrT.GetElement(2) < TOP ? 1 : 0));
+        cMindex.push_back((ctrT.GetElement(2) >= BAS ? 1 : 0) * (ctrT.GetElement(2) < MID ? 1 : 0));
+        cAindex.push_back((ctrT.GetElement(2) < BAS ? 1 : 0));
     }
 
     //Assign points labels for 3 layers
     AssignpLabels(0, refPointLabels, pBindex, pAngles, sepA, freeA);
     AssignpLabels(1, refPointLabels, pMindex, pAngles, sepA, freeA);
     AssignpLabels(2, refPointLabels, pAindex, pAngles, sepA, freeA);
-    AssigncLabels(0, refCellLabels,  cBindex, cAngles, sepA, freeA);
-    AssigncLabels(1, refCellLabels,  cMindex, cAngles, sepA, freeA);
-    AssigncLabels(2, refCellLabels,  cAindex, cAngles, sepA, freeA);
+    AssigncLabels(0, refCellLabels, cBindex, cAngles, sepA, freeA);
+    AssigncLabels(1, refCellLabels, cMindex, cAngles, sepA, freeA);
+    AssigncLabels(2, refCellLabels, cAindex, cAngles, sepA, freeA);
 
     //Calculate reference mesh attributes
     for (vtkIdType cellID = 0; cellID < pd->GetNumberOfCells(); cellID++) {
@@ -538,12 +538,12 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
         //Area
         double area = GetCellArea(pd, cellID);
         refArea.push_back(area);
-        refAhaArea.at(refCellLabels[cellID]-1) += area;
+        refAhaArea.at(refCellLabels[cellID] - 1) += area;
 
         //Axis
         vtkSmartPointer<vtkCell> cell = pd->GetCell(cellID);
-        mitk::Matrix<double,3,3> J;
-        mitk::Matrix<double,3,3> Q = GetCellAxes(cell, RCTR, J);
+        mitk::Matrix<double, 3, 3> J;
+        mitk::Matrix<double, 3, 3> Q = GetCellAxes(cell, RCTR, J);
         refJ.push_back(J);
         refQ.push_back(Q);
     }
@@ -551,7 +551,7 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     //Setup flattened AHA mesh
     flatSurface = refSurface->Clone();
     vtkSmartPointer<vtkPolyData> poly = flatSurface->GetVtkPolyData();
-    for (int i=0; i<poly->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < poly->GetNumberOfPoints(); i++) {
         double* point = poly->GetPoint(i);
         double  radii = point[2];
         double  theta = pAngles.at(i);
@@ -570,7 +570,7 @@ mitk::Surface::Pointer CemrgStrains::ReferenceAHA(mitk::DataNode::Pointer lmNode
     vtkSmartPointer<vtkUnsignedCharArray> segmentColors = vtkSmartPointer<vtkUnsignedCharArray>::New();
     segmentColors->SetNumberOfComponents(3);
     segmentColors->SetNumberOfTuples(pd->GetNumberOfPoints());
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         float rgbA[3];
         std::vector<float> rgbV = GetAHAColour((int)refPointLabels.at(i));
         std::copy(rgbV.begin(), rgbV.end(), rgbA);
@@ -633,7 +633,7 @@ std::vector<float> CemrgStrains::GetAHAColour(int label) {
     case 16:
         return std::vector<float>{230, 190, 255};
     }
-    return std::vector<float>{0,0,0};
+    return std::vector<float>{0, 0, 0};
 }
 
 /**************************************************************************************************
@@ -653,7 +653,7 @@ void CemrgStrains::ZeroVTKMesh(mitk::Point3D apex, mitk::Surface::Pointer surfac
 
     //Retrieve the data
     vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         double* point = pd->GetPoint(i);
         point[0] = point[0] - apex.GetElement(0);
         point[1] = point[1] - apex.GetElement(1);
@@ -662,29 +662,29 @@ void CemrgStrains::ZeroVTKMesh(mitk::Point3D apex, mitk::Surface::Pointer surfac
     }
 }
 
-mitk::Point3D CemrgStrains::RotatePoint(mitk::Matrix<double,3,3> rotationMatrix, mitk::Point3D point) {
+mitk::Point3D CemrgStrains::RotatePoint(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Point3D point) {
 
-    mitk::Matrix<double,1,3> vec;
-    mitk::Matrix<double,3,1> ans;
+    mitk::Matrix<double, 1, 3> vec;
+    mitk::Matrix<double, 3, 1> ans;
 
     vec[0][0] = point.GetElement(0);
     vec[0][1] = point.GetElement(1);
     vec[0][2] = point.GetElement(2);
     ans = rotationMatrix * vec.GetTranspose();
-    point.SetElement(0,ans[0][0]);
-    point.SetElement(1,ans[1][0]);
-    point.SetElement(2,ans[2][0]);
+    point.SetElement(0, ans[0][0]);
+    point.SetElement(1, ans[1][0]);
+    point.SetElement(2, ans[2][0]);
 
     return point;
 }
 
-void CemrgStrains::RotateVTKMesh(mitk::Matrix<double,3,3> rotationMatrix, mitk::Surface::Pointer surface) {
+void CemrgStrains::RotateVTKMesh(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Surface::Pointer surface) {
 
     //Retrieve the data
     vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
 
     //Rotate mesh into new coordiantes
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         mitk::Point3D point;
         double* pt = pd->GetPoint(i);
         point.SetElement(0, pt[0]);
@@ -724,13 +724,13 @@ mitk::Point3D CemrgStrains::GetCellCenter(vtkSmartPointer<vtkPolyData> pd, vtkId
     double x = pt1[0] + pt2[0] + pt3[0];
     double y = pt1[1] + pt2[1] + pt3[1];
     double z = pt1[2] + pt2[2] + pt3[2];
-    centre.SetElement(0, x/3);
-    centre.SetElement(1, y/3);
-    centre.SetElement(2, z/3);
+    centre.SetElement(0, x / 3);
+    centre.SetElement(1, y / 3);
+    centre.SetElement(2, z / 3);
     return centre;
 }
 
-mitk::Matrix<double,3,3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cell, mitk::Point3D& termPt, mitk::Matrix<double,3,3>& J) {
+mitk::Matrix<double, 3, 3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cell, mitk::Point3D& termPt, mitk::Matrix<double, 3, 3>& J) {
 
     //Three nodes of the triangle
     vtkSmartPointer<vtkTriangle> triangle = dynamic_cast<vtkTriangle*>(cell.GetPointer());
@@ -741,23 +741,23 @@ mitk::Matrix<double,3,3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cel
 
     //Coordinate system: vectors of the triangle
     mitk::Point3D vc1, vc2, vc3;
-    vc1.SetElement(0, pt2[0]-pt1[0]);
-    vc1.SetElement(1, pt2[1]-pt1[1]);
-    vc1.SetElement(2, pt2[2]-pt1[2]);
-    vc2.SetElement(0, pt3[0]-pt1[0]);
-    vc2.SetElement(1, pt3[1]-pt1[1]);
-    vc2.SetElement(2, pt3[2]-pt1[2]);
-    vc3.SetElement(0, Cross(vc1,vc2).GetElement(0)/Norm(Cross(vc1,vc2)));
-    vc3.SetElement(1, Cross(vc1,vc2).GetElement(1)/Norm(Cross(vc1,vc2)));
-    vc3.SetElement(2, Cross(vc1,vc2).GetElement(2)/Norm(Cross(vc1,vc2)));
+    vc1.SetElement(0, pt2[0] - pt1[0]);
+    vc1.SetElement(1, pt2[1] - pt1[1]);
+    vc1.SetElement(2, pt2[2] - pt1[2]);
+    vc2.SetElement(0, pt3[0] - pt1[0]);
+    vc2.SetElement(1, pt3[1] - pt1[1]);
+    vc2.SetElement(2, pt3[2] - pt1[2]);
+    vc3.SetElement(0, Cross(vc1, vc2).GetElement(0) / Norm(Cross(vc1, vc2)));
+    vc3.SetElement(1, Cross(vc1, vc2).GetElement(1) / Norm(Cross(vc1, vc2)));
+    vc3.SetElement(2, Cross(vc1, vc2).GetElement(2) / Norm(Cross(vc1, vc2)));
 
     //Radial axis
     mitk::Point3D radiAxis = vc3;
     //Normalise radial axis
     double norm = Norm(radiAxis);
-    radiAxis.SetElement(0, radiAxis.GetElement(0)/norm);
-    radiAxis.SetElement(1, radiAxis.GetElement(1)/norm);
-    radiAxis.SetElement(2, radiAxis.GetElement(2)/norm);
+    radiAxis.SetElement(0, radiAxis.GetElement(0) / norm);
+    radiAxis.SetElement(1, radiAxis.GetElement(1) / norm);
+    radiAxis.SetElement(2, radiAxis.GetElement(2) / norm);
 
     //Longitudinal axis
     mitk::Point3D longAxis;
@@ -767,17 +767,17 @@ mitk::Matrix<double,3,3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cel
     longAxis.SetElement(2, termPt.GetElement(2) - dot * radiAxis.GetElement(2));
     //Normalise longitudinal axis
     norm = Norm(longAxis);
-    longAxis.SetElement(0, longAxis.GetElement(0)/norm);
-    longAxis.SetElement(1, longAxis.GetElement(1)/norm);
-    longAxis.SetElement(2, longAxis.GetElement(2)/norm);
+    longAxis.SetElement(0, longAxis.GetElement(0) / norm);
+    longAxis.SetElement(1, longAxis.GetElement(1) / norm);
+    longAxis.SetElement(2, longAxis.GetElement(2) / norm);
 
     //Circumferential axis
     mitk::Point3D circAxis = Cross(longAxis, radiAxis);
     //Normalise circumferential axis
     norm = Norm(circAxis);
-    circAxis.SetElement(0, circAxis.GetElement(0)/norm);
-    circAxis.SetElement(1, circAxis.GetElement(1)/norm);
-    circAxis.SetElement(2, circAxis.GetElement(2)/norm);
+    circAxis.SetElement(0, circAxis.GetElement(0) / norm);
+    circAxis.SetElement(1, circAxis.GetElement(1) / norm);
+    circAxis.SetElement(2, circAxis.GetElement(2) / norm);
 
     //Assemble J matrix
     J[0][0] = vc1.GetElement(0);
@@ -791,7 +791,7 @@ mitk::Matrix<double,3,3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cel
     J[2][2] = vc3.GetElement(2);
 
     //Return axes
-    mitk::Matrix<double,3,3> Q;
+    mitk::Matrix<double, 3, 3> Q;
     Q[0][0] = radiAxis.GetElement(0);
     Q[0][1] = radiAxis.GetElement(1);
     Q[0][2] = radiAxis.GetElement(2);
@@ -811,7 +811,7 @@ mitk::Matrix<double,3,3> CemrgStrains::GetCellAxes(vtkSmartPointer<vtkCell>& cel
 mitk::Surface::Pointer CemrgStrains::ReadVTKMesh(int meshNo) {
 
     //Read a mesh
-    QString meshPath = projectDirectory + mitk::IOUtil::GetDirectorySeparator() + "transformed-" + QString::number(meshNo) + ".vtk";
+    QString meshPath = projectDirectory + "/transformed-" + QString::number(meshNo) + ".vtk";
     return CemrgCommonUtils::LoadVTKMesh(meshPath.toStdString());
 }
 
@@ -837,9 +837,9 @@ std::vector<mitk::Point3D> CemrgStrains::ConvertMPS(mitk::DataNode::Pointer node
 double CemrgStrains::Norm(mitk::Point3D vec) {
 
     double norm;
-    norm = sqrt(pow(double(vec.GetElement(0)),2.0) +
-                pow(double(vec.GetElement(1)),2.0) +
-                pow(double(vec.GetElement(2)),2.0));
+    norm = sqrt(pow(double(vec.GetElement(0)), 2.0) +
+        pow(double(vec.GetElement(1)), 2.0) +
+        pow(double(vec.GetElement(2)), 2.0));
     return norm;
 }
 
@@ -847,17 +847,17 @@ double CemrgStrains::Dot(mitk::Point3D vec1, mitk::Point3D vec2) {
 
     double dot;
     dot = ((vec1.GetElement(0) * vec2.GetElement(0)) +
-           (vec1.GetElement(1) * vec2.GetElement(1)) +
-           (vec1.GetElement(2) * vec2.GetElement(2)));
+        (vec1.GetElement(1) * vec2.GetElement(1)) +
+        (vec1.GetElement(2) * vec2.GetElement(2)));
     return dot;
 }
 
 mitk::Point3D CemrgStrains::Cross(mitk::Point3D vec1, mitk::Point3D vec2) {
 
     mitk::Point3D product;
-    product.SetElement(0, vec1.GetElement(1)*vec2.GetElement(2) - vec1.GetElement(2)*vec2.GetElement(1));
-    product.SetElement(1, vec1.GetElement(2)*vec2.GetElement(0) - vec1.GetElement(0)*vec2.GetElement(2));
-    product.SetElement(2, vec1.GetElement(0)*vec2.GetElement(1) - vec1.GetElement(1)*vec2.GetElement(0));
+    product.SetElement(0, vec1.GetElement(1) * vec2.GetElement(2) - vec1.GetElement(2) * vec2.GetElement(1));
+    product.SetElement(1, vec1.GetElement(2) * vec2.GetElement(0) - vec1.GetElement(0) * vec2.GetElement(2));
+    product.SetElement(2, vec1.GetElement(0) * vec2.GetElement(1) - vec1.GetElement(1) * vec2.GetElement(0));
     return product;
 }
 
@@ -865,15 +865,15 @@ std::vector<double> CemrgStrains::GetMinMax(vtkSmartPointer<vtkPolyData> pd, int
 
     double min = 0;
     double max = 0;
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         double* point = pd->GetPoint(i);
-        if (i==0) {
+        if (i == 0) {
             min = point[dimension];
             max = point[dimension];
         } else {
-            if (point[dimension]<min)
+            if (point[dimension] < min)
                 min = point[dimension];
-            if (point[dimension]>max)
+            if (point[dimension] > max)
                 max = point[dimension];
         }//_if
     }//_for
@@ -885,7 +885,7 @@ mitk::Point3D CemrgStrains::Circlefit3d(mitk::Point3D point1, mitk::Point3D poin
     //v1, v2 describe the vectors from p1 to p2 and p3, resp.
     mitk::Point3D v1;
     mitk::Point3D v2;
-    for (int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         v1.SetElement(i, point2.GetElement(i) - point1.GetElement(i));
         v2.SetElement(i, point3.GetElement(i) - point1.GetElement(i));
     }
@@ -897,38 +897,38 @@ mitk::Point3D CemrgStrains::Circlefit3d(mitk::Point3D point1, mitk::Point3D poin
     //v1n, v2n describe the normalized vectors v1 and v2
     mitk::Point3D v1n = v1;
     mitk::Point3D v2n = v2;
-    for (int i=0; i<3; i++) {
-        v1n.SetElement(i, v1n.GetElement(i)/l1);
-        v2n.SetElement(i, v2n.GetElement(i)/l2);
+    for (int i = 0; i < 3; i++) {
+        v1n.SetElement(i, v1n.GetElement(i) / l1);
+        v2n.SetElement(i, v2n.GetElement(i) / l2);
     }
 
     //nv describes the normal vector on the plane of the circle
     mitk::Point3D nv;
-    nv.SetElement(0, v1n.GetElement(1)*v2n.GetElement(2) - v1n.GetElement(2)*v2n.GetElement(1));
-    nv.SetElement(1, v1n.GetElement(2)*v2n.GetElement(0) - v1n.GetElement(0)*v2n.GetElement(2));
-    nv.SetElement(2, v1n.GetElement(0)*v2n.GetElement(1) - v1n.GetElement(1)*v2n.GetElement(0));
+    nv.SetElement(0, v1n.GetElement(1) * v2n.GetElement(2) - v1n.GetElement(2) * v2n.GetElement(1));
+    nv.SetElement(1, v1n.GetElement(2) * v2n.GetElement(0) - v1n.GetElement(0) * v2n.GetElement(2));
+    nv.SetElement(2, v1n.GetElement(0) * v2n.GetElement(1) - v1n.GetElement(1) * v2n.GetElement(0));
 
     //v2nb: orthogonalization of v2n against v1n
     double dotp = v2n.GetElement(0) * v1n.GetElement(0) +
-            v2n.GetElement(1) * v1n.GetElement(1) +
-            v2n.GetElement(2) * v1n.GetElement(2);
+        v2n.GetElement(1) * v1n.GetElement(1) +
+        v2n.GetElement(2) * v1n.GetElement(2);
 
     mitk::Point3D v2nb = v2n;
-    for (int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         v2nb.SetElement(i, v2nb.GetElement(i) - dotp * v1n.GetElement(i));
     }
 
     //Normalize v2nb
     double l2nb = sqrt(pow(v2nb.GetElement(0), 2) + pow(v2nb.GetElement(1), 2) + pow(v2nb.GetElement(2), 2));
-    for (int i=0; i<3; i++) {
-        v2nb.SetElement(i, v2nb.GetElement(i)/l2nb);
+    for (int i = 0; i < 3; i++) {
+        v2nb.SetElement(i, v2nb.GetElement(i) / l2nb);
     }
 
     //Calculate 2d coordinates of points in each plane
     mitk::Point2D p3_2d;
-    p3_2d.SetElement(0,0);
-    p3_2d.SetElement(1,0);
-    for (int i=0; i<3; i++) {
+    p3_2d.SetElement(0, 0);
+    p3_2d.SetElement(1, 0);
+    for (int i = 0; i < 3; i++) {
         p3_2d.SetElement(0, p3_2d.GetElement(0) + v2.GetElement(i) * v1n.GetElement(i));
         p3_2d.SetElement(1, p3_2d.GetElement(1) + v2.GetElement(i) * v2nb.GetElement(i));
     }
@@ -937,13 +937,13 @@ mitk::Point3D CemrgStrains::Circlefit3d(mitk::Point3D point1, mitk::Point3D poin
     double a = l1;
     double b = p3_2d.GetElement(0);
     double c = p3_2d.GetElement(1);
-    double t = .5 * (a-b) / c;
-    double scale1 = b/2 + c*t;
-    double scale2 = c/2 - b*t;
+    double t = .5 * (a - b) / c;
+    double scale1 = b / 2 + c * t;
+    double scale2 = c / 2 - b * t;
 
     //centre
     mitk::Point3D centre;
-    for (int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         double val = point1.GetElement(i) + (scale1 * v1n.GetElement(i)) + (scale2 * v2nb.GetElement(i));
         centre.SetElement(i, val);
     }
@@ -956,49 +956,49 @@ mitk::Point3D CemrgStrains::Circlefit3d(mitk::Point3D point1, mitk::Point3D poin
     return centre;
 }
 
-mitk::Matrix<double,3,3> CemrgStrains::CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2) {
+mitk::Matrix<double, 3, 3> CemrgStrains::CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2) {
 
     //X Axis
-    mitk::Matrix<double,1,3> vec;
+    mitk::Matrix<double, 1, 3> vec;
     vec[0][0] = point1.GetElement(0);
     vec[0][1] = point1.GetElement(1);
     vec[0][2] = point1.GetElement(2);
     double theta_x = atan(vec[0][1] / vec[0][2]);
 
-    mitk::Matrix<double,3,3> R_x;
+    mitk::Matrix<double, 3, 3> R_x;
     R_x[0][0] = 1;
     R_x[0][1] = 0;
     R_x[0][2] = 0;
     R_x[1][0] = 0;
     R_x[1][1] = cos(theta_x);
-    R_x[1][2] =-sin(theta_x);
+    R_x[1][2] = -sin(theta_x);
     R_x[2][0] = 0;
     R_x[2][1] = sin(theta_x);
     R_x[2][2] = cos(theta_x);
 
     //Y Axis
-    mitk::Matrix<double,3,1> vecX;
+    mitk::Matrix<double, 3, 1> vecX;
     vecX = R_x * vec.GetTranspose();
     double theta_y = atan(-vecX[0][0] / vecX[2][0]);
 
-    mitk::Matrix<double,3,3> R_y;
+    mitk::Matrix<double, 3, 3> R_y;
     R_y[0][0] = cos(theta_y);
     R_y[0][1] = 0;
     R_y[0][2] = sin(theta_y);
     R_y[1][0] = 0;
     R_y[1][1] = 1;
     R_y[1][2] = 0;
-    R_y[2][0] =-sin(theta_y);
+    R_y[2][0] = -sin(theta_y);
     R_y[2][1] = 0;
     R_y[2][2] = cos(theta_y);
 
     //Z Axis
-    point2 = RotatePoint(R_y*R_x, point2);
+    point2 = RotatePoint(R_y * R_x, point2);
     double theta_z = atan(-point2.GetElement(1) / point2.GetElement(0));
 
-    mitk::Matrix<double,3,3> R_z;
+    mitk::Matrix<double, 3, 3> R_z;
     R_z[0][0] = cos(theta_z);
-    R_z[0][1] =-sin(theta_z);
+    R_z[0][1] = -sin(theta_z);
     R_z[0][2] = 0;
     R_z[1][0] = sin(theta_z);
     R_z[1][1] = cos(theta_z);
@@ -1008,13 +1008,12 @@ mitk::Matrix<double,3,3> CemrgStrains::CalcRotationMatrix(mitk::Point3D point1, 
     R_z[2][2] = 1;
 
     //Rotation Matrix
-    mitk::Matrix<double,3,3> R;
+    mitk::Matrix<double, 3, 3> R;
     R = R_z * R_y * R_x;
     return R;
 }
 
-void CemrgStrains::AssignpLabels(
-        int layer, std::vector<double>& pLabel, std::vector<int> index, std::vector<double> pAngles, double sepA, double freeA) {
+void CemrgStrains::AssignpLabels(int layer, std::vector<double>& pLabel, std::vector<int> index, std::vector<double> pAngles, double sepA, double freeA) {
 
     double Csec;
     std::vector<int> oLab;
@@ -1026,34 +1025,34 @@ void CemrgStrains::AssignpLabels(
     if (layer == 0) {
         Csec = 0;
         oLab = {3, 2, 1, 6, 5, 4};
-        WID  = {sepA, sepA, freeA, freeA, freeA, freeA};
+        WID = {sepA, sepA, freeA, freeA, freeA, freeA};
     } else if (layer == 1) {
         Csec = 0;
         oLab = {9, 8, 7, 12, 11, 10};
-        WID  = {sepA, sepA, freeA, freeA, freeA, freeA};
+        WID = {sepA, sepA, freeA, freeA, freeA, freeA};
     } else if (layer == 2) {
         Csec = sepA - M_PI / 4;
         oLab = {14, 13, 16, 15};
-        WID  = {M_PI/2, M_PI/2, M_PI/2, M_PI/2};
+        WID = {M_PI / 2, M_PI / 2, M_PI / 2, M_PI / 2};
     }//_if
 
-    for (unsigned int i = 0; i<oLab.size(); i++) {
+    for (unsigned int i = 0; i < oLab.size(); i++) {
         double Upper = Csec + WID.at(i);
         double Lower = Csec;
-        for (unsigned int idx=0; idx<pAngles.size(); idx++) {
-            int logic = (pAngles.at(idx)<Upper?1:0) * (pAngles.at(idx)>=Lower?1:0) * index.at(idx);
-            logic==1 ? pLabel.at(idx) = oLab.at(i):false;// * SCAL;
+        for (unsigned int idx = 0; idx < pAngles.size(); idx++) {
+            int logic = (pAngles.at(idx) < Upper ? 1 : 0) * (pAngles.at(idx) >= Lower ? 1 : 0) * index.at(idx);
+            logic == 1 ? pLabel.at(idx) = oLab.at(i) : false;// * SCAL;
         }
         if (Lower < 0) {
-            for (unsigned int idx=0; idx<pAngles.size(); idx++) {
-                int logic = (pAngles.at(idx)<2*M_PI?1:0) * (pAngles.at(idx)>=2*M_PI+Lower?1:0) * index.at(idx);
-                logic==1 ? pLabel.at(idx) = oLab.at(i):false;// * SCAL;
+            for (unsigned int idx = 0; idx < pAngles.size(); idx++) {
+                int logic = (pAngles.at(idx) < 2 * M_PI ? 1 : 0) * (pAngles.at(idx) >= 2 * M_PI + Lower ? 1 : 0) * index.at(idx);
+                logic == 1 ? pLabel.at(idx) = oLab.at(i) : false;// * SCAL;
             }
         }
-        if (Upper > 2*M_PI) {
-            for (unsigned int idx=0; idx<pAngles.size(); idx++) {
-                int logic = (pAngles.at(idx)<Upper-2*M_PI?1:0) * (pAngles.at(idx)>=0?1:0) * index.at(idx);
-                logic==1 ? pLabel.at(idx) = oLab.at(i):false;// * SCAL;
+        if (Upper > 2 * M_PI) {
+            for (unsigned int idx = 0; idx < pAngles.size(); idx++) {
+                int logic = (pAngles.at(idx) < Upper - 2 * M_PI ? 1 : 0) * (pAngles.at(idx) >= 0 ? 1 : 0) * index.at(idx);
+                logic == 1 ? pLabel.at(idx) = oLab.at(i) : false;// * SCAL;
             }
         }
         Csec = Csec + WID.at(i);
@@ -1061,7 +1060,7 @@ void CemrgStrains::AssignpLabels(
 }
 
 void CemrgStrains::AssigncLabels(
-        int layer, std::vector<int>& cLabel, std::vector<int> index, std::vector<double> cAngles, double sepA, double freeA) {
+    int layer, std::vector<int>& cLabel, std::vector<int> index, std::vector<double> cAngles, double sepA, double freeA) {
 
     double Csec;
     std::vector<int> oLab;
@@ -1070,34 +1069,34 @@ void CemrgStrains::AssigncLabels(
     if (layer == 0) {
         Csec = 0;
         oLab = {3, 2, 1, 6, 5, 4};
-        WID  = {sepA, sepA, freeA, freeA, freeA, freeA};
+        WID = {sepA, sepA, freeA, freeA, freeA, freeA};
     } else if (layer == 1) {
         Csec = 0;
         oLab = {9, 8, 7, 12, 11, 10};
-        WID  = {sepA, sepA, freeA, freeA, freeA, freeA};
+        WID = {sepA, sepA, freeA, freeA, freeA, freeA};
     } else if (layer == 2) {
         Csec = sepA - M_PI / 4;
         oLab = {14, 13, 16, 15};
-        WID  = {M_PI/2, M_PI/2, M_PI/2, M_PI/2};
+        WID = {M_PI / 2, M_PI / 2, M_PI / 2, M_PI / 2};
     }//_if
 
-    for (unsigned int i = 0; i<oLab.size(); i++) {
+    for (unsigned int i = 0; i < oLab.size(); i++) {
         double Upper = Csec + WID.at(i);
         double Lower = Csec;
-        for (unsigned int idx=0; idx<cAngles.size(); idx++) {
-            int logic = (cAngles.at(idx)<Upper?1:0) * (cAngles.at(idx)>=Lower?1:0) * index.at(idx);
-            logic==1 ? cLabel.at(idx) = oLab.at(i):false;
+        for (unsigned int idx = 0; idx < cAngles.size(); idx++) {
+            int logic = (cAngles.at(idx) < Upper ? 1 : 0) * (cAngles.at(idx) >= Lower ? 1 : 0) * index.at(idx);
+            logic == 1 ? cLabel.at(idx) = oLab.at(i) : false;
         }
         if (Lower < 0) {
-            for (unsigned int idx=0; idx<cAngles.size(); idx++) {
-                int logic = (cAngles.at(idx)<2*M_PI?1:0) * (cAngles.at(idx)>=2*M_PI+Lower?1:0) * index.at(idx);
-                logic==1 ? cLabel.at(idx) = oLab.at(i):false;
+            for (unsigned int idx = 0; idx < cAngles.size(); idx++) {
+                int logic = (cAngles.at(idx) < 2 * M_PI ? 1 : 0) * (cAngles.at(idx) >= 2 * M_PI + Lower ? 1 : 0) * index.at(idx);
+                logic == 1 ? cLabel.at(idx) = oLab.at(i) : false;
             }
         }
-        if (Upper > 2*M_PI) {
-            for (unsigned int idx=0; idx<cAngles.size(); idx++) {
-                int logic = (cAngles.at(idx)<Upper-2*M_PI?1:0) * (cAngles.at(idx)>=0?1:0) * index.at(idx);
-                logic==1 ? cLabel.at(idx) = oLab.at(i):false;
+        if (Upper > 2 * M_PI) {
+            for (unsigned int idx = 0; idx < cAngles.size(); idx++) {
+                int logic = (cAngles.at(idx) < Upper - 2 * M_PI ? 1 : 0) * (cAngles.at(idx) >= 0 ? 1 : 0) * index.at(idx);
+                logic == 1 ? cLabel.at(idx) = oLab.at(i) : false;
             }
         }
         Csec = Csec + WID.at(i);

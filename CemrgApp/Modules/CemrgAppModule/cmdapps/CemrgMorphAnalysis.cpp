@@ -41,9 +41,8 @@ in the framework.
 #include <itkLabelMapToLabelImageFilter.h>
 #include <itkLabelSelectionLabelMapFilter.h>
 
-// CemrgLib
+// CemrgApp
 #include <CemrgMeasure.h>
-
 
 int main(int argc, char* argv[]) {
 
@@ -58,9 +57,9 @@ int main(int argc, char* argv[]) {
 
     // Add arguments. Unless specified otherwise, each argument is optional.
     parser.addArgument(
-                "directory", "d", mitkCommandLineParser::InputFile,
-                "Directory path", "Full path of directory",
-                us::Any(), false);
+        "directory", "d", mitkCommandLineParser::InputFile,
+        "Directory path", "Full path of directory",
+        us::Any(), false);
 
     // Parse arguments.
     auto parsedArgs = parser.parseArguments(argc, argv);
@@ -70,7 +69,7 @@ int main(int argc, char* argv[]) {
 
     try {
 
-        QString path = QString::fromStdString(directory) + mitk::IOUtil::GetDirectorySeparator() + "AnalyticBloodpool.nii";
+        QString path = QString::fromStdString(directory) + "/AnalyticBloodpool.nii";
         mitk::Image::Pointer analyticImage = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
 
         if (analyticImage) {
@@ -115,10 +114,10 @@ int main(int argc, char* argv[]) {
             labelImageConverter->SetInput(selector->GetOutput(0));
             labelImageConverter->Update();
             mitk::Image::Pointer ap = mitk::ImportItkImage(labelImageConverter->GetOutput());
-            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii");
+            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory + "/PVeinsCroppedImage.nii");
 
-            mitk::IOUtil::Save(ap, directory + mitk::IOUtil::GetDirectorySeparator() + "AP.nii.gz");
-            mitk::IOUtil::Save(bp, directory + mitk::IOUtil::GetDirectorySeparator() + "BP.nii.gz");
+            mitk::IOUtil::Save(ap, directory + "/AP.nii.gz");
+            mitk::IOUtil::Save(bp, directory + "/BP.nii.gz");
 
             //Ask for user input to set the parameters
             float th = 0.5;
@@ -194,7 +193,7 @@ int main(int argc, char* argv[]) {
 
             //Store in text file
             ofstream morphResult;
-            QString morphPath = QString::fromStdString(directory) + mitk::IOUtil::GetDirectorySeparator() + "morphResults_AB.txt";
+            QString morphPath = QString::fromStdString(directory) + "/morphResults_AB.txt";
             morphResult.open(morphPath.toStdString(), std::ios_base::app);
             morphResult << "SA" << " " << surfceLA << "\n";
             morphResult << "VA" << " " << volumeLA << "\n";

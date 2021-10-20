@@ -53,7 +53,7 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class MmcwViewPlot : public QmitkAbstractView {
+class MmcwViewPlot: public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -65,13 +65,14 @@ public:
     static void SetDirectory(const QString directory);
     static void SetNoFrames(int frames, int smoothness);
 
+    MmcwViewPlot();
+
 protected:
 
     virtual void CreateQtPartControl(QWidget *parent) override;
     virtual void SetFocus() override;
     /// \brief called by QmitkFunctionality when DataManager's selection has changed
-    virtual void OnSelectionChanged(
-            berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
+    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
     Ui::MmcwViewPlotControls m_Controls;
 
@@ -103,7 +104,7 @@ private:
     vtkSmartPointer<vtkRenderWindowInteractor> AHA_interactor;
     std::vector<std::vector<double>> plotValueVectors;
     std::vector<vtkSmartPointer<vtkFloatArray>> flatPlotScalars;
-    std::map<int,int> AHA;
+    std::map<int, int> AHA;
 };
 
 #endif // MmcwViewPlot_h

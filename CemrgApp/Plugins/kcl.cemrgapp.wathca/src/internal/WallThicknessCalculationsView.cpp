@@ -32,7 +32,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <berryIWorkbenchPage.h>
 #include <berryFileEditorInput.h>
 
-//Qmitk
+// Qmitk
 #include <mitkImage.h>
 #include <QmitkIOUtil.h>
 #include <mitkProgressBar.h>
@@ -52,8 +52,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include "WallThicknessCalculationsView.h"
 #include "WallThicknessCalculationsClipperView.h"
 
-//Micro services
+// Micro services
 #include <usModuleRegistry.h>
+
 #ifdef _WIN32
 // _WIN32 = we're in windows
 #include <winsock2.h>
@@ -62,14 +63,14 @@ PURPOSE.  See the above copyright notices for more information.
 #include <arpa/inet.h>
 #endif
 
-//VTK
+// VTK
 #include <vtkFieldData.h>
 #include <vtkCleanPolyData.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkWindowedSincPolyDataFilter.h>
 
-//ITK
+// ITK
 #include <itkAddImageFilter.h>
 #include <itkRelabelComponentImageFilter.h>
 #include <itkConnectedComponentImageFilter.h>
@@ -80,17 +81,22 @@ PURPOSE.  See the above copyright notices for more information.
 #include "itkLabelMapToLabelImageFilter.h"
 #include "itkLabelSelectionLabelMapFilter.h"
 
-//Qt
+// Qt
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QInputDialog>
 
-//CemrgAppModule
+// CemrgAppModule
 #include <CemrgCommonUtils.h>
 #include <CemrgCommandLine.h>
 #include <CemrgMeasure.h>
 
 const std::string WallThicknessCalculationsView::VIEW_ID = "org.mitk.views.wathcaview";
+
+WallThicknessCalculationsView::WallThicknessCalculationsView(){
+    this->fileName = "";
+    this->directory = "";
+}
 
 void WallThicknessCalculationsView::CreateQtPartControl(QWidget *parent) {
 
@@ -184,15 +190,13 @@ void WallThicknessCalculationsView::ConvertNII() {
     //Generic Conversion to nii
     int ctr = 0;
     QString path;
-    bool successfulNitfi, resampleImage, reorientToRAI;
-    resampleImage = false;
-    reorientToRAI = true;
+    bool resampleImage = false, reorientToRAI = true;
 
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(nodes.size());
     foreach (mitk::DataNode::Pointer node, nodes) {
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path, resampleImage, reorientToRAI);
+        path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
+        bool successfulNitfi = CemrgCommonUtils::ConvertToNifti(node->GetData(), path, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(node);
         } else {
@@ -206,7 +210,7 @@ void WallThicknessCalculationsView::ConvertNII() {
 
     //Load first item
     ctr = 0;
-    path = directory + mitk::IOUtil::GetDirectorySeparator() + "dcm-" + QString::number(ctr) + ".nii";
+    path = directory + "/dcm-" + QString::number(ctr) + ".nii";
     mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 }
@@ -242,7 +246,7 @@ void WallThicknessCalculationsView::CropIMGS() {
         this->BusyCursorOn();
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
         mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
-        path = directory + mitk::IOUtil::GetDirectorySeparator() + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
+        path = directory + "/" + CemrgCommonUtils::GetImageNode()->GetName().c_str() + ".nii";
         mitk::IOUtil::Save(outputImage, path.toStdString());
         mitk::ProgressBar::GetInstance()->Progress();
         this->BusyCursorOff();
@@ -336,7 +340,7 @@ void WallThicknessCalculationsView::ResampIMGS() {
                 this->BusyCursorOn();
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                 mitk::Image::Pointer outputImage = CemrgCommonUtils::Downsample(image, factor);
-                path = directory + mitk::IOUtil::GetDirectorySeparator() + imgNode->GetName().c_str() + ".nii";
+                path = directory + "/" + imgNode->GetName().c_str() + ".nii";
                 mitk::IOUtil::Save(outputImage, path.toStdString());
                 mitk::ProgressBar::GetInstance()->Progress();
                 this->BusyCursorOff();
@@ -441,7 +445,7 @@ void WallThicknessCalculationsView::CombineSegs() {
             //Add images
             typedef itk::Image<short, 3> ImageType;
             typedef itk::AddImageFilter<ImageType, ImageType, ImageType> AddFilterType;
-            QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "segmentation.nii";
+            QString path = directory + "/segmentation.nii";
             //Cast seg to ITK format
             ImageType::Pointer itkImage_0 = ImageType::New();
             ImageType::Pointer itkImage_1 = ImageType::New();
@@ -500,9 +504,9 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
 
     try {
 
-        QString pathAnalytic = directory + mitk::IOUtil::GetDirectorySeparator() + "AnalyticBloodpool.nii";
+        QString pathAnalytic = directory + "/AnalyticBloodpool.nii";
         mitk::Image::Pointer analyticImage = mitk::IOUtil::Load<mitk::Image>(pathAnalytic.toStdString());
-        QString pathCropped = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
+        QString pathCropped = directory + "/PVeinsCroppedImage.nii";
         mitk::Image::Pointer croppedPVImage = mitk::IOUtil::Load<mitk::Image>(pathCropped.toStdString());
 
         if (analyticImage && croppedPVImage) {
@@ -547,7 +551,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
             labelImageConverter->SetInput(selector->GetOutput(0));
             labelImageConverter->Update();
             mitk::Image::Pointer ap = mitk::ImportItkImage(labelImageConverter->GetOutput());
-            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory.toStdString() + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii");
+            mitk::Image::Pointer bp = mitk::IOUtil::Load<mitk::Image>(directory.toStdString() + "/PVeinsCroppedImage.nii");
 
             //Ask for user input to set the parameters
             QDialog* inputs = new QDialog(0,0);
@@ -653,7 +657,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
 
                 //Store in text file
                 ofstream morphResult;
-                QString morphPath = directory + mitk::IOUtil::GetDirectorySeparator() + "morphResults.txt";
+                QString morphPath = directory + "/morphResults.txt";
                 morphResult.open(morphPath.toStdString(), std::ios_base::app);
                 morphResult << "SA" << " " << surfceLA << "\n";
                 morphResult << "VA" << " " << volumeLA << "\n";
@@ -665,7 +669,7 @@ void WallThicknessCalculationsView::MorphologyAnalysis() {
                 bool ok;
                 QString morphFile = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, "morphResults.txt", &ok);
                 if (ok && !morphFile.isEmpty() && morphFile.endsWith(".txt")) {
-                    QString morphNewPath = directory + mitk::IOUtil::GetDirectorySeparator() + morphFile;
+                    QString morphNewPath = directory + "/" + morphFile;
                     int result = rename(morphPath.toStdString().c_str(), morphNewPath.toStdString().c_str());
                     if (result == 0)
                         QMessageBox::information(NULL, "Attention", "File name was changed successfully!");
@@ -719,12 +723,12 @@ void WallThicknessCalculationsView::ConvertNRRD() {
     try {
 
         bool ok;
-        QString path = directory + mitk::IOUtil::GetDirectorySeparator() + "PVeinsCroppedImage.nii";
+        QString path = directory + "/PVeinsCroppedImage.nii";
         mitk::Image::Pointer clippedImage = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
         QString tmpFileName = QInputDialog::getText(NULL, tr("Save Segmentation As"), tr("File Name:"), QLineEdit::Normal, ".nrrd", &ok);
 
         if (ok && !tmpFileName.isEmpty() && tmpFileName.endsWith(".nrrd") && tmpFileName != ".nrrd") {
-            path = directory + mitk::IOUtil::GetDirectorySeparator() + tmpFileName;
+            path = directory + "/" + tmpFileName;
             mitk::IOUtil::Save(clippedImage, path.toStdString());
             QMessageBox::information(NULL, "Attention", "Clipped Segmentation was successfully converted!");
             fileName = tmpFileName;
@@ -811,10 +815,10 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                 header[255] = '\n';
 
                 //Write to binary file
-                std::string path = (directory + mitk::IOUtil::GetDirectorySeparator() + "converted.inr").toStdString();
+                std::string path = (directory + "/converted.inr").toStdString();
                 ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
-                myFile.write((char*)&(*pv), dimensions * sizeof(uint8_t));
+                myFile.write((char*)pv, dimensions * sizeof(uint8_t));
                 myFile.close();
 
                 //Ask for user input to set the parameters
@@ -847,7 +851,6 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     this->BusyCursorOn();
                     mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                    cmd->SetUseDockerContainersOff();
                     cmd->ExecuteCreateCGALMesh(directory, meshName, templatePath);
                     QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                     mitk::ProgressBar::GetInstance()->Progress();
@@ -858,7 +861,7 @@ void WallThicknessCalculationsView::ThicknessCalculator() {
                     inputs->deleteLater();
                 }//_if
 
-            } catch(mitk::Exception& e) {
+            } catch(mitk::Exception&) {
                 return;
             }//_try
         } else

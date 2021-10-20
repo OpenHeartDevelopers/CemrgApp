@@ -59,14 +59,16 @@ in the framework.
 #include <QFileInfo>
 #include <QProcess>
 #include <QMessageBox>
+
+// C++ Standard
+#include <algorithm>
+#include <string>
 #include <numeric>
 
+// CemrgApp
 #include <CemrgScar3D.h>
 #include <CemrgCommandLine.h>
 #include <CemrgCommonUtils.h>
-
-#include <algorithm>
-#include <string>
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -82,29 +84,29 @@ int main(int argc, char* argv[]) {
 
     // Add arguments. Unless specified otherwise, each argument is optional.
     parser.addArgument(
-                "input", "i", mitkCommandLineParser::InputFile,
-                "NIFTI file path", "Full path of .nii file.",
-                us::Any(), false);
+        "input", "i", mitkCommandLineParser::InputFile,
+        "NIFTI file path", "Full path of .nii file.",
+        us::Any(), false);
     parser.addArgument(
-                "output", "o", mitkCommandLineParser::OutputFile,
-                "Output file", "Where to save the output.",
-                us::Any(), false);
+        "output", "o", mitkCommandLineParser::OutputFile,
+        "Output file", "Where to save the output.",
+        us::Any(), false);
     parser.addArgument( // optional
-                "reorient", "r", mitkCommandLineParser::Bool,
-                "Reorient to RAI", "Whether the nifti should be reoriented to RAI configuration (default=true)");
+        "reorient", "r", mitkCommandLineParser::Bool,
+        "Reorient to RAI", "Whether the nifti should be reoriented to RAI configuration (default=true)");
     parser.addArgument( // optional
-                "verbose", "v", mitkCommandLineParser::Bool,
-                "Verbose Output", "Whether to produce verbose output (default=false)");
+        "verbose", "v", mitkCommandLineParser::Bool,
+        "Verbose Output", "Whether to produce verbose output (default=false)");
 
     // Parse arguments.
     // This method returns a mapping of long argument names to their values.
     auto parsedArgs = parser.parseArguments(argc, argv);
 
-    if (parsedArgs.empty()){
+    if (parsedArgs.empty()) {
         return EXIT_FAILURE;
     }
 
-    if (parsedArgs["input"].Empty() || parsedArgs["output"].Empty() ) {
+    if (parsedArgs["input"].Empty() || parsedArgs["output"].Empty()) {
         MITK_INFO << parser.helpText();
         return EXIT_FAILURE;
     }
@@ -125,7 +127,7 @@ int main(int argc, char* argv[]) {
         reorientToRAI = us::any_cast<bool>(parsedArgs["reorient"]);
     }
 
-    try{
+    try {
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
 
@@ -133,7 +135,7 @@ int main(int argc, char* argv[]) {
         QString inputName = QString::fromStdString(inFilename);
         QString outname = QString::fromStdString(outFilename);
 
-        if (!outname.contains(".nii", Qt::CaseSensitive)){
+        if (!outname.contains(".nii", Qt::CaseSensitive)) {
             outname = outname + ".nii";
         }
 
@@ -151,15 +153,11 @@ int main(int argc, char* argv[]) {
         mitk::IOUtil::Save(image, imagePath.toStdString());
 
         MITK_INFO(verbose) << "Goodbye!";
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         MITK_ERROR << e.what();
         return EXIT_FAILURE;
-    }
-    catch(...) {
+    } catch (...) {
         MITK_ERROR << "Unexpected error";
         return EXIT_FAILURE;
     }
-
-
 }
