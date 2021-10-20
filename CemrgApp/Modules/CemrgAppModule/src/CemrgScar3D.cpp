@@ -58,8 +58,10 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QtDebug>
 #include <QMessageBox>
 
-// Generic
+// C++ Standard
 #include <numeric>
+
+// CemrgApp
 #include "CemrgCommonUtils.h"
 #include "CemrgScar3D.h"
 
@@ -69,6 +71,7 @@ CemrgScar3D::CemrgScar3D() {
     this->minStep = -3, this->maxStep = 3;
     this->minScalar = 1E10, this->maxScalar = -1;
     this->voxelBasedProjection = false;
+    this->debugging = false;
     this->scalars = vtkSmartPointer<vtkFloatArray>::New();
 }
 
@@ -106,34 +109,27 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     itkImageType::IndexType pixelXYZ;
     itkImageType::PointType pointXYZ;
 
-    double pN[3], cP[3];
-    double numPoints = 0;
-    double cX = 0, cY = 0, cZ = 0;
-
-    double sdev = -1e9;
     double maxSdev = -1e9;
-    double sratio = -1e9;
     double maxSratio = -1e9;
-    double scalar = 0;
     double mean = 0, var = 1;
 
-    for (int i=0; i<pd->GetNumberOfCells(); i++) {
-
-        vtkIdType neighborPoint;
+    for (int i = 0; i < pd->GetNumberOfCells(); i++) {
+        double pN[3];
         cellNormals->GetTuple(i, pN);
-        cX = 0, cY = 0, cZ = 0, numPoints = 0;
+        double cX = 0, cY = 0, cZ = 0, numPoints = 0;
         pd->GetCellPoints(i, cellPoints);
         numCellPoints = cellPoints->GetNumberOfIds();
 
-        for (neighborPoint=0; neighborPoint<numCellPoints; ++neighborPoint) {
+        for (vtkIdType neighborPoint = 0; neighborPoint < numCellPoints; ++neighborPoint) {
 
             //Get the neighbor point ID
             vtkIdType neighborPointID = cellPoints->GetId(neighborPoint);
 
             //Get the neighbor point position
+            double cP[3];
             pd->GetPoint(neighborPointID, cP);
 
-            //ITK method
+            // ITK method
             pointXYZ[0] = cP[0];
             pointXYZ[1] = cP[1];
             pointXYZ[2] = cP[2];
@@ -153,7 +149,7 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         cY /= numPoints;
         cZ /= numPoints;
 
-        //ITK method
+        // ITK method
         pointXYZ[0] = pN[0];
         pointXYZ[1] = pN[1];
         pointXYZ[2] = pN[2];
@@ -162,48 +158,57 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         pN[1] = pixelXYZ[1];
         pN[2] = pixelXYZ[2];
 
-        scalar = GetIntensityAlongNormal(scarImage, visitedImage, pN[0], pN[1], pN[2], cX, cY, cZ);
+        double scalar = GetIntensityAlongNormal(scarImage, visitedImage, pN[0], pN[1], pN[2], cX, cY, cZ);
 
         if (scalar > maxScalar) maxScalar = scalar;
         if (scalar < minScalar) minScalar = scalar;
 
-        sdev = (scalar-mean) / sqrt(var);
-        sratio = mean ? scalar / mean : std::numeric_limits<decltype(sratio)>::max();
+        double sdev = (scalar - mean) / sqrt(var);
+        // double sratio = mean ? scalar / mean : std::numeric_limits<decltype(sratio)>::max(); // mean=0 always false
+        double sratio = std::numeric_limits<decltype(sratio)>::max(); // mean=0 always false
 
         if (maxSdev < sdev) maxSdev = sdev;
         if (maxSratio < sratio) maxSratio = sratio;
 
         /**
-         * @brief tickbox GUI for this
-         */
+         * Placeholder variables for potential GUI options.
+         * We removed them in favour of a simplified functionality
+         *
         int _ONLY_POSITIVE_STDEVS = 1;
         int _SCAR_AS_STANDARD_DEVIATION = 1;
         int _SCAR_MIP = 1;
-        /**
-         * @brief end
+        *
+        * Comments that refer to this are identified with the following:
+        * [placeholder]
+         *
          */
 
-        if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
+        // [placeholder] simplified functionality without placeholder variables
+        if (sdev < 0) sdev = 0;
+
+        // [placeholder] comlete functionality with placeholder variables
+        // if (_ONLY_POSITIVE_STDEVS == 1 && sdev < 0) sdev = 0;
 
         scalarsOnlyStDev->InsertTuple1(i, sdev);
         scalarsOnlyIntensity->InsertTuple1(i, scalar);
         scalarsOnlyMultiplier->InsertTuple1(i, sratio);
 
         //For default scalar to plot
-        double scalarToPlot = (scalar-mean) / sqrt(var);
+        double scalarToPlot = (scalar - mean) / sqrt(var);
 
         if (scalarToPlot <= 0) scalarToPlot = 0;
 
-        if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
+        // [placeholder] simplified functionality without placeholder variables
+        scalars->InsertTuple1(i, scalarToPlot);
+        allScalarsInShell.push_back(scalarToPlot);
 
-            scalars->InsertTuple1(i, scalarToPlot);
-            allScalarsInShell.push_back(scalarToPlot);
-
-        } else {
-
-            scalars->InsertTuple1(i, scalar);
-            allScalarsInShell.push_back(scalar);
-        }
+        // [placeholder] comlete functionality with placeholder variables
+        // if (_SCAR_MIP == 1 && _SCAR_AS_STANDARD_DEVIATION == 1) {
+        //      scalars->InsertTuple1(i, scalarToPlot);
+        //      allScalarsInShell.push_back(scalarToPlot);
+        // } else {
+        //      scalars->InsertTuple1(i, scalar);
+        //      allScalarsInShell.push_back(scalar); }
     }//_for
 
     scarDebugLabel = visitedImage;
@@ -218,7 +223,7 @@ mitk::Surface::Pointer CemrgScar3D::ClipMesh3D(mitk::Surface::Pointer surface, m
     double x_c = 0;
     double y_c = 0;
     double z_c = 0;
-    for(int i=0; i<landmarks->GetSize(); i++) {
+    for (int i = 0; i < landmarks->GetSize(); i++) {
         x_c = x_c + landmarks->GetPoint(i).GetElement(0);
         y_c = y_c + landmarks->GetPoint(i).GetElement(1);
         z_c = z_c + landmarks->GetPoint(i).GetElement(2);
@@ -226,12 +231,12 @@ mitk::Surface::Pointer CemrgScar3D::ClipMesh3D(mitk::Surface::Pointer surface, m
     x_c /= landmarks->GetSize();
     y_c /= landmarks->GetSize();
     z_c /= landmarks->GetSize();
-    double * distance = new double [landmarks->GetSize()];
-    for(int i=0; i<landmarks->GetSize(); i++) {
+    double * distance = new double[landmarks->GetSize()];
+    for (int i = 0; i < landmarks->GetSize(); i++) {
         double x_d = landmarks->GetPoint(i).GetElement(0) - x_c;
         double y_d = landmarks->GetPoint(i).GetElement(1) - y_c;
         double z_d = landmarks->GetPoint(i).GetElement(2) - z_c;
-        distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+        distance[i] = sqrt(pow(x_d, 2) + pow(y_d, 2) + pow(z_d, 2));
     }//_for
     double radius = *std::max_element(distance, distance + landmarks->GetSize());
     double centre[3] = {x_c, y_c, z_c};
@@ -295,25 +300,24 @@ bool CemrgScar3D::CalculateMeanStd(mitk::Image::Pointer lgeImage, mitk::Image::P
     double sumDeviation = 0.0;
     double sum = std::accumulate(voxelValues.begin(), voxelValues.end(), 0.0);
     mean = sum / voxelValues.size();
-    for (unsigned int i=0; i<voxelValues.size(); i++)
-        sumDeviation += (voxelValues[i]-mean) * (voxelValues[i]-mean);
-    stdv = std::sqrt(sumDeviation/voxelValues.size());
+    for (unsigned int i = 0; i < voxelValues.size(); i++)
+        sumDeviation += (voxelValues[i] - mean) * (voxelValues[i] - mean);
+    stdv = std::sqrt(sumDeviation / voxelValues.size());
     return true;
 }
 
 double CemrgScar3D::Thresholding(double thresh) {
 
-    double value;
-    int ctr1 = 0; int ctr2 = 0;
-    for(int i=0; i<scalars->GetNumberOfTuples(); i++) {
-        value = scalars->GetValue(i);
+    int ctr1 = 0, ctr2 = 0;
+    for (int i = 0; i < scalars->GetNumberOfTuples(); i++) {
+        double value = scalars->GetValue(i);
         if (value == -1) {
             ctr1++;
             continue;
         }//_if
         if (value > thresh) ctr2++;
     }
-    double percentage = (ctr2*100.0) / (scalars->GetNumberOfTuples() - ctr1);
+    double percentage = (ctr2 * 100.0) / (scalars->GetNumberOfTuples() - ctr1);
     return percentage;
 }
 
@@ -322,16 +326,13 @@ void CemrgScar3D::SaveNormalisedScalars(double divisor, mitk::Surface::Pointer s
     MITK_INFO << "Dividing by the mean value of the bloodpool.";
     MITK_ERROR(divisor == 0) << "Can't divide by 0.";
 
-    double value;
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
     vtkSmartPointer<vtkPolyData> pd = surface->GetVtkPolyData();
     vtkSmartPointer<vtkFloatArray> normalisedScalars = vtkSmartPointer<vtkFloatArray>::New();
 
-    for(int i=0; i<scalars->GetNumberOfTuples(); i++) {
-        value = scalars->GetValue(i)/divisor;
-
-        if (value < 0) value =  -1;
-
+    for (int i = 0; i < scalars->GetNumberOfTuples(); i++) {
+        double value = scalars->GetValue(i) / divisor;
+        if (value < 0) value = -1;
         normalisedScalars->InsertTuple1(i, value);
     }
 
@@ -352,28 +353,27 @@ void CemrgScar3D::SaveNormalisedScalars(double divisor, mitk::Surface::Pointer s
 
 }
 
-void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> values_vector, int threshType, double mean, double stdv, bool printGuide){
+void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> values_vector, int threshType, double mean, double stdv, bool printGuide) {
     QString prodPath = dir + "/";
-    double thisThresh, thisPercentage, thisValue;
     std::ofstream prodFile1;
     prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
-    for(int ix=0; (unsigned) ix < values_vector.size(); ix++) {
-        thisValue = values_vector.at(ix);
-        thisThresh = (threshType == 1) ? mean*thisValue : mean + thisValue*stdv;
-        thisPercentage = Thresholding(thisThresh);
+    for (unsigned int ix = 0; ix < values_vector.size(); ix++) {
+        double thisValue = values_vector.at(ix);
+        double thisThresh = (threshType == 1) ? mean * thisValue : mean + thisValue * stdv;
+        double thisPercentage = Thresholding(thisThresh);
         prodFile1 << thisValue << "\n";
         prodFile1 << threshType << "\n";
         prodFile1 << mean << "\n";
         prodFile1 << stdv << "\n";
         prodFile1 << thisThresh << "\n";
         prodFile1 << "SCORE: " << thisPercentage << "\n";
-        if(!printGuide){
+        if (!printGuide) {
             prodFile1 << "=============== separation ================\n";
         }
     }
     prodFile1.close();
 
-    if(printGuide){
+    if (printGuide) {
         std::ofstream prodFileExplanation;
         prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
         prodFileExplanation << "VALUE\n";
@@ -387,7 +387,7 @@ void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> valu
     }
 }
 
-void CemrgScar3D::PrintSingleThresholdingResult(QString dir, double value, int threshType, double mean, double stdv){
+void CemrgScar3D::PrintSingleThresholdingResult(QString dir, double value, int threshType, double mean, double stdv) {
     std::vector<double> v;
     v.push_back(value);
     PrintThresholdingResults(dir, v, threshType, mean, stdv, false);
@@ -431,13 +431,10 @@ void CemrgScar3D::SetVoxelBasedProjection(bool value) {
     voxelBasedProjection = value;
 }
 
-double CemrgScar3D::GetIntensityAlongNormal(
-        itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage,
-        double n_x, double n_y, double n_z, double centre_x, double centre_y, double centre_z) {
+double CemrgScar3D::GetIntensityAlongNormal(itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage,
+    double n_x, double n_y, double n_z, double centre_x, double centre_y, double centre_z) {
 
     //Declarations
-    int a, b, c, maxX, maxY, maxZ;
-    double insty = 0, x = 0, y = 0, z = 0;
     std::vector<mitk::Point3D> pointsOnAndAroundNormal;
 
     //Normalize
@@ -450,33 +447,28 @@ double CemrgScar3D::GetIntensityAlongNormal(
     n_y /= norm;
     n_z /= norm;
 
-    double scar_step_min  = minStep;
-    double scar_step_max  = maxStep;
+    double scar_step_min = minStep;
+    double scar_step_max = maxStep;
     double scar_step_size = 1;
 
     const itkImageType::SizeType sizeOfImage = scarImage->GetLargestPossibleRegion().GetSize();
-    maxX = sizeOfImage[0];
-    maxY = sizeOfImage[1];
-    maxZ = sizeOfImage[2];
+    int maxX = sizeOfImage[0];
+    int maxY = sizeOfImage[1];
+    int maxZ = sizeOfImage[2];
 
     for (double i = scar_step_min; i <= scar_step_max; i += scar_step_size) {
+        double x = floor(centre_x + (i * n_x));
+        double y = floor(centre_y + (i * n_y));
+        double z = floor(centre_z + (i * n_z));
 
-        x = centre_x + (i*n_x);
-        y = centre_y + (i*n_y);
-        z = centre_z + (i*n_z);
-        x = floor(x);
-        y = floor(y);
-        z = floor(z);
-
-        for (a=-1; a<=1; a++) {
-            for (b=-1; b<=1; b++) {
-                for (c=-1; c<=1; c++) {
-                    if (x+a>=0 && x+a<maxX && y+b>=0 && y+b<maxY && z+c>=0 && z+c<maxZ) {
-
+        for (int a = -1; a <= 1; a++) {
+            for (int b = -1; b <= 1; b++) {
+                for (int c = -1; c <= 1; c++) {
+                    if (x + a >= 0 && x + a < maxX && y + b >= 0 && y + b < maxY && z + c >= 0 && z + c < maxZ) {
                         mitk::Point3D tempPoint;
-                        tempPoint.SetElement(0, x+a);
-                        tempPoint.SetElement(1, y+b);
-                        tempPoint.SetElement(2, z+c);
+                        tempPoint.SetElement(0, x + a);
+                        tempPoint.SetElement(1, y + b);
+                        tempPoint.SetElement(2, z + c);
                         pointsOnAndAroundNormal.push_back(tempPoint);
                     }
                 }
@@ -492,36 +484,22 @@ double CemrgScar3D::GetIntensityAlongNormal(
         //        }
     }//_for
 
-    if (methodType == 1) {
-
-        //Statistical measure 1 returns mean
-        insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, 1);
-
-    } else if (methodType == 2) {
-
-        //Statistical measure 2 returns max
-        insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, 2);
-
-    } else if(methodType == 4) {
-        // Statistical measure returns mode
-        insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, 4);
-
-    } //_if
-
+    double insty = 0;
+    insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, methodType);
+    
     return insty;
 }
 
-double CemrgScar3D::GetStatisticalMeasure(
-        std::vector<mitk::Point3D> pointsOnAndAroundNormal,
-        itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage, int measure) {
+double CemrgScar3D::GetStatisticalMeasure(std::vector<mitk::Point3D> pointsOnAndAroundNormal,
+    itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage, int measure) {
 
     //Declarations
     itkImageType::IndexType pixel_xyz;
-    int size = pointsOnAndAroundNormal.size(), maxIndex = 0;
-    double sum = 0, max = -1, greyVal, returnVal = 0, visitedStatus;
+    int size = pointsOnAndAroundNormal.size();
+    double sum = 0, returnVal = 0;
 
     //Filter out cut regions
-    for (int i=0; i<size; i++) {
+    for (int i = 0; i < size; i++) {
         pixel_xyz[0] = pointsOnAndAroundNormal.at(i).GetElement(0);
         pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
         pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
@@ -533,24 +511,26 @@ double CemrgScar3D::GetStatisticalMeasure(
     //Reutrn mean
     if (measure == 1) {
 
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             pixel_xyz[0] = pointsOnAndAroundNormal.at(i).GetElement(0);
             pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
             sum += scarImage->GetPixel(pixel_xyz);
         }
-        returnVal = sum/size;
+        returnVal = sum / size;
     }//_if_mean
 
     //Return max
     if (measure == 2) {
+        double max = -1;
+        int maxIndex = 0;
 
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             pixel_xyz[0] = pointsOnAndAroundNormal.at(i).GetElement(0);
             pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
-            greyVal = scarImage->GetPixel(pixel_xyz);
-            visitedStatus = visitedImage->GetPixel(pixel_xyz);
+            double greyVal = scarImage->GetPixel(pixel_xyz);
+            double visitedStatus = visitedImage->GetPixel(pixel_xyz);
             bool maxIntensity = greyVal > max;
             if (voxelBasedProjection)
                 maxIntensity = (greyVal > max) && (visitedStatus < 1);
@@ -559,6 +539,7 @@ double CemrgScar3D::GetStatisticalMeasure(
                 maxIndex = i;
             }
         }
+
         if (max == -1) {
             returnVal = 0;
         } else {
@@ -574,11 +555,11 @@ double CemrgScar3D::GetStatisticalMeasure(
     //Sum along the normal (integration)
     if (measure == 3) {
 
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             pixel_xyz[0] = pointsOnAndAroundNormal.at(i).GetElement(0);
             pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
-            greyVal = scarImage->GetPixel(pixel_xyz);
+            double greyVal = scarImage->GetPixel(pixel_xyz);
             sum += greyVal;
         }
         returnVal = sum;

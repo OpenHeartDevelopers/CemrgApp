@@ -33,23 +33,23 @@ PURPOSE.  See the above copyright notices for more information.
 
 namespace mitk {
 
-class kcl_cemrgapp_easi_Activator : public QObject, public ctkPluginActivator {
+    class kcl_cemrgapp_easi_Activator: public QObject, public ctkPluginActivator {
 
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "kcl_cemrgapp_easi")
-    Q_INTERFACES(ctkPluginActivator)
+        Q_OBJECT
+        Q_PLUGIN_METADATA(IID "kcl_cemrgapp_easi")
+        Q_INTERFACES(ctkPluginActivator)
 
-public:
+    public:
 
-    void start(ctkPluginContext *context);
-    void stop(ctkPluginContext *context);
-    static ctkPluginContext* getContext();
+        void start(ctkPluginContext *context);
+        void stop(ctkPluginContext *context);
+        static ctkPluginContext* getContext();
 
-private:
+    private:
 
-    static ctkPluginContext* pluginContext;
+        static ctkPluginContext* pluginContext;
 
-}; // kcl_cemrgapp_easi_Activator
+    }; // kcl_cemrgapp_easi_Activator
 }
 
 #endif // kcl_cemrgapp_easi_Activator_h

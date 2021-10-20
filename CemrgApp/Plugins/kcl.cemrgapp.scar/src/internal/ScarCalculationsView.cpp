@@ -70,7 +70,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFileInfo>
 #include <QStringList>
 
-// MitkCemrgAppModule
+// CemrgAppModule
 #include <CemrgCommandLine.h>
 
 QString ScarCalculationsView::fileName;
@@ -83,6 +83,16 @@ QString ScarCalculationsView::postScarFile;
 
 const std::string ScarCalculationsView::VIEW_ID = "org.mitk.views.scarcalculations";
 
+ScarCalculationsView::ScarCalculationsView() {
+    this->inputs = new QDialog(0, 0);
+    this->method = -1;
+    this->value = -1;
+    this->mean = -1;
+    this->stdv = -1;
+    this->thres = -1;
+    this->maxScalar = 200;
+    this->minScalar = 0;
+}
 ScarCalculationsView::~ScarCalculationsView() {
     //inputs->deleteLater();
 }
@@ -106,44 +116,44 @@ bool ScarCalculationsView::CheckForRequiredFiles() {
     int responsePost = ScarCalculationsView::SearchDirectory(searchPost);
 
     bool ret = false;
-    if (responsePre + responsePost >= 8){
+    if (responsePre + responsePost >= 8) {
         ret = true;
     }
     return ret;
 }
 
-int ScarCalculationsView::SearchDirectory(QString searchDir){
+int ScarCalculationsView::SearchDirectory(QString searchDir) {
     MITK_INFO << ("[INFO] Searching files on directory: " + searchDir).toStdString();
     int response = 0;
     bool debugVar = false;
     bool isPre = searchDir.contains("PRE", Qt::CaseSensitive);
 
     QDirIterator qiter(searchDir, QDirIterator::Subdirectories);
-    while(qiter.hasNext()) { // look for .nii LGE and MRA files in pre
+    while (qiter.hasNext()) { // look for .nii LGE and MRA files in pre
         QFileInfo finfo(qiter.next());
         if (finfo.fileName().contains(".nii", Qt::CaseSensitive)) {
-            if (finfo.fileName().contains("LGE", Qt::CaseSensitive)){
+            if (finfo.fileName().contains("LGE", Qt::CaseSensitive)) {
                 MITK_INFO(debugVar) << "[DEBUG] found: LGE.";
                 response++;
             }
 
-            if (finfo.fileName().contains("MRA", Qt::CaseSensitive)){
+            if (finfo.fileName().contains("MRA", Qt::CaseSensitive)) {
                 MITK_INFO(debugVar) << "[DEBUG] found: MRA.";
                 response++;
             }
         }
-        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive)){
+        if (finfo.fileName().contains("prodThresholds", Qt::CaseSensitive)) {
             MITK_INFO(debugVar) << "[DEBUG] found: Thresholds file.";
             response++;
         }
 
-        if (finfo.fileName().contains(".vtk", Qt::CaseSensitive)){
-            if (!finfo.fileName().contains("Normalised", Qt::CaseSensitive)){
-                if (finfo.fileName().contains("MaxScar", Qt::CaseSensitive)){
+        if (finfo.fileName().contains(".vtk", Qt::CaseSensitive)) {
+            if (!finfo.fileName().contains("Normalised", Qt::CaseSensitive)) {
+                if (finfo.fileName().contains("MaxScar", Qt::CaseSensitive)) {
                     MITK_INFO(debugVar) << "[DEBUG] found: Scar VTK.";
-                    if(isPre){
+                    if (isPre) {
                         preScarFile = finfo.fileName();
-                    } else{
+                    } else {
                         postScarFile = finfo.fileName();
                     }
                     response++;
@@ -158,17 +168,16 @@ QStringList ScarCalculationsView::CheckForAdvancedDirectoryFiles() {
 
     // Only checks for MaxScarPre/Post and prodThresholdsPre/Post
     QStringList need2load = {"Pre", "Post"};
-    std::vector<int> v;
     QString searchDir = ScarCalculationsView::advdir + "/";
     QDirIterator itdir(searchDir, QDirIterator::Subdirectories);
-    while(itdir.hasNext()) { // look for .nii LGE and MRA files in pre
+    while (itdir.hasNext()) { // look for .nii LGE and MRA files in pre
         QFileInfo finfo(itdir.next());
 
         if (finfo.fileName().contains("prodThresholdsPre.txt", Qt::CaseSensitive))
             need2load.removeAt(0);
 
         if (finfo.fileName().contains("prodThresholdsPost.txt", Qt::CaseSensitive)) {
-            int rmat = ((need2load.count()==2) ? 1 : 0);
+            int rmat = ((need2load.count() == 2) ? 1 : 0);
             need2load.removeAt(rmat);
         }
     }
@@ -178,15 +187,13 @@ QStringList ScarCalculationsView::CheckForAdvancedDirectoryFiles() {
 void ScarCalculationsView::GetInputsFromFile() {
 
     MITK_INFO << "GET INPUTS FROM FILE.\n";
-    double data1[5]; //, data2[5];
-    QString prodPath = QString();
     QString prodPathOut = ScarCalculationsView::advdir + "/";
     QDir advd(ScarCalculationsView::advdir);
 
     if (advd.mkdir(ScarCalculationsView::advdir)) {
         QMessageBox::warning(NULL, "Advanced analysis folder",
-                             ("The advanced analysis folder was created in:\n\n"+
-                              ScarCalculationsView::advdir.toStdString()).c_str());
+            ("The advanced analysis folder was created in:\n\n" +
+                ScarCalculationsView::advdir.toStdString()).c_str());
         MITK_INFO << "The advanced analysis folder was created.";
     }
 
@@ -194,15 +201,15 @@ void ScarCalculationsView::GetInputsFromFile() {
     QStringList need2load = CheckForAdvancedDirectoryFiles();
 
     if (need2load.count() == 0) {
-        MITK_INFO << "Using thresholds alread in ADVANCED_ANALYSIS folder." ;
-    }
-    else {
+        MITK_INFO << "Using thresholds alread in ADVANCED_ANALYSIS folder.";
+    } else {
         MITK_INFO << "Loading..." + need2load.join(", ").toStdString();
 
         for (int i = 0; i < need2load.size(); ++i) {
             MITK_INFO << "Loading " + need2load.at(i) + " files";
+            QString prodPath;
 
-            if (need2load.at(i).compare("Pre", Qt::CaseSensitive)==0)
+            if (need2load.at(i).compare("Pre", Qt::CaseSensitive) == 0)
                 prodPath = ScarCalculationsView::predir + "/";
             else
                 prodPath = ScarCalculationsView::postdir + "/";
@@ -210,14 +217,15 @@ void ScarCalculationsView::GetInputsFromFile() {
             ifstream prodFileRead;
             ofstream prodFileWrite;
             prodFileRead.open((prodPath + "prodThresholds.txt").toStdString());
-            prodFileWrite.open((prodPathOut + "prodThresholds"+need2load.at(i)+".txt").toStdString());
+            prodFileWrite.open((prodPathOut + "prodThresholds" + need2load.at(i) + ".txt").toStdString());
 
             MITK_INFO << "READ FILE: " + prodPath + "prodThresholds.txt";
-            MITK_INFO << "WRITE FILE: " + prodPathOut + "prodThresholds"+need2load.at(i)+".txt";
+            MITK_INFO << "WRITE FILE: " + prodPathOut + "prodThresholds" + need2load.at(i) + ".txt";
 
-            for(int i = 0; i < 5; i++) {
-                prodFileRead >> data1[i];
-                prodFileWrite << data1[i] << "\n";
+            double data[5];
+            for (int j = 0; j < 5; j++) {
+                prodFileRead >> data[j];
+                prodFileWrite << data[j] << "\n";
             }
             prodFileRead.close();
             prodFileWrite.close();
@@ -239,17 +247,17 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_saveth, SIGNAL(clicked()), this, SLOT(SaveNewThreshold()));
     connect(m_Controls.button_cancel, SIGNAL(clicked()), this, SLOT(CancelThresholdEdit()));
     connect(m_Controls.combo_thres, SIGNAL(currentIndexChanged(const QString&)),
-            this, SLOT(SetNewThreshold(const QString&)));
+        this, SLOT(SetNewThreshold(const QString&)));
     connect(m_Controls.comboBox, SIGNAL(currentIndexChanged(const QString&)),
-            this, SLOT(CtrlPrePostSelection(const QString&)));
+        this, SLOT(CtrlPrePostSelection(const QString&)));
 
     //Setup renderer
     surfActor = vtkSmartPointer<vtkActor>::New();
     renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->SetBackground(0,0,0);
+    renderer->SetBackground(0, 0, 0);
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
-            vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+        vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     m_Controls.widget_1->SetRenderWindow(renderWindow);
     m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
@@ -272,7 +280,7 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
         csadv = std::unique_ptr<CemrgScarAdvanced>(new CemrgScarAdvanced());
         outprefix = "pre";
 
-        csadv->SetOutputFileName((prodPathOut+outprefix+"encirclement.csv").toStdString());
+        csadv->SetOutputFileName((prodPathOut + outprefix + "encirclement.csv").toStdString());
         csadv->SetOutputPath(prodPathOut.toStdString());
 
         csadv->SetSurfaceAreaFilename("SurfaceAreaResults.txt");
@@ -301,16 +309,13 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
 }
 
 void ScarCalculationsView::SetFocus() {
-
     m_Controls.fandi_t1->setFocus();
 }
 
-void ScarCalculationsView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void ScarCalculationsView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void ScarCalculationsView::iniPreSurf() {
-
     // Check for folders to exist!
     QDir pred(ScarCalculationsView::predir);
     QDir postd(ScarCalculationsView::postdir);
@@ -318,14 +323,14 @@ void ScarCalculationsView::iniPreSurf() {
 
     if (!pred.exists() || !postd.exists()) {
         QMessageBox::warning(NULL, "Attention - Check folders' names!",
-                             "The patient's folder does not seem to have the correct structure!");
+            "The patient's folder does not seem to have the correct structure!");
         MITK_WARN << "The patient's folder does not seem to have the correct structure!";
         this->GetSite()->GetPage()->ResetPerspective();
         return;
     } else if (advd.mkdir(ScarCalculationsView::advdir)) {
         QMessageBox::warning(NULL, "Advanced analysis folder",
-                             ("The advanced analysis folder was created in:\n\n"+
-                              ScarCalculationsView::advdir.toStdString()).c_str());
+            ("The advanced analysis folder was created in:\n\n" +
+                ScarCalculationsView::advdir.toStdString()).c_str());
         MITK_INFO << "The advanced analysis folder was created.";
     }
     // Load file information
@@ -337,7 +342,7 @@ void ScarCalculationsView::iniPreSurf() {
 
     MITK_INFO << "Read file: " + (prodPathAdv + "prodThresholdsPre.txt").toStdString();
 
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
         prodFileRead >> datainfo[i];
     }
     prodFileRead.close();
@@ -349,7 +354,7 @@ void ScarCalculationsView::iniPreSurf() {
 
     // Convert to point data
     QString prename = ScarCalculationsView::preScarFile.isEmpty() ? "MaxScar.vtk" : ScarCalculationsView::preScarFile;
-    QString shellPathPre = ScarCalculationsView::predir +  "/" + prename;
+    QString shellPathPre = ScarCalculationsView::predir + "/" + prename;
     MITK_INFO << "Shell PRE: " + shellPathPre.toStdString();
     mitk::Surface::Pointer shellpre = mitk::IOUtil::Load<mitk::Surface>(shellPathPre.toStdString());
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
@@ -357,10 +362,10 @@ void ScarCalculationsView::iniPreSurf() {
     cell_to_point->PassCellDataOn();
     cell_to_point->Update();
     shellpre->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
-    mitk::IOUtil::Save(shellpre, (prodPathAdv+"MaxScarPre.vtk").toStdString());
+    mitk::IOUtil::Save(shellpre, (prodPathAdv + "MaxScarPre.vtk").toStdString());
 
     QString postname = ScarCalculationsView::postScarFile.isEmpty() ? "MaxScar.vtk" : ScarCalculationsView::postScarFile;
-    QString shellPathPost = ScarCalculationsView::postdir +  "/" + postname;
+    QString shellPathPost = ScarCalculationsView::postdir + "/" + postname;
     MITK_INFO << "Shell POST: " + shellPathPost.toStdString();
     mitk::Surface::Pointer shellpost = mitk::IOUtil::Load<mitk::Surface>(shellPathPost.toStdString());
     vtkSmartPointer<vtkCellDataToPointData> cell_to_point2 = vtkSmartPointer<vtkCellDataToPointData>::New();
@@ -368,13 +373,13 @@ void ScarCalculationsView::iniPreSurf() {
     cell_to_point2->PassCellDataOn();
     cell_to_point2->Update();
     shellpost->SetVtkPolyData(cell_to_point2->GetPolyDataOutput());
-    mitk::IOUtil::Save(shellpost, (prodPathAdv+"MaxScarPost.vtk").toStdString());
+    mitk::IOUtil::Save(shellpost, (prodPathAdv + "MaxScarPost.vtk").toStdString());
 
     // Load preablation
     surface = shellpre;
     outprefix = "pre";
 
-    QFileInfo txMaxScarPost(prodPathAdv+"MaxScarPost_Aligned.vtk");
+    QFileInfo txMaxScarPost(prodPathAdv + "MaxScarPost_Aligned.vtk");
     if (!txMaxScarPost.exists()) {
         MITK_INFO << "Transformed POST-ablation shell (MaxScarPost_Aligned.vtk) not found. Creating...";
         this->TransformMeshesForComparison();
@@ -382,14 +387,11 @@ void ScarCalculationsView::iniPreSurf() {
     m_Controls.comboBox->addItem("POST (ALIGNED)");
 }
 
-void ScarCalculationsView::KeyCallBackFunc(
-        vtkObject*, long unsigned int, void* ClientData, void*) {
+void ScarCalculationsView::KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*) {
 
     ScarCalculationsView* self;
     self = reinterpret_cast<ScarCalculationsView*>(ClientData);
     std::string key = self->interactor->GetKeySym();
-    vtkSmartPointer<vtkPolyData> poly_data = vtkSmartPointer<vtkPolyData>::New();
-    poly_data = self->surface->GetVtkPolyData();
 
     if (key == "space") {
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed SPACE key.\n";
@@ -399,7 +401,7 @@ void ScarCalculationsView::KeyCallBackFunc(
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed DELETE key.\n";
         vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
         vtkSmartPointer<vtkPoints> points = self->pickedLineSeeds->GetPoints();
-        for (int i=0; i<points->GetNumberOfPoints()-1; i++)
+        for (int i = 0; i < points->GetNumberOfPoints() - 1; i++)
             newPoints->InsertNextPoint(points->GetPoint(i));
         self->pickedLineSeeds->SetPoints(newPoints);
         self->m_Controls.widget_1->GetRenderWindow()->Render();
@@ -421,20 +423,19 @@ void ScarCalculationsView::KeyCallBackFunc(
 void ScarCalculationsView::BinVisualiser() {
 
     MITK_INFO << "Binary Visualiser";
-    double max_scalar=-2, min_scalar=0, s;
-    int numlabels=2;
-    vtkIntArray *scalars = vtkIntArray::New();
+    double max_scalar = -2, min_scalar = 0;
+    int numlabels = 2;
+    vtkIntArray *scalars = vtkIntArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkIntArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
 
-    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfPoints();i++) {
-        s = scalars->GetTuple1(i);
+    for (vtkIdType i = 0; i < surface->GetVtkPolyData()->GetNumberOfPoints(); i++) {
+        double s = scalars->GetTuple1(i);
         if (s > max_scalar)
             max_scalar = s;
         if (s < min_scalar)
             min_scalar = s;
     }
-    if (max_scalar==3){
+    if (max_scalar == 3) {
         numlabels = 5;
     }
 
@@ -448,14 +449,13 @@ void ScarCalculationsView::BinVisualiser() {
     lut->SetHueRange(0.8, 0.0);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
     lut->Build();     // this is important
 
-    vtkSmartPointer<vtkScalarBarActor> scalarBar =
-            vtkSmartPointer<vtkScalarBarActor>::New();
+    vtkSmartPointer<vtkScalarBarActor> scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
     scalarBar->SetLookupTable(surfMapper->GetLookupTable());
     scalarBar->SetWidth(0.75);
     scalarBar->SetHeight(0.3);
     scalarBar->SetTextPositionToPrecedeScalarBar();
     scalarBar->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
-    scalarBar->GetPositionCoordinate()->SetValue( 0.9, 0.01 );
+    scalarBar->GetPositionCoordinate()->SetValue(0.9, 0.01);
     scalarBar->SetNumberOfLabels(numlabels);
 
     surfMapper->SetLookupTable(lut);
@@ -472,12 +472,11 @@ void ScarCalculationsView::BinVisualiser() {
 void ScarCalculationsView::Visualiser() {
 
     MITK_INFO << "Visualiser";
-    double max_scalar=-1, min_scalar=1e9,s;
-    vtkFloatArray *scalars = vtkFloatArray::New();
+    double max_scalar = -1, min_scalar = 1e9;
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetPointData()->GetScalars());
-    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfPoints();i++) {
-        s = scalars->GetTuple1(i);
+    for (vtkIdType i = 0; i < surface->GetVtkPolyData()->GetNumberOfPoints(); i++) {
+        double s = scalars->GetTuple1(i);
         if (s > max_scalar)
             max_scalar = s;
         if (s < min_scalar)
@@ -491,7 +490,7 @@ void ScarCalculationsView::Visualiser() {
     glyph3D->SetInputData(pickedLineSeeds);
     glyph3D->SetSourceConnection(glyphSource->GetOutputPort());
     glyph3D->SetScaleModeToDataScalingOff();
-    glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength()*0.01);
+    glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength() * 0.01);
     glyph3D->Update();
 
     //Create a mapper and actor for glyph
@@ -499,7 +498,7 @@ void ScarCalculationsView::Visualiser() {
     glyphMapper->SetInputConnection(glyph3D->GetOutputPort());
     vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
     glyphActor->SetMapper(glyphMapper);
-    glyphActor->GetProperty()->SetColor(1.0,0.0,0.0);
+    glyphActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
     glyphActor->PickableOff();
     renderer->AddActor(glyphActor);
 
@@ -513,14 +512,13 @@ void ScarCalculationsView::Visualiser() {
     lut->SetHueRange(0.3, 0.0);  // this is the way_neighbourhood_size you tell which colors you want to be displayed.
     lut->Build();     // this is important
 
-    vtkSmartPointer<vtkScalarBarActor> scalarBar =
-            vtkSmartPointer<vtkScalarBarActor>::New();
+    vtkSmartPointer<vtkScalarBarActor> scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
     scalarBar->SetLookupTable(surfMapper->GetLookupTable());
     scalarBar->SetWidth(0.075);
     scalarBar->SetHeight(0.3);
     scalarBar->SetTextPositionToPrecedeScalarBar();
     scalarBar->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
-    scalarBar->GetPositionCoordinate()->SetValue( 0.9, 0.01 );
+    scalarBar->GetPositionCoordinate()->SetValue(0.9, 0.01);
     scalarBar->SetNumberOfLabels(5);
 
     std::string scalarBarTitle = "Raw Signal \n Intensity";
@@ -540,8 +538,7 @@ void ScarCalculationsView::Visualiser() {
 void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
 
     QString cb = text;//m_Controls.comboBox->currentText();
-    QMessageBox::warning(NULL, "Attention",
-                         "Changing to: " + cb + "-ablation data");
+    QMessageBox::warning(NULL, "Attention", "Changing to: " + cb + "-ablation data");
     // Load file information
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
@@ -569,10 +566,10 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
         prodFileRead.open((prodPathAdv + "prodThresholdsPost.txt").toStdString());
     }
 
-    csadv->SetOutputFileName((prodPathAdv+outprefix+"encirclement.csv").toStdString());
+    csadv->SetOutputFileName((prodPathAdv + outprefix + "encirclement.csv").toStdString());
     csadv->SetOutputPrefix(outprefix.toStdString());
 
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
         prodFileRead >> datainfo[i];
     }
     prodFileRead.close();
@@ -611,11 +608,11 @@ void ScarCalculationsView::EditThreshold() {
 
     MITK_INFO << "Edit threshold button...";
 
-    if (m_Controls.combo_thres->count()==0) { // sanity checks
-        if (method==2)
+    if (m_Controls.combo_thres->count() == 0) { // sanity checks
+        if (method == 2)
             m_Controls.combo_thres->addItems({"1", "2", "2.3", "3.3", "4", "5"});
         else
-            m_Controls.combo_thres->addItems({"0.86","0.97", "1.16", "1.2", "1.32"});
+            m_Controls.combo_thres->addItems({"0.86", "0.97", "1.16", "1.2", "1.32"});
     }
 
     m_Controls.combo_thres->setEnabled(true);
@@ -641,7 +638,7 @@ void ScarCalculationsView::EditThreshold() {
 
 void ScarCalculationsView::SetNewThreshold(const QString& text) {
 
-    if (m_Controls.combo_thres->count()==0)
+    if (m_Controls.combo_thres->count() == 0)
         return;
     MITK_INFO << "New threshold selected...";
 
@@ -657,7 +654,7 @@ void ScarCalculationsView::SetNewThreshold(const QString& text) {
     MITK_INFO << "Reading thresholds from: " + prodPath + outname;
 
     value = text.toDouble();
-    thres = (method == 1) ? mean*value : mean+value*stdv;
+    thres = (method == 1) ? mean * value : mean + value * stdv;
 
     std::string threShellPath = csadv->ThresholdedShell(thres);
 
@@ -682,7 +679,7 @@ void ScarCalculationsView::SaveNewThreshold() {
     m_Controls.comboBox->setEnabled(true);
 
     QString prodPath = ScarCalculationsView::advdir + "/";
-    QString shellpath = prodPath;
+    QString shellpath;
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
 
@@ -694,8 +691,7 @@ void ScarCalculationsView::SaveNewThreshold() {
             outprefix = "Tx_" + outprefix;
         } else
             shellpath = prodPath + "MaxScarPre.vtk";
-    }
-    else {//POST
+    } else {//POST
         outname = outname + "Post.txt";
         outprefix = "post";
         if (cb.contains("ALIGN", Qt::CaseInsensitive)) {
@@ -744,7 +740,7 @@ void ScarCalculationsView::CancelThresholdEdit() {
     }
 
     QString prodPath = ScarCalculationsView::advdir + "/";
-    QString shellpath = prodPath;
+    QString shellpath;
     QString cb = m_Controls.comboBox->currentText();
     QString outname = "prodThresholds";
 
@@ -756,8 +752,7 @@ void ScarCalculationsView::CancelThresholdEdit() {
             outprefix = "Tx_" + outprefix;
         } else
             shellpath = prodPath + "MaxScarPre.vtk";
-    }
-    else {//POST
+    } else {//POST
         outname = outname + "Post.txt";
         outprefix = "post";
         if (cb.contains("ALIGN", Qt::CaseInsensitive)) {
@@ -798,12 +793,11 @@ void ScarCalculationsView::PickCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
     int pickedSeedId = -1;
     double minDistance = 1E10;
-    for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
-                    pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
+    for (int i = 0; i < pickedCellPointIds->GetNumberOfIds(); i++) {
+        double distance = vtkMath::Distance2BetweenPoints(
+            pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
             pickedSeedId = pickedCellPointIds->GetId(i);
@@ -836,7 +830,7 @@ void ScarCalculationsView::DoImageProcessing() {
     csadv->GetSurfaceAreaFromThreshold(thres, maxScalar);
     csadv->ScarScore(thres);
     QMessageBox::warning(NULL, "F&I T1 - FINISHED CALCULATION",
-                         (csadv->PrintThresholdResults(mean, stdv, value)).c_str());
+        (csadv->PrintThresholdResults(mean, stdv, value)).c_str());
 }
 
 void ScarCalculationsView::GapMeasurement() {
@@ -851,10 +845,10 @@ void ScarCalculationsView::GapMeasurement() {
     }
 
     // F&I T2
-    if (pickedSeedIds->GetNumberOfIds()==0) {
+    if (pickedSeedIds->GetNumberOfIds() == 0) {
 
         QMessageBox::warning(NULL, "Attention - No points selected.",
-                             "Please select at least five points surrounding a vein.");
+            "Please select at least five points surrounding a vein.");
         MITK_WARN << "Please select at least five points surrounding a vein.";
 
     } else {
@@ -863,13 +857,13 @@ void ScarCalculationsView::GapMeasurement() {
         MITK_INFO << "Passing selected IDs to underlying functionalities.";
         int lim = this->pickedSeedIds->GetNumberOfIds();
         std::vector<int> v;
-        for(int i=0; i<lim; i++){
+        for (int i = 0; i < lim; i++) {
             v.push_back(this->pickedSeedIds->GetId(i));
         }
 
         MITK_INFO << "Creating shortest path and corridor.";
         // Choose parameters: neighbourhood size, left/right prefix
-        QDialog* inputs = new QDialog(0,0);
+        QDialog* inputs = new QDialog(0, 0);
         m_UICorridor.setupUi(inputs);
         connect(m_UICorridor.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
         connect(m_UICorridor.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -889,30 +883,30 @@ void ScarCalculationsView::GapMeasurement() {
                 thickness = 3;
             }
             // Calculate neighbourhood size from thickness
-            MITK_INFO << "Neighbourhood size:" + csadv->num2str(thickness,0);
+            MITK_INFO << "Neighbourhood size:" + csadv->num2str(thickness, 0);
             MITK_INFO << "Side: " + lrpre;
             csadv->SetNeighbourhoodSize(thickness);
             csadv->SetLeftRightPrefix(lrpre);
             csadv->CorridorFromPointList(v);
-            if (m_Controls.fandi_t2_visualise->findText(QString::fromStdString(csadv->GetPrefix())+"exploration_scalars")==-1)
-                m_Controls.fandi_t2_visualise->addItem(QString::fromStdString(csadv->GetPrefix())+"exploration_scalars");
+            if (m_Controls.fandi_t2_visualise->findText(QString::fromStdString(csadv->GetPrefix()) + "exploration_scalars") == -1)
+                m_Controls.fandi_t2_visualise->addItem(QString::fromStdString(csadv->GetPrefix()) + "exploration_scalars");
             csadv->ClearLeftRightPrefix();
             this->dijkstraActors = csadv->GetPathsMappersAndActors();
 
-            for (int i=0;(unsigned)i<this->dijkstraActors.size();i++){
+            for (unsigned int i = 0; i < this->dijkstraActors.size(); i++) {
                 renderer->AddActor(this->dijkstraActors[i]);
             }
 
             m_Controls.widget_1->GetRenderWindow()->Render();
 
             QMessageBox::warning(NULL, "F&I T2 - FINISHED CALCULATION",
-                                 (csadv->PrintAblationGapsResults(mean, stdv, value)).c_str());
+                (csadv->PrintAblationGapsResults(mean, stdv, value)).c_str());
             csadv->ResetValues();
             inputs->deleteLater();
 
         } else if (dialogCode == QDialog::Rejected) {
             QMessageBox::warning(NULL, "F&I T2 - CALCULATION CANCELLED",
-                                 "'Cancel' button pressed, no calculations were made.");
+                "'Cancel' button pressed, no calculations were made.");
             inputs->close();
             inputs->deleteLater();
         }//_if
@@ -981,7 +975,6 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     QString preShellPath = outpath + "MaxScarPre.vtk";
     QString preThresPath = outpath + "prodThresholdsPre.txt";
     mitk::Surface::Pointer shellpre = mitk::IOUtil::Load<mitk::Surface>(preShellPath.toStdString());
-    double prethresh, postthresh;
 
     GetThresholdValuesFromFile(preThresPath);
     valpre = value;
@@ -989,7 +982,6 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     csadv->SetOutputPrefix("pre");
     csadv->GetSurfaceAreaFromThreshold(thres, maxScalar);
     csadv->ScarScore(thres);
-    prethresh = thres;
 
     QString postThresPath = outpath + "prodThresholdsPost.txt";
     mitk::Surface::Pointer shellpost = mitk::IOUtil::Load<mitk::Surface>(outScarMap.toStdString());
@@ -1000,17 +992,13 @@ void ScarCalculationsView::BeforeAndAfterComp() {
     csadv->SetOutputPrefix("post");
     csadv->GetSurfaceAreaFromThreshold(thres, maxScalar);
     csadv->ScarScore(thres);
-    postthresh = thres;
 
     this->CopyScalarValues();
-    if (m_Controls.comboBox->findText("PRE (TRANSFORMED)", Qt::MatchExactly)==-1){
+    if (m_Controls.comboBox->findText("PRE (TRANSFORMED)", Qt::MatchExactly) == -1) {
         m_Controls.comboBox->addItem("PRE (TRANSFORMED)");
     }
 
     // build ScarOverlap.vtk
-    QString preMap = outpath + "MaxScarPre_OnPost.vtk";
-    mitk::Surface::Pointer presh = mitk::IOUtil::Load<mitk::Surface>(preMap.toStdString());
-    std::string overlapShellPath = csadv->ScarOverlap(presh->GetVtkPolyData(), prethresh, shellpost->GetVtkPolyData(), postthresh);
     QMessageBox::warning(NULL, "F&I T3 - FINISHED CALCULATION", (csadv->PrintScarOverlapResults(valpre, valpost)).c_str());
     // back to normal
     this->CtrlPrePostSelection(current);
@@ -1072,7 +1060,7 @@ void ScarCalculationsView::TransformMeshesForComparison() {
     if (cmd->IsOutputSuccessful(testTX)) {
         MITK_INFO << "[...] DOF file created successfully, attempting transformation.";
         this->BusyCursorOn();
-        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd = std::unique_ptr<CemrgCommandLine>(new CemrgCommandLine());
         cmd->ExecuteTransformationOnPoints(directory, sourcename, alignedname, testTX);
         this->BusyCursorOff();
         successful = cmd->IsOutputSuccessful(alignedname);
@@ -1093,7 +1081,7 @@ void ScarCalculationsView::GetThresholdValuesFromFile(QString filepath) {
 
     MITK_INFO << "READ FILE: " + filepath;
 
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
         prodFileRead >> data1[i];
 
     value = data1[0];
@@ -1118,19 +1106,19 @@ void ScarCalculationsView::SetThresholdValuesToFile(QString filepath) {
 
     MITK_INFO << "WRITE FILE: " + filepath;
 
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
         prodFileWrite << data1[i] << "\n";
     prodFileWrite.close();
 }
 
 void ScarCalculationsView::SetShortcutLegend() {
 
-    std::string mymethod = (method==1) ? "V*IIR" : "mean + V*stdv";
+    std::string mymethod = (method == 1) ? "V*IIR" : "mean + V*stdv";
     mymethod = "METHOD: " + mymethod;
 
-    std::string title = " "+ m_Controls.comboBox->currentText().toStdString() + "-Ablation ";
+    std::string title = " " + m_Controls.comboBox->currentText().toStdString() + "-Ablation ";
     title += "\n\n Value for threshold (V): " + csadv->num2str(value, 1);
-    title += "\n "+ mymethod + " = " + csadv->num2str(thres, 1);
+    title += "\n " + mymethod + " = " + csadv->num2str(thres, 1);
     title += "\n\n Shortcuts for gap measurement:\n ";
 
     std::string shortcuts = title + "Space: add seed point\n Delete: remove seed point\n R: Reset points.";
@@ -1156,7 +1144,7 @@ void ScarCalculationsView::CopyScalarValues() {
     csadv->TransformSource2Target();
 }
 
-void ScarCalculationsView::InitialisePickerObjects(){
+void ScarCalculationsView::InitialisePickerObjects() {
     pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
     pickedSeedIds->Initialize();
     pickedLineSeeds = vtkSmartPointer<vtkPolyData>::New();

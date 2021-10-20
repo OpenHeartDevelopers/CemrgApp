@@ -66,6 +66,16 @@ int MmcwViewPlot::noFrames = 10;
 int MmcwViewPlot::smoothness = 1;
 const std::string MmcwViewPlot::VIEW_ID = "org.mitk.views.mmcwplot";
 
+MmcwViewPlot::MmcwViewPlot() {
+    this->cardiCycle = 0;
+
+    this->legend = std::unique_ptr<QwtLegend>(new QwtLegend());
+    this->strain = std::unique_ptr<CemrgStrains>(new CemrgStrains());;
+    this->AHA_camera = vtkSmartPointer<vtkCamera>::New();
+    this->AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
+    this->AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+}
+
 void MmcwViewPlot::SetFocus() {
 }
 
@@ -81,18 +91,17 @@ void MmcwViewPlot::CreateQtPartControl(QWidget *parent) {
 
     //Adjust controllers
     m_Controls.lineEdit_F->setPlaceholderText("No Frames (default = " + QString::number(noFrames) + ")");
-    m_Controls.comboBox_S->setCurrentIndex(smoothness < 5 ? smoothness-1 : 2);
-    m_Controls.horizontalSlider->setMaximum(noFrames*smoothness);
+    m_Controls.comboBox_S->setCurrentIndex(smoothness < 5 ? smoothness - 1 : 2);
+    m_Controls.horizontalSlider->setMaximum(noFrames * smoothness);
     cardiCycle = 0;
 
     //AHA bullseye plot
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
-            vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     m_Controls.widget_1->SetRenderWindow(renderWindow);
 
     AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
-    AHA_renderer->SetBackground(0,0,0);
-    m_Controls.horizontalSlider->setMaximum(noFrames*smoothness);
+    AHA_renderer->SetBackground(0, 0, 0);
+    m_Controls.horizontalSlider->setMaximum(noFrames * smoothness);
     m_Controls.widget_1->GetRenderWindow()->AddRenderer(AHA_renderer);
     AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonPressEvent);
@@ -113,29 +122,25 @@ void MmcwViewPlot::CreateQtPartControl(QWidget *parent) {
     AHA_renderer->SetActiveCamera(AHA_camera);
 
     //Setup AHA lookup table
-    AHA[1]=13; AHA[5]=10; AHA[9 ]=8; AHA[13]=6;
-    AHA[2]=14; AHA[6]=11; AHA[10]=9; AHA[14]=1;
-    AHA[3]=15; AHA[7]=12; AHA[11]=4; AHA[15]=2;
-    AHA[4]=16; AHA[8]= 7; AHA[12]=5; AHA[16]=3;
+    AHA[1] = 13; AHA[5] = 10; AHA[9] = 8; AHA[13] = 6;
+    AHA[2] = 14; AHA[6] = 11; AHA[10] = 9; AHA[14] = 1;
+    AHA[3] = 15; AHA[7] = 12; AHA[11] = 4; AHA[15] = 2;
+    AHA[4] = 16; AHA[8] = 7; AHA[12] = 5; AHA[16] = 3;
 }
 
 void MmcwViewPlot::SetDirectory(const QString directory) {
-
     MmcwViewPlot::directory = directory;
 }
 
 void MmcwViewPlot::SetNoFrames(int frames, int smoothness) {
-
     MmcwViewPlot::noFrames = frames;
     MmcwViewPlot::smoothness = smoothness;
 }
 
-void MmcwViewPlot::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void MmcwViewPlot::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void MmcwViewPlot::PlotData() {
-
     //Check for selection of landmarks
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty()) {
@@ -146,8 +151,8 @@ void MmcwViewPlot::PlotData() {
     //Ask the user for a dir to locate data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -158,13 +163,13 @@ void MmcwViewPlot::PlotData() {
     //Frames and smoothness adjustments
     bool ok1;
     int frames = m_Controls.lineEdit_F->text().toInt(&ok1);
-    smoothness = m_Controls.comboBox_S->currentIndex() < 2 ? m_Controls.comboBox_S->currentIndex()+1 : 5;
+    smoothness = m_Controls.comboBox_S->currentIndex() < 2 ? m_Controls.comboBox_S->currentIndex() + 1 : 5;
     noFrames = (ok1) ? frames : noFrames;
-    m_Controls.horizontalSlider->setMaximum(noFrames*smoothness);
+    m_Controls.horizontalSlider->setMaximum(noFrames * smoothness);
 
     //Find the reference mesh
     bool ok2;
-    int refMshNo = QInputDialog::getInt(NULL, tr("Reference Mesh"), tr("Number:"), 0, 0, noFrames*smoothness, 1, &ok2);
+    int refMshNo = QInputDialog::getInt(NULL, tr("Reference Mesh"), tr("Number:"), 0, 0, noFrames * smoothness, 1, &ok2);
     if (!ok2) {
         QMessageBox::warning(NULL, "Attention", "Have you completed the tracking step?");
         return;
@@ -174,7 +179,7 @@ void MmcwViewPlot::PlotData() {
     int bas = m_Controls.lineEdit_1->text().toInt();
     int mid = m_Controls.lineEdit_2->text().toInt();
     int api = m_Controls.lineEdit_3->text().toInt();
-    if (std::abs(bas+mid+api - 100) > 1.0) {
+    if (std::abs(bas + mid + api - 100) > 1.0) {
         QMessageBox::warning(NULL, "Attention", "Revert to a default ratio for basal, mid, and apical segments!");
         bas = 33; mid = 33; api = 33;
     }
@@ -204,7 +209,7 @@ void MmcwViewPlot::PlotData() {
 
     if (plotType.compare("Area Change") == 0) {
         refSurf = strain->ReferenceAHA(lmNode, segRatios, false);
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             plotValueVectors.push_back(strain->CalculateSqzPlot(i));
             vtkSmartPointer<vtkFloatArray> holder = vtkSmartPointer<vtkFloatArray>::New();
             holder->DeepCopy(strain->GetFlatSurfScalars());
@@ -212,7 +217,7 @@ void MmcwViewPlot::PlotData() {
         }
     } else if (plotType.compare("Circumferential Small Strain") == 0) {
         refSurf = strain->ReferenceAHA(lmNode, segRatios, false);
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             plotValueVectors.push_back(strain->CalculateStrainsPlot(i, lmNode, 1));
             vtkSmartPointer<vtkFloatArray> holder = vtkSmartPointer<vtkFloatArray>::New();
             holder->DeepCopy(strain->GetFlatSurfScalars());
@@ -220,7 +225,7 @@ void MmcwViewPlot::PlotData() {
         }
     } else if (plotType.compare("Circumferential Large Strain") == 0) {
         refSurf = strain->ReferenceAHA(lmNode, segRatios, false);
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             plotValueVectors.push_back(strain->CalculateStrainsPlot(i, lmNode, 3));
             vtkSmartPointer<vtkFloatArray> holder = vtkSmartPointer<vtkFloatArray>::New();
             holder->DeepCopy(strain->GetFlatSurfScalars());
@@ -228,7 +233,7 @@ void MmcwViewPlot::PlotData() {
         }
     } else if (plotType.compare("Longitudinal Small Strain") == 0) {
         refSurf = strain->ReferenceAHA(lmNode, segRatios, false);
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             plotValueVectors.push_back(strain->CalculateStrainsPlot(i, lmNode, 2));
             vtkSmartPointer<vtkFloatArray> holder = vtkSmartPointer<vtkFloatArray>::New();
             holder->DeepCopy(strain->GetFlatSurfScalars());
@@ -236,7 +241,7 @@ void MmcwViewPlot::PlotData() {
         }
     } else if (plotType.compare("Longitudinal Large Strain") == 0) {
         refSurf = strain->ReferenceAHA(lmNode, segRatios, false);
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             plotValueVectors.push_back(strain->CalculateStrainsPlot(i, lmNode, 4));
             vtkSmartPointer<vtkFloatArray> holder = vtkSmartPointer<vtkFloatArray>::New();
             holder->DeepCopy(strain->GetFlatSurfScalars());
@@ -244,7 +249,7 @@ void MmcwViewPlot::PlotData() {
         }
     } else if (plotType.compare("Pacing site Squeez") == 0) {
         refSurf = strain->ReferenceAHA(lmNode, pacingSegRatios, true);
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             plotValueVectors.push_back(strain->CalculateSqzPlot(i));
             vtkSmartPointer<vtkFloatArray> holder = vtkSmartPointer<vtkFloatArray>::New();
             holder->DeepCopy(strain->GetFlatSurfScalars());
@@ -281,9 +286,9 @@ void MmcwViewPlot::PlotData() {
 
     //Visualise reference mesh guidelines
     std::vector<mitk::Surface::Pointer> guidelines = strain->ReferenceGuideLines(lmNode);
-    for (int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         mitk::DataNode::Pointer gNode = mitk::DataNode::New();
-        gNode->SetName("Guideline "+ std::to_string(i+1));
+        gNode->SetName("Guideline " + std::to_string(i + 1));
         gNode->SetData(guidelines.at(i));
         this->GetDataStorage()->Add(gNode, node);
     }
@@ -294,7 +299,6 @@ void MmcwViewPlot::PlotData() {
 }
 
 void MmcwViewPlot::BullPlot() {
-
     if (!strain) {
         //if plot values have not been calculated
         return;
@@ -309,7 +313,6 @@ void MmcwViewPlot::BullPlot() {
 }
 
 void MmcwViewPlot::FilePlot() {
-
     //Check anything to plot
     if (plotValueVectors.size() == 0) {
         QMessageBox::warning(NULL, "Attention", "No plot to save!");
@@ -319,8 +322,8 @@ void MmcwViewPlot::FilePlot() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -336,7 +339,6 @@ void MmcwViewPlot::FilePlot() {
 }
 
 void MmcwViewPlot::ColourAHASegments(int /*value*/) {
-
     if (plotValueVectors.size() != 0) {
         if (m_Controls.button_3->isChecked() == false)
             HandleBullPlot(false);
@@ -347,7 +349,7 @@ void MmcwViewPlot::ColourAHASegments(int /*value*/) {
         DrawAHATextInfo();
 
         //Render the window
-        AHA_camera->SetPosition(0,0,m_Controls.button_3->isChecked()?300:12);
+        AHA_camera->SetPosition(0, 0, m_Controls.button_3->isChecked() ? 300 : 12);
         AHA_renderer->GetRenderWindow()->Render();
     }//_if
 }
@@ -357,7 +359,6 @@ void MmcwViewPlot::ColourAHASegments(int /*value*/) {
  **************************************************************************************************/
 
 void MmcwViewPlot::HandleBullPlot(bool global) {
-
     //Clean up the renderer
     AHA_renderer->RemoveAllViewProps();
 
@@ -366,7 +367,7 @@ void MmcwViewPlot::HandleBullPlot(bool global) {
         //Setup the surface
         std::vector<double> ranges;
         mitk::Surface::Pointer surface = strain->FlattenedAHA();
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             surface->GetVtkPolyData()->GetCellData()->SetScalars(flatPlotScalars.at(i));
             ranges.push_back(surface->GetVtkPolyData()->GetScalarRange()[0]);
             ranges.push_back(surface->GetVtkPolyData()->GetScalarRange()[1]);
@@ -382,27 +383,26 @@ void MmcwViewPlot::HandleBullPlot(bool global) {
         vtkSmartPointer<vtkScalarBarActor> scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
         scalarBar->SetLookupTable(lut);
         scalarBar->SetNumberOfLabels(2);
-        scalarBar->SetPosition(0.9,0.1);
+        scalarBar->SetPosition(0.9, 0.1);
         scalarBar->SetWidth(0.1);
         scalarBar->SetTitle(" ");
         AHA_renderer->AddActor2D(scalarBar);
 
         //Setup AHA segments
-        int frame = (m_Controls.horizontalSlider->value() == noFrames*smoothness) ? 0 : m_Controls.horizontalSlider->value();
+        int frame = (m_Controls.horizontalSlider->value() == noFrames * smoothness) ? 0 : m_Controls.horizontalSlider->value();
         DrawAHASegments(frame, range);
         DrawAHALines();
 
     } else {
-
         //Setup the surface
         std::vector<double> ranges;
         mitk::Surface::Pointer surface = strain->FlattenedAHA();
-        for (int i=0; i<noFrames*smoothness; i++) {
+        for (int i = 0; i < noFrames * smoothness; i++) {
             surface->GetVtkPolyData()->GetCellData()->SetScalars(flatPlotScalars.at(i));
             ranges.push_back(surface->GetVtkPolyData()->GetScalarRange()[0]);
             ranges.push_back(surface->GetVtkPolyData()->GetScalarRange()[1]);
         }
-        int frame = (m_Controls.horizontalSlider->value() == noFrames*smoothness) ? 0 : m_Controls.horizontalSlider->value();
+        int frame = (m_Controls.horizontalSlider->value() == noFrames * smoothness) ? 0 : m_Controls.horizontalSlider->value();
         surface->GetVtkPolyData()->GetCellData()->SetScalars(flatPlotScalars.at(frame));
 
         //Setup lookup table
@@ -415,7 +415,7 @@ void MmcwViewPlot::HandleBullPlot(bool global) {
         vtkSmartPointer<vtkScalarBarActor> scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
         scalarBar->SetLookupTable(lut);
         scalarBar->SetNumberOfLabels(2);
-        scalarBar->SetPosition(0.9,0.1);
+        scalarBar->SetPosition(0.9, 0.1);
         scalarBar->SetWidth(0.1);
         scalarBar->SetTitle(" ");
         AHA_renderer->AddActor2D(scalarBar);
@@ -436,17 +436,16 @@ void MmcwViewPlot::HandleBullPlot(bool global) {
 
 void MmcwViewPlot::HandleCurvPlot() {
 
-    int curveId = 0;
     bool nonComputable = false;
     m_Controls.widget_2->Clear();
-    QmitkPlotWidget::DataVector xValues(noFrames*smoothness+1,0);
-    QmitkPlotWidget::DataVector yValues(noFrames*smoothness+1,0);
+    QmitkPlotWidget::DataVector xValues(noFrames * smoothness + 1, 0);
+    QmitkPlotWidget::DataVector yValues(noFrames * smoothness + 1, 0);
 
-    for (int i=0; i<16; i++) {
+    for (int i = 0; i < 16; i++) {
         //Order x and y values
-        for (int j=0; j<noFrames*smoothness+1; j++) {
+        for (int j = 0; j < noFrames * smoothness + 1; j++) {
             xValues[j] = j;
-            if (j<noFrames*smoothness)
+            if (j < noFrames * smoothness)
                 yValues[j] = plotValueVectors[j][i];
             else
                 yValues[j] = plotValueVectors[0][i];
@@ -460,7 +459,7 @@ void MmcwViewPlot::HandleCurvPlot() {
         std::vector<float> colour = strain->GetAHAColour(label);
         QColor qColour(colour[0], colour[1], colour[2]);
         legend = std::unique_ptr<QwtLegend>(new QwtLegend());
-        curveId = m_Controls.widget_2->InsertCurve(std::to_string(label).c_str());
+        int curveId = m_Controls.widget_2->InsertCurve(std::to_string(label).c_str());
 
         m_Controls.widget_2->SetCurveData(curveId, xValues, yValues);
         m_Controls.widget_2->SetCurvePen(curveId, QPen(qColour));
@@ -471,38 +470,36 @@ void MmcwViewPlot::HandleCurvPlot() {
     }//_for
 
     QString msg =
-            "Curves were not computed. Check the order of selected landmarks! "
-            "For instance, order of two points on RV cusps.";
+        "Curves were not computed. Check the order of selected landmarks! "
+        "For instance, order of two points on RV cusps.";
     if (nonComputable)
         QMessageBox::warning(NULL, "Attention", msg);
 }
 
 void MmcwViewPlot::DrawAHALines() {
-
     //Draw lines
     const double z = 0.0001;
     //Create two points, P0 and P1
     std::vector<double> p0, p1;
 
-    for (int i=0; i<8; i++) {
-
+    for (int i = 0; i < 8; i++) {
         vtkSmartPointer<vtkLineSource> lineSource = vtkSmartPointer<vtkLineSource>::New();
-        if (i==0) {
-            p0 = {-.70,-.70,z}; p1 = {0.70,0.70,z};
-        } else if (i==1) {
-            p0 = {-.70,0.70,z}; p1 = {0.70,-.70,z};
-        } else if (i==2) {
-            p0 = {1.00,0.00,z}; p1 = {3.00,0.00,z};
-        } else if (i==3) {
-            p0 = {-1.0,0.00,z}; p1 = {-3.0,0.00,z};
-        } else if (i==4) {
-            p0 = {0.50,0.86,z}; p1 = {1.50,2.59,z};
-        } else if (i==5) {
-            p0 = {0.50,-.86,z}; p1 = {1.5,-2.59,z};
-        } else if (i==6) {
-            p0 = {-.50,0.86,z}; p1 = {-1.5,2.59,z};
+        if (i == 0) {
+            p0 = {-.70, -.70, z}; p1 = {0.70, 0.70, z};
+        } else if (i == 1) {
+            p0 = {-.70, 0.70, z}; p1 = {0.70, -.70, z};
+        } else if (i == 2) {
+            p0 = {1.00, 0.00, z}; p1 = {3.00, 0.00, z};
+        } else if (i == 3) {
+            p0 = {-1.0, 0.00, z}; p1 = {-3.0, 0.00, z};
+        } else if (i == 4) {
+            p0 = {0.50, 0.86, z}; p1 = {1.50, 2.59, z};
+        } else if (i == 5) {
+            p0 = {0.50, -.86, z}; p1 = {1.5, -2.59, z};
+        } else if (i == 6) {
+            p0 = {-.50, 0.86, z}; p1 = {-1.5, 2.59, z};
         } else {
-            p0 = {-.5,-.86,z}; p1 = {-1.5,-2.59,z};
+            p0 = {-.5, -.86, z}; p1 = {-1.5, -2.59, z};
         }//_if
 
         lineSource->SetPoint1(p0[0], p0[1], p0[2]);
@@ -517,20 +514,19 @@ void MmcwViewPlot::DrawAHALines() {
 
         //Setup the colour
         actor->GetProperty()->SetLineWidth(3);
-        actor->GetProperty()->SetColor(0.0,0.0,0.0);
+        actor->GetProperty()->SetColor(0.0, 0.0, 0.0);
 
         //Add to renderer
         AHA_renderer->AddActor2D(actor);
     }
 
     //Draw Circles
-    for (int i=0; i<2; i++) {
-
+    for (int i = 0; i < 2; i++) {
         vtkSmartPointer<vtkRegularPolygonSource> polygonSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
         polygonSource->GeneratePolygonOff();
         polygonSource->SetNumberOfSides(50);
-        polygonSource->SetRadius(i+1);
-        polygonSource->SetCenter(0.0,0.0,0.0);
+        polygonSource->SetRadius(i + 1);
+        polygonSource->SetCenter(0.0, 0.0, 0.0);
 
         //Create a mapper and actor
         vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -540,7 +536,7 @@ void MmcwViewPlot::DrawAHALines() {
 
         //Setup the colour
         actor->GetProperty()->SetLineWidth(3);
-        actor->GetProperty()->SetColor(0.0,0.0,0.0);
+        actor->GetProperty()->SetColor(0.0, 0.0, 0.0);
 
         //Add to renderer
         AHA_renderer->AddActor2D(actor);
@@ -548,24 +544,22 @@ void MmcwViewPlot::DrawAHALines() {
 }
 
 void MmcwViewPlot::DrawAHASegments(int frame, double* range) {
-
     //Setup lookup table
     double angle, radii, radio, inf = 0.0001;
     vtkSmartPointer<vtkColorTransferFunction> lut = GetLookupTable(range);
 
     //Create Segments Layers
-    for (int i=0; i<16; i++) {
-
+    for (int i = 0; i < 16; i++) {
         vtkSmartPointer<vtkSectorSource> segmentSource = vtkSmartPointer<vtkSectorSource>::New();
-        if (i<4) {
+        if (i < 4) {
             angle = 90; radii = inf; radio = 1.0;
-        } else if (i<10) {
+        } else if (i < 10) {
             angle = 60; radii = 1.0; radio = 2.0;
         } else {
             angle = 60; radii = 2.0; radio = 3.0;
         }//_if
-        segmentSource->SetStartAngle(i*angle);
-        segmentSource->SetEndAngle((i+1)*angle);
+        segmentSource->SetStartAngle(i * angle);
+        segmentSource->SetEndAngle((i + 1) * angle);
         segmentSource->SetInnerRadius(radii);
         segmentSource->SetOuterRadius(radio);
 
@@ -576,22 +570,22 @@ void MmcwViewPlot::DrawAHASegments(int frame, double* range) {
         actor->SetMapper(mapper);
 
         //Adjust rotation
-        if (i<4)
+        if (i < 4)
             actor->RotateZ(45.0);
 
         //Setup colours
         double colour[3];
-        double value = plotValueVectors[frame][AHA.find(i+1)->second-1];
+        double value = plotValueVectors[frame][AHA.find(i + 1)->second - 1];
         lut->GetColor(value, colour);
         actor->GetProperty()->SetColor(colour[0], colour[1], colour[2]);
 
         //Add labels to actors
-        float offst = (AHA.find(i+1)->second > 9) ? .15 : .1;
+        float offst = (AHA.find(i + 1)->second > 9) ? .15 : .1;
         double* pos = vtkProp3D::SafeDownCast(actor)->GetCenter();
         vtkSmartPointer<vtkTextActor> textActor = vtkSmartPointer<vtkTextActor>::New();
         textActor->GetPositionCoordinate()->SetCoordinateSystemToWorld();
-        textActor->SetInput(std::to_string(AHA.find(i+1)->second).c_str());
-        textActor->SetPosition(pos[0]-offst, pos[1]-offst);
+        textActor->SetInput(std::to_string(AHA.find(i + 1)->second).c_str());
+        textActor->SetPosition(pos[0] - offst, pos[1] - offst);
         textActor->GetTextProperty()->SetFontSize(14);
         textActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
 
@@ -602,12 +596,11 @@ void MmcwViewPlot::DrawAHASegments(int frame, double* range) {
 }
 
 void MmcwViewPlot::DrawAHATextInfo() {
-
     bool ok = true;
     if (cardiCycle == 0)
         cardiCycle = QInputDialog::getInt(NULL, tr("Cycle Length in ms"), tr("Value:"), 1000, 1, 2000, 1, &ok);
     if (ok) {
-        double SDI = strain->CalculateSDI(plotValueVectors, cardiCycle, noFrames*smoothness);
+        double SDI = strain->CalculateSDI(plotValueVectors, cardiCycle, noFrames * smoothness);
         std::ostringstream os;
         os << std::fixed << std::setprecision(2) << SDI;
         std::string output = "SDI: " + os.str() + "%";
@@ -622,9 +615,7 @@ void MmcwViewPlot::DrawAHATextInfo() {
 }
 
 void MmcwViewPlot::WritePlotToCSV(QString dir) {
-
     if (plotValueVectors.size() != 0) {
-
         bool ok;
         QString fileName = "Plot.csv";
         if (m_Controls.comboBox->currentText().startsWith("A"))
@@ -637,24 +628,22 @@ void MmcwViewPlot::WritePlotToCSV(QString dir) {
             fileName = "SQZ_at_pacing_0.66.csv";
         fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
         if (ok && !fileName.isEmpty() && fileName.endsWith(".csv")) {
-
             ofstream file;
             file.open(dir.toStdString() + "/" + fileName.toStdString());
             std::vector<double> values;
-            for (int i=0; i<16; i++) {
-                for (int j=0; j<noFrames*smoothness; j++)
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < noFrames * smoothness; j++)
                     values.push_back(plotValueVectors[j][i]);
                 //Append the curve to the file
-                for (size_t z=0; z<values.size(); z++) {
+                for (size_t z = 0; z < values.size(); z++) {
                     file << values.at(z);
-                    if (z == values.size()-1) file << endl;
+                    if (z == values.size() - 1) file << endl;
                     else file << ",";
                 }
                 values.clear();
             }//_for
             file.close();
             QMessageBox::information(NULL, "Attention", "The plot was saved to a CSV file.");
-
         } else {
             QMessageBox::warning(NULL, "Attention", "Please type a file name with the right extension (i.e. .csv)!");
             return;
@@ -663,9 +652,8 @@ void MmcwViewPlot::WritePlotToCSV(QString dir) {
 }
 
 void MmcwViewPlot::WritePlotToVTK(QString dir) {
-
     mitk::Surface::Pointer surface = strain->FlattenedAHA();
-    int frame = (m_Controls.horizontalSlider->value() == noFrames*smoothness) ? 0 : m_Controls.horizontalSlider->value();
+    int frame = (m_Controls.horizontalSlider->value() == noFrames * smoothness) ? 0 : m_Controls.horizontalSlider->value();
     surface->GetVtkPolyData()->GetCellData()->SetScalars(flatPlotScalars.at(frame));
     QString fileName = dir + "/" + QString::number(frame) + ".vtk";
     mitk::IOUtil::Save(surface, fileName.toStdString());
@@ -673,13 +661,12 @@ void MmcwViewPlot::WritePlotToVTK(QString dir) {
 }
 
 vtkSmartPointer<vtkColorTransferFunction> MmcwViewPlot::GetLookupTable(double* range) {
-
     double middlePt = 0.0; //(range[0] + range[1]) / 2.0;
     vtkSmartPointer<vtkColorTransferFunction> lut = vtkSmartPointer<vtkColorTransferFunction>::New();
     lut->SetColorSpaceToRGB();
-    lut->AddRGBPoint(range[0], 0,0,1); //blue
-    lut->AddRGBPoint(middlePt, 1,1,1); //white
-    lut->AddRGBPoint(range[1], 1,0,0); //red
+    lut->AddRGBPoint(range[0], 0, 0, 1); //blue
+    lut->AddRGBPoint(middlePt, 1, 1, 1); //white
+    lut->AddRGBPoint(range[1], 1, 0, 0); //red
     lut->SetScaleToLinear();
     return lut;
 }

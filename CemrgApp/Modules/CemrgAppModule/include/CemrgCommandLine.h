@@ -36,11 +36,11 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QVBoxLayout>
 #include <MitkCemrgAppModuleExports.h>
 
-class MITKCEMRGAPPMODULE_EXPORT CemrgCommandLine : public QObject {
+class MITKCEMRGAPPMODULE_EXPORT CemrgCommandLine: public QObject {
 
     Q_OBJECT
-    // this is needed for all Qt objects that should have a Qt meta-object
-    // (everything that derives from QObject and wants to have signal/slots)
+        // this is needed for all Qt objects that should have a Qt meta-object
+        // (everything that derives from QObject and wants to have signal/slots)
 
 public:
 
@@ -49,19 +49,19 @@ public:
     QDialog* GetDialog();
 
     //Execute Plugin Specific Functions
-    QString ExecuteSurf(QString dir, QString segPath, QString morphOperation="close", int iter=1, float th=0.5, int blur=0, int smth=10);
-    QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName="converted.inr");
-    void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output="tsffd.dof");
+    QString ExecuteSurf(QString dir, QString segPath, QString morphOperation = "close", int iter = 1, float th = 0.5, int blur = 0, int smth = 10);
+    QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName = "converted.inr");
+    void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output = "tsffd.dof");
     void ExecuteApplying(QString dir, QString inputMesh, double iniTime, QString dofin, int noFrames, int smooth);
-    void ExecuteRegistration(QString dir, QString fixed, QString moving, QString transformFileName="rigid.dof", QString modelname="Rigid");
-    void ExecuteTransformation(QString dir, QString imgNamefullpath, QString regImgNamefullpath, QString transformFileFullPath="rigid.dof");
-    void ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString transformFileName="init.dof", bool transformThePoints=true);
+    void ExecuteRegistration(QString dir, QString fixed, QString moving, QString transformFileName = "rigid.dof", QString modelname = "Rigid");
+    void ExecuteTransformation(QString dir, QString imgNamefullpath, QString regImgNamefullpath, QString transformFileFullPath = "rigid.dof");
+    void ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString transformFileName = "init.dof", bool transformThePoints = true);
 
     //Execute MIRTK Specific Functions
-    QString ExecuteMorphologicalOperation(QString operation, QString dir, QString segPath, QString outputPath = "segmentation.s.nii", int iter=1);
-    QString ExecuteExtractSurface(QString dir, QString segPath, QString outputPath = "segmentation.vtk", float th=0.5, int blur=0);
-    QString ExecuteSmoothSurface(QString dir, QString segPath, QString outputPath, int smth=10);
-    void ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime=-100);
+    QString ExecuteMorphologicalOperation(QString operation, QString dir, QString segPath, QString outputPath = "segmentation.s.nii", int iter = 1);
+    QString ExecuteExtractSurface(QString dir, QString segPath, QString outputPath = "segmentation.vtk", float th = 0.5, int blur = 0);
+    QString ExecuteSmoothSurface(QString dir, QString segPath, QString outputPath, int smth = 10);
+    void ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime = -100);
     void ExecuteResamplingOnNifti(QString niiFullPath, QString outputNiiFullPath, int isovalue);
 
     //Execute Docker Specific Functions
@@ -77,8 +77,8 @@ public:
     // meshtool routines
     QString DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix); // extract surface
     QString DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad=true); // extract gradient
-    QString DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale=-1);
     QString DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax=1, double hmin=0.98, double havg=0.3, double surfCorr=0.95); // resample surfmesh
+    QString DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale=-1);
     QString DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType);
     void DockerCleanMeshQuality(QString dir, QString meshname, QString outMesh, double qualityThres, QString ifmt="vtk", QString ofmt="vtk_polydata");
 
@@ -86,14 +86,18 @@ public:
     inline QString DockerInterpolateCell(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, meshname, outmesh, idatExt, odatExt,"elemdata");}; // meshtool interpolate elemdata
     inline QString DockerInterpolateCloudPoint(QString dir, QString ptsname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, ptsname, outmesh, idatExt, odatExt,"clouddata");}; // meshtool interpolate clouddata
 
+    inline void SetDebug(bool b) { _debugvar = b; };
+    inline void SetDebugOn() { SetDebug(true); };
+    inline void SetDebugOff() { SetDebug(false); };
+
     //Docker Helper Functions
     void SetUseDockerContainers(bool dockerContainersOnOff);
     inline void SetUseDockerContainersOn() {SetUseDockerContainers(true);};
     inline void SetUseDockerContainersOff() {SetUseDockerContainers(false);};
     inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
+    inline QString GetDockerImage() {return _dockerimage;};
     inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
     inline void SetDockerImageUac(){_dockerimage = "cemrg/uac:v1.1";};// modify when docker image has been pushed to hub
-    inline QString GetDockerImage() {return _dockerimage;};
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
 
     //Helper Functions
@@ -101,7 +105,7 @@ public:
     void ExecuteTouch(QString filepath);
     bool IsOutputSuccessful(QString outputFullPath);
     std::string PrintFullCommand(QString command, QStringList arguments);
-    bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath, bool isOutputFile=true);
+    bool ExecuteCommand(QString executableName, QStringList arguments, QString outputPath, bool isOutputFile = true);
 
 protected slots:
 
@@ -119,7 +123,7 @@ private:
     //QProcess
     bool completion;
     QString _dockerimage;
-    bool _useDockerContainers;
+    bool _useDockerContainers, _debugvar;
     std::unique_ptr<QProcess> process;
 };
 

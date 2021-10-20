@@ -63,11 +63,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFileDialog>
 #include <QInputDialog>
 
-//Define the Image type and ITK iterator types
-typedef itk::Image<short,3> ImageType;
-typedef itk::ImageRegionConstIterator< ImageType > ConstIteratorType;
-typedef itk::ImageRegionIterator< ImageType> IteratorType;
-
 const std::string YZSegView::VIEW_ID = "org.mitk.views.scaryzseg";
 
 void YZSegView::CreateQtPartControl(QWidget *parent) {
@@ -110,16 +105,13 @@ void YZSegView::CreateQtPartControl(QWidget *parent) {
 }
 
 void YZSegView::SetFocus() {
-
     m_Controls.button_1->setFocus();
 }
 
-void YZSegView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void YZSegView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void YZSegView::LoadDICOM() {
-
     //Use MITK DICOM editor
     QString editor_id = "org.mitk.editors.dicomeditor";
     berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
@@ -127,7 +119,6 @@ void YZSegView::LoadDICOM() {
 }
 
 void YZSegView::ProcessIMGS() {
-
     //Toggle visibility of buttons
     if (m_Controls.button_2_1->isVisible()) {
         m_Controls.button_2_1->setVisible(false);
@@ -139,21 +130,20 @@ void YZSegView::ProcessIMGS() {
 }
 
 void YZSegView::ConvertNII() {
-
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 1) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please load and select an LGE image from the Data Manager before starting this step!");
+            NULL, "Attention",
+            "Please load and select an LGE image from the Data Manager before starting this step!");
         return;
     }//_if
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -200,8 +190,8 @@ void YZSegView::ResampIMGS() {
 
     //Show the plugin
     QMessageBox::critical(
-                NULL, "Attention",
-                "Make sure you close this view before closing the application! Failure to do so will cause serious problems!");
+        NULL, "Attention",
+        "Make sure you close this view before closing the application! Failure to do so will cause serious problems!");
     this->GetSite()->GetPage()->ShowView("org.mitk.views.basicimageprocessing");
 }
 
@@ -216,12 +206,12 @@ void YZSegView::SegmentIMGS() {
     }
 
     int reply = QMessageBox::question(
-                NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
+        NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
 
     if (reply == QMessageBox::Yes) {
 
         QString path = QFileDialog::getOpenFileName(
-                    NULL, "Open Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty()) return;
         mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
@@ -244,8 +234,8 @@ void YZSegView::SaveSEG() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -326,7 +316,7 @@ void YZSegView::ScarSeg_FWHM() {
 
         if (image && seg) {
 
-            typedef itk::Image<short,3> ImageType;
+            typedef itk::Image<short, 3> ImageType;
             ImageType::Pointer itkImage = ImageType::New();
             mitk::CastToItkImage(image, itkImage);
 
@@ -365,15 +355,11 @@ void YZSegView::ScarSeg_FWHM() {
                 }//_if
             }
 
-            //Function definitions can be found at the end of the script, here we are only declearing them
-            double FWMH_getPeak_SORT(ImageType::Pointer x);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double t_min); //, double t_max, int label);
-
             //Find the maximum infart value within LV
             double max_inf = FWMH_getPeak_SORT(LV);
 
             //Apply the threshold
-            thresholdImage(itkImage, LV, 0.5*max_inf); //, max_inf, 1); // based on Schmidt et al. that SICore > 0.5 x Peak-infarct
+            thresholdImage(itkImage, LV, 0.5 * max_inf); //, max_inf, 1); // based on Schmidt et al. that SICore > 0.5 x Peak-infarct
         }//_if_image
 
     } else {
@@ -398,12 +384,12 @@ void YZSegView::ScarSeg_SD() {
 
     //Select a small region of remote left ventricular myocardium
     int reply = QMessageBox::question(
-                NULL, "Question", "Do you have a remote myocardium segmentation to load?", QMessageBox::Yes, QMessageBox::No);
+        NULL, "Question", "Do you have a remote myocardium segmentation to load?", QMessageBox::Yes, QMessageBox::No);
 
     if (reply == QMessageBox::Yes) {
 
         QString path = QFileDialog::getOpenFileName(
-                    NULL, "Open remote myocardium Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+            NULL, "Open remote myocardium Segmentation file", mitk::IOUtil::GetProgramPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty()) return;
         mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
@@ -421,8 +407,8 @@ void YZSegView::ScarSeg_4SD() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 3) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select the LGE image, LV segmentation and the remote myocardium in this order from the Data Manager!");
+            NULL, "Attention",
+            "Please select the LGE image, LV segmentation and the remote myocardium in this order from the Data Manager!");
         return;
     }
 
@@ -449,7 +435,7 @@ void YZSegView::ScarSeg_4SD() {
             mitk::CastToItkImage(seg, itkSeg);
 
             ImageType::Pointer itkMyo = ImageType::New();
-            mitk::CastToItkImage(myo,itkMyo);
+            mitk::CastToItkImage(myo, itkMyo);
 
             //Create an empty image LV of the same size as the input images
             ImageType::Pointer LV = ImageType::New();
@@ -483,20 +469,16 @@ void YZSegView::ScarSeg_4SD() {
                 }
             }//_for
 
-            //Declear the functions
-            double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
-
-            double mean = GetStats(itkImage,itkMyo,1);
+            double mean = GetStats(itkImage, itkMyo, 1);
             double std = GetStats(itkImage, itkMyo, 2);
-            double max = GetStats(itkImage,LV,3);
+            double max = GetStats(itkImage, LV, 3);
 
-            if (max > mean + 4*std)
-                thresholdImage(itkImage,LV,mean + 4*std);
+            if (max > mean + 4 * std)
+                thresholdImage(itkImage, LV, mean + 4 * std);
             else {
                 QMessageBox::warning(
-                            NULL, "Attention!",
-                            "4 Standard Deviation away from the mean is out of range! Please try again with the customised SD!");
+                    NULL, "Attention!",
+                    "4 Standard Deviation away from the mean is out of range! Please try again with the customised SD!");
                 return;
             }
         }//_if_images
@@ -513,8 +495,8 @@ void YZSegView::ScarSeg_6SD() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty() || nodes.size() != 3) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select the LGE image, LV segmentation and the remote myocardium in this order from the Data Manager!");
+            NULL, "Attention",
+            "Please select the LGE image, LV segmentation and the remote myocardium in this order from the Data Manager!");
         return;
     }
 
@@ -541,7 +523,7 @@ void YZSegView::ScarSeg_6SD() {
             mitk::CastToItkImage(seg, itkSeg);
 
             ImageType::Pointer itkMyo = ImageType::New();
-            mitk::CastToItkImage(myo,itkMyo);
+            mitk::CastToItkImage(myo, itkMyo);
 
             //Create an empty image LV of the same size as the input images
             ImageType::Pointer LV = ImageType::New();
@@ -565,7 +547,6 @@ void YZSegView::ScarSeg_6SD() {
 
             //Loop over the image
             for (inIm.GoToBegin(), inSeg.GoToBegin(), outLV.GoToBegin(); !inIm.IsAtEnd(); ++inIm, ++inSeg, ++outLV) {
-
                 //if we are on the left ventricular wall
                 if (inSeg.Get() != 0) {
                     outLV.Set(inIm.Get());
@@ -575,20 +556,16 @@ void YZSegView::ScarSeg_6SD() {
                 }
             }//_for
 
-            // declear the functions
-            double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
-
             double mean = GetStats(itkImage, itkMyo, 1);
             double std = GetStats(itkImage, itkMyo, 2);
             double max = GetStats(itkImage, LV, 3);
 
-            if (max > mean + 6*std)
-                thresholdImage(itkImage, LV, mean + 6*std);
+            if (max > mean + 6 * std)
+                thresholdImage(itkImage, LV, mean + 6 * std);
             else {
                 QMessageBox::warning(
-                            NULL, "Attention!",
-                            "6 Standard Deviation away from the mean is out of range! Please try again with the customised SD!");
+                    NULL, "Attention!",
+                    "6 Standard Deviation away from the mean is out of range! Please try again with the customised SD!");
                 return;
             }
         }//_if_image
@@ -605,8 +582,8 @@ void YZSegView::ScarSeg_CustomisedSD() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty() || nodes.size() != 3) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select the LGE image, LV segmentation and the remote myocardium in this order from the Data Manager!");
+            NULL, "Attention",
+            "Please select the LGE image, LV segmentation and the remote myocardium in this order from the Data Manager!");
         return;
     }
 
@@ -633,7 +610,7 @@ void YZSegView::ScarSeg_CustomisedSD() {
             mitk::CastToItkImage(seg, itkSeg);
 
             ImageType::Pointer itkMyo = ImageType::New();
-            mitk::CastToItkImage(myo,itkMyo);
+            mitk::CastToItkImage(myo, itkMyo);
 
             //Create an empty image LV of the same size as the input images
             ImageType::Pointer LV = ImageType::New();
@@ -667,10 +644,6 @@ void YZSegView::ScarSeg_CustomisedSD() {
                 }
             }//_for
 
-            //Declear the functions
-            double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a);
-            void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold);
-
             double mean = GetStats(itkImage, itkMyo, 1);
             double std = GetStats(itkImage, itkMyo, 2);
             double max = GetStats(itkImage, LV, 3);
@@ -679,12 +652,12 @@ void YZSegView::ScarSeg_CustomisedSD() {
             QString msg = "Please enter a whole number to set the threshold ";
             int num = QInputDialog::getInt(NULL, tr("Scar Segmentation: SD method: "), msg, 0, 0, 10, 1, &ok);
             if (ok) {
-                if (max > mean + num*std)
-                    thresholdImage(itkImage,LV,mean + num*std);
+                if (max > mean + num * std)
+                    thresholdImage(itkImage, LV, mean + num * std);
                 else {
                     QMessageBox::warning(
-                                NULL, "Attention!",
-                                QString::number(num) + " Standard Deviation away from the mean is out of range! Please try again with the customised SD!");
+                        NULL, "Attention!",
+                        QString::number(num) + " Standard Deviation away from the mean is out of range! Please try again with the customised SD!");
                     return;
                 }
             }
@@ -708,8 +681,8 @@ void YZSegView::ScarSeg_save() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -753,7 +726,7 @@ void YZSegView::ScarSeg_save() {
  * @param x
  * @return
  */
-double FWMH_getPeak_SORT(ImageType::Pointer x) {
+double YZSegView::FWMH_getPeak_SORT(ImageType::Pointer x) {
 
     //Copy all the intensity values to a temporary 1D array arr, which will be sorted later
     int m = 0;
@@ -767,8 +740,8 @@ double FWMH_getPeak_SORT(ImageType::Pointer x) {
 
     //Assign the non-zero elements to the new array arr
     int n = 0;
-    int * arr = new int [m];
-    for (in.GoToBegin(); !in.IsAtEnd() ; ++in) {
+    int * arr = new int[m];
+    for (in.GoToBegin(); !in.IsAtEnd(); ++in) {
         if (in.Get() != 0) {
             arr[n] = in.Get();
             n++;
@@ -776,13 +749,12 @@ double FWMH_getPeak_SORT(ImageType::Pointer x) {
     }
 
     //Sort the temporary array arr in the ascending order
-    void insertion_sort(int array[], int l);
     insertion_sort(arr, m);
 
     //Find the average value of the top 5% of the intensity values
     double max = 0;
     int start = m * 0.998;
-    for (int i = start -1; i <m; i++) {
+    for (int i = start - 1; i < m; i++) {
         max += arr[i];
     }
     delete[] arr;
@@ -790,7 +762,7 @@ double FWMH_getPeak_SORT(ImageType::Pointer x) {
     return max;
 }
 
-void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold) {
+void YZSegView::thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double threshold) {
 
     //Create two iterators for the image and the mask
     IteratorType in_img(img, img->GetRequestedRegion());
@@ -809,21 +781,20 @@ void thresholdImage(ImageType::Pointer img, ImageType::Pointer mask, double thre
     }//_for
 }
 
-void insertion_sort(int array[], int l) {
+void YZSegView::insertion_sort(int array[], int l) {
 
-    int j, temp;
     for (int i = 0; i < l; i++) {
-        j = i;
-        while (j > 0 && array[j] < array[j-1]) {
-            temp = array[j];
-            array[j] = array[j-1];
-            array[j-1] = temp;
+        int j = i;
+        while (j > 0 && array[j] < array[j - 1]) {
+            int temp = array[j];
+            array[j] = array[j - 1];
+            array[j - 1] = temp;
             j--;
         }
     }//_for
 }
 
-double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a) {
+double YZSegView::GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a) {
 
     int n = 0;
     double sum = 0;
@@ -849,7 +820,7 @@ double GetStats(ImageType::Pointer im, ImageType::Pointer mask, int a) {
             diff += (in_im.Get() - mean) * (in_im.Get() - mean);
     }
 
-    double sd = sqrt(diff/n);
+    double sd = sqrt(diff / n);
     if (a == 1)
         return mean;
     else if (a == 2)

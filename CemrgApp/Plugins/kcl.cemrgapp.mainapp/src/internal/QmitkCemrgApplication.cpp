@@ -31,11 +31,10 @@ PURPOSE.  See the above copyright notices for more information.
 #include "QmitkCemrgWorkbenchAdvisor.h"
 #include <QDebug>
 
-QmitkCemrgApplication::QmitkCemrgApplication() {    
+QmitkCemrgApplication::QmitkCemrgApplication() {
 }
 
 QmitkCemrgApplication::QmitkCemrgApplication(const QmitkCemrgApplication& other) : QObject(other.parent()) {
-
     Q_UNUSED(other)
     throw std::runtime_error("Copy constructor not implemented");
 }

@@ -65,6 +65,10 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolyData.h>
 #include <vtkUnstructuredGrid.h>
 
+// C++ Standard
+#include <numeric>
+#include <iostream>
+
 // CemrgAppModule
 #include <CemrgCommandLine.h>
 #include <CemrgCommonUtils.h>
@@ -72,10 +76,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <CemrgPower.h>
 #include "kcl_cemrgapp_powertrans_Activator.h"
 #include "powertransView.h"
-
-// Generic
-#include <numeric>
-#include <iostream>
 
 const std::string powertransView::VIEW_ID = "org.mitk.views.powertrans";
 
@@ -125,7 +125,7 @@ void powertransView::SetFocus() {
 }
 
 void powertransView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+    berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void powertransView::LoadDICOM() {
@@ -157,16 +157,16 @@ void powertransView::ConvertNII() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 10) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please load and select 10 images from the Data Manager before starting this step!");
+            NULL, "Attention",
+            "Please load and select 10 images from the Data Manager before starting this step!");
         return;
     }//_if
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -179,7 +179,7 @@ void powertransView::ConvertNII() {
     std::string seriesDescription;
     foreach (mitk::DataNode::Pointer node, nodes) {
         node->GetData()->GetPropertyList()->GetStringProperty("dicom.series.SeriesDescription", seriesDescription);
-        if (seriesDescription.find("90.0%")      != seriesDescription.npos) indexNodes.push_back(9);
+        if (seriesDescription.find("90.0%") != seriesDescription.npos) indexNodes.push_back(9);
         else if (seriesDescription.find("80.0%") != seriesDescription.npos) indexNodes.push_back(8);
         else if (seriesDescription.find("70.0%") != seriesDescription.npos) indexNodes.push_back(7);
         else if (seriesDescription.find("60.0%") != seriesDescription.npos) indexNodes.push_back(6);
@@ -188,20 +188,20 @@ void powertransView::ConvertNII() {
         else if (seriesDescription.find("30.0%") != seriesDescription.npos) indexNodes.push_back(3);
         else if (seriesDescription.find("20.0%") != seriesDescription.npos) indexNodes.push_back(2);
         else if (seriesDescription.find("10.0%") != seriesDescription.npos) indexNodes.push_back(1);
-        else if (seriesDescription.find("0.0%")  != seriesDescription.npos) indexNodes.push_back(0);
+        else if (seriesDescription.find("0.0%") != seriesDescription.npos) indexNodes.push_back(0);
     }//_for
 
     //Sort indexes based on comparing values
     std::vector<int> index(indexNodes.size());
     std::iota(index.begin(), index.end(), 0);
-    std::sort(index.begin(), index.end(), [&](int i1, int i2) {return indexNodes[i1]<indexNodes[i2];});
+    std::sort(index.begin(), index.end(), [&](int i1, int i2) { return indexNodes[i1] < indexNodes[i2]; });
     //Warning for cases when order is not found
     size_t length1 = nodes.size();
     size_t length2 = indexNodes.size();
     if (length1 != length2) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Cannot find the order of images automatically. Revert to user order and selections in the data manager!");
+            NULL, "Attention",
+            "Cannot find the order of images automatically. Revert to user order and selections in the data manager!");
         index.resize(nodes.size());
         std::iota(index.begin(), index.end(), 0);
     }//_if
@@ -209,13 +209,12 @@ void powertransView::ConvertNII() {
     //Convert to Nifti
     int ctr = 0;
     QString path;
-    bool successfulNitfi;
 
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
         path = directory + "/dcm-" + QString::number(ctr++) + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
+        bool successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
         } else {
@@ -240,8 +239,8 @@ void powertransView::CropinIMGS() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty()) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select an image from the Data Manager to perform cropping!");
+            NULL, "Attention",
+            "Please select an image from the Data Manager to perform cropping!");
         return;
     }//_if
 
@@ -252,8 +251,8 @@ void powertransView::CropinIMGS() {
         //Ask the user for a dir to locate data
         if (directory.isEmpty()) {
             directory = QFileDialog::getExistingDirectory(
-                        NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                        QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+                NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+                QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
             if (directory.isEmpty() || directory.simplified().contains(" ")) {
                 QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
                 directory = QString();
@@ -324,16 +323,16 @@ void powertransView::ResampIMGS() {
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.empty()) {
         QMessageBox::warning(
-                    NULL, "Attention",
-                    "Please select an image from the Data Manager to perform downsampling!");
+            NULL, "Attention",
+            "Please select an image from the Data Manager to perform downsampling!");
         return;
     }
 
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -397,7 +396,7 @@ void powertransView::MapPowerTop() {
 }
 
 void powertransView::ResetRibSpacing() {
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     m_UIRibSpacing.setupUi(inputs);
 
     connect(m_UIRibSpacing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
@@ -411,15 +410,15 @@ void powertransView::ResetRibSpacing() {
 
         //Checking input rib spacing
         if (ribSpacingStr.isEmpty()) {
-            ribSpacing=5;
+            ribSpacing = 5;
             QMessageBox::warning(NULL, "Attention", "Default: Rib spacing 5 is used");
 
         } else {
             bool flag;
-            ribSpacing=ribSpacingStr.toInt(&flag);
+            ribSpacing = ribSpacingStr.toInt(&flag);
             if (!flag) {
                 QMessageBox::warning(NULL, "Attention", "Wrong input for rib spacing. Using default rib spacing = 5");
-                ribSpacing=5;
+                ribSpacing = 5;
             }
         }
         inputs->deleteLater();
@@ -480,8 +479,8 @@ void powertransView::LandmarkSelection() {
     }
     */
     QMessageBox::information(
-                NULL, "Attention",
-                "Please select 2 or 3 landmark points:\n\n 1. Mid-medial edge of power transmitter\n 2. 10mm along the length of the transmitter (RHS of landmark 1)\n 3. [opt] 10mm along the width of the transmitter (below landmark 1)");
+        NULL, "Attention",
+        "Please select 2 or 3 landmark points:\n\n 1. Mid-medial edge of power transmitter\n 2. 10mm along the length of the transmitter (RHS of landmark 1)\n 3. [opt] 10mm along the width of the transmitter (below landmark 1)");
 
     this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
 
@@ -492,8 +491,8 @@ void powertransView::MapPowerTransLM() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -501,8 +500,8 @@ void powertransView::MapPowerTransLM() {
         }//_if
     }
     //Ask for user input to set the ribSpacing number
-    if (ribSpacing==0) {
-        QDialog* inputs = new QDialog(0,0);
+    if (ribSpacing == 0) {
+        QDialog* inputs = new QDialog(0, 0);
         m_UIRibSpacing.setupUi(inputs);
 
         connect(m_UIRibSpacing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
@@ -516,15 +515,15 @@ void powertransView::MapPowerTransLM() {
 
             //Checking input rib spacing
             if (ribSpacingStr.isEmpty()) {
-                ribSpacing=5;
+                ribSpacing = 5;
                 QMessageBox::information(NULL, "Attention", "Default: Rib spacing 5 is used");
 
             } else {
                 bool flag;
-                ribSpacing=ribSpacingStr.toInt(&flag);
+                ribSpacing = ribSpacingStr.toInt(&flag);
                 if (!flag) {
                     QMessageBox::warning(NULL, "Attention", "Wrong input for rib spacing. Using default rib spacing = 5");
-                    ribSpacing=5;
+                    ribSpacing = 5;
                 }
             }
             inputs->deleteLater();
@@ -638,8 +637,8 @@ void powertransView::LoadMesh() {
 
     QString path = "";
     path = QFileDialog::getOpenFileName(
-                NULL, "Open Mesh Data File",
-                directory, QmitkIOUtil::GetFileOpenFilterString());
+        NULL, "Open Mesh Data File",
+        directory, QmitkIOUtil::GetFileOpenFilterString());
     if (path.isEmpty() || path.simplified().contains(" ")) {
         QMessageBox::warning(NULL, "Attention", "Please select endo mesh file to open!");
         directory = QString();
@@ -647,7 +646,7 @@ void powertransView::LoadMesh() {
     }//_if
 
     CemrgCommonUtils::AddToStorage(
-                CemrgCommonUtils::LoadVTKMesh(path.toStdString()), "Mesh", this->GetDataStorage());
+        CemrgCommonUtils::LoadVTKMesh(path.toStdString()), "Mesh", this->GetDataStorage());
 }
 
 void powertransView::CalculatePower() {
@@ -656,8 +655,8 @@ void powertransView::CalculatePower() {
     //Ask the user for a dir to store data
     if (directory.isEmpty()) {
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             QMessageBox::warning(NULL, "Attention", "Please select a project directory with no spaces in the path!");
             directory = QString();
@@ -665,8 +664,8 @@ void powertransView::CalculatePower() {
         }//_if
     }
     //Ask for user input to set the ribSpacing number
-    if (ribSpacing==0) {
-        QDialog* inputs = new QDialog(0,0);
+    if (ribSpacing == 0) {
+        QDialog* inputs = new QDialog(0, 0);
         m_UIRibSpacing.setupUi(inputs);
 
         connect(m_UIRibSpacing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
@@ -680,15 +679,15 @@ void powertransView::CalculatePower() {
 
             //Checking input rib spacing
             if (ribSpacingStr.isEmpty()) {
-                ribSpacing=5;
+                ribSpacing = 5;
                 QMessageBox::warning(NULL, "Attention", "Default: Rib spacing 5 is used");
 
             } else {
                 bool flag;
-                ribSpacing=ribSpacingStr.toInt(&flag);
+                ribSpacing = ribSpacingStr.toInt(&flag);
                 if (!flag) {
                     QMessageBox::warning(NULL, "Attention", "Wrong input for rib spacing. Using default rib spacing = 5");
-                    ribSpacing=5;
+                    ribSpacing = 5;
                 }
             }
             inputs->deleteLater();
@@ -711,13 +710,13 @@ void powertransView::CalculatePower() {
         mitk::Surface::Pointer surface = dynamic_cast<mitk::Surface*>(data.GetPointer());
         if (surface) {
 
-            QString outstr="Calculated power on selected mesh for Rib spacing" + QString::number(ribSpacing);
+            QString outstr = "Calculated power on selected mesh for Rib spacing" + QString::number(ribSpacing);
             QMessageBox::information(NULL, "Attention", outstr);
 
             this->BusyCursorOn();
             mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
             power = std::unique_ptr<CemrgPower>(new CemrgPower(directory, ribSpacing));
-            mitk::Surface::Pointer outputEndoMesh = power->CalculateAcousticIntensity(surface);
+            // mitk::Surface::Pointer outputEndoMesh = power->CalculateAcousticIntensity(surface);
             // Load in mesh
             //AddToStorage("PowerMap", outputEndoMesh);
             mitk::ProgressBar::GetInstance()->Progress();
@@ -752,8 +751,8 @@ void powertransView::MapAHATop() {
 void powertransView::AHALandmarkSelection() {
 
     QMessageBox::information(
-                NULL, "Attention",
-                "Please select 6 points in order:\n\n1 on the Apex\n3 on the Mitral Valve surface\n2 on the Right Ventricle cusps\n");
+        NULL, "Attention",
+        "Please select 6 points in order:\n\n1 on the Apex\n3 on the Mitral Valve surface\n2 on the Right Ventricle cusps\n");
 
     this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
 
@@ -761,14 +760,14 @@ void powertransView::AHALandmarkSelection() {
 void powertransView::MapAHAfromInput() {
 
     //Ask for user input to set the parameters
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     QSignalMapper* signalMapper = new QSignalMapper(this);
 
     m_UIAhaInput.setupUi(inputs);
     connect(m_UIAhaInput.pushButton_1, SIGNAL(clicked()), signalMapper, SLOT(map()));
     connect(m_UIAhaInput.pushButton_2, SIGNAL(clicked()), signalMapper, SLOT(map()));
     signalMapper->setMapping(m_UIAhaInput.pushButton_1, "1" + directory + "/ebr" + QString::number(ribSpacing) + ".vtk");
-    signalMapper->setMapping(m_UIAhaInput.pushButton_2, "2" + directory );
+    signalMapper->setMapping(m_UIAhaInput.pushButton_2, "2" + directory);
     connect(signalMapper, SIGNAL(mapped(QString)), this, SLOT(BrowseA(const QString&)));
 
     int dialogCode = inputs->exec();
@@ -848,8 +847,8 @@ void powertransView::MapAHA() {
 
         //
         if (!pointset || !surface) {
-            mitk::Surface::Pointer surface = dynamic_cast<mitk::Surface*>(nodes.at(0)->GetData());
-            mitk::DataNode::Pointer pointset = dynamic_cast<mitk::DataNode*>(nodes.at(1)->GetData());
+            surface = dynamic_cast<mitk::Surface*>(nodes.at(0)->GetData());
+            pointset = dynamic_cast<mitk::PointSet*>(nodes.at(1)->GetData());
             if (!pointset || !surface) {
                 QMessageBox::warning(NULL, "Attention", "Cannot dynamic cast pointset and mesh for AHA mapping");
                 return;
@@ -901,8 +900,8 @@ void powertransView::Reset() {
 
         //Check if we got the default datastorage and if there is anything else then helper object in the storage
         if (dataStorageRef->IsDefault() && dataStorage->GetSubset(
-                    mitk::NodePredicateNot::New(
-                        mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true))))->empty())
+            mitk::NodePredicateNot::New(
+                mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true))))->empty())
             return;
 
         //Remove everything
@@ -915,7 +914,7 @@ void powertransView::Reset() {
         //Close all editors with this data storage as input
         mitk::DataStorageEditorInput::Pointer dsInput(new mitk::DataStorageEditorInput(dataStorageRef));
         QList<berry::IEditorReference::Pointer> dsEditors =
-                this->GetSite()->GetPage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
+            this->GetSite()->GetPage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
 
         if (!dsEditors.empty()) {
             QList<berry::IEditorReference::Pointer> editorsToClose = dsEditors;
