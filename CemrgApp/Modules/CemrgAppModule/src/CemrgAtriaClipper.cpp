@@ -439,7 +439,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
 
         //Image Dilation
         BallType binaryBall;
-        binaryBall.SetRadius(manuals[i] == 1 ? 1 : 1.5); // manuals[i] == 1 ? 1 : 1.5
+        binaryBall.SetRadius(1); // before, radius=(manuals[i] == 1 ? 1 : 1.5) change to a larger value if problems arise
         binaryBall.CreateStructuringElement();
         DilationFilterType::Pointer dilationFilter = DilationFilterType::New();
         dilationFilter->SetInput(cutItkImage);
