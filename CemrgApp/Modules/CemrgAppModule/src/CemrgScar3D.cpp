@@ -486,7 +486,7 @@ double CemrgScar3D::GetIntensityAlongNormal(itkImageType::Pointer scarImage, itk
 
     double insty = 0;
     insty = GetStatisticalMeasure(pointsOnAndAroundNormal, scarImage, visitedImage, methodType);
-    
+
     return insty;
 }
 
@@ -572,7 +572,7 @@ double CemrgScar3D::GetStatisticalMeasure(std::vector<mitk::Point3D> pointsOnAnd
             pixel_xyz[1] = pointsOnAndAroundNormal.at(i).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(i).GetElement(2);
 
-            greyVal = scarImage->GetPixel(pixel_xyz);
+            double greyVal = scarImage->GetPixel(pixel_xyz);
             if(greyVal!=0){
                 values.push_back(greyVal);
             }
