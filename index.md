@@ -19,7 +19,7 @@ An Interactive Medical Imaging Platform with Image Processing and Computer Visio
 Links:
 
 + [Project on Github](https://github.com/CemrgDevelopers/CemrgApp)
-+ [Download our latest version](https://github.com/CemrgDevelopers/CemrgApp/releases/tag/v2.1.1)
++ [Download our latest version](https://github.com/CemrgDevelopers/CemrgApp/releases/tag/v2.2)
 + [Visit our wiki Page](https://github.com/CemrgDevelopers/CemrgApp/wiki)
 
 
