@@ -222,6 +222,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_0_3_checklabels">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    StepW: Verify Labels</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="button_x_meshtools">
      <property name="font">
       <font>
@@ -245,16 +255,6 @@
      </property>
      <property name="text">
       <string>    StepY: Convert format</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="button_0_3_checklabels">
-     <property name="styleSheet">
-      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
-     </property>
-     <property name="text">
-      <string>    StepZ: Verify Labels</string>
      </property>
     </widget>
    </item>
@@ -305,7 +305,7 @@
       <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
      </property>
      <property name="text">
-      <string>    StepW: Scar Projection</string>
+      <string>    StepZ: Scar Projection</string>
      </property>
     </widget>
    </item>
