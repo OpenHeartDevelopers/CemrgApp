@@ -56,6 +56,7 @@ class AtrialScarView: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    AtrialScarView();
     int Ask(std::string title, std::string msg);
 
 protected slots:
