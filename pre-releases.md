@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Pre-releases & Ongoing Projects
+title: Pre-releases
 permalink: /pre-releases/
 ---
 
