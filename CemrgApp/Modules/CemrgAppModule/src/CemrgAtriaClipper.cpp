@@ -26,14 +26,14 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-//Qmitk
+// Qmitk
 #include <mitkProgressBar.h>
 #include <mitkIOUtil.h>
 #include <mitkImageCast.h>
 #include <mitkITKImageImport.h>
 #include "CemrgAtriaClipper.h"
 
-//VTK
+// VTK
 #include <vtkPointLocator.h>
 #include <vtkPointData.h>
 #include <vtkDoubleArray.h>
@@ -54,7 +54,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolygon.h>
 #include <vtkCellArray.h>
 
-//ITK
+// ITK
 #include <itkSubtractImageFilter.h>
 #include <itkConnectedComponentImageFilter.h>
 #include <itkLabelShapeKeepNObjectsImageFilter.h>
@@ -66,12 +66,12 @@ PURPOSE.  See the above copyright notices for more information.
 #include <itkResampleImageFilter.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
 
-//Qt
+// Qt
 #include <QDebug>
 #include <QString>
 #include <QFileInfo>
 
-//CemrgAppModule
+// CemrgApp
 #include "CemrgCommonUtils.h"
 #include "CemrgMeasure.h"
 
@@ -89,17 +89,17 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
 
     try {
 
-		MITK_INFO << "Producibility test. ";
+        MITK_INFO << "Producibility test. ";
         QString prodPath = directory + "/";
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
         ofstream prodFile1;
         prodFile1.open((prodPath + "prodSeedLabels.txt").toStdString());
-        for (unsigned int i=0; i<pickedSeedLabels.size(); i++)
+        for (unsigned int i = 0; i < pickedSeedLabels.size(); i++)
             prodFile1 << pickedSeedLabels.at(i) << "\n";
         prodFile1.close();
         ofstream prodFile2;
         prodFile2.open((prodPath + "prodSeedIds.txt").toStdString());
-        for (unsigned int i=0; i<pickedSeedIds->GetNumberOfIds(); i++)
+        for (unsigned int i = 0; i < pickedSeedIds->GetNumberOfIds(); i++)
             prodFile2 << pickedSeedIds->GetId(i) << "\n";
         prodFile2.close();
         ofstream prodFile3;
@@ -119,9 +119,9 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
             MITK_INFO << "Number of pickedSeedLabels: ";
             MITK_INFO << pickedSeedLabels.size();
             MITK_INFO(!autoLines) << "Centre lines orientation set manually.";
-            MITK_INFO(autoLines)  << "Centre lines orientation set automatically.";
+            MITK_INFO(autoLines) << "Centre lines orientation set automatically.";
 
-            for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+            for (unsigned int i = 0; i < pickedSeedLabels.size(); i++) {
 
                 //Compute Centre Lines
                 outletSeedIds->InsertNextId(pickedSeedIds->GetId(i));
@@ -150,7 +150,7 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
             }//_for
         }//_if
 
-    } catch(...) {
+    } catch (...) {
         return false;
     }//_try
     return true;
@@ -168,7 +168,7 @@ bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
 
     try {
 
-        for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+        for (unsigned int i = 0; i < pickedSeedLabels.size(); i++) {
 
             int pointID;
             double slope;
@@ -179,7 +179,7 @@ bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
 
             //Initialisation
             manuals.push_back(0);
-            std::vector<double> tempVec = {0.0,0.0};
+            std::vector<double> tempVec = {0.0, 0.0};
             normalPlAngles.push_back(tempVec);
 
             //Diameters and area changes
@@ -196,9 +196,9 @@ bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
 
             //Slope calculations
             areaMeter = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
-            for (pointID = 1; pointID<areaMeter->GetNumberOfTuples(); pointID++) {
-                if (areaMeter->GetValue(pointID-1) == 0) continue;
-                slope = areaMeter->GetValue(pointID) - areaMeter->GetValue(pointID-1);
+            for (pointID = 1; pointID < areaMeter->GetNumberOfTuples(); pointID++) {
+                if (areaMeter->GetValue(pointID - 1) == 0) continue;
+                slope = areaMeter->GetValue(pointID) - areaMeter->GetValue(pointID - 1);
                 slope > highSlope ? highCount += 1 : highCount = 0;
                 if (slope > maxiSlope) break;
                 else if (slope > highSlope && highCount == noBumpCriterion) break;
@@ -216,7 +216,7 @@ bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
             centreLinePointPlanes.push_back(vtkSmartPointer<vtkPoints>::New());
         }//_for
 
-    } catch(...) {
+    } catch (...) {
         return false;
     }//_try
     return true;
@@ -224,7 +224,7 @@ bool CemrgAtriaClipper::ComputeCtrLinesClippers(std::vector<int> pickedSeedLabel
 
 void CemrgAtriaClipper::ClipVeinsMesh(std::vector<int> pickedSeedLabels) {
 
-    for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+    for (unsigned int i = 0; i < pickedSeedLabels.size(); i++) {
 
         //Label is not appendage-uncut
         if (pickedSeedLabels.at(i) != APPENDAGEUNCUT) {
@@ -289,7 +289,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
     CastToItkImage(segImage, pvLblsItkImage);
     std::vector<ImageType::Pointer> cutRegions;
 
-    for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+    for (unsigned int i = 0; i < pickedSeedLabels.size(); i++) {
 
         //Find the right vein section by removing unwanted ones
         vtkSmartPointer<vtkPolyData> line = centreLines.at(i)->GetOutput();
@@ -297,7 +297,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         vtkSmartPointer<vtkPolyData> centreVeinPlane = centreLineVeinPlanes.at(i);
         centreVeinPlane->BuildLinks();
         for (vtkIdType cellID = 0; cellID < centreVeinPlane->GetNumberOfCells(); cellID++)
-            if (cellID != line->GetNumberOfPoints()-1-position)
+            if (cellID != line->GetNumberOfPoints() - 1 - position)
                 centreVeinPlane->DeleteCell(cellID);
         centreVeinPlane->RemoveDeletedCells();
         vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
@@ -309,19 +309,17 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         if (morphAnalysis) {
 
             int noPV = pickedSeedLabels.size();
-            vtkSmartPointer<vtkDoubleArray> areas = vtkSmartPointer<vtkDoubleArray>::New();
-            areas = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
+            vtkSmartPointer<vtkDoubleArray> areas = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CentrelineSectionAreaArrayName"));
             double area = areas->GetValue(position);
             CemrgMeasure::Points points;
-            for(vtkIdType i=0; i<centreVeinPlane->GetNumberOfPoints(); i++) {
+            for (vtkIdType j = 0; j < centreVeinPlane->GetNumberOfPoints(); j++) {
                 double p[3];
-                centreVeinPlane->GetPoints()->GetPoint(i,p);
-                points.push_back(CemrgMeasure::Point(p[0],p[1],p[2]));
+                centreVeinPlane->GetPoints()->GetPoint(j, p);
+                points.push_back(CemrgMeasure::Point(p[0], p[1], p[2]));
             }//_for
             std::unique_ptr<CemrgMeasure> morphAnal = std::unique_ptr<CemrgMeasure>(new CemrgMeasure());
             double circ = morphAnal->CalcPerimeter(points);
-            vtkSmartPointer<vtkDoubleArray> diams = vtkSmartPointer<vtkDoubleArray>::New();
-            diams = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CenterlineSectionMinSizeArrayName"));
+            vtkSmartPointer<vtkDoubleArray> diams = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CenterlineSectionMinSizeArrayName"));
             double diam = diams->GetValue(position);
 
             ofstream morphResult;
@@ -340,8 +338,8 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         if (manuals[i] == 2) {
             vtkSmartPointer<vtkPolygon> polygon = vtkSmartPointer<vtkPolygon>::New();
             polygon->GetPointIds()->SetNumberOfIds(centreLinePointPlanes.at(i)->GetNumberOfPoints());
-            for (int j=0; j<centreLinePointPlanes.at(i)->GetNumberOfPoints(); j++)
-                polygon->GetPointIds()->SetId(j,j);
+            for (int j = 0; j < centreLinePointPlanes.at(i)->GetNumberOfPoints(); j++)
+                polygon->GetPointIds()->SetId(j, j);
             vtkSmartPointer<vtkCellArray> polygons = vtkSmartPointer<vtkCellArray>::New();
             polygons->InsertNextCell(polygon);
             vtkSmartPointer<vtkPolyData> polygonPolyData = vtkSmartPointer<vtkPolyData>::New();
@@ -357,11 +355,11 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             circle = centreLinePolyPlanes.at(i)->GetOutput();
         else
             circle = centreLineVeinPlanes.at(i);
-        for (int i=0; i<circle->GetNumberOfPoints(); i++) {
-            double* point = circle->GetPoint(i);
+        for (int j = 0; j < circle->GetNumberOfPoints(); j++) {
+            double* point = circle->GetPoint(j);
             point[0] = -point[0];
             point[1] = -point[1];
-            circle->GetPoints()->SetPoint(i, point);
+            circle->GetPoints()->SetPoint(j, point);
         }//_for
 
         /*
@@ -379,12 +377,12 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             prodFile1 << centreLinePolyPlanes.at(i)->GetNormal()[2] << "\n";
             prodFile1 << manuals[i] << "\n";
             prodFile1.close();
-        } catch(...) {};
+        } catch (...) {};
         /*
          * End Test
          **/
 
-        //Prepare empty image
+         //Prepare empty image
         vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
         double spacing[3];
         segImage->GetVtkImageData()->GetSpacing(spacing);
@@ -396,12 +394,12 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         double origin[3];
         segImage->GetGeometry()->GetOrigin().ToArray(origin);
         whiteImage->SetOrigin(origin);
-        whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR,1);
+        whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
         unsigned char otval = 0;
         unsigned char inval = 255;
         vtkIdType count = whiteImage->GetNumberOfPoints();
-        for (vtkIdType i = 0; i < count; ++i)
-            whiteImage->GetPointData()->GetScalars()->SetTuple1(i, inval);
+        for (vtkIdType j = 0; j < count; j++)
+            whiteImage->GetPointData()->GetScalars()->SetTuple1(j, inval);
 
         //Sweep polygonal data to create an image
         vtkSmartPointer<vtkLinearExtrusionFilter> extruder = vtkSmartPointer<vtkLinearExtrusionFilter>::New();
@@ -424,7 +422,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         imgstenc->SetBackgroundValue(otval);
         imgstenc->Update();
 
-        //VTK to ITK conversion
+        // VTK to ITK conversion
         mitk::Image::Pointer cutImg = mitk::Image::New();
         cutImg->Initialize(imgstenc->GetOutput());
         cutImg->SetVolume(imgstenc->GetOutput()->GetScalarPointer());
@@ -442,7 +440,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
 
         //Image Dilation
         BallType binaryBall;
-        binaryBall.SetRadius(manuals[i] == 1 ? static_cast<unsigned long>(1.0) : static_cast<unsigned long>(1.5));
+        binaryBall.SetRadius(1); // before, radius=(manuals[i] == 1 ? 1 : 1.5) change to a larger value if problems arise
         binaryBall.CreateStructuringElement();
         DilationFilterType::Pointer dilationFilter = DilationFilterType::New();
         dilationFilter->SetInput(cutItkImage);
@@ -528,7 +526,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
     }//_for
 
     //Adjust voxel labels after cut PV
-    for (unsigned int i=0; i<pickedSeedLabels.size(); i++) {
+    for (unsigned int i = 0; i < pickedSeedLabels.size(); i++) {
         ItType itCutSub(segItkImage, segItkImage->GetRequestedRegion());
         ItType itLblSub(pvLblsItkImage, pvLblsItkImage->GetRequestedRegion());
         ItType itOrgSub(cutRegions.at(i), cutRegions.at(i)->GetRequestedRegion());
@@ -796,8 +794,7 @@ void CemrgAtriaClipper::ClipVeinsImgFromFileList(QStringList cutters, QStringLis
 void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position) {
 
     vtkSmartPointer<vtkPolyData> line = centreLines.at(ctrLineNo)->GetOutput();
-    vtkSmartPointer<vtkDoubleArray> radii = vtkSmartPointer<vtkDoubleArray>::New();
-    radii = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
+    vtkSmartPointer<vtkDoubleArray> radii = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
 
     //Centre point
     double* clipPoint = line->GetPoint(position);
@@ -808,7 +805,7 @@ void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSourc
     //Normal calculations
     double x_s = 0.0, y_s = 0.0, z_s = 0.0;
     double pointAtPosition[3], pointAtNextPosition[3];
-    line->GetPoint(position+1, pointAtNextPosition);
+    line->GetPoint(position + 1, pointAtNextPosition);
     line->GetPoint(position, pointAtPosition);
 
     x_s = pointAtNextPosition[0] - pointAtPosition[0];
@@ -816,7 +813,7 @@ void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSourc
     z_s = pointAtNextPosition[2] - pointAtPosition[2];
     if (manuals[ctrLineNo] == 1) {
         double x, y, z;
-        double lng = sqrt(pow(x_s,2) + pow(y_s,2) + pow(z_s,2));
+        double lng = sqrt(pow(x_s, 2) + pow(y_s, 2) + pow(z_s, 2));
         x = lng * sin(normalPlAngles[ctrLineNo][0]) * cos(normalPlAngles[ctrLineNo][1]) + line->GetPoint(position)[0];
         y = lng * sin(normalPlAngles[ctrLineNo][0]) * sin(normalPlAngles[ctrLineNo][1]) + line->GetPoint(position)[1];
         z = lng * cos(normalPlAngles[ctrLineNo][0]) + line->GetPoint(position)[2];
@@ -825,11 +822,11 @@ void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSourc
         z_s = z - line->GetPoint(position)[2];
     } else {
         double y, z;
-        double lng = sqrt(pow(x_s,2) + pow(y_s,2) + pow(z_s,2));
+        double lng = sqrt(pow(x_s, 2) + pow(y_s, 2) + pow(z_s, 2));
         y = y_s + line->GetPoint(position)[1];
         z = z_s + line->GetPoint(position)[2];
-        normalPlAngles[ctrLineNo][0] = acos((z-line->GetPoint(position)[2])/lng);
-        normalPlAngles[ctrLineNo][1] = asin((y-line->GetPoint(position)[1])/lng*sin(normalPlAngles[ctrLineNo][0]));
+        normalPlAngles[ctrLineNo][0] = acos((z - line->GetPoint(position)[2]) / lng);
+        normalPlAngles[ctrLineNo][1] = asin((y - line->GetPoint(position)[1]) / lng * sin(normalPlAngles[ctrLineNo][0]));
     }//_if
     double clipNormal[3] = {x_s, y_s, z_s};
 
@@ -873,7 +870,7 @@ vtkIdType CemrgAtriaClipper::CentreOfMass(mitk::Surface::Pointer surface) {
     mitralValvePlane[1] = pointInSurface[1] - centreInSurface[1];
     mitralValvePlane[2] = pointInSurface[2] - centreInSurface[2];
     for (int i = 0; i < 3; i++) {
-        xProduct += (mitralValvePlane[i])*(pointNormal[i]);
+        xProduct += (mitralValvePlane[i]) * (pointNormal[i]);
     }//_for
 
     //Orientation of centrelines

@@ -33,23 +33,23 @@ PURPOSE.  See the above copyright notices for more information.
 
 namespace mitk {
 
-class kcl_cemrgapp_scar_Activator : public QObject, public ctkPluginActivator {
+    class kcl_cemrgapp_scar_Activator: public QObject, public ctkPluginActivator {
 
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "kcl_cemrgapp_scar")
-    Q_INTERFACES(ctkPluginActivator)
+        Q_OBJECT
+        Q_PLUGIN_METADATA(IID "kcl_cemrgapp_scar")
+        Q_INTERFACES(ctkPluginActivator)
 
-public:
+    public:
 
-    void start(ctkPluginContext *context);
-    void stop(ctkPluginContext *context);
-    static ctkPluginContext* getContext();
+        void start(ctkPluginContext *context);
+        void stop(ctkPluginContext *context);
+        static ctkPluginContext* getContext();
 
-private:
+    private:
 
-    static ctkPluginContext* pluginContext;
+        static ctkPluginContext* pluginContext;
 
-}; // kcl_cemrgapp_scar_Activator
+    }; // kcl_cemrgapp_scar_Activator
 }
 
 #endif // kcl_cemrgapp_scar_Activator_h

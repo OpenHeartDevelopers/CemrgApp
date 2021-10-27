@@ -72,6 +72,10 @@ QString AtrialScarClipperView::fileName;
 QString AtrialScarClipperView::directory;
 const std::string AtrialScarClipperView::VIEW_ID = "org.mitk.views.scarclipper";
 
+AtrialScarClipperView::AtrialScarClipperView(){
+    this->inputs = new QDialog(0, 0);
+}
+
 void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file
@@ -84,7 +88,7 @@ void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(CtrLinesSelector(int)));
 
     //Create GUI widgets
-    inputs = new QDialog(0,0);
+    inputs = new QDialog(0, 0);
     m_Labels.setupUi(inputs); //QDialogButtonBox
     connect(m_Labels.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_Labels.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -92,7 +96,7 @@ void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {
     //Setup renderer
     surfActor = vtkSmartPointer<vtkActor>::New();
     renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->SetBackground(0,0,0);
+    renderer->SetBackground(0, 0, 0);
     vtkSmartPointer<vtkTextActor> txtActor = vtkSmartPointer<vtkTextActor>::New();
     std::string shortcuts = "R: reset centrelines\nSpace: add seed point\nDelete: remove seed point";
     txtActor->SetInput(shortcuts.c_str());
@@ -100,8 +104,7 @@ void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {
     txtActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
     renderer->AddActor2D(txtActor);
 
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
-            vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     m_Controls.widget_1->SetRenderWindow(renderWindow);
     m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
@@ -136,27 +139,22 @@ void AtrialScarClipperView::CreateQtPartControl(QWidget *parent) {
 }
 
 void AtrialScarClipperView::SetFocus() {
-
     m_Controls.button_1->setFocus();
 }
 
-void AtrialScarClipperView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void AtrialScarClipperView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 AtrialScarClipperView::~AtrialScarClipperView() {
-
     inputs->deleteLater();
 }
 
 void AtrialScarClipperView::SetDirectoryFile(const QString directory, const QString fileName) {
-
     AtrialScarClipperView::fileName = fileName;
     AtrialScarClipperView::directory = directory;
 }
 
 void AtrialScarClipperView::iniPreSurf() {
-
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 1) {
@@ -182,7 +180,7 @@ void AtrialScarClipperView::iniPreSurf() {
             }//_if
 
             //Ask for user input to set the parameters
-            QDialog* inputs = new QDialog(0,0);
+            QDialog* inputs = new QDialog(0, 0);
             m_UIMeshing.setupUi(inputs);
             connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
             connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -202,7 +200,7 @@ void AtrialScarClipperView::iniPreSurf() {
                 if (!ok1 || !ok2 || !ok3 || !ok4)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
                 if (!ok1) iter = 1;
-                if (!ok2) th   = 0.5;
+                if (!ok2) th = 0.5;
                 if (!ok3) blur = 0;
                 if (!ok4) smth = 10;
                 //_if
@@ -263,7 +261,7 @@ void AtrialScarClipperView::CtrLines() {
             QMessageBox::information(NULL, "Attention", "You are using precomputed centrelines!");
 
         this->BusyCursorOn();
-        for (unsigned int i=0; i<clipper->GetCentreLines().size(); i++) {
+        for (unsigned int i = 0; i < clipper->GetCentreLines().size(); i++) {
             if (i == 0) pickedSeedLabels.clear();
             vtkSmartPointer<vtkPolyData> pd = clipper->GetCentreLines().at(i)->GetOutput();
             vtkSmartPointer<vtkIntArray> lb = vtkIntArray::SafeDownCast(pd->GetFieldData()->GetAbstractArray("PickedSeedLabels"));
@@ -299,14 +297,14 @@ void AtrialScarClipperView::CtrLines() {
 
     //Create a mapper and actor for centre lines
     std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> ctrLines = clipper->GetCentreLines();
-    for (unsigned int i=0; i<ctrLines.size(); i++) {
+    for (unsigned int i = 0; i < ctrLines.size(); i++) {
         vtkSmartPointer<vtkPolyDataMapper> linesMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         linesMapper->SetInputData(ctrLines.at(i)->GetOutput());
         linesMapper->ScalarVisibilityOff();
         vtkSmartPointer<vtkActor> linesActor = vtkSmartPointer<vtkActor>::New();
         linesActor->SetMapper(linesMapper);
         linesActor->GetProperty()->SetOpacity(1.0);
-        linesActor->GetProperty()->SetColor(1,0,0);
+        linesActor->GetProperty()->SetColor(1, 0, 0);
         renderer->AddActor(linesActor);
     }//_for
     // m_Controls.widget_1->GetVtkRenderWindow()->Render();
@@ -345,14 +343,14 @@ void AtrialScarClipperView::CtrPlanes() {
     int index = ctrLine->GetOutput()->FindPoint(ctrPlane->GetCenter());
 
     //Create a mapper and actor for centre lines clippers
-    for (unsigned int i=0; i<ctrPlanes.size(); i++) {
+    for (unsigned int i = 0; i < ctrPlanes.size(); i++) {
         vtkSmartPointer<vtkPolyDataMapper> clipperMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
         clipperMapper->SetInputConnection(ctrPlanes.at(i)->GetOutputPort());
         clipperMapper->ScalarVisibilityOff();
         vtkSmartPointer<vtkActor> clipperActor = vtkSmartPointer<vtkActor>::New();
         clipperActor->SetMapper(clipperMapper);
         clipperActor->GetProperty()->SetOpacity(1.0);
-        clipperActor->GetProperty()->SetColor(1,1,0);
+        clipperActor->GetProperty()->SetColor(1, 1, 0);
         renderer->AddActor(clipperActor);
         clipperActors.push_back(clipperActor);
         QString comboText = "DEFAULT";
@@ -479,13 +477,12 @@ void AtrialScarClipperView::CtrLinesSelector(int index) {
     int position = line->FindPoint(ctrPlane->GetCenter());
 
     //Find the right radius
-    vtkSmartPointer<vtkDoubleArray> radii = vtkSmartPointer<vtkDoubleArray>::New();
-    radii = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
+    vtkSmartPointer<vtkDoubleArray> radii = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("MaximumInscribedSphereRadius"));
     double adjust = ctrPlane->GetRadius() / radii->GetValue(position);
 
     //Adjust highlighted clipper
-    for (unsigned int i=0; i<clipperActors.size(); i++)
-        clipperActors.at(i)->GetProperty()->SetOpacity(i==(unsigned)index ? 1.0 : 0.1);
+    for (unsigned int i = 0; i < clipperActors.size(); i++)
+        clipperActors.at(i)->GetProperty()->SetOpacity(i == (unsigned)index ? 1.0 : 0.1);
 
     //Set corresponding label
     int type = clipper->GetManualType().at(index);
@@ -501,7 +498,7 @@ void AtrialScarClipperView::CtrLinesSelector(int index) {
     }//_if_type
 
     //Set controllers
-    m_Controls.slider->setRange(0, line->GetNumberOfPoints()-1);
+    m_Controls.slider->setRange(0, line->GetNumberOfPoints() - 1);
     m_Controls.slider->setValue(position);
     m_Controls.spinBox->setValue(adjust);
     pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
@@ -515,7 +512,7 @@ void AtrialScarClipperView::Visualiser() {
     glyph3D->SetInputData(pickedLineSeeds);
     glyph3D->SetSourceConnection(glyphSource->GetOutputPort());
     glyph3D->SetScaleModeToDataScalingOff();
-    glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength()*0.01);
+    glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength() * 0.01);
     glyph3D->Update();
 
     //Create a mapper and actor for glyph
@@ -523,7 +520,7 @@ void AtrialScarClipperView::Visualiser() {
     glyphMapper->SetInputConnection(glyph3D->GetOutputPort());
     vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
     glyphActor->SetMapper(glyphMapper);
-    glyphActor->GetProperty()->SetColor(1.0,0.0,0.0);
+    glyphActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
     glyphActor->PickableOff();
     renderer->AddActor(glyphActor);
 
@@ -547,12 +544,11 @@ void AtrialScarClipperView::PickCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
     int pickedSeedId = -1;
     double minDistance = 1E10;
-    for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
-                    pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
+    for (int i = 0; i < pickedCellPointIds->GetNumberOfIds(); i++) {
+        double distance = vtkMath::Distance2BetweenPoints(
+            pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
             pickedSeedId = pickedCellPointIds->GetId(i);
@@ -577,7 +573,7 @@ void AtrialScarClipperView::ManualCutterCallBack() {
         glyph3D->SetInputData(pickedCutterSeeds);
         glyph3D->SetSourceConnection(glyphSource->GetOutputPort());
         glyph3D->SetScaleModeToDataScalingOff();
-        glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength()*0.01);
+        glyph3D->SetScaleFactor(surface->GetVtkPolyData()->GetLength() * 0.01);
         glyph3D->Update();
 
         //Create a mapper and actor for glyph
@@ -585,7 +581,7 @@ void AtrialScarClipperView::ManualCutterCallBack() {
         glyphMapper->SetInputConnection(glyph3D->GetOutputPort());
         vtkSmartPointer<vtkActor> glyphActor = vtkSmartPointer<vtkActor>::New();
         glyphActor->SetMapper(glyphMapper);
-        glyphActor->GetProperty()->SetColor(1.0,0.0,0.0);
+        glyphActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
         glyphActor->PickableOff();
         renderer->AddActor(glyphActor);
 
@@ -602,12 +598,11 @@ void AtrialScarClipperView::ManualCutterCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
     int pickedSeedId = -1;
     double minDistance = 1E10;
-    for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
-                    pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
+    for (int i = 0; i < pickedCellPointIds->GetNumberOfIds(); i++) {
+        double distance = vtkMath::Distance2BetweenPoints(
+            pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
             pickedSeedId = pickedCellPointIds->GetId(i);
@@ -638,7 +633,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
             QRect screenGeometry = QApplication::desktop()->screenGeometry();
             int x = (screenGeometry.width() - self->inputs->width()) / 2;
             int y = (screenGeometry.height() - self->inputs->height()) / 2;
-            self->inputs->move(x,y);
+            self->inputs->move(x, y);
 
             //Act on dialog return code
             if (dialogCode == QDialog::Accepted) {
@@ -686,13 +681,13 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
             //Clean up last dropped seed point
             vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
             vtkSmartPointer<vtkPoints> points = self->pickedLineSeeds->GetPoints();
-            for (int i=0; i<points->GetNumberOfPoints()-1; i++)
+            for (int i = 0; i < points->GetNumberOfPoints() - 1; i++)
                 newPoints->InsertNextPoint(points->GetPoint(i));
             self->pickedLineSeeds->SetPoints(newPoints);
             vtkSmartPointer<vtkIdList> newPickedSeedIds = vtkSmartPointer<vtkIdList>::New();
             newPickedSeedIds->Initialize();
             vtkSmartPointer<vtkIdList> pickedSeedIds = self->pickedSeedIds;
-            for (int i=0; i<pickedSeedIds->GetNumberOfIds()-1; i++)
+            for (int i = 0; i < pickedSeedIds->GetNumberOfIds() - 1; i++)
                 newPickedSeedIds->InsertNextId(pickedSeedIds->GetId(i));
             self->pickedSeedIds = newPickedSeedIds;
 
@@ -725,7 +720,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
         }//_if_space
 
     } else if (self->clipper->GetCentreLinePolyPlanes().size() != 0 && !self->m_Controls.button_1->isEnabled() &&
-               /*self->m_Controls.button_3->isEnabled() &&*/ self->m_Controls.button_4->isEnabled()) {
+        /*self->m_Controls.button_3->isEnabled() &&*/ self->m_Controls.button_4->isEnabled()) {
 
         double adjustments[2];
         int idxClipper = self->m_Controls.comboBox->currentIndex();
@@ -741,7 +736,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
                 adjustments[0] = 0.0;
             else
                 adjustments[0] = self->clipper->GetMClipperAngles()[idxClipper][0] + 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
@@ -754,7 +749,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
                 adjustments[0] = 180.0;
             else
                 adjustments[0] = self->clipper->GetMClipperAngles()[idxClipper][0] - 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
@@ -767,7 +762,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
                 adjustments[1] = 0.0;
             else
                 adjustments[1] = self->clipper->GetMClipperAngles()[idxClipper][1] + 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
@@ -780,13 +775,13 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
                 adjustments[1] = 360.0;
             else
                 adjustments[1] = self->clipper->GetMClipperAngles()[idxClipper][1] - 0.1;
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(0, 1, 0);
             self->clipper->SetMClipperAngles(adjustments, idxClipper);
             self->CtrPlanesPlacer();
 
         } else if (key == "space") {
 
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1,0,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1, 0, 0);
             self->ManualCutterCallBack();
             self->clipper->SetMClipperSeeds(self->pickedCutterSeeds, self->m_Controls.comboBox->currentIndex());
             self->CtrPlanesPlacer();
@@ -795,7 +790,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
 
             vtkSmartPointer<vtkPoints> newPoints = vtkSmartPointer<vtkPoints>::New();
             vtkSmartPointer<vtkPoints> points = self->pickedCutterSeeds->GetPoints();
-            for (int i=0; i<points->GetNumberOfPoints()-1; i++)
+            for (int i = 0; i < points->GetNumberOfPoints() - 1; i++)
                 newPoints->InsertNextPoint(points->GetPoint(i));
             self->pickedCutterSeeds->SetPoints(newPoints);
             self->clipper->SetMClipperSeeds(self->pickedCutterSeeds, self->m_Controls.comboBox->currentIndex());
@@ -807,7 +802,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
             QString style = "QLabel {border-width:1px; border-color:black; border-radius:10px; background-color:yellow;}";
             self->m_Controls.label->setStyleSheet(style);
             self->clipper->SetToAutomaticClipperMode(idxClipper);
-            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1,1,0);
+            self->clipperActors.at(idxClipper)->GetProperty()->SetColor(1, 1, 0);
             self->CtrPlanesPlacer();
 
         } else if (key == "o" || key == "O") {
@@ -816,7 +811,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
                 self->surfActor->GetProperty()->SetOpacity(0.5);
             else {
                 self->surfActor->GetProperty()->SetOpacity(1.0);
-                for (unsigned int i=0; i<self->clipperActors.size(); i++)
+                for (unsigned int i = 0; i < self->clipperActors.size(); i++)
                     self->clipperActors.at(i)->GetProperty()->SetOpacity(1.0);
             }//_if
             self->m_Controls.widget_1->GetRenderWindow()->Render();
@@ -825,7 +820,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
 
     } else if (!self->m_Controls.button_1->isEnabled()) {
 
-        if (key == "r" || key =="R") {
+        if (key == "r" || key == "R") {
 
             //Clear renderer
             self->renderer->RemoveAllViewProps();
@@ -849,7 +844,7 @@ void AtrialScarClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void*
 
             //Reset controls
             self->m_Controls.comboBox->clear();
-            self->m_Controls.slider->setRange(0,2);
+            self->m_Controls.slider->setRange(0, 2);
             self->m_Controls.slider->setValue(0);
             self->m_Controls.spinBox->setValue(2.0);
             self->m_Controls.slider->setEnabled(false);

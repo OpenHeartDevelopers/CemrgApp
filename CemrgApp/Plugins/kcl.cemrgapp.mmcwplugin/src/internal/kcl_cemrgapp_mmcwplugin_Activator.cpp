@@ -30,22 +30,22 @@ PURPOSE.  See the above copyright notices for more information.
 #include "MmcwView.h"
 #include "MmcwViewPlot.h"
 
-namespace mitk{
+namespace mitk {
 
-ctkPluginContext* kcl_cemrgapp_mmcwplugin_Activator::pluginContext = nullptr;
+    ctkPluginContext* kcl_cemrgapp_mmcwplugin_Activator::pluginContext = nullptr;
 
-void kcl_cemrgapp_mmcwplugin_Activator::start(ctkPluginContext *context) {
-    BERRY_REGISTER_EXTENSION_CLASS(MmcwView, context);
-    BERRY_REGISTER_EXTENSION_CLASS(MmcwViewPlot, context);
-    pluginContext = context;
-}
+    void kcl_cemrgapp_mmcwplugin_Activator::start(ctkPluginContext *context) {
+        BERRY_REGISTER_EXTENSION_CLASS(MmcwView, context);
+        BERRY_REGISTER_EXTENSION_CLASS(MmcwViewPlot, context);
+        pluginContext = context;
+    }
 
-void kcl_cemrgapp_mmcwplugin_Activator::stop(ctkPluginContext *context) {
-    Q_UNUSED(context)
-    pluginContext = nullptr;
-}
+    void kcl_cemrgapp_mmcwplugin_Activator::stop(ctkPluginContext *context) {
+        Q_UNUSED(context)
+        pluginContext = nullptr;
+    }
 
-ctkPluginContext* kcl_cemrgapp_mmcwplugin_Activator::getContext() {
-    return pluginContext;
-}
+    ctkPluginContext* kcl_cemrgapp_mmcwplugin_Activator::getContext() {
+        return pluginContext;
+    }
 }

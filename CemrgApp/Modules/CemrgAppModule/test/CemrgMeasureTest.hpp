@@ -26,26 +26,7 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-// C++ Standard
-#include <vector>
-#include <tuple>
-#include <string>
-#include <array>
-#include <utility>
-#include <memory>
-
-// Qt
-#include <QtTest/QtTest>
-#include <QFileInfo>
-
-// MITK
-#include <mitkIOUtil.h>
-#include <mitkTestingConfig.h>
-
-// VTK
-#include <vtkPolyDataNormals.h>
-
-// CemrgApp
+#include "CemrgTestCommon.hpp"
 #include <CemrgMeasure.h>
 
 using namespace std;
@@ -57,14 +38,7 @@ class TestCemrgMeasure : public QObject {
 private:
     unique_ptr<CemrgMeasure> cemrgMeasure { new CemrgMeasure() };
 
-    // These data are under MITK-Data in the Build directory
-    array<pair<const char*, mitk::Surface::Pointer>, 5> surfaceData { {
-        {MITK_DATA_DIR "/IGT-Data/Book.stl", nullptr},
-        {MITK_DATA_DIR "/IGT-Data/ClaronTool.stl", nullptr},
-        {MITK_DATA_DIR "/IGT-Data/EMTool.stl", nullptr},
-        {MITK_DATA_DIR "/ball.stl", nullptr},
-        {MITK_DATA_DIR "/binary.stl", nullptr}
-    } };
+    array<pair<QString, mitk::Surface::Pointer>, CemrgTestData::surfacePaths.size()> surfaceData;
 
 private slots:
     void initTestCase();

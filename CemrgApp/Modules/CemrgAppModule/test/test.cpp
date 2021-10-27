@@ -50,11 +50,12 @@ void TestSuite::cleanupTestCase() {
     qDebug("Called after myFirstTest and mySecondTest.");
 }
 
-// Function name should be the same as the filename
+// TODO: Function name should be the same as the filename
 // Therefore, MITK test system can call it
 int test(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
     app.setAttribute(Qt::AA_Use96Dpi, true);
+    // TODO: Don't forget to change the class name here
     TestSuite tc;
     QTEST_SET_MAIN_SOURCE_PATH
     return QTest::qExec(&tc, argc, argv);

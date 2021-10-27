@@ -14,17 +14,17 @@
  PURPOSE.  See the above copyright notices for more information.
 
  =========================================================================*/
-/*=========================================================================
- *
- * CemrgApp Main App
- *
- * Cardiac Electromechanics Research Group
- * http://www.cemrgapp.com
- * orod.razeghi@kcl.ac.uk
- *
- * This software is distributed WITHOUT ANY WARRANTY or SUPPORT!
- *
-=========================================================================*/
+ /*=========================================================================
+  *
+  * CemrgApp Main App
+  *
+  * Cardiac Electromechanics Research Group
+  * http://www.cemrgapp.com
+  * orod.razeghi@kcl.ac.uk
+  *
+  * This software is distributed WITHOUT ANY WARRANTY or SUPPORT!
+  *
+ =========================================================================*/
 
 #include <QmitkExtWorkbenchWindowAdvisor.h>
 #include <mitkWorkbenchUtil.h>
@@ -34,7 +34,6 @@
 const QString QmitkCemrgWorkbenchAdvisor::DEFAULT_PERSPECTIVE_ID = "kcl.cemrgapp.CemrgJBPerspective";
 
 void QmitkCemrgWorkbenchAdvisor::Initialize(berry::IWorkbenchConfigurer::Pointer configurer) {
-
     berry::QtWorkbenchAdvisor::Initialize(configurer);
     configurer->SetSaveAndRestore(true);
     ctkPluginContext* context = mitk::kcl_cemrgapp_mainapp_Activator::GetDefault()->GetPluginContext();
@@ -42,13 +41,12 @@ void QmitkCemrgWorkbenchAdvisor::Initialize(berry::IWorkbenchConfigurer::Pointer
 }
 
 berry::WorkbenchWindowAdvisor* QmitkCemrgWorkbenchAdvisor::CreateWorkbenchWindowAdvisor(
-        berry::IWorkbenchWindowConfigurer::Pointer configurer) {
+    berry::IWorkbenchWindowConfigurer::Pointer configurer) {
 
     // -------------------------------------------------------------------
     // Here you could pass your custom Workbench window advisor
     // -------------------------------------------------------------------
-    QmitkExtWorkbenchWindowAdvisor* advisor = new
-            QmitkExtWorkbenchWindowAdvisor(this, configurer);
+    QmitkExtWorkbenchWindowAdvisor* advisor = new QmitkExtWorkbenchWindowAdvisor(this, configurer);
 
     advisor->ShowViewToolbar(false);
     advisor->SetWindowIcon(":/CemrgApp/icon_research.xpm");
@@ -57,6 +55,5 @@ berry::WorkbenchWindowAdvisor* QmitkCemrgWorkbenchAdvisor::CreateWorkbenchWindow
 }
 
 QString QmitkCemrgWorkbenchAdvisor::GetInitialWindowPerspectiveId() {
-
     return DEFAULT_PERSPECTIVE_ID;
 }
