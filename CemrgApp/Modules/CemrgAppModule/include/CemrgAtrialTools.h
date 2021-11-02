@@ -33,6 +33,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkIOUtil.h>
 #include <mitkImage.h>
 #include <vtkSmartPointer.h>
+#include <vtkConnectivityFilter.h>
 #include <vtkIdList.h>
 #include <vtkRegularPolygonSource.h>
 #include <vmtk/vtkvmtkPolyDataCenterlines.h>
@@ -104,6 +105,7 @@ public:
     inline void SetTagSegmentationName(QString tsn){tagSegName = tsn;};
 
     inline void SetSurface(QString surfpath){surface = mitk::IOUtil::Load<mitk::Surface>(surfpath.toStdString()); surfLoaded=true;};
+    inline void SetSurface(mitk::Surface::Pointer externalSurface){surface = externalSurface; surfLoaded=true;};
     inline mitk::Surface::Pointer GetSurface(){return surface;};
 
     // Label setters
@@ -150,7 +152,9 @@ public:
 
     void FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<vtkPolyData> pd, int nveins, QString outName="scarSeeds");
 
-    bool CheckLabelConnectivity(mitk::Surface::Pointer surface, QStringList labelsToCheck, std::vector<int> &labelsVector);
+    bool CheckLabelConnectivity(mitk::Surface::Pointer externalSurface, QStringList labelsToCheck, std::vector<int> &labelsVector);
+    void FixSingleLabelConnectivityInSurface(mitk::Surface::Pointer externalSurface, int wrongLabel);
+    void FixAllLabelConnectivitiesInSurface(mitk::Surface::Pointer externalSurface, std::vector<int> &labelsVectors);
 
     // helper functions
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);
@@ -162,6 +166,7 @@ public:
     ShortImageType::Pointer Uint16ToShort(ImageType::Pointer im);
     mitk::Image::Pointer ImErode(ImageType::Pointer input, int vxls=3);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);
+    vtkSmartPointer<vtkConnectivityFilter> GetLabelConnectivity(mitk::Surface::Pointer externalSurface, double label, bool colourRegions=false);
 
 private:
 

@@ -1393,6 +1393,9 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
             msg += std::to_string(incorrectLabels.at(ix));
             msg += (ix+1<incorrectLabels.size()) ? ", " : "";
         };
+        // test
+        atrium->FixSingleLabelConnectivityInSurface(surface, incorrectLabels.at(0));
+        // _test
         QMessageBox::warning(NULL, title.c_str(), msg.c_str());
         MITK_WARN << msg;
 
