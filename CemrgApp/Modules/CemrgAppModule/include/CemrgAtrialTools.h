@@ -153,8 +153,7 @@ public:
     void FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<vtkPolyData> pd, int nveins, QString outName="scarSeeds");
 
     bool CheckLabelConnectivity(mitk::Surface::Pointer externalSurface, QStringList labelsToCheck, std::vector<int> &labelsVector);
-    void FixSingleLabelConnectivityInSurface(mitk::Surface::Pointer externalSurface, int wrongLabel);
-    void FixAllLabelConnectivitiesInSurface(mitk::Surface::Pointer externalSurface, std::vector<int> &labelsVectors);
+    void FixSingleLabelConnectivityInSurface(mitk::Surface::Pointer externalSurface, int wrongLabel, QString outpath="");
 
     // helper functions
     ImageType::Pointer ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius=1.0, int maxNumObjects=-1);

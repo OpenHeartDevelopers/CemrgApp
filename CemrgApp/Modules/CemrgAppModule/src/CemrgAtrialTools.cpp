@@ -665,7 +665,7 @@ bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer externalSur
     return (totalWrongLabels>0);
 }
 
-void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointer externalSurface, int wrongLabel){
+void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointer externalSurface, int wrongLabel, QString outpath){
     double currentLabel = (double) wrongLabel;
     bool colours = true;
     vtkSmartPointer<vtkConnectivityFilter> cf = GetLabelConnectivity(externalSurface, currentLabel, colours);
@@ -717,12 +717,12 @@ void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointe
 
             std::cout << "Number of cells at region " << jx << ": " << pdcf->GetOutput()->GetNumberOfCells() << '\n';
             for (vtkIdType queryId=0; queryId < pdcf->GetOutput()->GetNumberOfCells(); queryId++) {
-                // get cell from piece
+                MITK_INFO(debugMessages) << "\t get cell from piece";
                 vtkSmartPointer<vtkIdList> ptsInCell = vtkSmartPointer<vtkIdList>::New();
                 pdcf->GetOutput()->GetCellPoints(queryId, ptsInCell);
                 vtkIdType numPtsInCell = ptsInCell->GetNumberOfIds();
 
-                // compute cog of piece
+                MITK_INFO(debugMessages) << "\t compute cog of piece";
                 double numPts=0;
                 double cog[3] = {0, 0, 0};
                 for (vtkIdType ptId = 0; ptId < numPtsInCell; ++ptId) {
@@ -740,29 +740,56 @@ void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointe
                 cog[1] /= numPts;
                 cog[2] /= numPts;
 
-                // query cog on cellLocator
+                MITK_INFO(debugMessages) << "\t query cog on cellLocator";
                 double closest[3];   // the coordinates of the closest point
                 double dist2closest; // the squared distance to the closest point
                 vtkIdType closestId; // the cell id of the cell containing the closest point
                 int subId;        // this is rarely used (in triangle strips only, I believe)
                 cellLocator->FindClosestPoint(cog, closest, closestId, subId, dist2closest);
 
-                // look for surrounding labels to closestId
-                vtkSmartPointer<vtkIdList> neighborsPtIdList = vtkSmartPointer<vtkIdList>::New();
-                vtkSmartPointer<vtkIdList> neighboursCellIdList = vtkSmartPointer<vtkIdList>::New();
-                externalSurface->GetVtkPolyData()->GetCellNeighbors(closestId, neighborsPtIdList, neighboursCellIdList);
+                if(debugMessages){
+                    std::cout << "\t Closest point: ";
+                    std::cout << "\t Point: (" ", " << closest[0] << ", " << closest[1] << ", " << closest[2] << ")" << '\n';
+                    std::cout << "\t Cell ID: " << closestId;
+                    std::cout << "\t Sub ID: " << subId << '\n';
+                }
 
-                for (vtkIdType cId = 0; cId < neighboursCellIdList->GetNumberOfIds() ; cId++) {
-                    testScalar = cellScalars->GetTuple1(neighboursCellIdList->GetId(cId));
+                vtkSmartPointer<vtkIdList> cellPtIds = vtkSmartPointer<vtkIdList>::New();
+                externalSurface->GetVtkPolyData()->GetCellPoints(closestId, cellPtIds);
+                vtkSmartPointer<vtkIdList> neighbours = vtkSmartPointer<vtkIdList>::New();
+                neighbours->Initialize();
+
+                MITK_INFO(debugMessages) << "\t look for surrounding labels to closestId";
+                for (vtkIdType i = 0; i < cellPtIds->GetNumberOfIds(); i++){
+                    vtkSmartPointer<vtkIdList> ptsIdList = vtkSmartPointer<vtkIdList>::New();
+                    ptsIdList->InsertNextId(cellPtIds->GetId(i)); // add one of the edge points
+                    if (i + 1 == cellPtIds->GetNumberOfIds()){ // add the other edge point
+                        ptsIdList->InsertNextId(cellPtIds->GetId(0));
+                    } else{
+                        ptsIdList->InsertNextId(cellPtIds->GetId(i + 1));
+                    }
+
+                    // get the neighbours of the cell
+                    vtkSmartPointer<vtkIdList> neighborCellIds = vtkSmartPointer<vtkIdList>::New();
+                    externalSurface->GetVtkPolyData()->GetCellNeighbors(closestId, ptsIdList, neighborCellIds);
+
+                    for (vtkIdType j = 0; j < neighborCellIds->GetNumberOfIds(); j++){
+                        neighbours->InsertNextId(neighborCellIds->GetId(j));
+                    }
+                }
+                MITK_INFO(debugMessages) << "\t Got neighbours to closest cell";
+
+                MITK_INFO(debugMessages) << ("\t Number of neighbours: " + QString::number(neighbours->GetNumberOfIds())).toStdString();
+                for (vtkIdType cId = 0; cId < neighbours->GetNumberOfIds() ; cId++) {
+                    testScalar = cellScalars->GetTuple1(neighbours->GetId(cId));
 
                     if(testScalar == (double) wrongLabel){
-                        patchCells->InsertNextId(neighboursCellIdList->GetId(cId));
+                        patchCells->InsertNextId(neighbours->GetId(cId));
                     } else{
-                        cellsAroundPatch->InsertNextId(neighboursCellIdList->GetId(cId));
+                        cellsAroundPatch->InsertNextId(neighbours->GetId(cId));
                         labelsAroundPatch.push_back(testScalar);
                     }
                 }
-
             }
 
             // sort labels and make them unique
@@ -775,7 +802,7 @@ void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointe
                 std::vector<int> countLabels(numUniqueLabels, 0);
                 for (int lx = 0; lx < numUniqueLabels; lx++) {
                     double thisLabel = uniqueLabels.at(lx);
-                    for (int qx = 0; qx < labelsAroundPatch.size(); qx++) {
+                    for (unsigned int qx = 0; qx < labelsAroundPatch.size(); qx++) {
                         countLabels.at(lx) += (labelsAroundPatch.at(qx) == thisLabel) ? 1 : 0;
                     }
                 }
@@ -791,13 +818,10 @@ void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointe
     }
 
     externalSurface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
-    mitk::IOUtil::Save(externalSurface, "C:/tests/corrected_shell.vtk");
+    if (!outpath.isEmpty()){
+        mitk::IOUtil::Save(externalSurface, outpath.toStdString());
+    }
 }
-
-void CemrgAtrialTools::FixAllLabelConnectivitiesInSurface(mitk::Surface::Pointer externalSurface, std::vector<int> &labelsVectors){
-
-}
-
 
 //helper functions
 vtkSmartPointer<vtkConnectivityFilter> CemrgAtrialTools::GetLabelConnectivity(mitk::Surface::Pointer externalSurface, double label, bool colourRegions){

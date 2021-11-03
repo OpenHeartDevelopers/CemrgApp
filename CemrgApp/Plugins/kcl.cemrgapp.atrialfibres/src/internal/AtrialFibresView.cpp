@@ -1386,18 +1386,32 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
     std::vector<int> incorrectLabels;
     if(atrium->CheckLabelConnectivity(surface, uiLabels, incorrectLabels)){
         title = "Label connectivity verification - failure";
-        msg = "Make sure label connectivity is correct.\n";
-        msg += "Go back to Step7: Mesh Preprocessing \n\n";
-        msg += "Fix following labels: \n";
-        for (unsigned int ix = 0; ix < incorrectLabels.size(); ix++) {
-            msg += std::to_string(incorrectLabels.at(ix));
-            msg += (ix+1<incorrectLabels.size()) ? ", " : "";
-        };
-        // test
-        atrium->FixSingleLabelConnectivityInSurface(surface, incorrectLabels.at(0));
-        // _test
-        QMessageBox::warning(NULL, title.c_str(), msg.c_str());
-        MITK_WARN << msg;
+        msg = "Make sure label connectivity is correct.\n\n";
+        msg += "Do you want to try automatic fixing? ";
+
+        int reply_auto_fix = Ask(title, msg);
+        if(reply_auto_fix == QMessageBox::Yes){
+            MITK_INFO << "Solving labelling inconsistencies";
+            for (unsigned int ix = 0; ix < incorrectLabels.size(); ix++) {
+                atrium->FixSingleLabelConnectivityInSurface(surface, incorrectLabels.at(0));
+            }
+            mitk::IOUtil::Save(surface, StdStringPath(tagName+".vtk"));
+
+            title = "Labels fixed";
+            msg = "Labels fixed - saved file: \n";
+            msg += StdStringPath(tagName+".vtk");
+            QMessageBox::information(NULL, title.c_str(), msg.c_str());
+
+        } else{
+            title = "Opening Mesh Preprocessing";
+            msg = "Use the Fix labelling button to fix labelling connectivity";
+            QMessageBox::information(NULL, title.c_str(), msg.c_str());
+
+            //Show the plugin
+            this->GetSite()->GetPage()->ResetPerspective();
+            AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", true);
+            this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
+        }
 
         return;
     } else{
