@@ -59,6 +59,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkConnectivityFilter.h>
 #include <vtkImageResize.h>
 #include <vtkImageChangeInformation.h>
+#include <vtkGeometryFilter.h>
+#include <vtkMassProperties.h>
+#include <vtkCellLocator.h>
 
 //ITK
 #include <itkSubtractImageFilter.h>
@@ -629,7 +632,7 @@ void CemrgAtrialTools::FindVeinLandmarks(ImageType::Pointer im, vtkSmartPointer<
 
 }
 
-bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer surface, QStringList labelsToCheck, std::vector<int> &labelsVector){
+bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer externalSurface, QStringList labelsToCheck, std::vector<int> &labelsVector){
     std::vector<int> v;
     bool foundBodyLabel=false;
     for (int ix = 0; ix < labelsToCheck.size(); ix++) {
@@ -650,17 +653,7 @@ bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer surface, QS
     double currentLabel;
     for (unsigned int jx = 0; jx < v.size(); jx++) {
         currentLabel = (double) v.at(jx);
-        vtkSmartPointer<vtkThreshold> thres = vtkSmartPointer<vtkThreshold>::New();
-        thres->ThresholdBetween(currentLabel, currentLabel);
-        thres->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-        thres->SetInputData(surface->GetVtkPolyData());
-        thres->Update();
-
-        vtkSmartPointer<vtkConnectivityFilter> cf = vtkSmartPointer<vtkConnectivityFilter>::New();
-        cf->SetInputConnection(thres->GetOutputPort());
-        cf->Update();
-        cf->SetExtractionModeToLargestRegion();
-        cf->Update();
+        vtkSmartPointer<vtkConnectivityFilter> cf = GetLabelConnectivity(externalSurface, currentLabel);
         currentNumRegions = cf->GetNumberOfExtractedRegions();
         if(currentNumRegions>1){
             totalWrongLabels++;
@@ -672,7 +665,193 @@ bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer surface, QS
     return (totalWrongLabels>0);
 }
 
+void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointer externalSurface, int wrongLabel, QString outpath){
+    double currentLabel = (double) wrongLabel;
+    bool colours = true;
+    vtkSmartPointer<vtkConnectivityFilter> cf = GetLabelConnectivity(externalSurface, currentLabel, colours);
+    int NumRegions = cf->GetNumberOfExtractedRegions();
+    cf->Update();
+
+    // Get max area
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> pdcf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    pdcf->SetInputData(cf->GetPolyDataOutput());
+    pdcf->ScalarConnectivityOn();
+    pdcf->FullScalarConnectivityOn();
+    int maxObjectSize = -1, maxObjectIndex=-1;
+    QStringList fnames;
+    for (int ix = 0; ix < NumRegions; ix++) {
+        pdcf->SetScalarRange(ix, ix);
+        pdcf->Update();
+        pdcf->SetExtractionModeToLargestRegion();
+
+        vtkSmartPointer<vtkMassProperties> mp = vtkSmartPointer<vtkMassProperties>::New();
+        mp->SetInputConnection(pdcf->GetOutputPort());
+
+        if(mp->GetSurfaceArea() > maxObjectSize){
+            maxObjectSize = mp->GetSurfaceArea();
+            maxObjectIndex = ix;
+        }
+    }
+
+    vtkFloatArray *cellScalars = vtkFloatArray::New();
+    cellScalars = vtkFloatArray::SafeDownCast(externalSurface->GetVtkPolyData()->GetCellData()->GetScalars());
+
+    vtkNew<vtkCellLocator> cellLocator;
+    cellLocator->SetDataSet(externalSurface->GetVtkPolyData());
+    cellLocator->BuildLocator();
+
+    double testScalar;
+
+    for (int jx = 0; jx < NumRegions; jx++) {
+        if(jx!=maxObjectIndex){
+            pdcf->SetScalarRange(jx, jx);
+            pdcf->Update();
+            pdcf->SetExtractionModeToLargestRegion();
+
+            std::vector<double> labelsAroundPatch;
+
+            vtkSmartPointer<vtkIdList> cellsAroundPatch = vtkSmartPointer<vtkIdList>::New();
+            vtkSmartPointer<vtkIdList> patchCells = vtkSmartPointer<vtkIdList>::New();
+            cellsAroundPatch->Initialize();
+            patchCells->Initialize();
+
+            std::cout << "Number of cells at region " << jx << ": " << pdcf->GetOutput()->GetNumberOfCells() << '\n';
+            for (vtkIdType queryId=0; queryId < pdcf->GetOutput()->GetNumberOfCells(); queryId++) {
+                MITK_INFO(debugMessages) << "\t get cell from piece";
+                vtkSmartPointer<vtkIdList> ptsInCell = vtkSmartPointer<vtkIdList>::New();
+                pdcf->GetOutput()->GetCellPoints(queryId, ptsInCell);
+                vtkIdType numPtsInCell = ptsInCell->GetNumberOfIds();
+
+                MITK_INFO(debugMessages) << "\t compute cog of piece";
+                double numPts=0;
+                double cog[3] = {0, 0, 0};
+                for (vtkIdType ptId = 0; ptId < numPtsInCell; ++ptId) {
+                    double cP[3];
+                    vtkIdType thisPtId = ptsInCell->GetId(ptId);
+                    pdcf->GetOutput()->GetPoint(thisPtId, cP);
+
+                    cog[0] += cP[0];
+                    cog[1] += cP[1];
+                    cog[2] += cP[2];
+
+                    numPts++;
+                }
+                cog[0] /= numPts;
+                cog[1] /= numPts;
+                cog[2] /= numPts;
+
+                MITK_INFO(debugMessages) << "\t query cog on cellLocator";
+                double closest[3];   // the coordinates of the closest point
+                double dist2closest; // the squared distance to the closest point
+                vtkIdType closestId; // the cell id of the cell containing the closest point
+                int subId;        // this is rarely used (in triangle strips only, I believe)
+                cellLocator->FindClosestPoint(cog, closest, closestId, subId, dist2closest);
+
+                if(debugMessages){
+                    std::cout << "\t Closest point: ";
+                    std::cout << "\t Point: (" ", " << closest[0] << ", " << closest[1] << ", " << closest[2] << ")" << '\n';
+                    std::cout << "\t Cell ID: " << closestId;
+                    std::cout << "\t Sub ID: " << subId << '\n';
+                }
+
+                vtkSmartPointer<vtkIdList> cellPtIds = vtkSmartPointer<vtkIdList>::New();
+                externalSurface->GetVtkPolyData()->GetCellPoints(closestId, cellPtIds);
+                vtkSmartPointer<vtkIdList> neighbours = vtkSmartPointer<vtkIdList>::New();
+                neighbours->Initialize();
+
+                MITK_INFO(debugMessages) << "\t look for surrounding labels to closestId";
+                for (vtkIdType i = 0; i < cellPtIds->GetNumberOfIds(); i++){
+                    vtkSmartPointer<vtkIdList> ptsIdList = vtkSmartPointer<vtkIdList>::New();
+                    ptsIdList->InsertNextId(cellPtIds->GetId(i)); // add one of the edge points
+                    if (i + 1 == cellPtIds->GetNumberOfIds()){ // add the other edge point
+                        ptsIdList->InsertNextId(cellPtIds->GetId(0));
+                    } else{
+                        ptsIdList->InsertNextId(cellPtIds->GetId(i + 1));
+                    }
+
+                    // get the neighbours of the cell
+                    vtkSmartPointer<vtkIdList> neighborCellIds = vtkSmartPointer<vtkIdList>::New();
+                    externalSurface->GetVtkPolyData()->GetCellNeighbors(closestId, ptsIdList, neighborCellIds);
+
+                    for (vtkIdType j = 0; j < neighborCellIds->GetNumberOfIds(); j++){
+                        neighbours->InsertNextId(neighborCellIds->GetId(j));
+                    }
+                }
+                MITK_INFO(debugMessages) << "\t Got neighbours to closest cell";
+
+                MITK_INFO(debugMessages) << ("\t Number of neighbours: " + QString::number(neighbours->GetNumberOfIds())).toStdString();
+                for (vtkIdType cId = 0; cId < neighbours->GetNumberOfIds() ; cId++) {
+                    testScalar = cellScalars->GetTuple1(neighbours->GetId(cId));
+
+                    if(testScalar == (double) wrongLabel){
+                        patchCells->InsertNextId(neighbours->GetId(cId));
+                    } else{
+                        cellsAroundPatch->InsertNextId(neighbours->GetId(cId));
+                        labelsAroundPatch.push_back(testScalar);
+                    }
+                }
+            }
+
+            // sort labels and make them unique
+            std::vector<double> uniqueLabels(labelsAroundPatch);
+            std::sort(uniqueLabels.begin(), uniqueLabels.end());
+            int numUniqueLabels = std::unique(uniqueLabels.begin(), uniqueLabels.end()) - uniqueLabels.begin();
+
+            int indexOfMax=0;
+            if(numUniqueLabels>1){
+                std::vector<int> countLabels(numUniqueLabels, 0);
+                for (int lx = 0; lx < numUniqueLabels; lx++) {
+                    double thisLabel = uniqueLabels.at(lx);
+                    for (unsigned int qx = 0; qx < labelsAroundPatch.size(); qx++) {
+                        countLabels.at(lx) += (labelsAroundPatch.at(qx) == thisLabel) ? 1 : 0;
+                    }
+                }
+                indexOfMax = std::distance(countLabels.begin(),std::max_element(countLabels.begin(), countLabels.end()));
+            }
+
+            // correct labels in cellScalars
+            double correctedLabel = uniqueLabels.at(indexOfMax);
+            for (vtkIdType cId = 0; cId < patchCells->GetNumberOfIds() ; cId++) {
+                cellScalars->SetTuple1(patchCells->GetId(cId), correctedLabel);
+            }
+        }
+    }
+
+    externalSurface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
+    if (!outpath.isEmpty()){
+        mitk::IOUtil::Save(externalSurface, outpath.toStdString());
+    }
+}
+
 //helper functions
+vtkSmartPointer<vtkConnectivityFilter> CemrgAtrialTools::GetLabelConnectivity(mitk::Surface::Pointer externalSurface, double label, bool colourRegions){
+    // threshold at label
+    vtkSmartPointer<vtkThreshold> thres = vtkSmartPointer<vtkThreshold>::New();
+    thres->ThresholdBetween(label, label);
+    thres->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
+    thres->SetInputData(externalSurface->GetVtkPolyData());
+    thres->Update();
+
+    // convert threshold output to polydata
+    vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+    gf->SetInputConnection(thres->GetOutputPort());
+    gf->Update();
+
+    // connectivity filter
+    vtkSmartPointer<vtkConnectivityFilter> cf = vtkSmartPointer<vtkConnectivityFilter>::New();
+    cf->SetInputConnection(gf->GetOutputPort());
+    cf->Update();
+    if(colourRegions){
+        cf->SetExtractionModeToAllRegions();
+        cf->ColorRegionsOn();
+    } else{
+        cf->SetExtractionModeToLargestRegion();
+    }
+    cf->Update();
+
+    return cf;
+}
+
 ImageType::Pointer CemrgAtrialTools::ExtractLabel(QString tag, ImageType::Pointer im, uint16_t label, uint16_t filterRadius, int maxNumObjects){
     MITK_INFO << ("Thresholding " + tag + " from clean segmentation").toStdString();
     ThresholdType::Pointer thresVeins = ThresholdImageFilter(im, label);
