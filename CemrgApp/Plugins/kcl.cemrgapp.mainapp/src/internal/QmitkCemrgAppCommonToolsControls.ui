@@ -34,7 +34,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_1">
+    <widget class="QPushButton" name="btn_loadmesh">
      <property name="toolTip">
       <string>Do image processing</string>
      </property>
@@ -44,7 +44,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_2">
+    <widget class="QPushButton" name="btn_convert2carto">
      <property name="toolTip">
       <string>Do image processing</string>
      </property>
@@ -54,7 +54,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="button_3">
+    <widget class="QPushButton" name="btn_vtk2cart">
      <property name="text">
       <string>Create VTK from Carp files</string>
      </property>
