@@ -55,6 +55,12 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.btn_loadmesh, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
     connect(m_Controls.btn_convert2carto, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
     connect(m_Controls.btn_vtk2cart, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertCarpToVtk);
+    connect(m_Controls.btn_roiboxes, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::RoiControls);
+    connect(m_Controls.btn_roiboxes_pts, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::RoiControlsSelectPoints);
+    connect(m_Controls.btn_roiboxes_create, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::RoiControlsExtract);
+
+    m_Controls.btn_roiboxes_pts->setVisible(false);
+    m_Controls.btn_roiboxes_create->setVisible(false);
 }
 
 void QmitkCemrgAppCommonTools::SetFocus() {
@@ -248,4 +254,158 @@ void QmitkCemrgAppCommonTools::ConvertCarpToVtk() {
                 "Append another scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
         }
     }
+}
+
+void QmitkCemrgAppCommonTools::RoiControls(){
+    // loads image, opens pointsetinteraction, activates other buttons.
+    QString path2image = QFileDialog::getOpenFileName(NULL, "Open image");
+    if (path2image.isEmpty()){
+        return;
+    }
+
+    mitk::IOUtil::Load(path2image.toStdString(), *this->GetDataStorage());
+    mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
+
+    QMessageBox::information(NULL, "Attention", "Select positions of ROI using the PointSet Interaction Tool");
+
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
+
+    if(!m_Controls.btn_roiboxes_pts->isVisible()){
+        m_Controls.btn_roiboxes_pts->setVisible(true);
+        m_Controls.btn_roiboxes_create->setVisible(true);
+    } else{
+        m_Controls.btn_roiboxes_pts->setVisible(false);
+        m_Controls.btn_roiboxes_create->setVisible(false);
+    }
+}
+
+void QmitkCemrgAppCommonTools::RoiControlsSelectPoints(){
+    QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+    if (nodes.empty()) {
+        QMessageBox::warning(NULL, "Attention", "Please select the PointSet from the Data Manager!");
+        return;
+    }//_if
+
+    //Check selection type
+    mitk::DataNode::Pointer landMarks = nodes.front();
+    mitk::PointSet::Pointer pointSet = dynamic_cast<mitk::PointSet*>(landMarks->GetData());
+    if (!pointSet) {
+        QMessageBox::warning(NULL, "Attention", "PointSet error. Try selecting the points again!");
+        return;
+    }//_if
+
+    double xL=1.0, yL=1.0, zL=1.0, xC=1.0, yC=1.0, zC=1.0;
+    QString roiBoxesFilename = "prodRoiParameters.txt";
+
+    if(m_Controls.btn_roiboxes_pts->text() == QString::fromStdString("Display ROI Boxes")){
+
+        //Ask for user input to set the parameters
+        QDialog* inputs = new QDialog(0, 0);
+        m_RoiControls.setupUi(inputs);
+        connect(m_RoiControls.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+        connect(m_RoiControls.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+
+        int dialogCode = inputs->exec();
+
+        if (dialogCode == QDialog::Accepted) {
+            std::cout << "x spinbox: " << m_RoiControls.spinbox_x->value() << ", ";
+            std::cout << "y spinbox: " << m_RoiControls.spinbox_y->value() << ", ";
+            std::cout << "z spinbox: " << m_RoiControls.spinbox_z->value() << '\n';
+            xL = m_RoiControls.spinbox_x->value();
+            yL = m_RoiControls.spinbox_y->value();
+            zL = m_RoiControls.radio_set2d->isChecked() ? 1.0 : m_RoiControls.spinbox_z->value();
+
+            if(!m_RoiControls.lineedit_name->text().isEmpty()){
+                roiBoxesFilename = m_RoiControls.lineedit_name->text();
+                roiBoxesFilename += (!roiBoxesFilename.contains(".txt")) ? ".txt" : "";
+            }
+
+            inputs->deleteLater();
+        } else if (dialogCode == QDialog::Rejected) {
+            inputs->close();
+            inputs->deleteLater();
+
+            return;
+        }//_if
+
+        QString dir = QFileDialog::getExistingDirectory(NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
+        QString prodFile = dir + "/" + roiBoxesFilename;
+        ofstream fo(prodFile.toStdString());
+        fo << pointSet->GetSize() << '\n'; // number of points
+        fo << xL << " " << yL << " " << zL << '\n'; // sizes
+
+        for (int ix = 0; ix < pointSet->GetSize(); ix++) {
+            xC = pointSet->GetPoint(ix).GetElement(0);
+            yC = pointSet->GetPoint(ix).GetElement(1);
+            zC = pointSet->GetPoint(ix).GetElement(2);
+
+            fo << std::setprecision(6) << xC << " ";
+            fo << std::setprecision(6) << yC << " ";
+            fo << std::setprecision(6) << zC << '\n';
+
+            std::vector<double> centre = {xC, yC, zC};
+            std::vector<double> sides = {xL, yL, zL};
+            mitk::Surface::Pointer cube = CemrgCommonUtils::CreateCube(centre, sides);
+
+            mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+
+            std::string cubename = ("cube_"+QString::number(ix)).toStdString();
+            CemrgCommonUtils::AddToStorage(cube, cubename, this->GetDataStorage(), false);
+
+            sob = this->GetDataStorage()->GetAll();
+            for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+                if (nodeIt->Value()->GetName().find("cube_") != nodeIt->Value()->GetName().npos) {
+                    nodeIt->Value()->SetProperty("opacity", mitk::FloatProperty::New(0.4));
+                    nodeIt->Value()->SetProperty("color", mitk::ColorProperty::New(0.0, 0.5, 0.5));
+                }//_if
+            }//_for
+        }//_for each point selected by user
+
+        m_Controls.btn_roiboxes_pts->setText("Clear ROI Boxes");
+    } else{
+        std::string title = "Question";
+        std::string msg = "Clear current boxes?";
+        int reply = QMessageBox::question(NULL, title.c_str(), msg.c_str());
+        if(reply==QMessageBox::Yes){
+            // remove everything
+            mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+
+            for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt){
+                if (nodeIt->Value()->GetName().find("cube_") != nodeIt->Value()->GetName().npos){
+                    this->GetDataStorage()->Remove(nodeIt->Value());
+                }
+            }
+        }
+        m_Controls.btn_roiboxes_pts->setText("Display ROI Boxes");
+    }
+}
+
+void QmitkCemrgAppCommonTools::RoiControlsExtract(){
+    QString path2roiboxes = QFileDialog::getOpenFileName(NULL, "Open file with box parameters");
+    ifstream fi(path2roiboxes.toStdString());
+    int numPoints;
+    double xL, yL, zL, xC, yC, zC;
+
+    fi >> numPoints;
+    fi >> xL >> yL >> zL;
+    std::cout << xL <<  ", " << yL << ", " << zL << '\n';
+    std::cout << "Points: " << '\n';
+    for (int ix = 0; ix < numPoints; ix++) {
+        fi >> xC >> yC >> zC;
+        std::cout << xC <<  ", " << yC << ", " << zC << '\n';
+    }
+    // get things form node
+    mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+    for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+        if (nodeIt->Value()->GetName().find("cube_") != nodeIt->Value()->GetName().npos) {
+            nodeIt->Value()->SetProperty("opacity", mitk::FloatProperty::New(0.4));
+            nodeIt->Value()->SetProperty("color", mitk::ColorProperty::New(0.0, 0.5, 0.5));
+        }//_if
+    }//_for
+    // mitk::Cuboid::Pointer cuttingObject = mitk::Cuboid::New();
+    // cuttingObject->SetVtkPolyData(cube);
+    // CemrgCommonUtils::SetImageToCut(imageToCut);
+    // CemrgCommonUtils::SetCuttingCube(cuttingCube);
+    // CemrgCommonUtils::SetImageNode(imageNode);
+    // CemrgCommonUtils::SetCuttingNode(cuttingNode);
 }

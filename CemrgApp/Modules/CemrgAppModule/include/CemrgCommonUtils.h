@@ -73,6 +73,8 @@ public:
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata = true);
     static void FillHoles(mitk::Surface::Pointer surf, QString dir = "", QString vtkname = "");
 
+    static mitk::Surface::Pointer CreateCube(std::vector<double> centre, std::vector<double> sides);
+
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
 

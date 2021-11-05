@@ -33,6 +33,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QmitkAbstractView.h>
 #include "ui_QmitkCemrgAppCartoExport.h"
 #include "ui_QmitkCemrgAppCommonToolsControls.h"
+#include "ui_QmitkCemrgAppRoiControls.h"
 
 /**
   \brief QmitkCemrgAppCommonTools
@@ -58,6 +59,9 @@ protected slots:
     void ConvertToCartoUIUpdate();
     void ConvertToCartoUITextUpdate();
     void ConvertCarpToVtk();
+    void RoiControls();
+    void RoiControlsSelectPoints();
+    void RoiControlsExtract();
 
 protected:
 
@@ -67,6 +71,7 @@ protected:
 
     Ui::QmitkCemrgAppCommonToolsControls m_Controls;
     Ui::QmitkCemrgAppCartoExport m_CartoUIThresholding;
+    Ui::QmitkCemrgAppRoiControls m_RoiControls;
 };
 
 #endif // QmitkCemrgAppCommonTools_h

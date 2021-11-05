@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>222</width>
-    <height>161</height>
+    <height>299</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -57,6 +57,27 @@
     <widget class="QPushButton" name="btn_vtk2cart">
      <property name="text">
       <string>Create VTK from Carp files</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_roiboxes">
+     <property name="text">
+      <string>ROI Boxes on Image</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="btn_roiboxes_pts">
+     <property name="text">
+      <string>Display ROI Boxes</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QPushButton" name="btn_roiboxes_create">
+     <property name="text">
+      <string>Extract ROI Boxes</string>
      </property>
     </widget>
    </item>

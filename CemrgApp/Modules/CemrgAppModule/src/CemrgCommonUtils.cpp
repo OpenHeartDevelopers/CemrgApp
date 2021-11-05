@@ -68,6 +68,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCleanPolyData.h>
 #include <vtkCellDataToPointData.h>
 #include <vtkFillHolesFilter.h>
+#include <vtkCubeSource.h>
 
 // Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -828,6 +829,28 @@ void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QStri
         QString outPath = dir + "/" + vtkname;
         mitk::IOUtil::Save(surf, outPath.toStdString());
     }
+}
+
+mitk::Surface::Pointer CemrgCommonUtils::CreateCube(std::vector<double> centre, std::vector<double> sides){
+    double xC, yC, zC, xL, yL, zL;
+    xC = centre.at(0);
+    yC = centre.at(1);
+    zC = centre.at(2);
+    xL = sides.at(0);
+    yL = sides.at(1);
+    zL = sides.at(2);
+
+    vtkSmartPointer<vtkCubeSource> cube = vtkSmartPointer<vtkCubeSource>::New();
+    cube->SetCenter(xC, yC, zC);
+    cube->SetXLength(xL);
+    cube->SetYLength(yL);
+    cube->SetZLength(zL);
+    cube->Update();
+
+    mitk::Surface::Pointer outCube = mitk::Surface::New();
+    outCube->SetVtkPolyData(cube->GetOutput());
+
+    return outCube;
 }
 
 //UTILities for CARP - operations with .elem and .pts files
