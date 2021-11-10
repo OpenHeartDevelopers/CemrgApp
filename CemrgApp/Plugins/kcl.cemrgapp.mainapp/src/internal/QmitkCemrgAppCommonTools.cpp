@@ -266,9 +266,50 @@ void QmitkCemrgAppCommonTools::RoiControls(){
     mitk::IOUtil::Load(path2image.toStdString(), *this->GetDataStorage());
     mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
 
-    QMessageBox::information(NULL, "Attention", "Select positions of ROI using the PointSet Interaction Tool");
+    int reply_found_points = QMessageBox::question(NULL, "Question", "Do you have points previously saved?");
 
-    this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
+    if (reply_found_points==QMessageBox::No){
+        QMessageBox::information(NULL, "Attention", "Select positions of ROI using the PointSet Interaction Tool");
+        this->GetSite()->GetPage()->ShowView("org.mitk.views.pointsetinteraction");
+    } else if(reply_found_points==QMessageBox::Yes){
+        QString path2roiboxes = QFileDialog::getOpenFileName(NULL, "Open file with box parameters");
+        QFileInfo qfi(path2roiboxes);
+
+        QString path = qfi.absolutePath();
+
+        ifstream fi(path2roiboxes.toStdString());
+        int numPoints;
+        double xL, yL, zL, xC, yC, zC;
+
+        fi >> numPoints;
+        fi >> xL >> yL >> zL;
+        std::cout << xL <<  ", " << yL << ", " << zL << '\n';
+        std::cout << "Points: " << '\n';
+        for (int ix = 0; ix < numPoints; ix++) {
+            fi >> xC >> yC >> zC;
+            std::cout << xC <<  ", " << yC << ", " << zC << '\n';
+
+            std::vector<double> centre = {xC, yC, zC};
+            std::vector<double> sides = {xL, yL, zL};
+            mitk::Surface::Pointer cube = CemrgCommonUtils::CreateCube(centre, sides);
+
+            mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+
+            std::string cubename = ("cube_"+QString::number(ix)).toStdString();
+            CemrgCommonUtils::AddToStorage(cube, cubename, this->GetDataStorage(), false);
+
+            sob = this->GetDataStorage()->GetAll();
+            for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+                if (nodeIt->Value()->GetName().find("cube_") != nodeIt->Value()->GetName().npos) {
+                    nodeIt->Value()->SetProperty("opacity", mitk::FloatProperty::New(0.4));
+                    nodeIt->Value()->SetProperty("color", mitk::ColorProperty::New(0.0, 0.5, 0.5));
+                }//_if
+            }//_for
+            m_Controls.btn_roiboxes_pts->setEnabled(false);
+        }
+    } else{
+        return;
+    }
 
     if(!m_Controls.btn_roiboxes_pts->isVisible()){
         m_Controls.btn_roiboxes_pts->setVisible(true);
@@ -381,31 +422,44 @@ void QmitkCemrgAppCommonTools::RoiControlsSelectPoints(){
 }
 
 void QmitkCemrgAppCommonTools::RoiControlsExtract(){
-    QString path2roiboxes = QFileDialog::getOpenFileName(NULL, "Open file with box parameters");
-    ifstream fi(path2roiboxes.toStdString());
-    int numPoints;
-    double xL, yL, zL, xC, yC, zC;
+    QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+    if (nodes.empty()) {
+        QMessageBox::warning(NULL, "Attention",
+            "Please select an image from the Data Manager to perform cropping!");
+        return;
+    }//_if
 
-    fi >> numPoints;
-    fi >> xL >> yL >> zL;
-    std::cout << xL <<  ", " << yL << ", " << zL << '\n';
-    std::cout << "Points: " << '\n';
-    for (int ix = 0; ix < numPoints; ix++) {
-        fi >> xC >> yC >> zC;
-        std::cout << xC <<  ", " << yC << ", " << zC << '\n';
-    }
+    QString dir = QFileDialog::getExistingDirectory(NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
+    QString prodFile = dir + "/roi_";
+
     // get things form node
-    mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
-    for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
-        if (nodeIt->Value()->GetName().find("cube_") != nodeIt->Value()->GetName().npos) {
-            nodeIt->Value()->SetProperty("opacity", mitk::FloatProperty::New(0.4));
-            nodeIt->Value()->SetProperty("color", mitk::ColorProperty::New(0.0, 0.5, 0.5));
-        }//_if
-    }//_for
-    // mitk::Cuboid::Pointer cuttingObject = mitk::Cuboid::New();
-    // cuttingObject->SetVtkPolyData(cube);
-    // CemrgCommonUtils::SetImageToCut(imageToCut);
-    // CemrgCommonUtils::SetCuttingCube(cuttingCube);
-    // CemrgCommonUtils::SetImageNode(imageNode);
-    // CemrgCommonUtils::SetCuttingNode(cuttingNode);
+    mitk::DataNode::Pointer imageNode = nodes.at(0);
+    mitk::Image::Pointer imageToCut;
+    mitk::BaseData::Pointer data = imageNode->GetData();
+
+    if(data){
+        imageToCut = dynamic_cast<mitk::Image*>(data.GetPointer());
+        if(imageToCut){
+
+            CemrgCommonUtils::SetImageNode(imageNode);
+            CemrgCommonUtils::SetImageToCut(imageToCut);
+
+            int ix = 0;
+            mitk::DataStorage::SetOfObjects::ConstPointer sob = this->GetDataStorage()->GetAll();
+            for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
+                if (nodeIt->Value()->GetName().find("cube_") != nodeIt->Value()->GetName().npos) {
+                    MITK_INFO << nodeIt->Value()->GetName();
+                    mitk::BoundingObject::Pointer cuttingCube;
+                    cuttingCube = dynamic_cast<mitk::BoundingObject*>(nodeIt->Value()->GetData());
+                    cuttingCube->FitGeometry(imageToCut->GetGeometry());
+
+                    CemrgCommonUtils::SetCuttingCube(cuttingCube);
+
+                    mitk::Image::Pointer outputImage = CemrgCommonUtils::CropImage();
+                    mitk::IOUtil::Save(outputImage, (prodFile+QString::number(ix)+".nii").toStdString());
+                    ix++;
+                }//_if
+            }//_for
+        } else return;
+    } else return;
 }
