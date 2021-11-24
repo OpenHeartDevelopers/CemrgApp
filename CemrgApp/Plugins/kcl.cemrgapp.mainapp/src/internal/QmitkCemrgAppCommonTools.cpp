@@ -322,15 +322,23 @@ void QmitkCemrgAppCommonTools::ResampleReorientConvert(){
     msg = "Is this a binary image (i.e a segmentation)?";
     int replyImBinary = QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
 
-    bool resamplebool=true, reorientbool=true, isBinary=(replyImBinary==QMessageBox::Yes);
-    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool, isBinary);
-    if(isBinary){
-        image = CemrgCommonUtils::ReturnBinarised(image);
-    }
-
+    bool resamplebool=true, reorientbool=true;
+    bool isBinary=(replyImBinary==QMessageBox::Yes);
     QFileInfo fi(pathToImage);
-    QString outPath = fi.absolutePath() + "/" + fi.baseName() + ".nii";
-    mitk::IOUtil::Save(image, outPath.toStdString());
+    QString pathToOutput=fi.absolutePath() + "/" + fi.baseName() + ".nii";
+    bool success = CemrgCommonUtils::ImageConvertFormat(pathToImage, pathToOutput, resamplebool, reorientbool, isBinary);
+    // mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool, isBinary);
+    // if(isBinary){
+    //     image = CemrgCommonUtils::ReturnBinarised(image);
+    // }
+    //
+    // QFileInfo fi(pathToImage);
+    // QString outPath = fi.absolutePath() + "/" + fi.baseName() + ".nii";
+    // mitk::IOUtil::Save(image, outPath.toStdString());
 
-    QMessageBox::information(NULL, "Attention", "Image resampled, reoriented and converted to NIFTI");
+    if(success){
+        title = "Attention";
+        msg = "Image resampled, reoriented and converted to NIFTI";
+        QMessageBox::information(NULL, title.c_str(), msg.c_str());
+    }
 }

@@ -7,6 +7,7 @@ option(BUILD_CEMRG_IM2INR "Build image to inr command line app. " ON)
 option(BUILD_CEMRG_COLOURSURF "Build colour surface command line app. " ON)
 option(BUILD_CEMRG_VENTRICLE_SEGMENTATION_RELABEL "Build ventricle segmentation relabelling command line app" ON)
 option(BUILD_CEMRG_MORPH_ANALYSIS "Build atrial morph analysis" ON)
+option(BUILD_CEMRG_IMAGE_CONVERT "Build image convert format" ON)
 
 if(BUILD_CemrgCMDApps)
   mitkFunctionCreateCommandLineApp(
@@ -77,5 +78,13 @@ if(BUILD_CEMRG_MORPH_ANALYSIS)
     NAME CemrgMorphAnalysis
     DEPENDS MitkSegmentation MitkCemrgAppModule
     CPP_FILES CemrgMorphAnalysis.cpp
+  )
+endif()
+
+if(BUILD_CEMRG_IMAGE_CONVERT)
+  mitkFunctionCreateCommandLineApp(
+    NAME CemrgImageConvertFormat
+    DEPENDS MitkSegmentation MitkCemrgAppModule
+    CPP_FILES CemrgImageConvertFormat.cpp
   )
 endif()
