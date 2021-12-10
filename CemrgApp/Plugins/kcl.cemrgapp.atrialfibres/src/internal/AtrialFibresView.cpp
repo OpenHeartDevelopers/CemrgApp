@@ -1346,10 +1346,19 @@ void AtrialFibresView::UacFibreMapping(){
     uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, "", "Fibre_1.vpts");
 
     bool uacOutputSuccess = cmd->IsOutputSuccessful(uacOutput);
-    MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
-    std::string msg = "UAC Fibre Mapping ";
-    msg += (uacOutputSuccess) ? "successful" : "failed";
-    QMessageBox::information(NULL, "Attention", msg.c_str());
+    MITK_WARN(!uacOutputSuccess) << ("Not found " + uaccmd).toStdString();
+
+    MITK_INFO << "Searching for .vpts files in directory";
+    QStringList vptsfiles = GetFilesWithExtension(".vpts");
+    std::string msg = "UAC Fibre Mapping \n Following paths found:\n\n";
+    if(!vptsfiles.isEmpty()){
+        for (int ix = 0; ix < vptsfiles.size(); ix++) {
+            msg += (vptsfiles.at(ix).toStdString() + '\n');
+        }
+    }else{
+        msg += "failed";
+    }
+    QMessageBox::information(NULL, "Fibre Mapping - finished", msg.c_str());
 
 
     MITK_INFO << ("Output path of fibres: " + uacOutput).toStdString();
@@ -1369,20 +1378,15 @@ void AtrialFibresView::UacFibreMapping(){
     clearFiles << "carpf_laplace_LS.par"<< "carpf_laplace_PA.par"<< "P_Checker_PA.vtx";
     clearFiles << "Post_Strength_Test_LS1.vtx"<< "Post_Strength_Test_PA1.vtx";
 
-    if(!uacOutputSuccess){
-        int delete_files_reply = Ask("Question", "Delete auxiliary and temporary files?");
-        if(delete_files_reply==QMessageBox::Yes){
-            int count=0;
-            for (int idx = 0; idx < clearFiles.size(); idx++) {
-                count += (QFile::remove(Path(clearFiles.at(idx)))) ? 1 : 0;
-            }
-
-            MITK_INFO(count==clearFiles.size()) << "All aux Files cleared successfully";
+    int delete_files_reply = Ask("Question", "Delete auxiliary and temporary files?");
+    if(delete_files_reply==QMessageBox::Yes){
+        int count=0;
+        for (int idx = 0; idx < clearFiles.size(); idx++) {
+            count += (QFile::remove(Path(clearFiles.at(idx)))) ? 1 : 0;
         }
-        MITK_ERROR << "FibreMapping Output not successful";
-        return;
-    }
 
+        MITK_INFO(count==clearFiles.size()) << "All aux Files cleared successfully";
+    }
 }
 
 void AtrialFibresView::UacCalculationVerifyLabels(){
@@ -2186,6 +2190,18 @@ QString AtrialFibresView::GetFilePath(QString nameSubstring, QString extension){
         }
     }//_while
 
+    return result;
+}
+
+QStringList AtrialFibresView::GetFilesWithExtension(QString extension){
+    QStringList result;
+    QDirIterator searchit(directory, QDirIterator::Subdirectories);
+    while(searchit.hasNext()) {
+        QFileInfo searchfinfo(searchit.next());
+        if (searchfinfo.fileName().contains(extension, Qt::CaseSensitive)) {
+            result.push_back(searchfinfo.fileName());
+        }
+    }//_while
     return result;
 }
 

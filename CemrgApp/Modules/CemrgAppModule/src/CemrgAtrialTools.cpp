@@ -219,8 +219,18 @@ ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QStrin
 ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName, QString cleanName){
     QString inputPath = dir + "/" + segName;
     ImageType::Pointer orgSegImage = LoadImage(inputPath);
-
     ImageType::Pointer atriumCoarse = RemoveNoiseFromAutomaticSegmentation(dir, segName);
+
+    // binarise to 1, 0
+    IteratorType imIter(atriumCoarse, atriumCoarse->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        float value = (imIter.Get() > 0) ? 1 : 0;
+        imIter.Set(value);
+
+        ++imIter;
+    }
 
     if(!cleanName.isEmpty()){
         SaveImageToDisk(atriumCoarse, dir, cleanName);
