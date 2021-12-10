@@ -392,8 +392,6 @@ void AtrialFibresView::AnalysisChoice(){
 void AtrialFibresView::AutomaticAnalysis(){
     QString prodPath = directory + "/";
     if(cnnPath.isEmpty()){
-        // int reply = Ask("Question", "Do you have a previous automatic segmentation?");
-        // uiSelector_imgauto_skipCemrgNet
         if(uiSelector_imgauto_skipCemrgNet){
             cnnPath = QFileDialog::getOpenFileName(NULL, "Open Automatic Segmentation file",
             directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
@@ -479,13 +477,17 @@ void AtrialFibresView::AutomaticAnalysis(){
         std::cout << "Path to load: " << path.toStdString() <<'\n';
         std::cout << "tagName: " << tagName.toStdString() << '\n';
         mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(path.toStdString());
-        // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
-        // CemrgCommonUtils::FlipXYPlane(surface, "");
 
         std::string meshName = tagName.toStdString() + "-Mesh";
         CemrgCommonUtils::AddToStorage(surface, meshName, this->GetDataStorage());
-    }
 
+        std::string msg = "Created labelled mesh - Complete\n\n";
+        msg += "Automatic labels were assigned to the mesh. \n";
+        msg += "To set default labels: \n\n";
+        msg += "+ Identify the LAA and PVs in Step4: Mesh Preprocessing, and set the clippers.\n";
+        msg += "+ Click Step5: Clip PVs and MV (this step will set the correct labels)";
+        QMessageBox::information(NULL, "Automatic Labelling complete", msg.c_str());
+    }
 }
 
 void AtrialFibresView::MeshPreprocessing(){
@@ -871,7 +873,7 @@ void AtrialFibresView::ClipperPV(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.#
     if (!LoadSurfaceChecks()) return; // Surface was not loaded and user could not find file.
 
-    QString prodPath = directory + "/";
+    QString prodPath = Path();
 
     MITK_INFO << "[ClipperPV] clipping PVs.";
 
@@ -912,7 +914,10 @@ void AtrialFibresView::ClipperPV(){
 
             QString correctLabels = prodPath + "prodSeedLabels.txt";
             QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
+
+            QMessageBox::information(NULL, "Attention", "Attempting to correct automatic labels to default ones");
             atrium->SetSurfaceLabels(correctLabels, naiveLabels);
+            atrium->SaveSurface(path.toStdString());
         }
 
         QMessageBox::information(NULL, "Attention", "Clipping of PV and MV finished");
@@ -968,7 +973,7 @@ void AtrialFibresView::MeshingOptions(){
 
     QMessageBox::information(NULL, "Open Mesh File", "Open the mesh file (vtk ONLY)");
     QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
-        StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        StdStringPath().c_str(), tr("Mesh (*.vtk)"));
     QFileInfo fi(meshPath);
 
     QString meshName = fi.baseName();
@@ -1176,7 +1181,7 @@ void AtrialFibresView::UacCalculationRough(){
 
         bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
-        std::string msg = "UAC Calculation ";
+        std::string msg = "UAC Calculation - Stage 1 ";
         msg += (uacOutputSuccess) ? "successful" : "failed";
         QMessageBox::information(NULL, "Attention", msg.c_str());
     }
@@ -1241,10 +1246,14 @@ void AtrialFibresView::UacCalculationRefined(){
         if (!IsUacOutputCorrect(directory, outputFiles)) return;
 
         QString lrp_par, udp_par, lra_par, uda_par;
-        lrp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_LR_P.par", "PosteriorMesh", "", "Post_Strength_Test_LS1");
-        udp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_UD_P.par", "PosteriorMesh", "", "Post_Strength_Test_PA1");
-        lra_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_LR_A.par", "AnteriorMesh", "", "Ant_Strength_Test_LS1");
-        uda_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_single_UD_A.par", "AnteriorMesh", "", "Ant_Strength_Test_PA1");
+        QString carpf_lr, carpf_ud;
+        carpf_lr = "carpf_laplace_single_LR";
+        carpf_ud = "carpf_laplace_single_UD";
+
+        lrp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_lr+"_P.par", "PosteriorMesh", "", "Post_Strength_Test_LS1");
+        udp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_ud+"_P.par", "PosteriorMesh", "", "Post_Strength_Test_PA1");
+        lra_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_lr+"_A.par", "AnteriorMesh", "", "Ant_Strength_Test_LS1");
+        uda_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_ud+"_A.par", "AnteriorMesh", "", "Ant_Strength_Test_PA1");
 
         cmd->SetDockerImageOpenCarp();
 
@@ -1266,7 +1275,7 @@ void AtrialFibresView::UacCalculationRefined(){
 
         bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
-        std::string msg = "UAC Calculation - Refined ";
+        std::string msg = "UAC Calculation - Stage 2 ";
         msg += (uacOutputSuccess) ? "successful" : "failed";
         QMessageBox::information(NULL, "Attention", msg.c_str());
 
@@ -1342,10 +1351,6 @@ void AtrialFibresView::UacFibreMapping(){
     msg += (uacOutputSuccess) ? "successful" : "failed";
     QMessageBox::information(NULL, "Attention", msg.c_str());
 
-    if(!uacOutputSuccess){
-        MITK_ERROR << "FibreMapping Output not successful";
-        return;
-    }
 
     MITK_INFO << ("Output path of fibres: " + uacOutput).toStdString();
     MITK_INFO << "Clearing auxiliary files";
@@ -1364,12 +1369,19 @@ void AtrialFibresView::UacFibreMapping(){
     clearFiles << "carpf_laplace_LS.par"<< "carpf_laplace_PA.par"<< "P_Checker_PA.vtx";
     clearFiles << "Post_Strength_Test_LS1.vtx"<< "Post_Strength_Test_PA1.vtx";
 
-    int count=0;
-    for (int idx = 0; idx < clearFiles.size(); idx++) {
-        count += (QFile::remove(Path(clearFiles.at(idx)))) ? 1 : 0;
-    }
+    if(!uacOutputSuccess){
+        int delete_files_reply = Ask("Question", "Delete auxiliary and temporary files?");
+        if(delete_files_reply==QMessageBox::Yes){
+            int count=0;
+            for (int idx = 0; idx < clearFiles.size(); idx++) {
+                count += (QFile::remove(Path(clearFiles.at(idx)))) ? 1 : 0;
+            }
 
-    MITK_INFO(count==clearFiles.size()) << "All aux Files cleared successfully";
+            MITK_INFO(count==clearFiles.size()) << "All aux Files cleared successfully";
+        }
+        MITK_ERROR << "FibreMapping Output not successful";
+        return;
+    }
 
 }
 
@@ -1393,7 +1405,7 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
         if(reply_auto_fix == QMessageBox::Yes){
             MITK_INFO << "Solving labelling inconsistencies";
             for (unsigned int ix = 0; ix < incorrectLabels.size(); ix++) {
-                atrium->FixSingleLabelConnectivityInSurface(surface, incorrectLabels.at(0));
+                atrium->FixSingleLabelConnectivityInSurface(surface, incorrectLabels.at(ix));
             }
             mitk::IOUtil::Save(surface, StdStringPath(tagName+".vtk"));
 
@@ -1455,7 +1467,7 @@ void AtrialFibresView::ConvertFormat(){
     if (!RequestProjectDirectoryFromUser()) return;
 
     QString meshPath = QFileDialog::getOpenFileName(NULL, "Open Mesh file",
-        StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+        StdStringPath().c_str(), tr("Mesh (*.vtk)"));
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
@@ -1953,7 +1965,7 @@ bool AtrialFibresView::GetUserMeshingInputs(){
             if (!ok1) uiMesh_th=0.5;
             if (!ok2) uiMesh_bl=0.0;
             if (!ok3) uiMesh_smth=10;
-            if (!ok4) uiMesh_iter=1;
+            if (!ok4) uiMesh_iter=0;
 
             inputs->deleteLater();
             userInputAccepted=true;

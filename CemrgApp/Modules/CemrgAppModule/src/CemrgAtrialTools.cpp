@@ -314,10 +314,11 @@ ImageType::Pointer CemrgAtrialTools::AssignAutomaticLabels(ImageType::Pointer im
     IteratorType veinsIter(conn2->GetOutput(), conn2->GetOutput()->GetLargestPossibleRegion());
 
     int idx=0;
-    int relabelValue = relabel ? 10 : 1;
+    int relabelValue = relabel ? 30 : 1;
     while(!veinsIter.IsAtEnd()){
         if(veinsIter.Get() > 0){
-            int value = (int)veinsIter.Get()+relabelValue;
+            // create large even numbers 32, 34, 36, ... for detected labels that don't overlap with default labels (1,11,13, ...,19)
+            int value = ((int)veinsIter.Get())*2+relabelValue;
             detectedLabels.push_back(value);
             imIter.Set(detectedLabels[idx]);
             idx++;
@@ -539,6 +540,30 @@ void CemrgAtrialTools::SetSurfaceLabels(QString correctLabels, QString naiveLabe
         } else if(correctlabel == ripv){
             naiveripv = naivelabel;
         }
+    }
+
+    if(HasSurface()){
+        MITK_INFO << "Attempting to correct naive labels for default ones";
+        double testScalar;
+        vtkFloatArray *cellScalars = vtkFloatArray::New();
+        cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        for (vtkIdType ix = 0; ix < surface->GetVtkPolyData()->GetNumberOfCells(); ix++) {
+            testScalar = cellScalars->GetTuple1(ix);
+
+            if(testScalar == naivelaap){
+                cellScalars->SetTuple1(ix, laap);
+            } else if(testScalar == naivelspv){
+                cellScalars->SetTuple1(ix, lspv);
+            } else if(testScalar == naivelipv){
+                cellScalars->SetTuple1(ix, lipv);
+            } else if(testScalar == naiverspv){
+                cellScalars->SetTuple1(ix, rspv);
+            } else if(testScalar == naiveripv){
+                cellScalars->SetTuple1(ix, ripv);
+            }
+        }
+    } else{
+        MITK_INFO << "Surface not loaded. Naive labelss associated to default labels, but not changed";
     }
 }
 

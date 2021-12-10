@@ -271,14 +271,14 @@
    <item alignment="Qt::AlignHCenter">
     <widget class="QPushButton" name="button_0_1_uacRough">
      <property name="text">
-      <string>Rough UAC</string>
+      <string>UAC: Stage 1</string>
      </property>
     </widget>
    </item>
    <item alignment="Qt::AlignHCenter">
     <widget class="QPushButton" name="button_0_2_uacRefined">
      <property name="text">
-      <string>Refined UAC</string>
+      <string> UAC: Stage 2</string>
      </property>
     </widget>
    </item>
