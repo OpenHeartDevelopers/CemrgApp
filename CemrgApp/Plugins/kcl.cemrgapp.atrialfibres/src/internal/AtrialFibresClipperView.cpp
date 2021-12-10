@@ -481,7 +481,7 @@ void AtrialFibresClipperView::PvClipperRadius(){
     }
 
     renderer->RemoveAllViewProps();
-    Visualiser(0.5);
+    Visualiser(1);
 
     int index = m_Controls.comboBox_auto->currentIndex();
     double newRadius = (double) m_Controls.slider_auto->value();
@@ -499,7 +499,7 @@ void AtrialFibresClipperView::PvClipperSelector(int index){
 
     MITK_INFO << "[PvClipperSelector]";
     renderer->RemoveAllViewProps();
-    Visualiser(0.5);
+    Visualiser(1);
 
     double radiusAtId = pvClipperRadii.at(index);
     VisualiseSphereAtPoint(index, radiusAtId);
@@ -514,25 +514,6 @@ void AtrialFibresClipperView::SaveLabels(){
     if (pickedSeedIds->GetNumberOfIds()==0) {
         msg = "Select the corresponding veins and assign labels to them.";
         QMessageBox::warning(NULL, "Attention - No points selected.", msg.c_str());
-        MITK_WARN << msg;
-
-        return;
-    }
-    QStringList thisLabels;
-    for (unsigned int ix = 0; ix < pickedSeedLabels.size(); ix++) {
-        thisLabels << QString::number(pickedSeedLabels.at(ix));
-    }
-    std::vector<int> incorrectLabels;
-    std::unique_ptr<CemrgAtrialTools> atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
-    if(atrium->CheckLabelConnectivity(surface, thisLabels, incorrectLabels)){
-        msg = "Make sure there's no holes in the meshes.\n";
-        msg += "Use 'X' on your keyboard and the 'Fix mesh labelling' button \n";
-        msg += "on following labels: \n\n";
-        for (unsigned int ix = 0; ix < incorrectLabels.size(); ix++) {
-            msg += std::to_string(incorrectLabels.at(ix));
-            msg += (ix+1<incorrectLabels.size()) ? ", " : "";
-        };
-        QMessageBox::warning(NULL, "Label connectivity problem.", msg.c_str());
         MITK_WARN << msg;
 
         return;
@@ -1119,7 +1100,7 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                 double currentRadius = self->pvClipperRadii.at(currentIdIndex);
                 self->UpdateClipperSeedIds(newPickedId, currentIdIndex);
                 self->renderer->RemoveAllViewProps();
-                self->Visualiser(0.5);
+                self->Visualiser(1);
                 self->VisualiseSphereAtPoint(currentIdIndex, currentRadius);
             }
         } //_if_space

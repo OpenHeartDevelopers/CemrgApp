@@ -386,6 +386,18 @@ void CemrgCommonUtils::SavePadImageWithConstant(QString inputPath, QString outpu
     mitk::IOUtil::Save(outImg, out.toStdString());
 }
 
+bool CemrgCommonUtils::ImageConvertFormat(QString pathToImage, QString pathToOutput, bool optResample, bool optReorient, bool optImgBinary){
+    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, optResample, optReorient, optImgBinary);
+    if(optImgBinary){
+        image = CemrgCommonUtils::ReturnBinarised(image);
+    }
+
+    mitk::IOUtil::Save(image, pathToOutput.toStdString());
+
+    return (QFile::exists(pathToOutput));
+
+}
+
 void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath){
     using ImageType = itk::Image<short,3>;
 

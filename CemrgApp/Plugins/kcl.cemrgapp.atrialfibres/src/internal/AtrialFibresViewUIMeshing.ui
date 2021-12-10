@@ -48,7 +48,7 @@
    <item>
     <widget class="QLineEdit" name="lineEdit_4">
      <property name="placeholderText">
-      <string>'Close' iterations (default = 1)</string>
+      <string>'Close' iterations (default=0)</string>
      </property>
     </widget>
    </item>

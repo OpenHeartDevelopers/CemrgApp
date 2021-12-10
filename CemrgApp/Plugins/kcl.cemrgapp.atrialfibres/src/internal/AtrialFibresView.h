@@ -98,6 +98,7 @@ public:
     void SetLgeAnalysis(bool b);
     QString UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer seg);
     QString GetFilePath(QString type, QString extension);
+    QStringList GetFilesWithExtension(QString extension);
     int Ask(std::string title, std::string msg);
 
     inline void SetManualModeButtonsOn(){SetManualModeButtons(true);};

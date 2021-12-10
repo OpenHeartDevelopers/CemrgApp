@@ -64,6 +64,7 @@ public:
     static void RoundPixelValues(QString pathToImage, QString outputPath="");
     static mitk::Image::Pointer PadImageWithConstant(mitk::Image::Pointer image, int vxlsToExtend=2, short constant=0);
     static void SavePadImageWithConstant(QString inputPath, QString outputPath="", int vxlsToExtend=2, short constant=0);
+    static bool ImageConvertFormat(QString pathToImage, QString pathToOutput, bool optResample=true, bool optReorient=true, bool optImgBinary=false);
 
     // static void RoundPointDataValues(vtkSmartPointer<vtkPolyData> pd);
 

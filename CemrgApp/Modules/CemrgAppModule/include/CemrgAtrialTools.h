@@ -104,6 +104,7 @@ public:
     inline void SetWorkingDirectory(QString wd){directory =wd;};
     inline void SetTagSegmentationName(QString tsn){tagSegName = tsn;};
 
+    inline void SaveSurface(std::string p){mitk::IOUtil::Save(surface, p);};
     inline void SetSurface(QString surfpath){surface = mitk::IOUtil::Load<mitk::Surface>(surfpath.toStdString()); surfLoaded=true;};
     inline void SetSurface(mitk::Surface::Pointer externalSurface){surface = externalSurface; surfLoaded=true;};
     inline mitk::Surface::Pointer GetSurface(){return surface;};
