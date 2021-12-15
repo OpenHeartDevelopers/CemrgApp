@@ -34,6 +34,8 @@ PURPOSE.  See the above copyright notices for more information.
 
 //Qmitk
 #include <mitkImage.h>
+#include <mitkLog.h>
+
 #include <QmitkIOUtil.h>
 #include <mitkProgressBar.h>
 #include <mitkIDataStorageService.h>
@@ -91,6 +93,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QDirIterator>
+#include <QDate>
 
 //CemrgAppModule
 #include <CemrgCommonUtils.h>
@@ -390,6 +393,7 @@ void AtrialFibresView::AnalysisChoice(){
 
 // Automatic pipeline
 void AtrialFibresView::AutomaticAnalysis(){
+    MITK_INFO << "TIMELOG|AutomaticAnalysis| Start";
     QString prodPath = directory + "/";
     if(cnnPath.isEmpty()){
         if(uiSelector_imgauto_skipCemrgNet){
@@ -488,9 +492,11 @@ void AtrialFibresView::AutomaticAnalysis(){
         msg += "+ Click Step5: Clip PVs and MV (this step will set the correct labels)";
         QMessageBox::information(NULL, "Automatic Labelling complete", msg.c_str());
     }
+    MITK_INFO << "TIMELOG|AutomaticAnalysis| End";
 }
 
 void AtrialFibresView::MeshPreprocessing(){
+    MITK_INFO << "TIMELOG|MeshPreprocessing| Start";
     MITK_INFO << "[MeshPreprocessing] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!LoadSurfaceChecks()) return;
@@ -685,6 +691,7 @@ void AtrialFibresView::IdentifyPV(){
 }
 
 void AtrialFibresView::CreateLabelledMesh(){
+    MITK_INFO << "TIMELOG|CreateLabelledMesh| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
     if(!analysisOnLge){
@@ -734,6 +741,7 @@ void AtrialFibresView::CreateLabelledMesh(){
         std::string meshName = tagName.toStdString() + "-Mesh";
         CemrgCommonUtils::AddToStorage(surface, meshName, this->GetDataStorage());
     }
+    MITK_INFO << "TIMELOG|CreateLabelledMesh| End";
 }
 
 void AtrialFibresView::ClipperMV(){
@@ -870,6 +878,8 @@ void AtrialFibresView::ClipMV(){
 
 
 void AtrialFibresView::ClipperPV(){
+    MITK_INFO << "TIMELOG|MeshPreprocessing| End";
+    MITK_INFO << "TIMELOG|ClipperPV| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.#
     if (!LoadSurfaceChecks()) return; // Surface was not loaded and user could not find file.
 
@@ -931,6 +941,7 @@ void AtrialFibresView::ClipperPV(){
 
 // Labelled Mesh to UAC
 void AtrialFibresView::SelectLandmarks(){
+    MITK_INFO << "TIMELOG|SelectLandmarks| Start";
     MITK_INFO << "[MeshPreprocessing] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!LoadSurfaceChecks()) return;
@@ -969,6 +980,8 @@ void AtrialFibresView::CleanMeshQuality(){
 }
 
 void AtrialFibresView::MeshingOptions(){
+    MITK_INFO << "TIMELOG|SelectLandmarks| End";
+    MITK_INFO << "TIMELOG|MeshImprovement| Start";
     if (!RequestProjectDirectoryFromUser()) return;
 
     QMessageBox::information(NULL, "Open Mesh File", "Open the mesh file (vtk ONLY)");
@@ -1053,6 +1066,7 @@ void AtrialFibresView::MeshingOptions(){
         }
 
         MITK_INFO << "[MeshingOptions] finished";
+        MITK_INFO << "TIMELOG|MeshImprovement| End";
     }
 }
 
@@ -1072,6 +1086,7 @@ bool  AtrialFibresView::UserSelectUacMesh(){
 
 
 void AtrialFibresView::UacCalculation(){
+    MITK_INFO << "TIMELOG|UacCalculationSetup| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if(!UserSelectUacMesh()) return;
 
@@ -1108,9 +1123,11 @@ void AtrialFibresView::UacCalculation(){
         m_Controls.button_0_1_uacRough->setVisible(true);
         m_Controls.button_0_2_uacRefined->setVisible(true);
     }
+    MITK_INFO << "TIMELOG|UacCalculationSetup| End";
 }
 
 void AtrialFibresView::UacCalculationRough(){
+    MITK_INFO << "TIMELOG|UacCalculation_Stage1| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
@@ -1161,15 +1178,21 @@ void AtrialFibresView::UacCalculationRough(){
 
         fibreAtlas << ("_" + uac_type + "_" + uac_surftype);
         cmd->SetDockerImageUac();
+        MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 start";
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
+        MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 end";
 
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
         outputFiles << "PAbc1.vtx" << "PAbc2.vtx";
 
-        if (!IsUacOutputCorrect(directory, outputFiles)) return;
+        if (!IsUacOutputCorrect(directory, outputFiles)){
+            MITK_INFO << "TIMELOG|UacCalculation_Stage1| End (FAIL)";
+            return;
+        }
 
         MITK_INFO << "Create Laplace Solve files for LR and PA SOLVES";
         QString lr_par, pa_par;
+        MITK_INFO << "TIMELOG|UacCalculation_Stage1| openCARP start";
         lr_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_LS.par", uacMeshName, "LSbc1", "LSbc2");
         pa_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, "carpf_laplace_PA.par", uacMeshName, "PAbc1", "PAbc2");
 
@@ -1178,16 +1201,19 @@ void AtrialFibresView::UacCalculationRough(){
         QString lrLapSolve, paLapSolve;
         lrLapSolve = cmd->OpenCarpDocker(directory, lr_par, "LR_UAC_N2");
         paLapSolve = cmd->OpenCarpDocker(directory, pa_par, "PA_UAC_N2");
+        MITK_INFO << "TIMELOG|UacCalculation_Stage1| openCARP end";
 
         bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
         std::string msg = "UAC Calculation - Stage 1 ";
         msg += (uacOutputSuccess) ? "successful" : "failed";
         QMessageBox::information(NULL, "Attention", msg.c_str());
+        MITK_INFO << "TIMELOG|UacCalculation_Stage1| End";
     }
 }
 
 void AtrialFibresView::UacCalculationRefined(){
+    MITK_INFO << "TIMELOG|UacCalculation_Stage2| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
@@ -1240,16 +1266,22 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "AnteriorMesh.elem" << "PosteriorMesh.elem";
         outputFiles << "Ant_Strength_Test_PA1.vtx" << "Ant_Strength_Test_LS1.vtx";
         outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - Start";
         cmd->SetDockerImageUac();
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - End";
 
-        if (!IsUacOutputCorrect(directory, outputFiles)) return;
+        if (!IsUacOutputCorrect(directory, outputFiles)){
+            MITK_INFO << "TIMELOG|UacCalculation_Stage2| End (FAILED)";
+            return;
+        }
 
         QString lrp_par, udp_par, lra_par, uda_par;
         QString carpf_lr, carpf_ud;
         carpf_lr = "carpf_laplace_single_LR";
         carpf_ud = "carpf_laplace_single_UD";
 
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| openCARP - Start";
         lrp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_lr+"_P.par", "PosteriorMesh", "", "Post_Strength_Test_LS1");
         udp_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_ud+"_P.par", "PosteriorMesh", "", "Post_Strength_Test_PA1");
         lra_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory, carpf_lr+"_A.par", "AnteriorMesh", "", "Ant_Strength_Test_LS1");
@@ -1262,6 +1294,7 @@ void AtrialFibresView::UacCalculationRefined(){
         udpLapSolve = cmd->OpenCarpDocker(directory, udp_par, "UD_Post_UAC");
         lraLapSolve = cmd->OpenCarpDocker(directory, lra_par, "LR_Ant_UAC");
         udaLapSolve = cmd->OpenCarpDocker(directory, uda_par, "UD_Ant_UAC");
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| openCARP - End";
 
         uaccmd = "UAC_2B_" + uac_type;
         uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
@@ -1270,8 +1303,10 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.elem";
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.pts";
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - Start";
         cmd->SetDockerImageUac();
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, "");
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - End";
 
         bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
@@ -1279,10 +1314,12 @@ void AtrialFibresView::UacCalculationRefined(){
         msg += (uacOutputSuccess) ? "successful" : "failed";
         QMessageBox::information(NULL, "Attention", msg.c_str());
 
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| End";
     }
 }
 
 void AtrialFibresView::UacFibreMapping(){
+    MITK_INFO << "TIMELOG|UacFibreMapping| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
@@ -1387,9 +1424,11 @@ void AtrialFibresView::UacFibreMapping(){
 
         MITK_INFO(count==clearFiles.size()) << "All aux Files cleared successfully";
     }
+    MITK_INFO << "TIMELOG|UacFibreMapping| End";
 }
 
 void AtrialFibresView::UacCalculationVerifyLabels(){
+    MITK_INFO << "TIMELOG|VerifyLabels| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if(!GetUserEditLabelsInputs()){
         MITK_INFO << "labels not checked. Stopping";
@@ -1437,6 +1476,7 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
         QMessageBox::information(NULL, title.c_str(), msg.c_str());
         MITK_INFO << msg;
     }
+    MITK_INFO << "TIMELOG|VerifyLabels| End";
 }
 
 bool AtrialFibresView::IsUacOutputCorrect(QString dir, QStringList filenames){
@@ -1662,9 +1702,19 @@ bool AtrialFibresView::RequestProjectDirectoryFromUser() {
             succesfulAssignment = false;
         }//_if
 
+        if (succesfulAssignment){
+            QString now = QDate::currentDate().toString(Qt::ISODate);
+            QString logfilename = directory + "/afib_log" + now + ".log";
+            std::string logfname_str = logfilename.toStdString();
+
+            mitk::LoggingBackend::SetLogFile(logfname_str.c_str());
+            MITK_INFO << ("Changed logfile location to: " + logfilename).toStdString();
+        }
+
     } else {
         MITK_INFO << ("Project directory already set: " + directory).toStdString();
     }//_if
+
 
     return succesfulAssignment;
 }
