@@ -1002,6 +1002,20 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
     return argumentList;
 }
 
+QStringList CemrgCommandLine::GetOpenCarpDockerDefaultArguments(QString volume){
+    QStringList defaultArguments;
+    defaultArguments << "run" << "--rm" << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
+    defaultArguments << "docker.opencarp.org/opencarp/opencarp:latest";
+    defaultArguments << "openCARP";
+    defaultArguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
+    defaultArguments << "-parab_options_file";
+    defaultArguments << "/usr/local/lib/python3.6/dist-packages/carputils/resources/petsc_options/ilu_cg_opts";
+    defaultArguments << "-ellip_options_file";
+    defaultArguments << "/usr/local/lib/python3.6/dist-packages/carputils/resources/petsc_options/amg_cg_opts";
+
+    return defaultArguments;
+}
+
 QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroName, QStringList oneName, QStringList regionLabels){
     SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
     QString executablePath;
@@ -1020,15 +1034,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
         if(!outDir.exists()){
             MITK_INFO << ("Error creating directory: " + outPath).toStdString();
         } else{
-            QStringList arguments;
-            arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
-            arguments << "docker.opencarp.org/opencarp/opencarp:latest";
-            arguments << "openCARP";
-            arguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
-            arguments << "-parab_options_file";
-            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/ilu_cg_opts";
-            arguments << "-ellip_options_file";
-            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/amg_cg_opts";
+            QStringList arguments = GetOpenCarpDockerDefaultArguments(home.absolutePath());
             arguments << "-simID" << home.relativeFilePath(outPath);
             arguments << "-meshname" << meshName;
             arguments << "-experiment" << "2";
@@ -1107,15 +1113,8 @@ QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString
         if(!outDir.exists()){
             MITK_INFO << ("Error creating directory: " + outPath).toStdString();
         } else{
-            QStringList arguments;
-            arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
-            arguments << "docker.opencarp.org/opencarp/opencarp:latest";
-            arguments << "openCARP";
-            arguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
-            arguments << "-parab_options_file";
-            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/ilu_cg_opts";
-            arguments << "-ellip_options_file";
-            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/amg_cg_opts";
+            QStringList arguments = GetOpenCarpDockerDefaultArguments(home.absolutePath());
+
             arguments << "+F" << home.relativeFilePath(paramfile);
             arguments << "-simID" << home.relativeFilePath(outPath);
 
