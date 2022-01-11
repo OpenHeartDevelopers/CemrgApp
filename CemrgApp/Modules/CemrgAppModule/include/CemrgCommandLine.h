@@ -99,6 +99,7 @@ public:
     inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
     inline void SetDockerImageUac(){_dockerimage = "cemrg/uac:v1.1";};// modify when docker image has been pushed to hub
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
+    QStringList GetOpenCarpDockerDefaultArguments(QString volume);
 
     //Helper Functions
     bool CheckForStartedProcess();
