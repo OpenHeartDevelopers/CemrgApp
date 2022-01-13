@@ -301,7 +301,7 @@ void QmitkCemrgAppCommonTools::BinariseImage(){
     }
 
     QFileInfo fi(pathToImage);
-    QString outPath = fi.absolutePath() + "/" + fi.baseName() + "-bin" + fi.suffix();
+    QString outPath = fi.absolutePath() + "/" + fi.baseName() + "-bin." + fi.suffix();
 
     mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(pathToImage.toStdString());
     mitk::Image::Pointer outIm = CemrgCommonUtils::ReturnBinarised(im);
