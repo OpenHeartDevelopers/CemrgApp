@@ -165,6 +165,7 @@ public:
     ImFilterType::Pointer ImOpenFilter(ImageType::Pointer input, uint16_t radius);
     ShortImageType::Pointer Uint16ToShort(ImageType::Pointer im);
     mitk::Image::Pointer ImErode(ImageType::Pointer input, int vxls=3);
+    void QuickBinarise(ImageType::Pointer imToBin);
     void SaveImageToDisk(ImageType::Pointer im, QString dir, QString imName);
     vtkSmartPointer<vtkConnectivityFilter> GetLabelConnectivity(mitk::Surface::Pointer externalSurface, double label, bool colourRegions=false);
 
