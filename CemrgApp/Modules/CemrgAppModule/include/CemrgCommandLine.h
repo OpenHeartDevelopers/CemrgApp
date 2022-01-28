@@ -97,7 +97,7 @@ public:
     inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
     inline QString GetDockerImage() {return _dockerimage;};
     inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
-    inline void SetDockerImageUac(){_dockerimage = "cemrg/uac:v1.1";};// modify when docker image has been pushed to hub
+    inline void SetDockerImageUac(){_dockerimage = "cemrg/uac:latest";};// modify when docker image has been pushed to hub
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
     QStringList GetOpenCarpDockerDefaultArguments(QString volume);
 
