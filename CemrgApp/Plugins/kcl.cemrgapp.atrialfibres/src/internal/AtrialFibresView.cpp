@@ -1185,7 +1185,7 @@ void AtrialFibresView::UacCalculationRough(){
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
         outputFiles << "PAbc1.vtx" << "PAbc2.vtx";
 
-        if (!IsUacOutputCorrect(directory, outputFiles)){
+        if (!IsOutputFileCorrect(directory, outputFiles)){
             MITK_INFO << "TIMELOG|UacCalculation_Stage1| End (FAIL)";
             return;
         }
@@ -1203,7 +1203,7 @@ void AtrialFibresView::UacCalculationRough(){
         paLapSolve = cmd->OpenCarpDocker(directory, pa_par, "PA_UAC_N2");
         MITK_INFO << "TIMELOG|UacCalculation_Stage1| openCARP end";
 
-        bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
+        bool uacOutputSuccess = IsOutputFileCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
         std::string msg = "UAC Calculation - Stage 1 ";
         msg += (uacOutputSuccess) ? "successful" : "failed";
@@ -1271,7 +1271,7 @@ void AtrialFibresView::UacCalculationRefined(){
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - End";
 
-        if (!IsUacOutputCorrect(directory, outputFiles)){
+        if (!IsOutputFileCorrect(directory, outputFiles)){
             MITK_INFO << "TIMELOG|UacCalculation_Stage2| End (FAILED)";
             return;
         }
@@ -1308,7 +1308,7 @@ void AtrialFibresView::UacCalculationRefined(){
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, "");
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - End";
 
-        bool uacOutputSuccess = IsUacOutputCorrect(directory, outputFiles);
+        bool uacOutputSuccess = IsOutputFileCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
         std::string msg = "UAC Calculation - Stage 2 ";
         msg += (uacOutputSuccess) ? "successful" : "failed";
@@ -1355,7 +1355,7 @@ void AtrialFibresView::UacFibreMapping(){
     outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
     outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.elem";
     outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.pts";
-    if (!IsUacOutputCorrect(directory, outputFiles)) return;
+    if (!IsOutputFileCorrect(directory, outputFiles)) return;
 
     std::cout << "[uac_fibreField]" << uac_fibreField.toStdString() << '\n';
     std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
@@ -1479,7 +1479,7 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
     MITK_INFO << "TIMELOG|VerifyLabels| End";
 }
 
-bool AtrialFibresView::IsUacOutputCorrect(QString dir, QStringList filenames){
+bool AtrialFibresView::IsOutputFileCorrect(QString dir, QStringList filenames){
     bool success = true;
     bool okSingleTest;
     int countfails = 0;
@@ -2295,7 +2295,7 @@ QString AtrialFibresView::UserIncludeLgeAnalysis(QString segPath, ImageType::Poi
 
 void AtrialFibresView::SetLgeAnalysis(bool b){
     analysisOnLge = b;
-    m_Controls.button_z_scar->setEnabled(b);
+    // m_Controls.button_z_scar->setEnabled(b);
 }
 
 void AtrialFibresView::CheckLoadedMeshQuality(){

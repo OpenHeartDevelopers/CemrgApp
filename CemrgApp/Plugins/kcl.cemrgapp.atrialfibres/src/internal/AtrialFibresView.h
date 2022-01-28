@@ -110,7 +110,7 @@ public:
     inline std::string StdStringPath(QString fnameExt=""){return (Path(fnameExt).toStdString());};
 
     QString LandmarkFilesCreated(QString defaultName, QString type);
-    bool IsUacOutputCorrect(QString dir, QStringList filenames);
+    bool IsOutputFileCorrect(QString dir, QStringList filenames);
 
 protected slots:
 
