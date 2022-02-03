@@ -1074,7 +1074,7 @@ bool  AtrialFibresView::UserSelectUacMesh(){
     if(uacMeshName.isEmpty()){
         QMessageBox::information(NULL, "Open Mesh File", "Open the CARP mesh file (pts ONLY)");
         QString meshPath = QFileDialog::getOpenFileName(NULL, "Open the CARP mesh file (pts ONLY)",
-            StdStringPath().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+            StdStringPath().c_str(), tr("CARP points file (*.pts)"));
         QFileInfo fi(meshPath);
 
         uacMeshName = fi.baseName();
@@ -2220,7 +2220,7 @@ bool AtrialFibresView::LoadSurfaceChecks(){
 }
 
 void AtrialFibresView::UserLoadSurface(){
-    QString newpath = QFileDialog::getOpenFileName(NULL, "Select the surface file to load!", directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+    QString newpath = QFileDialog::getOpenFileName(NULL, "Select the surface file to load!", directory.toStdString().c_str(), tr("Mesh (*.vtk)"));
     SetTagNameFromPath(newpath);
     CheckLoadedMeshQuality();
 }
@@ -2303,9 +2303,13 @@ void AtrialFibresView::CheckLoadedMeshQuality(){
     QString meshinput = prodPath + tagName + ".vtk";
 
     MITK_INFO << "Safety check: converting file to polydata: ";
-    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-    cmd->SetUseDockerContainers(true);
-    meshinput = cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName, "vtk_polydata", 1);
+    std::string msg = "Is [" + (tagName + ".vtk").toStdString() + "] a vtk polydata?";
+    int reply = Ask("Question", msg);
+    if(reply==QMessageBox::No){
+        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        cmd->SetUseDockerContainers(true);
+        meshinput = cmd->DockerConvertMeshFormat(directory, tagName, "vtk", tagName, "vtk_polydata", 1);
+    }
     MITK_INFO << "Safety check: finished";
 
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
@@ -2337,6 +2341,5 @@ void AtrialFibresView::CheckLoadedMeshQuality(){
             QString nameExt = "connectivityTest_"+QString::number(ix)+".vtk";
             mitk::IOUtil::Save(surface, (prodPath+nameExt).toStdString());
         }
-
     }
 }

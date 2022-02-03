@@ -715,7 +715,8 @@ QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filena
         out << "parab_use_pt " << "= " << " 1" << "\n";
 
         int ix = 0;
-        if(zeroBoundaryName.isEmpty()){
+        bool onlyOneStimulusCheck = zeroBoundaryName.isEmpty();
+        if(onlyOneStimulusCheck){
             out << "num_stim " << "= " << " 1" << "\n";
 
         } else {
@@ -728,6 +729,10 @@ QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filena
         out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 2" << "\n";
         out << "stimulus["+ QString::number(ix)+"].duration " << "= " << " 1" << "\n";
         out << "stimulus["+ QString::number(ix)+"].strength " << "= " << " 1.0" << "\n";
+
+        if(onlyOneStimulusCheck){
+            out << "stimulus["+ QString::number(ix)+"].vtx_fcn  " << "= " << " 1" << "\n";
+        }
         out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << oneBoundaryName << "\n";
 
         return path2file;
