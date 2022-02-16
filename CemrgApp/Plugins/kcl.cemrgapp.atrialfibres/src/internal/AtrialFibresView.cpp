@@ -54,6 +54,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "AtrialFibresView.h"
 #include "AtrialFibresClipperView.h"
 #include "AtrialFibresLandmarksView.h"
+#include "AtrialFibresVisualiseView.h"
 
 //Micro services
 #include <usModuleRegistry.h>
@@ -939,10 +940,22 @@ void AtrialFibresView::ClipperPV(){
 
 }
 
+// Visualise
+void AtrialFibresView::SimpleVisualisation(){
+    MITK_INFO << "[Visualise] ";
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!LoadSurfaceChecks()) return;
+
+    //Show the plugin
+    this->GetSite()->GetPage()->ResetPerspective();
+    AtrialFibresVisualiseView::SetDirectoryFile(directory, tagName+".vtk");
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresvisualiseview");
+}
+
 // Labelled Mesh to UAC
 void AtrialFibresView::SelectLandmarks(){
     MITK_INFO << "TIMELOG|SelectLandmarks| Start";
-    MITK_INFO << "[MeshPreprocessing] ";
+    MITK_INFO << "[UAC_Landmarks] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!LoadSurfaceChecks()) return;
 

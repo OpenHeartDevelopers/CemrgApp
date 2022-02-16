@@ -144,6 +144,7 @@ protected slots:
     void UacFibreMapping();
 
     void ScarProjection();
+    void SimpleVisualisation();
     void Reset();
 
 protected:

@@ -1592,6 +1592,25 @@ std::vector<double> CemrgCommonUtils::ReadScalarField(QString pathToFile) {
     return field;
 }
 
+std::vector<double> CemrgCommonUtils::ReadVectorField(QString pathToFile, bool totalAtTop) {
+    std::ifstream fi(pathToFile.toStdString());
+    int n = CemrgCommonUtils::GetTotalFromCarpFile(pathToFile, totalAtTop);
+    std::vector<double> field((n*3), 0.0);
+
+    for (int ix = 0; ix < n; ix++) {
+        if (fi.eof()) {
+            MITK_INFO << "File finished prematurely.";
+            break;
+        }
+        fi >> field[3*ix + 0];
+        fi >> field[3*ix + 1];
+        fi >> field[3*ix + 2];
+    }
+    fi.close();
+
+    return field;
+}
+
 void CemrgCommonUtils::AppendScalarFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader) {
     std::ofstream VTKFile;
     short int precision = 12;

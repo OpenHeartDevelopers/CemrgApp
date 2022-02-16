@@ -98,6 +98,7 @@ public:
     static void RectifyFileValues(QString pathToFile, double minVal = 0.0, double maxVal = 1.0);
     static int GetTotalFromCarpFile(QString pathToFile, bool totalAtTop = true);
     static std::vector<double> ReadScalarField(QString pathToFile);
+    static std::vector<double> ReadVectorField(QString pathToFile, bool totalAtTop=true);
     static void CarpToVtk(QString elemPath, QString ptsPath, QString outputPath, bool saveRegionlabels = true);
     static void AppendScalarFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader = true);
     static void AppendVectorFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader = true);
