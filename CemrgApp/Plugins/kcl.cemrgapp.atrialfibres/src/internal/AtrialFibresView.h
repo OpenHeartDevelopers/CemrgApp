@@ -92,6 +92,7 @@ public:
     void SetManualModeButtons(bool b);
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
+    void SetFibresVariables(QString uaccmd_prefix="");
     void UserLoadSurface();
     bool UserSelectUacMesh();
     void CheckLoadedMeshQuality();
@@ -185,6 +186,10 @@ private:
     QStringList uiUac_fibreFile, uiUac_type, uiUac_surftype;
     QString uac_fibreField, uac_fibreFieldOutputName, uacMeshName;
     QStringList uiLabels;
+
+    // fibres variables
+    QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd;
+    QStringList fibreAtlas;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;
