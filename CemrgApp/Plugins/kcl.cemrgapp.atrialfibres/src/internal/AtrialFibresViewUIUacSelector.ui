@@ -175,7 +175,7 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QComboBox" name="combo_uac_type">
+     <widget class="QComboBox" name="combo_uac_whichAtrium">
       <item>
        <property name="text">
         <string>Left Atrium (LA)</string>

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>310</width>
+    <width>343</width>
     <height>248</height>
    </rect>
   </property>
@@ -42,7 +42,7 @@
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="3" column="0">
-      <widget class="QRadioButton" name="radioBtn_LAA">
+      <widget class="QRadioButton" name="radioBtn_LA_LatWall">
        <property name="text">
         <string>Lateral wall (LAA)</string>
        </property>
@@ -56,14 +56,14 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QRadioButton" name="radioBtn_RIPV">
+      <widget class="QRadioButton" name="radioBtn_LA_RspvBody">
        <property name="text">
         <string>RSPV/body junction</string>
        </property>
       </widget>
      </item>
      <item row="2" column="0">
-      <widget class="QRadioButton" name="radioBtn_LIPV">
+      <widget class="QRadioButton" name="radioBtn_LA_LspvBody">
        <property name="text">
         <string>LSPV/body junction</string>
        </property>
@@ -84,7 +84,7 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QRadioButton" name="radioBtn_FO">
+      <widget class="QRadioButton" name="radioBtn_LA_FO">
        <property name="text">
         <string>Septal Wall (FOO)</string>
        </property>
@@ -94,7 +94,7 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QRadioButton" name="radioBtn_LSPV">
+      <widget class="QRadioButton" name="radioBtn_LA_LSPV">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -104,7 +104,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QRadioButton" name="radioBtn_RSPV">
+      <widget class="QRadioButton" name="radioBtn_LA_RSPV">
        <property name="enabled">
         <bool>false</bool>
        </property>

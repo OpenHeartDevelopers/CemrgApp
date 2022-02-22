@@ -959,9 +959,17 @@ void AtrialFibresView::SelectLandmarks(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!LoadSurfaceChecks()) return;
 
+    if(GetUserUacOptionsInputs(false)){
+        uac_whichAtrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex);
+        MITK_INFO << ("[UAC_Landmarks] Seleted ["+uac_whichAtrium+"] analysis").toStdString();
+    } else{
+        MITK_INFO << "User cancelled selection of LA/RA selection";
+        return;
+    }
+
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk");
+    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk", uac_whichAtrium);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibreslandmarksview");
 }
 
@@ -1134,7 +1142,7 @@ void AtrialFibresView::UacCalculationRough(){
         QString uacOutput;
         QStringList outputFiles;
 
-        SetFibresVariables("UAC_1_"); // sets: uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd
+        SetFibresVariables("UAC_1_"); // sets: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd
 
         // Cemrg CMD
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
@@ -1194,7 +1202,7 @@ void AtrialFibresView::UacCalculationRefined(){
         QString uacOutput;
         QStringList outputFiles;
 
-        SetFibresVariables("UAC_2A_"); // sets: uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd
+        SetFibresVariables("UAC_2A_"); // sets: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd
 
         // Cemrg CMD
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
@@ -1277,7 +1285,7 @@ void AtrialFibresView::UacFibreMapping(){
     QString uacOutput;
     QStringList outputFiles;
 
-    SetFibresVariables("UAC_FibreMapping"); // sets: uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd
+    SetFibresVariables("UAC_FibreMapping"); // sets: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd
 
     QMessageBox::information(NULL, "Attention", "Checking for UAC Calculation output");
     outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
@@ -1681,22 +1689,22 @@ bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext,
     return userInputAccepted;
 }
 
-bool AtrialFibresView::GetUserUacOptionsInputs(){
+bool AtrialFibresView::GetUserUacOptionsInputs(bool enableFullUiOptions){
     QString metadata = Path("prodUacMetadata.txt");
     bool userInputAccepted=false;
 
     if(uiUac_fibreFile.size() == 0){
         uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A";
-        uiUac_type << "LA" << "RA" << "4Ch";
+        uiUac_whichAtrium << "LA" << "RA" << "4Ch";
         uiUac_surftype << "Endo" << "Epi" << "Bilayer";
     }
 
-    if(QFile::exists(metadata)){
+    if(enableFullUiOptions && QFile::exists(metadata)){
         int reply0 = Ask("Metadata Found", "Load previous analysis metadata found?");
         if(reply0==QMessageBox::Yes){
             std::ifstream fi(metadata.toStdString());
             fi >> uiUac_meshtype_labelled;
-            fi >> uiUac_typeIndex;
+            fi >> uiUac_whichAtriumIndex;
             fi >> uiUac_fibreFileIndex;
             fi >> uiUac_surftypeIndex;
             fi.close();
@@ -1710,22 +1718,32 @@ bool AtrialFibresView::GetUserUacOptionsInputs(){
         m_UIUac.setupUi(inputs);
         connect(m_UIUac.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
         connect(m_UIUac.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+
+        // enable or disable parts that might not be used
+        m_UIUac.label_3->setVisible(enableFullUiOptions);
+        m_UIUac.combo_uac_surftype->setVisible(enableFullUiOptions);
+        m_UIUac.label->setVisible(enableFullUiOptions);
+        m_UIUac.combo_uac_fibrefile->setVisible(enableFullUiOptions);
+        m_UIUac.check_uac_meshtype_labelled->setVisible(enableFullUiOptions);
+
         int dialogCode = inputs->exec();
 
         //Act on dialog return code
         if (dialogCode == QDialog::Accepted) {
             userInputAccepted = true;
             uiUac_meshtype_labelled = m_UIUac.check_uac_meshtype_labelled->isChecked();
-            uiUac_typeIndex = m_UIUac.combo_uac_type->currentIndex();
+            uiUac_whichAtriumIndex = m_UIUac.combo_uac_whichAtrium->currentIndex();
             uiUac_fibreFileIndex = m_UIUac.combo_uac_fibrefile->currentIndex();
             uiUac_surftypeIndex = m_UIUac.combo_uac_surftype->currentIndex();
 
-            std::ofstream fo(metadata.toStdString());
-            fo << uiUac_meshtype_labelled << std::endl;
-            fo << uiUac_typeIndex << std::endl;
-            fo << uiUac_fibreFileIndex << std::endl;
-            fo << uiUac_surftypeIndex << std::endl;
-            fo.close();
+            if (enableFullUiOptions){
+                std::ofstream fo(metadata.toStdString());
+                fo << uiUac_meshtype_labelled << std::endl;
+                fo << uiUac_whichAtriumIndex << std::endl;
+                fo << uiUac_fibreFileIndex << std::endl;
+                fo << uiUac_surftypeIndex << std::endl;
+                fo.close();
+            }
 
         } else if (dialogCode == QDialog::Rejected) {
             inputs->close();
@@ -2114,14 +2132,14 @@ void AtrialFibresView::SetTagNameFromPath(QString path){
 }
 
 void AtrialFibresView::SetFibresVariables(QString uaccmd_prefix){
-    // Variables set in this function: uac_anatomy, uac_surftype, uac_type, uac_fibre,
+    // Variables set in this function: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre,
     // uaccmd is set through the uaccmd_prefix input
     //
     MITK_INFO << "[SetFibresVariables] Set variables based on UAC user-defined parameters";
 
     uac_anatomy = "6"; // might change later
     uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
-    uac_type = uiUac_type.at(uiUac_typeIndex);
+    uac_whichAtrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex);
     uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
 
     uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
@@ -2131,13 +2149,13 @@ void AtrialFibresView::SetFibresVariables(QString uaccmd_prefix){
     }
 
     fibreAtlas.clear();
-    fibreAtlas << "_" + uac_type + "_" + uac_surftype;
+    fibreAtlas << "_" + uac_whichAtrium + "_" + uac_surftype;
 
     if(!uaccmd_prefix.isEmpty()){
         if(uaccmd_prefix.contains("FibreMapping")){
             uaccmd = "UAC_FibreMapping";
             if(uiUac_surftypeIndex==2){ // Check for Bilayer run
-                fibreAtlas << ("_" + uac_type + "_Epi");
+                fibreAtlas << ("_" + uac_whichAtrium + "_Epi");
             }
         } else{
             if(uiLabels.isEmpty()){
@@ -2150,7 +2168,7 @@ void AtrialFibresView::SetFibresVariables(QString uaccmd_prefix){
                     }
                 }
             }
-            uaccmd = uaccmd_prefix + uac_type;
+            uaccmd = uaccmd_prefix + uac_whichAtrium;
             uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
         }
     }

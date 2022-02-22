@@ -89,6 +89,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 QString AtrialFibresLandmarksView::fileName;
 QString AtrialFibresLandmarksView::directory;
+QString AtrialFibresLandmarksView::whichAtrium;
 
 const std::string AtrialFibresLandmarksView::VIEW_ID = "org.mitk.views.atrialfibreslandmarksview";
 
@@ -139,6 +140,9 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
+
+    isLeftAtrium = (AtrialFibresLandmarksView::whichAtrium.compare("LA", Qt::CaseInsensitive));
+    std::cout << (isLeftAtrium ? "Working on Left Atrium" : "Working on Right Atrium") << '\n';
 
     //Initialisation
     iniPreSurf();
@@ -256,9 +260,10 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     m_Controls.button_guide1->setEnabled(false);
 }
 
-void AtrialFibresLandmarksView::SetDirectoryFile(const QString directory, const QString fileName) {
+void AtrialFibresLandmarksView::SetDirectoryFile(const QString directory, const QString fileName, const QString whichAtrium) {
     AtrialFibresLandmarksView::fileName = fileName;
     AtrialFibresLandmarksView::directory = directory;
+    AtrialFibresLandmarksView::whichAtrium = whichAtrium;
 }
 
 void AtrialFibresLandmarksView::iniPreSurf() {
@@ -425,13 +430,13 @@ void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, v
         if (self->roughSeedLabels.empty() == false) {
             int radioButtonNumber = self->roughSeedLabels.back() - 10;
             if (radioButtonNumber == 1)
-            self->m_Rough.radioBtn_LSPV->setEnabled(true);
+            self->m_Rough.radioBtn_LA_LSPV->setEnabled(true);
             else if (radioButtonNumber == 3)
-            self->m_Rough.radioBtn_LIPV->setEnabled(true);
+            self->m_Rough.radioBtn_LA_LIPV->setEnabled(true);
             else if (radioButtonNumber == 5)
-            self->m_Rough.radioBtn_RSPV->setEnabled(true);
+            self->m_Rough.radioBtn_LA_RSPV->setEnabled(true);
             else if (radioButtonNumber == 7)
-            self->m_Rough.radioBtn_RIPV->setEnabled(true);
+            self->m_Rough.radioBtn_LA_RIPV->setEnabled(true);
             else if (radioButtonNumber == 9)
             self->m_Rough.radioBtn_LAA_base->setEnabled(true);
             else if (radioButtonNumber == 11)
@@ -467,17 +472,17 @@ void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, v
             if (self->refinedSeedLabels.empty() == false) {
                 int radioButtonNumber = self->refinedSeedLabels.back() - 10;
                 if (radioButtonNumber == 1)
-                self->m_Refined.radioBtn_LSPV->setEnabled(true);
+                self->m_Refined.radioBtn_LA_LSPV->setEnabled(true);
                 else if (radioButtonNumber == 3)
-                self->m_Refined.radioBtn_LIPV->setEnabled(true);
+                self->m_Refined.radioBtn_LA_LspvBody->setEnabled(true);
                 else if (radioButtonNumber == 5)
-                self->m_Refined.radioBtn_RSPV->setEnabled(true);
+                self->m_Refined.radioBtn_LA_RSPV->setEnabled(true);
                 else if (radioButtonNumber == 7)
-                self->m_Refined.radioBtn_RIPV->setEnabled(true);
+                self->m_Refined.radioBtn_LA_RspvBody->setEnabled(true);
                 else if (radioButtonNumber == 9)
-                self->m_Refined.radioBtn_LAA->setEnabled(true);
+                self->m_Refined.radioBtn_LA_LatWall->setEnabled(true);
                 else if (radioButtonNumber == 12)
-                self->m_Refined.radioBtn_FO->setEnabled(true);
+                self->m_Refined.radioBtn_LA_FO->setEnabled(true);
 
                 self->refinedSeedLabels.pop_back();
             }//_if
@@ -516,7 +521,11 @@ std::string AtrialFibresLandmarksView::GetShortcuts(){
 
 std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
     std::string res = "ROUGH LANDMARKS GUIDE\n Select rough locations for:\n";
-    res += "LSPV, LIPV\n RSPV, RIPV\nLAA tip, and LAA base.\n";
+    if(isLeftAtrium){
+        res += "LSPV, LIPV\n RSPV, RIPV\nLAA tip, and LAA base.\n";
+    } else{
+        res += "LSPV, LIPV\n RSPV, RIPV\nLAA tip, and LAA base.\n";
+    }
 
     return res;
 }
@@ -550,18 +559,18 @@ void AtrialFibresLandmarksView::UserSelectPvRoughLabel(){
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
 
-        if (m_Rough.radioBtn_LSPV->isChecked()) {
+        if (m_Rough.radioBtn_LA_LSPV->isChecked()) {
             roughSeedLabels.push_back(11); // LSPV
-            m_Rough.radioBtn_LSPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_LIPV->isChecked()) {
+            m_Rough.radioBtn_LA_LSPV->setEnabled(false);
+        } else if (m_Rough.radioBtn_LA_LIPV->isChecked()) {
             roughSeedLabels.push_back(13); // LIPV
-            m_Rough.radioBtn_LIPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_RSPV->isChecked()) {
+            m_Rough.radioBtn_LA_LIPV->setEnabled(false);
+        } else if (m_Rough.radioBtn_LA_RSPV->isChecked()) {
             roughSeedLabels.push_back(15); // RSPV
-            m_Rough.radioBtn_RSPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_RIPV->isChecked()) {
+            m_Rough.radioBtn_LA_RSPV->setEnabled(false);
+        } else if (m_Rough.radioBtn_LA_RIPV->isChecked()) {
             roughSeedLabels.push_back(17); // RIPV
-            m_Rough.radioBtn_RIPV->setEnabled(false);
+            m_Rough.radioBtn_LA_RIPV->setEnabled(false);
         } else if (m_Rough.radioBtn_LAA_base->isChecked()) {
             roughSeedLabels.push_back(19); // LAAP_1
             m_Rough.radioBtn_LAA_base->setEnabled(false);
@@ -585,24 +594,24 @@ void AtrialFibresLandmarksView::UserSelectPvRefinedLabel(){
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
 
-        if (m_Refined.radioBtn_LSPV->isChecked()) {
+        if (m_Refined.radioBtn_LA_LSPV->isChecked()) {
             refinedSeedLabels.push_back(11); // LSPV
-            m_Refined.radioBtn_LSPV->setEnabled(false);
-        } else if (m_Refined.radioBtn_LIPV->isChecked()) {
-            refinedSeedLabels.push_back(13); // LIPV
-            m_Refined.radioBtn_LIPV->setEnabled(false);
-        } else if (m_Refined.radioBtn_RSPV->isChecked()) {
+            m_Refined.radioBtn_LA_LSPV->setEnabled(false);
+        } else if (m_Refined.radioBtn_LA_LspvBody->isChecked()) {
+            refinedSeedLabels.push_back(13); // LspvBody
+            m_Refined.radioBtn_LA_LspvBody->setEnabled(false);
+        } else if (m_Refined.radioBtn_LA_RSPV->isChecked()) {
             refinedSeedLabels.push_back(15); // RSPV
-            m_Refined.radioBtn_RSPV->setEnabled(false);
-        } else if (m_Refined.radioBtn_RIPV->isChecked()) {
-            refinedSeedLabels.push_back(17); // RIPV
-            m_Refined.radioBtn_RIPV->setEnabled(false);
-        } else if (m_Refined.radioBtn_LAA->isChecked()) {
-            refinedSeedLabels.push_back(19); // LAAP_1
-            m_Refined.radioBtn_LAA->setEnabled(false);
-        } else if(m_Refined.radioBtn_FO){
+            m_Refined.radioBtn_LA_RSPV->setEnabled(false);
+        } else if (m_Refined.radioBtn_LA_RspvBody->isChecked()) {
+            refinedSeedLabels.push_back(17); // RspvBody
+            m_Refined.radioBtn_LA_RspvBody->setEnabled(false);
+        } else if (m_Refined.radioBtn_LA_LatWall->isChecked()) {
+            refinedSeedLabels.push_back(19); // LatWall
+            m_Refined.radioBtn_LA_LatWall->setEnabled(false);
+        } else if(m_Refined.radioBtn_LA_FO){ // LAAP_1
             refinedSeedLabels.push_back(22);
-            m_Refined.radioBtn_FO->setEnabled(false);
+            m_Refined.radioBtn_LA_FO->setEnabled(false);
         }
 
     } else if (dialogCode == QDialog::Rejected) {

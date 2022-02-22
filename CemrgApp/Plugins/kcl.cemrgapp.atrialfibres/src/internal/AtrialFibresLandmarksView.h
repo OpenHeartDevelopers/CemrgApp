@@ -59,7 +59,7 @@ class AtrialFibresLandmarksView : public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
-    static void SetDirectoryFile(const QString directory, const QString fileName);
+    static void SetDirectoryFile(const QString directory, const QString fileName, const QString whichAtrium);
     ~AtrialFibresLandmarksView();
 
     // helper functions
@@ -108,9 +108,11 @@ private:
 
     static QString fileName;
     static QString directory;
+    static QString whichAtrium;
 
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;
+    bool isLeftAtrium; 
 
     std::vector<int> roughSeedLabels;
     vtkSmartPointer<vtkIdList> roughSeedIds;

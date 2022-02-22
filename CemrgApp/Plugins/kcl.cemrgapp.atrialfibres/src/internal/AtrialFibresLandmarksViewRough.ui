@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>305</width>
+    <width>321</width>
     <height>248</height>
    </rect>
   </property>
@@ -49,7 +49,7 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QRadioButton" name="radioBtn_RIPV">
+      <widget class="QRadioButton" name="radioBtn_LA_RIPV">
        <property name="text">
         <string>Right Inferior PV</string>
        </property>
@@ -73,14 +73,14 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QRadioButton" name="radioBtn_RSPV">
+      <widget class="QRadioButton" name="radioBtn_LA_RSPV">
        <property name="text">
         <string>Right Superior PV</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QRadioButton" name="radioBtn_LSPV">
+      <widget class="QRadioButton" name="radioBtn_LA_LSPV">
        <property name="text">
         <string>Left Superior PV</string>
        </property>
@@ -94,7 +94,7 @@
       </widget>
      </item>
      <item row="2" column="0">
-      <widget class="QRadioButton" name="radioBtn_LIPV">
+      <widget class="QRadioButton" name="radioBtn_LA_LIPV">
        <property name="text">
         <string>Left Inferior PV</string>
        </property>
