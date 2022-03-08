@@ -106,13 +106,16 @@ private:
     void UserSelectPvRoughLabel();
     void UserSelectPvRefinedLabel();
 
+    void RoughUiEnableButtons();
+    void RefinedUiEnableButtons();
+
     static QString fileName;
     static QString directory;
     static QString whichAtrium;
 
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;
-    bool isLeftAtrium; 
+    bool isLeftAtrium;
 
     std::vector<int> roughSeedLabels;
     vtkSmartPointer<vtkIdList> roughSeedIds;

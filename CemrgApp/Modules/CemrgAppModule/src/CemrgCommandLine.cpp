@@ -721,12 +721,15 @@ QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString 
 
     QDir home(dir);
     QStringList arguments = GetDockerArguments(home.absolutePath());
-    
+
     arguments << uaccmd;
     arguments << fibreAtlas; // append list
     arguments << meshname;
     arguments << cmdargs; // append list
-    arguments << landmarks; // append list
+
+    for (int ix = 0; ix < landmarks.size(); ix++) {
+        arguments << home.relativeFilePath(landmarks.at(ix));
+    }
 
     // output filename checked when running ExecuteCommand
     QString outPath = home.absolutePath() + "/" + outnameext;

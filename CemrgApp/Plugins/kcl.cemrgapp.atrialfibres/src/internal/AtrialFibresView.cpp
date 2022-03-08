@@ -1129,10 +1129,20 @@ void AtrialFibresView::UacCalculationRough(){
     if (!UserSelectUacMesh()) return;
 
     // at least in LA, the uac codes need the refined landmarks for both stages
-    QString path2landmarks = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+    bool isRaLabelled = uac_whichAtrium.compare("RA", Qt::CaseInsensitive)==0;
 
-    if(path2landmarks.compare("FILE_NOT_FOUND")==0){
-        return;
+    QString landmarkFilename = (isRaLabelled) ? "prodRaLandmarks" : "prodLaRefinedLandmarks";
+    QString landmarkType = (isRaLabelled) ? "RA_LANDMARK" : "LA_REFINED";
+    QString path2landmarks = LandmarkFilesCreated(landmarkFilename, landmarkType);
+
+    if(path2landmarks.compare("FILE_NOT_FOUND")==0) return;
+
+    QStringList landmarksFilesList;
+    landmarksFilesList << path2landmarks;
+
+    if(isRaLabelled){
+        path2landmarks = LandmarkFilesCreated("prodRaRegion", "REGION");
+        landmarksFilesList << path2landmarks;
     }
 
     bool userInputAccepted = GetUserUacOptionsInputs();
@@ -1151,7 +1161,7 @@ void AtrialFibresView::UacCalculationRough(){
 
         cmd->SetDockerImageUac();
         MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 start";
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
         MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 end";
 
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
@@ -1189,10 +1199,21 @@ void AtrialFibresView::UacCalculationRefined(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
-    QString path2landmarks = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+    bool isRaLabelled = uac_whichAtrium.compare("RA", Qt::CaseInsensitive)==0;
+    QString landmarkFilename = (isRaLabelled) ? "prodRaLandmarks" : "prodLaRefinedLandmarks";
+    QString landmarkType = (isRaLabelled) ? "RA_LANDMARK" : "LA_REFINED";
+    QString path2landmarks = LandmarkFilesCreated(landmarkFilename, landmarkType);
 
     if(path2landmarks.compare("FILE_NOT_FOUND")==0){
         return;
+    }
+
+    QStringList landmarksFilesList;
+    landmarksFilesList << path2landmarks;
+
+    if(isRaLabelled){
+        path2landmarks = LandmarkFilesCreated("prodRaRegion", "REGION");
+        landmarksFilesList << path2landmarks;
     }
 
     bool userInputAccepted = GetUserUacOptionsInputs();
@@ -1215,7 +1236,7 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - Start";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - End";
 
         if (!IsOutputFileCorrect(directory, outputFiles)){
@@ -1251,7 +1272,7 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.pts";
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - Start";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, "");
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, QStringList());
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - End";
 
         bool uacOutputSuccess = IsOutputFileCorrect(directory, outputFiles);
@@ -1309,7 +1330,7 @@ void AtrialFibresView::UacFibreMapping(){
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetDockerImageUac();
-    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, "", "Fibre_1.vpts");
+    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, QStringList(), "Fibre_1.vpts");
 
     bool uacOutputSuccess = cmd->IsOutputSuccessful(uacOutput);
     MITK_WARN(!uacOutputSuccess) << ("Not found " + uaccmd).toStdString();
@@ -1359,6 +1380,13 @@ void AtrialFibresView::UacFibreMapping(){
 void AtrialFibresView::UacCalculationVerifyLabels(){
     MITK_INFO << "TIMELOG|VerifyLabels| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if(GetUserUacOptionsInputs(false)){
+        uac_whichAtrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex);
+        MITK_INFO << ("[UacCalculationVerifyLabels] Seleted ["+uac_whichAtrium+"] analysis").toStdString();
+    } else{
+        MITK_INFO << "User cancelled selection of LA/RA selection";
+        return;
+    }
     if(!GetUserEditLabelsInputs()){
         MITK_INFO << "labels not checked. Stopping";
         return;
@@ -1762,35 +1790,72 @@ bool AtrialFibresView::GetUserEditLabelsInputs(){
         m_UIEditLabels.setupUi(inputs);
         connect(m_UIEditLabels.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
         connect(m_UIEditLabels.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-        int dialogCode = inputs->exec();
+        std::cout << "WHICH ATRIUM: " << uac_whichAtrium.toStdString() << '\n';
+        bool isLeftAtrium = (uac_whichAtrium.compare("LA", Qt::CaseInsensitive)==0);
 
+        m_UIEditLabels.lineEdit_LA->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_LAA->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_LSPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_LIPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_RSPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_RIPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RAA->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA_SVC->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA_IVC->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA_CS->setVisible(!isLeftAtrium);
+
+        int dialogCode = inputs->exec();
         //Act on dialog return code
         if (dialogCode == QDialog::Accepted) {
             userInputAccepted = true;
             bool ok1, ok2, ok3, ok4, ok5, ok6;
-            int la, laa, ls, li, rs, ri;
+            if(isLeftAtrium){
+                int la, laa, ls, li, rs, ri;
 
-            la = m_UIEditLabels.lineEdit_LA->text().toInt(&ok1);
-            laa = m_UIEditLabels.lineEdit_LAA->text().toInt(&ok2);
-            ls = m_UIEditLabels.lineEdit_LSPV->text().toInt(&ok3);
-            li = m_UIEditLabels.lineEdit_LIPV->text().toInt(&ok4);
-            rs = m_UIEditLabels.lineEdit_RSPV->text().toInt(&ok5);
-            ri = m_UIEditLabels.lineEdit_RIPV->text().toInt(&ok6);
+                la = m_UIEditLabels.lineEdit_LA->text().toInt(&ok1);
+                laa = m_UIEditLabels.lineEdit_LAA->text().toInt(&ok2);
+                ls = m_UIEditLabels.lineEdit_LSPV->text().toInt(&ok3);
+                li = m_UIEditLabels.lineEdit_LIPV->text().toInt(&ok4);
+                rs = m_UIEditLabels.lineEdit_RSPV->text().toInt(&ok5);
+                ri = m_UIEditLabels.lineEdit_RIPV->text().toInt(&ok6);
 
-            if (!ok1) la = 1;
-            if (!ok2) laa = 19;
-            if (!ok3) ls = 11;
-            if (!ok4) li = 13;
-            if (!ok5) rs = 15;
-            if (!ok6) ri = 17;
+                if (!ok1) la = 1;
+                if (!ok2) laa = 19;
+                if (!ok3) ls = 11;
+                if (!ok4) li = 13;
+                if (!ok5) rs = 15;
+                if (!ok6) ri = 17;
 
-            uiLabels.clear();
-            uiLabels << QString::number(la);
-            uiLabels << QString::number(laa);
-            uiLabels << QString::number(ls);
-            uiLabels << QString::number(li);
-            uiLabels << QString::number(rs);
-            uiLabels << QString::number(ri);
+                uiLabels.clear();
+                uiLabels << QString::number(la);
+                uiLabels << QString::number(laa);
+                uiLabels << QString::number(ls);
+                uiLabels << QString::number(li);
+                uiLabels << QString::number(rs);
+                uiLabels << QString::number(ri);
+            } else{
+                int ra, raa, svc, svi, cs;
+
+                ra = m_UIEditLabels.lineEdit_LA->text().toInt(&ok1);
+                raa = m_UIEditLabels.lineEdit_LAA->text().toInt(&ok2);
+                svc = m_UIEditLabels.lineEdit_LSPV->text().toInt(&ok3);
+                svi = m_UIEditLabels.lineEdit_LIPV->text().toInt(&ok4);
+                cs = m_UIEditLabels.lineEdit_RSPV->text().toInt(&ok5);
+
+                if (!ok1) ra = 1;
+                if (!ok2) raa = 2;
+                if (!ok3) svc = 6;
+                if (!ok4) svi = 7;
+                if (!ok5) cs = 5;
+
+                uiLabels.clear();
+                uiLabels << QString::number(ra);
+                uiLabels << QString::number(raa);
+                uiLabels << QString::number(svc);
+                uiLabels << QString::number(svi);
+                uiLabels << QString::number(cs);
+            }
 
         } else if (dialogCode == QDialog::Rejected) {
             inputs->close();

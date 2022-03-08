@@ -101,6 +101,9 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_save1_rough, SIGNAL(clicked()), this, SLOT(SaveRoughPoints()));
     connect(m_Controls.button_save2_refined, SIGNAL(clicked()), this, SLOT(SaveRefinedPoints()));
 
+    isLeftAtrium = (AtrialFibresLandmarksView::whichAtrium.compare("LA", Qt::CaseInsensitive)==0);
+    std::cout << (isLeftAtrium ? "Working on Left Atrium" : "Working on Right Atrium") << '\n';
+
     //Create GUI widgets
     inputsRough = new QDialog(0,0);
     m_Rough.setupUi(inputsRough);
@@ -111,6 +114,9 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
     m_Refined.setupUi(inputsRefined);
     connect(m_Refined.buttonBox, SIGNAL(accepted()), inputsRefined, SLOT(accept()));
     connect(m_Refined.buttonBox, SIGNAL(rejected()), inputsRefined, SLOT(reject()));
+
+    RoughUiEnableButtons();
+    RefinedUiEnableButtons();
 
     //Setup renderer
     surfActor = vtkSmartPointer<vtkActor>::New();
@@ -140,9 +146,6 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
-
-    isLeftAtrium = (AtrialFibresLandmarksView::whichAtrium.compare("LA", Qt::CaseInsensitive));
-    std::cout << (isLeftAtrium ? "Working on Left Atrium" : "Working on Right Atrium") << '\n';
 
     //Initialisation
     iniPreSurf();
@@ -192,14 +195,19 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
 
     MITK_INFO << "[SaveRoughPoints] Saving rough points to file.";
     QString prodPath = directory + "/";
-    QString outname = "prodRoughLandmarks";
+    QString outname = (isLeftAtrium) ? "prodLaRoughLandmarks" : "prodRaLandmarks";
     ofstream fileRough, fileRoughLabels;
 
     MITK_INFO << "[SaveRoughPoints] Saving TXT file.";
     fileRough.open((prodPath + outname + ".txt").toStdString());
     fileRoughLabels.open((prodPath + outname + "-Labels.txt").toStdString());
 
-    std::vector<int> roughPointsOrder = {15, 17, 13, 11, 21, 19};
+	std::vector<int> roughPointsOrder;
+	if (isLeftAtrium) {
+		roughPointsOrder = { 15, 17, 13, 11, 21, 19 };
+	} else {
+		roughPointsOrder = { 29, 31, 33, 35, 37, 39 };
+	}
     for (unsigned int ix = 0; ix<roughPointsOrder.size(); ix++) {
         int index = GetIndex(roughSeedLabels, roughPointsOrder.at(ix));
         if(index!=-1){
@@ -231,7 +239,7 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
 
     MITK_INFO << "[SaveRefinedPoints] Saving refined points to file.";
     QString prodPath = directory + "/";
-    QString outname = "prodRefinedLandmarks";
+    QString outname = (isLeftAtrium) ? "prodLaRefinedLandmarks" : "prodRaRegion";
     ofstream fileRefined;
     ofstream fileRough, fileRefinedLabels;
 
@@ -239,7 +247,12 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     fileRefined.open((prodPath + outname + ".txt").toStdString());
     fileRefinedLabels.open((prodPath + outname + "-Labels.txt").toStdString());
 
-    std::vector<int> refinedPointsOrder = {19, 22, 13, 17};
+	std::vector<int> refinedPointsOrder;
+	if (isLeftAtrium) {
+		refinedPointsOrder = { 19, 22, 13, 17 };
+	} else {
+		refinedPointsOrder = { 29, 31, 33, 35, 37, 39 };
+	}
     for (unsigned int ix = 0; ix<refinedPointsOrder.size(); ix++) {
         int index = GetIndex(refinedSeedLabels, refinedPointsOrder.at(ix));
         if(index!=-1){
@@ -279,17 +292,19 @@ void AtrialFibresLandmarksView::iniPreSurf() {
 
 void AtrialFibresLandmarksView::Visualiser(double opacity){
     MITK_INFO << "[Visualiser]";
-    double max_scalar=-1, min_scalar=1e9,s;
-    vtkFloatArray *scalars = vtkFloatArray::New();
+    double max_scalar = (isLeftAtrium) ? 19 : 7;
+    double min_scalar = 1;
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
-    for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
-        s = scalars->GetTuple1(i);
-        if (s > max_scalar)
-            max_scalar = s;
-        if (s < min_scalar)
-            min_scalar = s;
-    }
+    // double max_scalar=-1, min_scalar=1e9,s;
+    // vtkFloatArray *scalars = vtkFloatArray::New();
+    // scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+    // for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
+    //     s = scalars->GetTuple1(i);
+    //     if (s > max_scalar)
+    //         max_scalar = s;
+    //     if (s < min_scalar)
+    //         min_scalar = s;
+    // }
     this->maxScalar = max_scalar;
     this->minScalar = min_scalar;
 
@@ -441,6 +456,18 @@ void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, v
             self->m_Rough.radioBtn_LAA_base->setEnabled(true);
             else if (radioButtonNumber == 11)
             self->m_Rough.radioBtn_LAA_tip->setEnabled(true);
+            else if (radioButtonNumber == 19)
+            self->m_Rough.radioBtn_RA_SVC_POST->setEnabled(true);
+            else if (radioButtonNumber == 21)
+            self->m_Rough.radioBtn_RA_IVC_POST->setEnabled(true);
+            else if (radioButtonNumber == 23)
+            self->m_Rough.radioBtn_RAA_TCV->setEnabled(true);
+            else if (radioButtonNumber == 25)
+            self->m_Rough.radioBtn_RA_CS_TCV->setEnabled(true);
+            else if (radioButtonNumber == 27)
+            self->m_Rough.radioBtn_RA_SVC_ANT->setEnabled(true);
+            else if (radioButtonNumber == 29)
+            self->m_Rough.radioBtn_RA_IVC_ANT->setEnabled(true);
 
             self->roughSeedLabels.pop_back();
         }//_if
@@ -484,6 +511,19 @@ void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, v
                 else if (radioButtonNumber == 12)
                 self->m_Refined.radioBtn_LA_FO->setEnabled(true);
 
+                else if (radioButtonNumber == 19)
+                self->m_Refined.radioBtn_RA_IVC_ANT->setEnabled(true);
+                else if (radioButtonNumber == 21)
+                self->m_Refined.radioBtn_RA_CS->setEnabled(true);
+                else if (radioButtonNumber == 23)
+                self->m_Refined.radioBtn_RA_IvcSvc->setEnabled(true);
+                else if (radioButtonNumber == 25)
+                self->m_Refined.radioBtn_RA_SVC_ANT->setEnabled(true);
+                else if (radioButtonNumber == 27)
+                self->m_Refined.radioBtn_RAA_ANT->setEnabled(true);
+                else if (radioButtonNumber == 29)
+                self->m_Refined.radioBtn_RAA_CS_ANT->setEnabled(true);
+
                 self->refinedSeedLabels.pop_back();
             }//_if
 
@@ -524,7 +564,12 @@ std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
     if(isLeftAtrium){
         res += "LSPV, LIPV\n RSPV, RIPV\nLAA tip, and LAA base.\n";
     } else{
-        res += "LSPV, LIPV\n RSPV, RIPV\nLAA tip, and LAA base.\n";
+        res += "SVC posterior \n";
+        res += "IVC posterior \n";
+        res += "RAA/TCV posterior \n";
+        res += "CS/TCV posterior \n";
+        res += "SVC anterior \n";
+        res += "IVC anterior \n";
     }
 
     return res;
@@ -532,10 +577,19 @@ std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
 
 std::string AtrialFibresLandmarksView::GetRefinedPointsGiude(){
     std::string res = "REFINED LANDMARKS GUIDE\n Select specific locations for: \n";
-    res += "Lateral wall (LAA) - Between LSPV and MV, away from LAA\n";
-    res += "Septal wall (FO)\n";
-    res += "Posterior segment of LSPV/LA junction\n";
-    res += "Posterior segment of RSPV/LA junction\n";
+    if(isLeftAtrium){
+        res += "Lateral wall (LAA) - Between LSPV and MV, away from LAA\n";
+        res += "Septal wall (FO)\n";
+        res += "Posterior segment of LSPV/LA junction\n";
+        res += "Posterior segment of RSPV/LA junction\n";
+    } else{
+        res += "IVC anterior \n";
+		res += "CS\n";
+        res += "IVC/SVC anterior \n";
+        res += "SVC anterior \n";
+        res += "RAA anterior \n";
+        res += "RAA/CS anterior \n";
+    }
 
     return res;
 }
@@ -559,24 +613,46 @@ void AtrialFibresLandmarksView::UserSelectPvRoughLabel(){
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
 
-        if (m_Rough.radioBtn_LA_LSPV->isChecked()) {
-            roughSeedLabels.push_back(11); // LSPV
-            m_Rough.radioBtn_LA_LSPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_LA_LIPV->isChecked()) {
-            roughSeedLabels.push_back(13); // LIPV
-            m_Rough.radioBtn_LA_LIPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_LA_RSPV->isChecked()) {
-            roughSeedLabels.push_back(15); // RSPV
-            m_Rough.radioBtn_LA_RSPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_LA_RIPV->isChecked()) {
-            roughSeedLabels.push_back(17); // RIPV
-            m_Rough.radioBtn_LA_RIPV->setEnabled(false);
-        } else if (m_Rough.radioBtn_LAA_base->isChecked()) {
-            roughSeedLabels.push_back(19); // LAAP_1
-            m_Rough.radioBtn_LAA_base->setEnabled(false);
-        } else if(m_Rough.radioBtn_LAA_tip){
-            roughSeedLabels.push_back(21);
-            m_Rough.radioBtn_LAA_tip->setEnabled(false);
+        if(isLeftAtrium){
+            if (m_Rough.radioBtn_LA_LSPV->isChecked()) {
+                roughSeedLabels.push_back(11); // LSPV
+                m_Rough.radioBtn_LA_LSPV->setEnabled(false);
+            } else if (m_Rough.radioBtn_LA_LIPV->isChecked()) {
+                roughSeedLabels.push_back(13); // LIPV
+                m_Rough.radioBtn_LA_LIPV->setEnabled(false);
+            } else if (m_Rough.radioBtn_LA_RSPV->isChecked()) {
+                roughSeedLabels.push_back(15); // RSPV
+                m_Rough.radioBtn_LA_RSPV->setEnabled(false);
+            } else if (m_Rough.radioBtn_LA_RIPV->isChecked()) {
+                roughSeedLabels.push_back(17); // RIPV
+                m_Rough.radioBtn_LA_RIPV->setEnabled(false);
+            } else if (m_Rough.radioBtn_LAA_base->isChecked()) {
+                roughSeedLabels.push_back(19); // LAAP_1
+                m_Rough.radioBtn_LAA_base->setEnabled(false);
+            } else if(m_Rough.radioBtn_LAA_tip){
+                roughSeedLabels.push_back(21);
+                m_Rough.radioBtn_LAA_tip->setEnabled(false);
+            }
+        } else{
+            if(m_Rough.radioBtn_RA_SVC_POST->isChecked()){
+                roughSeedLabels.push_back(29);
+                m_Rough.radioBtn_RA_SVC_POST->setEnabled(false);
+            } else if(m_Rough.radioBtn_RA_IVC_POST->isChecked()){
+                roughSeedLabels.push_back(31);
+                m_Rough.radioBtn_RA_IVC_POST->setEnabled(false);
+            } else if(m_Rough.radioBtn_RAA_TCV->isChecked()){
+                roughSeedLabels.push_back(33);
+                m_Rough.radioBtn_RAA_TCV->setEnabled(false);
+            } else if(m_Rough.radioBtn_RA_CS_TCV->isChecked()){
+                roughSeedLabels.push_back(35);
+                m_Rough.radioBtn_RA_CS_TCV->setEnabled(false);
+            } else if(m_Rough.radioBtn_RA_SVC_ANT->isChecked()){
+                roughSeedLabels.push_back(37);
+                m_Rough.radioBtn_RA_SVC_ANT->setEnabled(false);
+            } else if(m_Rough.radioBtn_RA_IVC_ANT->isChecked()){
+                roughSeedLabels.push_back(39);
+                m_Rough.radioBtn_RA_IVC_ANT->setEnabled(false);
+            }
         }
 
     } else if (dialogCode == QDialog::Rejected) {
@@ -593,25 +669,46 @@ void AtrialFibresLandmarksView::UserSelectPvRefinedLabel(){
 
     //Act on dialog return code
     if (dialogCode == QDialog::Accepted) {
-
-        if (m_Refined.radioBtn_LA_LSPV->isChecked()) {
-            refinedSeedLabels.push_back(11); // LSPV
-            m_Refined.radioBtn_LA_LSPV->setEnabled(false);
-        } else if (m_Refined.radioBtn_LA_LspvBody->isChecked()) {
-            refinedSeedLabels.push_back(13); // LspvBody
-            m_Refined.radioBtn_LA_LspvBody->setEnabled(false);
-        } else if (m_Refined.radioBtn_LA_RSPV->isChecked()) {
-            refinedSeedLabels.push_back(15); // RSPV
-            m_Refined.radioBtn_LA_RSPV->setEnabled(false);
-        } else if (m_Refined.radioBtn_LA_RspvBody->isChecked()) {
-            refinedSeedLabels.push_back(17); // RspvBody
-            m_Refined.radioBtn_LA_RspvBody->setEnabled(false);
-        } else if (m_Refined.radioBtn_LA_LatWall->isChecked()) {
-            refinedSeedLabels.push_back(19); // LatWall
-            m_Refined.radioBtn_LA_LatWall->setEnabled(false);
-        } else if(m_Refined.radioBtn_LA_FO){ // LAAP_1
-            refinedSeedLabels.push_back(22);
-            m_Refined.radioBtn_LA_FO->setEnabled(false);
+        if(isLeftAtrium){
+            if (m_Refined.radioBtn_LA_LSPV->isChecked()) {
+                refinedSeedLabels.push_back(11); // LSPV
+                m_Refined.radioBtn_LA_LSPV->setEnabled(false);
+            } else if (m_Refined.radioBtn_LA_LspvBody->isChecked()) {
+                refinedSeedLabels.push_back(13); // LspvBody
+                m_Refined.radioBtn_LA_LspvBody->setEnabled(false);
+            } else if (m_Refined.radioBtn_LA_RSPV->isChecked()) {
+                refinedSeedLabels.push_back(15); // RSPV
+                m_Refined.radioBtn_LA_RSPV->setEnabled(false);
+            } else if (m_Refined.radioBtn_LA_RspvBody->isChecked()) {
+                refinedSeedLabels.push_back(17); // RspvBody
+                m_Refined.radioBtn_LA_RspvBody->setEnabled(false);
+            } else if (m_Refined.radioBtn_LA_LatWall->isChecked()) {
+                refinedSeedLabels.push_back(19); // LatWall
+                m_Refined.radioBtn_LA_LatWall->setEnabled(false);
+            } else if(m_Refined.radioBtn_LA_FO){ // LAAP_1
+                refinedSeedLabels.push_back(22);
+                m_Refined.radioBtn_LA_FO->setEnabled(false);
+            }
+        } else {
+            if(m_Refined.radioBtn_RA_IVC_ANT->isChecked()){
+                refinedSeedLabels.push_back(29);
+                m_Refined.radioBtn_RA_IVC_ANT->setEnabled(false);
+            } else if(m_Refined.radioBtn_RA_CS->isChecked()){
+                refinedSeedLabels.push_back(31);
+                m_Refined.radioBtn_RA_CS->setEnabled(false);
+            } else if(m_Refined.radioBtn_RA_IvcSvc->isChecked()){
+                refinedSeedLabels.push_back(33);
+                m_Refined.radioBtn_RA_IvcSvc->setEnabled(false);
+            } else if(m_Refined.radioBtn_RA_SVC_ANT->isChecked()){
+                refinedSeedLabels.push_back(35);
+                m_Refined.radioBtn_RA_SVC_ANT->setEnabled(false);
+            } else if(m_Refined.radioBtn_RAA_ANT->isChecked()){
+                refinedSeedLabels.push_back(37);
+                m_Refined.radioBtn_RAA_ANT->setEnabled(false);
+            } else if(m_Refined.radioBtn_RAA_CS_ANT->isChecked()){
+                refinedSeedLabels.push_back(39);
+                m_Refined.radioBtn_RAA_CS_ANT->setEnabled(false);
+            }
         }
 
     } else if (dialogCode == QDialog::Rejected) {
@@ -634,6 +731,18 @@ std::string AtrialFibresLandmarksView::GetStructureIdFromLabel(bool refinedLandm
             res = "LAA_BASE";
         }else if(label==21){
             res = "LAA_TIP";
+        } else if(label==29){
+            res = "SVC_POST";
+        } else if(label==31){
+            res = "IVC_POST";
+        } else if(label==33){
+            res = "RAA_VALVE_P";
+        } else if(label==35){
+            res = "CS_VALVE_P";
+        } else if(label==37){
+            res = "SVC_ANT";
+        } else if(label==39){
+            res = "IVC_ANT";
         }
     } else{
         if(label==11){
@@ -648,6 +757,18 @@ std::string AtrialFibresLandmarksView::GetStructureIdFromLabel(bool refinedLandm
             res = "LAA";
         }else if(label==22){
             res = "FO";
+        } else if(label==29){
+            res = "IVC_ANT";
+        } else if(label==31){
+            res = "CS_TOP";
+        } else if(label==33){
+            res = "IVC_SVC_ANT";
+        } else if(label==35){
+            res = "SVC_ANT";
+        } else if(label==37){
+            res = "RAA_ANT";
+        } else if(label==39){
+            res = "RAA_CS_ANT";
         }
     }
 
@@ -662,3 +783,57 @@ int AtrialFibresLandmarksView::GetIndex(std::vector<int> v, int value){
     }
     return index;
 }
+
+void AtrialFibresLandmarksView::RoughUiEnableButtons(){
+    m_Rough.radioBtn_LAA_base->setVisible(isLeftAtrium);
+    m_Rough.radioBtn_LAA_tip->setVisible(isLeftAtrium);
+    m_Rough.radioBtn_LA_LSPV->setVisible(isLeftAtrium);
+    m_Rough.radioBtn_LA_LIPV->setVisible(isLeftAtrium);
+    m_Rough.radioBtn_LA_RSPV->setVisible(isLeftAtrium);
+    m_Rough.radioBtn_LA_RIPV->setVisible(isLeftAtrium);
+
+    m_Rough.radioBtn_RA_SVC_POST->setVisible(!isLeftAtrium);
+    m_Rough.radioBtn_RA_IVC_POST->setVisible(!isLeftAtrium);
+    m_Rough.radioBtn_RAA_TCV->setVisible(!isLeftAtrium);
+    m_Rough.radioBtn_RA_CS_TCV->setVisible(!isLeftAtrium);
+    m_Rough.radioBtn_RA_SVC_ANT->setVisible(!isLeftAtrium);
+    m_Rough.radioBtn_RA_IVC_ANT->setVisible(!isLeftAtrium);
+}
+
+void AtrialFibresLandmarksView::RefinedUiEnableButtons(){
+
+    m_Refined.radioBtn_LA_FO->setVisible(isLeftAtrium);
+    m_Refined.radioBtn_LA_LSPV->setVisible(isLeftAtrium);
+    m_Refined.radioBtn_LA_LatWall->setVisible(isLeftAtrium);
+    m_Refined.radioBtn_LA_LspvBody->setVisible(isLeftAtrium);
+    m_Refined.radioBtn_LA_RSPV->setVisible(isLeftAtrium);
+    m_Refined.radioBtn_LA_RspvBody->setVisible(isLeftAtrium);
+
+    m_Refined.radioBtn_RA_IVC_ANT->setVisible(!isLeftAtrium);
+    m_Refined.radioBtn_RA_CS->setVisible(!isLeftAtrium);
+    m_Refined.radioBtn_RA_IvcSvc->setVisible(!isLeftAtrium);
+    m_Refined.radioBtn_RA_SVC_ANT->setVisible(!isLeftAtrium);
+    m_Refined.radioBtn_RAA_ANT->setVisible(!isLeftAtrium);
+    m_Refined.radioBtn_RAA_CS_ANT->setVisible(!isLeftAtrium);
+}
+
+/*
+========================
+ CemrgApp radiobtn codes
+========================
+=== Landmarks ===
+SVC_POST - radioBtn_RA_SVC_POST - 29
+IVC_POST - radioBtn_RA_IVC_POST - 31
+RAA_VALVE_P - radioBtn_RAA_TCV -  33
+CS_VALVE_P - radioBtn_RA_CS_TCV - 35
+SVC_ANT  - radioBtn_RA_SVC_ANT -  37
+IVC_ANT  - radioBtn_RA_IVC_ANT -  39
+
+=== Region ===
+IVC_ANT - radioBtn_RA_IVC_ANT -      29
+CS_TOP - radioBtn_RA_CS -            31
+IVC_SVC_ANT - radioBtn_RA_IvcSvc -   33
+SVC_ANT - radioBtn_RA_SVC_ANT -      35
+RAA_ANT - radioBtn_RAA_ANT -         37
+RAA_CS_ANT - radioBtn_RAA_CS_ANT -   39
+*/

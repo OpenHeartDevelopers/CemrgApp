@@ -41,41 +41,6 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="3" column="0">
-      <widget class="QRadioButton" name="radioBtn_LA_LatWall">
-       <property name="text">
-        <string>Lateral wall (LAA)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="Line" name="line_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QRadioButton" name="radioBtn_LA_RspvBody">
-       <property name="text">
-        <string>RSPV/body junction</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QRadioButton" name="radioBtn_LA_LspvBody">
-       <property name="text">
-        <string>LSPV/body junction</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="Line" name="line">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label_rough">
        <property name="text">
@@ -83,13 +48,17 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QRadioButton" name="radioBtn_LA_FO">
+     <item row="6" column="0">
+      <widget class="QRadioButton" name="radioBtn_RAA_ANT">
        <property name="text">
-        <string>Septal Wall (FOO)</string>
+        <string>RAA Anterior</string>
        </property>
-       <property name="checked">
-        <bool>true</bool>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QRadioButton" name="radioBtn_LA_LspvBody">
+       <property name="text">
+        <string>LSPV/body junction</string>
        </property>
       </widget>
      </item>
@@ -103,6 +72,65 @@
        </property>
       </widget>
      </item>
+     <item row="4" column="1">
+      <widget class="QRadioButton" name="radioBtn_RA_CS">
+       <property name="text">
+        <string>CS Top</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QRadioButton" name="radioBtn_RAA_CS_ANT">
+       <property name="text">
+        <string>RAA/CS Anterior</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QRadioButton" name="radioBtn_LA_LatWall">
+       <property name="text">
+        <string>Lateral wall (LAA)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QRadioButton" name="radioBtn_LA_RspvBody">
+       <property name="text">
+        <string>RSPV/body junction</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QRadioButton" name="radioBtn_RA_IvcSvc">
+       <property name="text">
+        <string>IVC/SVC Anterior</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QRadioButton" name="radioBtn_LA_FO">
+       <property name="text">
+        <string>Septal Wall (FOO)</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="1">
       <widget class="QRadioButton" name="radioBtn_LA_RSPV">
        <property name="enabled">
@@ -110,6 +138,20 @@
        </property>
        <property name="text">
         <string>Right Superior PV</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QRadioButton" name="radioBtn_RA_IVC_ANT">
+       <property name="text">
+        <string>IVC Anterior</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QRadioButton" name="radioBtn_RA_SVC_ANT">
+       <property name="text">
+        <string>SVC_Anterior</string>
        </property>
       </widget>
      </item>
