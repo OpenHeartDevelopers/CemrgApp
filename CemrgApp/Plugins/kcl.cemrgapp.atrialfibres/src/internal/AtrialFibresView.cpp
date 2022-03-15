@@ -722,7 +722,7 @@ void AtrialFibresView::CreateLabelledMesh(){
         MITK_INFO << "[CreateLabelledMesh] Create clean segmentation";
         mitk::Image::Pointer segIm = mitk::Image::New();
         mitk::CastToMitkImage(pveins, segIm);
-        CemrgCommonUtils::Binarise(segIm);
+        segIm = CemrgCommonUtils::ReturnBinarised(segIm);
         mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
 
         MITK_INFO << "[CreateLabelledMesh] Create surface file and projecting tags";
