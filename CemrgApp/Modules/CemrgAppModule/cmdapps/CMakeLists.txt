@@ -8,6 +8,7 @@ option(BUILD_CEMRG_COLOURSURF "Build colour surface command line app. " ON)
 option(BUILD_CEMRG_VENTRICLE_SEGMENTATION_RELABEL "Build ventricle segmentation relabelling command line app" ON)
 option(BUILD_CEMRG_MORPH_ANALYSIS "Build atrial morph analysis" ON)
 option(BUILD_CEMRG_IMAGE_CONVERT "Build image convert format" ON)
+option(BUILD_CEMRG_SURFACE_AREA "Build surface area calculator" ON)
 
 if(BUILD_CemrgCMDApps)
   mitkFunctionCreateCommandLineApp(
@@ -88,3 +89,11 @@ if(BUILD_CEMRG_IMAGE_CONVERT)
     CPP_FILES CemrgImageConvertFormat.cpp
   )
 endif()
+
+IF(BUILD_CEMRG_SURFACE_AREA)
+    mitkFunctionCreateCommandLineApp(
+        NAME CemrgAreaFromThreshold
+        DEPENDS MitkSegmentation MitkCemrgAppModule
+        CPP_FILES CemrgAreaFromThreshold.cpp
+    )
+ENDIF()
