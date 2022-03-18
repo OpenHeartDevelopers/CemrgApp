@@ -1835,26 +1835,26 @@ bool AtrialFibresView::GetUserEditLabelsInputs(){
                 uiLabels << QString::number(rs);
                 uiLabels << QString::number(ri);
             } else{
-                int ra, raa, svc, svi, cs;
+                int ra, raa, svc, ivc, cs;
 
-                ra = m_UIEditLabels.lineEdit_LA->text().toInt(&ok1);
-                raa = m_UIEditLabels.lineEdit_LAA->text().toInt(&ok2);
-                svc = m_UIEditLabels.lineEdit_LSPV->text().toInt(&ok3);
-                svi = m_UIEditLabels.lineEdit_LIPV->text().toInt(&ok4);
-                cs = m_UIEditLabels.lineEdit_RSPV->text().toInt(&ok5);
+                ra = m_UIEditLabels.lineEdit_RA->text().toInt(&ok1);
+                svc = m_UIEditLabels.lineEdit_RA_SVC->text().toInt(&ok3);
+                ivc = m_UIEditLabels.lineEdit_RA_IVC->text().toInt(&ok4);
+                cs = m_UIEditLabels.lineEdit_RA_CS->text().toInt(&ok5);
+                raa = m_UIEditLabels.lineEdit_RAA->text().toInt(&ok2);
 
                 if (!ok1) ra = 1;
-                if (!ok2) raa = 2;
                 if (!ok3) svc = 6;
-                if (!ok4) svi = 7;
+                if (!ok4) ivc = 7;
                 if (!ok5) cs = 5;
+                if (!ok2) raa = 2;
 
                 uiLabels.clear();
                 uiLabels << QString::number(ra);
-                uiLabels << QString::number(raa);
                 uiLabels << QString::number(svc);
-                uiLabels << QString::number(svi);
+                uiLabels << QString::number(ivc);
                 uiLabels << QString::number(cs);
+                uiLabels << QString::number(raa);
             }
 
         } else if (dialogCode == QDialog::Rejected) {

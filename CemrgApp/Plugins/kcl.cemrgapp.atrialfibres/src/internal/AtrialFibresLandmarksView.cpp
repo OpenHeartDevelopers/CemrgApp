@@ -103,6 +103,10 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
 
     isLeftAtrium = (AtrialFibresLandmarksView::whichAtrium.compare("LA", Qt::CaseInsensitive)==0);
     std::cout << (isLeftAtrium ? "Working on Left Atrium" : "Working on Right Atrium") << '\n';
+    if(!isLeftAtrium){
+        m_Controls.button_save1_rough->setText("Save Landmarks");
+        m_Controls.button_save2_refined->setText("Save Region");
+    }
 
     //Create GUI widgets
     inputsRough = new QDialog(0,0);
@@ -552,18 +556,30 @@ void AtrialFibresLandmarksView::InitialisePickerObjects(){
 
 std::string AtrialFibresLandmarksView::GetShortcuts(){
     std::string res = "";
-    res += "ROUGH POINT SELECTION:\n\tSpace: select rough location\n\tDelete: remove rough location";
-    res += "\n\nREFINED POINT SELECTION:\n\tX: Select refined landmark\n\tD: remove refined landmark";
+    if(isLeftAtrium){
+        res += "ROUGH";
+    } else{
+        res += "LANDMARK";
+    }
+    res += " POINT SELECTION:\n\tSpace: select rough location\n\tDelete: remove rough location";
+    if(isLeftAtrium){
+        res += "\n\nREFINED";
+    } else{
+        res += "\n\nREGION";
+    }
+    res += " POINT SELECTION:\n\tX: Select refined landmark\n\tD: remove refined landmark";
     res += "\nHELP:\n\tH/h: Guides";
 
     return res;
 }
 
 std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
-    std::string res = "ROUGH LANDMARKS GUIDE\n Select rough locations for:\n";
+    std::string res = "";
     if(isLeftAtrium){
+        res = "ROUGH LANDMARKS GUIDE\n Select rough locations for:\n";
         res += "LSPV, LIPV\n RSPV, RIPV\nLAA tip, and LAA base.\n";
     } else{
+        res = "LANDMARKS GUIDE\n Select rough locations for:\n";
         res += "SVC posterior \n";
         res += "IVC posterior \n";
         res += "RAA/TCV posterior \n";
@@ -576,13 +592,15 @@ std::string AtrialFibresLandmarksView::GetRoughPointsGuide(){
 }
 
 std::string AtrialFibresLandmarksView::GetRefinedPointsGiude(){
-    std::string res = "REFINED LANDMARKS GUIDE\n Select specific locations for: \n";
+    std::string res = "";
     if(isLeftAtrium){
+        res = "REFINED LANDMARKS GUIDE\n Select specific locations for: \n";
         res += "Lateral wall (LAA) - Between LSPV and MV, away from LAA\n";
         res += "Septal wall (FO)\n";
         res += "Posterior segment of LSPV/LA junction\n";
         res += "Posterior segment of RSPV/LA junction\n";
     } else{
+        res = "REGION GUIDE\n Select specific locations for: \n";
         res += "IVC anterior \n";
 		res += "CS\n";
         res += "IVC/SVC anterior \n";
