@@ -310,6 +310,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_visualise">
+     <property name="styleSheet">
+      <string notr="true">text-align: left; color: rgb(132, 174, 235);</string>
+     </property>
+     <property name="text">
+      <string>    Visualise</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="Line" name="line_2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

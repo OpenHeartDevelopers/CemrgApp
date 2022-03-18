@@ -54,6 +54,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "AtrialFibresView.h"
 #include "AtrialFibresClipperView.h"
 #include "AtrialFibresLandmarksView.h"
+#include "AtrialFibresVisualiseView.h"
 
 //Micro services
 #include <usModuleRegistry.h>
@@ -721,7 +722,7 @@ void AtrialFibresView::CreateLabelledMesh(){
         MITK_INFO << "[CreateLabelledMesh] Create clean segmentation";
         mitk::Image::Pointer segIm = mitk::Image::New();
         mitk::CastToMitkImage(pveins, segIm);
-        CemrgCommonUtils::Binarise(segIm);
+        segIm = CemrgCommonUtils::ReturnBinarised(segIm);
         mitk::IOUtil::Save(segIm, StdStringPath("prodClean.nii"));
 
         MITK_INFO << "[CreateLabelledMesh] Create surface file and projecting tags";
@@ -939,16 +940,36 @@ void AtrialFibresView::ClipperPV(){
 
 }
 
-// Labelled Mesh to UAC
-void AtrialFibresView::SelectLandmarks(){
-    MITK_INFO << "TIMELOG|SelectLandmarks| Start";
-    MITK_INFO << "[MeshPreprocessing] ";
+// Visualise
+void AtrialFibresView::SimpleVisualisation(){
+    MITK_INFO << "[Visualise] ";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!LoadSurfaceChecks()) return;
 
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk");
+    AtrialFibresVisualiseView::SetDirectoryFile(directory, tagName+".vtk");
+    this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresvisualiseview");
+}
+
+// Labelled Mesh to UAC
+void AtrialFibresView::SelectLandmarks(){
+    MITK_INFO << "TIMELOG|SelectLandmarks| Start";
+    MITK_INFO << "[UAC_Landmarks] ";
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if (!LoadSurfaceChecks()) return;
+
+    if(GetUserUacOptionsInputs(false)){
+        uac_whichAtrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex);
+        MITK_INFO << ("[UAC_Landmarks] Seleted ["+uac_whichAtrium+"] analysis").toStdString();
+    } else{
+        MITK_INFO << "User cancelled selection of LA/RA selection";
+        return;
+    }
+
+    //Show the plugin
+    this->GetSite()->GetPage()->ResetPerspective();
+    AtrialFibresLandmarksView::SetDirectoryFile(directory, tagName+".vtk", uac_whichAtrium);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibreslandmarksview");
 }
 
@@ -1094,31 +1115,7 @@ void AtrialFibresView::UacCalculation(){
     MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
 
     if(userInputAccepted){
-        QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd, uacOutput;
-        QStringList fibreAtlas, outputFiles;
-
-        MITK_INFO << "Set variables based on UAC user-defined parameters";
-        uac_anatomy = "6"; // might change later
-        uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
-        uac_type = uiUac_type.at(uiUac_typeIndex);
-        uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
-
-        uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
-        uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
-        if(uiUac_fibreFileIndex==7){ // chosen Avg
-            uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
-        }
-
-        if(uiLabels.isEmpty()){
-            uiLabels.clear();
-            if(uiUac_meshtype_labelled){
-                QMessageBox::information(NULL, "Attention", "Check the labels are correct");
-                if(!GetUserEditLabelsInputs()){
-                    MITK_INFO << "labels not checked. Stopping";
-                    return;
-                }
-            }
-        }
+        SetFibresVariables();
 
         m_Controls.button_0_1_uacRough->setVisible(true);
         m_Controls.button_0_2_uacRefined->setVisible(true);
@@ -1132,54 +1129,39 @@ void AtrialFibresView::UacCalculationRough(){
     if (!UserSelectUacMesh()) return;
 
     // at least in LA, the uac codes need the refined landmarks for both stages
-    QString path2landmarks = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+    bool isRaLabelled = uac_whichAtrium.compare("RA", Qt::CaseInsensitive)==0;
 
-    if(path2landmarks.compare("FILE_NOT_FOUND")==0){
-        return;
+    QString landmarkFilename = (isRaLabelled) ? "prodRaLandmarks" : "prodLaRefinedLandmarks";
+    QString landmarkType = (isRaLabelled) ? "RA_LANDMARK" : "LA_REFINED";
+    QString path2landmarks = LandmarkFilesCreated(landmarkFilename, landmarkType);
+
+    if(path2landmarks.compare("FILE_NOT_FOUND")==0) return;
+
+    QStringList landmarksFilesList;
+    landmarksFilesList << path2landmarks;
+
+    if(isRaLabelled){
+        path2landmarks = LandmarkFilesCreated("prodRaRegion", "REGION");
+        landmarksFilesList << path2landmarks;
     }
 
     bool userInputAccepted = GetUserUacOptionsInputs();
     MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
 
     if(userInputAccepted){
-        QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd, uacOutput;
-        QStringList fibreAtlas, outputFiles;
+        QString uacOutput;
+        QStringList outputFiles;
 
-        MITK_INFO << "Set variables based on UAC user-defined parameters";
-        uac_anatomy = "6"; // might change later
-        uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
-        uac_type = uiUac_type.at(uiUac_typeIndex);
-        uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
-
-        uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
-        uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
-        if(uiUac_fibreFileIndex==7){ // chosen Avg
-            uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
-        }
-
-        if(uiLabels.isEmpty()){
-            uiLabels.clear();
-            if(uiUac_meshtype_labelled){
-                QMessageBox::information(NULL, "Attention", "Check the labels are correct");
-                if(!GetUserEditLabelsInputs()){
-                    MITK_INFO << "labels not checked. Stopping";
-                    return;
-                }
-            }
-        }
+        SetFibresVariables("UAC_1_"); // sets: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd
 
         // Cemrg CMD
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
         MITK_INFO << "Do Rough UAC code from Docker";
 
-        uaccmd = "UAC_1_" + uac_type;
-        uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
-
-        fibreAtlas << ("_" + uac_type + "_" + uac_surftype);
         cmd->SetDockerImageUac();
         MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 start";
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
         MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 end";
 
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
@@ -1217,50 +1199,36 @@ void AtrialFibresView::UacCalculationRefined(){
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
     if (!UserSelectUacMesh()) return;
 
-    QString path2landmarks = LandmarkFilesCreated("prodRefinedLandmarks", "REFINED");
+    bool isRaLabelled = uac_whichAtrium.compare("RA", Qt::CaseInsensitive)==0;
+    QString landmarkFilename = (isRaLabelled) ? "prodRaLandmarks" : "prodLaRefinedLandmarks";
+    QString landmarkType = (isRaLabelled) ? "RA_LANDMARK" : "LA_REFINED";
+    QString path2landmarks = LandmarkFilesCreated(landmarkFilename, landmarkType);
 
     if(path2landmarks.compare("FILE_NOT_FOUND")==0){
         return;
+    }
+
+    QStringList landmarksFilesList;
+    landmarksFilesList << path2landmarks;
+
+    if(isRaLabelled){
+        path2landmarks = LandmarkFilesCreated("prodRaRegion", "REGION");
+        landmarksFilesList << path2landmarks;
     }
 
     bool userInputAccepted = GetUserUacOptionsInputs();
     MITK_INFO(userInputAccepted) << "[UacCalculation] User Input accepted";
 
     if(userInputAccepted){
-        QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd, uacOutput;
-        QStringList fibreAtlas, outputFiles;
+        QString uacOutput;
+        QStringList outputFiles;
 
-        MITK_INFO << "Set variables based on UAC user-defined parameters";
-        uac_anatomy = "6"; // might change later
-        uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
-        uac_type = uiUac_type.at(uiUac_typeIndex);
-        uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
-
-        uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
-        uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
-        if(uiUac_fibreFileIndex==7){ // chosen Avg
-            uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
-        }
-
-        if(uiLabels.isEmpty()){
-            uiLabels.clear();
-            if(uiUac_meshtype_labelled){
-                QMessageBox::information(NULL, "Attention", "Check the labels are correct");
-                if(!GetUserEditLabelsInputs()){
-                    MITK_INFO << "labels not checked. Stopping";
-                    return;
-                }
-            }
-        }
+        SetFibresVariables("UAC_2A_"); // sets: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd
 
         // Cemrg CMD
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
         MITK_INFO << "Do Rough UAC code from Docker";
-
-        uaccmd = "UAC_2A_" + uac_type;
-        uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
-        fibreAtlas << ("_" + uac_type + "_" + uac_surftype);
 
         outputFiles.clear();
         outputFiles << "AnteriorMesh.elem" << "PosteriorMesh.elem";
@@ -1268,7 +1236,7 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "Post_Strength_Test_PA1.vtx" << "Post_Strength_Test_LS1.vtx";
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - Start";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, path2landmarks);
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - End";
 
         if (!IsOutputFileCorrect(directory, outputFiles)){
@@ -1296,8 +1264,7 @@ void AtrialFibresView::UacCalculationRefined(){
         udaLapSolve = cmd->OpenCarpDocker(directory, uda_par, "UD_Ant_UAC");
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| openCARP - End";
 
-        uaccmd = "UAC_2B_" + uac_type;
-        uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
+        SetFibresVariables("UAC_2B_");
 
         outputFiles.clear();
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
@@ -1305,7 +1272,7 @@ void AtrialFibresView::UacCalculationRefined(){
         outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.pts";
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - Start";
         cmd->SetDockerImageUac();
-        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, "");
+        uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, QStringList());
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.2 - End";
 
         bool uacOutputSuccess = IsOutputFileCorrect(directory, outputFiles);
@@ -1336,20 +1303,10 @@ void AtrialFibresView::UacFibreMapping(){
         MITK_INFO(GetUserUacOptionsInputs()) << "Reading UAC user inputs";
     }
 
-    QString uac_anatomy, uac_surftype, uac_type, uac_fibre, uaccmd, uacOutput;
-    QStringList fibreAtlas, outputFiles;
+    QString uacOutput;
+    QStringList outputFiles;
 
-    MITK_INFO << "Set variables based on UAC user-defined parameters";
-    uac_anatomy = "6"; // might change later
-    uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
-    uac_type = uiUac_type.at(uiUac_typeIndex);
-    uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
-
-    uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
-    uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
-    if(uiUac_fibreFileIndex==7){ // chosen Avg
-        uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
-    }
+    SetFibresVariables("UAC_FibreMapping"); // sets: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd
 
     QMessageBox::information(NULL, "Attention", "Checking for UAC Calculation output");
     outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
@@ -1359,8 +1316,6 @@ void AtrialFibresView::UacFibreMapping(){
 
     std::cout << "[uac_fibreField]" << uac_fibreField.toStdString() << '\n';
     std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
-
-    uaccmd = "UAC_FibreMapping";
 
     outputFiles.clear();
     outputFiles << "Fibre_1.vpts";
@@ -1373,14 +1328,9 @@ void AtrialFibresView::UacFibreMapping(){
     }
     cmdargs << uac_fibreFieldOutputName;// output of fibremapping
 
-    fibreAtlas << "_" + uac_type + "_" + uac_surftype;
-    if(uiUac_surftypeIndex==2){
-        fibreAtlas << ("_" + uac_type + "_Epi");
-    }
-
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetDockerImageUac();
-    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, "", "Fibre_1.vpts");
+    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, QStringList(), "Fibre_1.vpts");
 
     bool uacOutputSuccess = cmd->IsOutputSuccessful(uacOutput);
     MITK_WARN(!uacOutputSuccess) << ("Not found " + uaccmd).toStdString();
@@ -1430,6 +1380,13 @@ void AtrialFibresView::UacFibreMapping(){
 void AtrialFibresView::UacCalculationVerifyLabels(){
     MITK_INFO << "TIMELOG|VerifyLabels| Start";
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+    if(GetUserUacOptionsInputs(false)){
+        uac_whichAtrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex);
+        MITK_INFO << ("[UacCalculationVerifyLabels] Seleted ["+uac_whichAtrium+"] analysis").toStdString();
+    } else{
+        MITK_INFO << "User cancelled selection of LA/RA selection";
+        return;
+    }
     if(!GetUserEditLabelsInputs()){
         MITK_INFO << "labels not checked. Stopping";
         return;
@@ -1760,22 +1717,22 @@ bool AtrialFibresView::GetUserConvertFormatInputs(QString inname, QString inext,
     return userInputAccepted;
 }
 
-bool AtrialFibresView::GetUserUacOptionsInputs(){
+bool AtrialFibresView::GetUserUacOptionsInputs(bool enableFullUiOptions){
     QString metadata = Path("prodUacMetadata.txt");
     bool userInputAccepted=false;
 
     if(uiUac_fibreFile.size() == 0){
         uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A";
-        uiUac_type << "LA" << "RA" << "4Ch";
+        uiUac_whichAtrium << "LA" << "RA" << "4Ch";
         uiUac_surftype << "Endo" << "Epi" << "Bilayer";
     }
 
-    if(QFile::exists(metadata)){
+    if(enableFullUiOptions && QFile::exists(metadata)){
         int reply0 = Ask("Metadata Found", "Load previous analysis metadata found?");
         if(reply0==QMessageBox::Yes){
             std::ifstream fi(metadata.toStdString());
             fi >> uiUac_meshtype_labelled;
-            fi >> uiUac_typeIndex;
+            fi >> uiUac_whichAtriumIndex;
             fi >> uiUac_fibreFileIndex;
             fi >> uiUac_surftypeIndex;
             fi.close();
@@ -1789,22 +1746,32 @@ bool AtrialFibresView::GetUserUacOptionsInputs(){
         m_UIUac.setupUi(inputs);
         connect(m_UIUac.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
         connect(m_UIUac.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+
+        // enable or disable parts that might not be used
+        m_UIUac.label_3->setVisible(enableFullUiOptions);
+        m_UIUac.combo_uac_surftype->setVisible(enableFullUiOptions);
+        m_UIUac.label->setVisible(enableFullUiOptions);
+        m_UIUac.combo_uac_fibrefile->setVisible(enableFullUiOptions);
+        m_UIUac.check_uac_meshtype_labelled->setVisible(enableFullUiOptions);
+
         int dialogCode = inputs->exec();
 
         //Act on dialog return code
         if (dialogCode == QDialog::Accepted) {
             userInputAccepted = true;
             uiUac_meshtype_labelled = m_UIUac.check_uac_meshtype_labelled->isChecked();
-            uiUac_typeIndex = m_UIUac.combo_uac_type->currentIndex();
+            uiUac_whichAtriumIndex = m_UIUac.combo_uac_whichAtrium->currentIndex();
             uiUac_fibreFileIndex = m_UIUac.combo_uac_fibrefile->currentIndex();
             uiUac_surftypeIndex = m_UIUac.combo_uac_surftype->currentIndex();
 
-            std::ofstream fo(metadata.toStdString());
-            fo << uiUac_meshtype_labelled << std::endl;
-            fo << uiUac_typeIndex << std::endl;
-            fo << uiUac_fibreFileIndex << std::endl;
-            fo << uiUac_surftypeIndex << std::endl;
-            fo.close();
+            if (enableFullUiOptions){
+                std::ofstream fo(metadata.toStdString());
+                fo << uiUac_meshtype_labelled << std::endl;
+                fo << uiUac_whichAtriumIndex << std::endl;
+                fo << uiUac_fibreFileIndex << std::endl;
+                fo << uiUac_surftypeIndex << std::endl;
+                fo.close();
+            }
 
         } else if (dialogCode == QDialog::Rejected) {
             inputs->close();
@@ -1823,35 +1790,72 @@ bool AtrialFibresView::GetUserEditLabelsInputs(){
         m_UIEditLabels.setupUi(inputs);
         connect(m_UIEditLabels.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
         connect(m_UIEditLabels.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
-        int dialogCode = inputs->exec();
+        std::cout << "WHICH ATRIUM: " << uac_whichAtrium.toStdString() << '\n';
+        bool isLeftAtrium = (uac_whichAtrium.compare("LA", Qt::CaseInsensitive)==0);
 
+        m_UIEditLabels.lineEdit_LA->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_LAA->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_LSPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_LIPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_RSPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_RIPV->setVisible(isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RAA->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA_SVC->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA_IVC->setVisible(!isLeftAtrium);
+        m_UIEditLabels.lineEdit_RA_CS->setVisible(!isLeftAtrium);
+
+        int dialogCode = inputs->exec();
         //Act on dialog return code
         if (dialogCode == QDialog::Accepted) {
             userInputAccepted = true;
             bool ok1, ok2, ok3, ok4, ok5, ok6;
-            int la, laa, ls, li, rs, ri;
+            if(isLeftAtrium){
+                int la, laa, ls, li, rs, ri;
 
-            la = m_UIEditLabels.lineEdit_LA->text().toInt(&ok1);
-            laa = m_UIEditLabels.lineEdit_LAA->text().toInt(&ok2);
-            ls = m_UIEditLabels.lineEdit_LSPV->text().toInt(&ok3);
-            li = m_UIEditLabels.lineEdit_LIPV->text().toInt(&ok4);
-            rs = m_UIEditLabels.lineEdit_RSPV->text().toInt(&ok5);
-            ri = m_UIEditLabels.lineEdit_RIPV->text().toInt(&ok6);
+                la = m_UIEditLabels.lineEdit_LA->text().toInt(&ok1);
+                laa = m_UIEditLabels.lineEdit_LAA->text().toInt(&ok2);
+                ls = m_UIEditLabels.lineEdit_LSPV->text().toInt(&ok3);
+                li = m_UIEditLabels.lineEdit_LIPV->text().toInt(&ok4);
+                rs = m_UIEditLabels.lineEdit_RSPV->text().toInt(&ok5);
+                ri = m_UIEditLabels.lineEdit_RIPV->text().toInt(&ok6);
 
-            if (!ok1) la = 1;
-            if (!ok2) laa = 19;
-            if (!ok3) ls = 11;
-            if (!ok4) li = 13;
-            if (!ok5) rs = 15;
-            if (!ok6) ri = 17;
+                if (!ok1) la = 1;
+                if (!ok2) laa = 19;
+                if (!ok3) ls = 11;
+                if (!ok4) li = 13;
+                if (!ok5) rs = 15;
+                if (!ok6) ri = 17;
 
-            uiLabels.clear();
-            uiLabels << QString::number(la);
-            uiLabels << QString::number(laa);
-            uiLabels << QString::number(ls);
-            uiLabels << QString::number(li);
-            uiLabels << QString::number(rs);
-            uiLabels << QString::number(ri);
+                uiLabels.clear();
+                uiLabels << QString::number(la);
+                uiLabels << QString::number(laa);
+                uiLabels << QString::number(ls);
+                uiLabels << QString::number(li);
+                uiLabels << QString::number(rs);
+                uiLabels << QString::number(ri);
+            } else{
+                int ra, raa, svc, ivc, cs;
+
+                ra = m_UIEditLabels.lineEdit_RA->text().toInt(&ok1);
+                svc = m_UIEditLabels.lineEdit_RA_SVC->text().toInt(&ok3);
+                ivc = m_UIEditLabels.lineEdit_RA_IVC->text().toInt(&ok4);
+                cs = m_UIEditLabels.lineEdit_RA_CS->text().toInt(&ok5);
+                raa = m_UIEditLabels.lineEdit_RAA->text().toInt(&ok2);
+
+                if (!ok1) ra = 1;
+                if (!ok3) svc = 6;
+                if (!ok4) ivc = 7;
+                if (!ok5) cs = 5;
+                if (!ok2) raa = 2;
+
+                uiLabels.clear();
+                uiLabels << QString::number(ra);
+                uiLabels << QString::number(svc);
+                uiLabels << QString::number(ivc);
+                uiLabels << QString::number(cs);
+                uiLabels << QString::number(raa);
+            }
 
         } else if (dialogCode == QDialog::Rejected) {
             inputs->close();
@@ -2190,6 +2194,50 @@ void AtrialFibresView::SetAutomaticModeButtons(bool b){
 void AtrialFibresView::SetTagNameFromPath(QString path){
     QFileInfo fi(path);
     tagName = fi.baseName();
+}
+
+void AtrialFibresView::SetFibresVariables(QString uaccmd_prefix){
+    // Variables set in this function: uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre,
+    // uaccmd is set through the uaccmd_prefix input
+    //
+    MITK_INFO << "[SetFibresVariables] Set variables based on UAC user-defined parameters";
+
+    uac_anatomy = "6"; // might change later
+    uac_surftype = (uiUac_surftypeIndex==2) ? "Endo" : uiUac_surftype.at(uiUac_surftypeIndex);
+    uac_whichAtrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex);
+    uac_fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex);
+
+    uac_fibreField = "Labelled_" + uac_anatomy + "_" + uac_fibre;
+    uac_fibreFieldOutputName = "Fibre_" + uac_fibre;
+    if(uiUac_fibreFileIndex==7){ // chosen Avg
+        uac_fibreField = "Labelled_" + uac_fibre + "_" + uac_anatomy + "_1";
+    }
+
+    fibreAtlas.clear();
+    fibreAtlas << "_" + uac_whichAtrium + "_" + uac_surftype;
+
+    if(!uaccmd_prefix.isEmpty()){
+        if(uaccmd_prefix.contains("FibreMapping")){
+            uaccmd = "UAC_FibreMapping";
+            if(uiUac_surftypeIndex==2){ // Check for Bilayer run
+                fibreAtlas << ("_" + uac_whichAtrium + "_Epi");
+            }
+        } else{
+            if(uiLabels.isEmpty()){
+                uiLabels.clear();
+                if(uiUac_meshtype_labelled){
+                    QMessageBox::information(NULL, "Attention", "Check the labels are correct");
+                    if(!GetUserEditLabelsInputs()){
+                        MITK_INFO << "labels not checked. Stopping";
+                        return;
+                    }
+                }
+            }
+            uaccmd = uaccmd_prefix + uac_whichAtrium;
+            uaccmd += (!uiUac_meshtype_labelled) ? "_noPV" : "";
+        }
+    }
+
 }
 
 bool AtrialFibresView::LoadSurfaceChecks(){

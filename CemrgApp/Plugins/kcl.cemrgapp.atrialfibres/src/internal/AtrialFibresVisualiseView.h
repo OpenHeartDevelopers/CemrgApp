@@ -26,8 +26,8 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-#ifndef AtrialFibresLandmarksView_h
-#define AtrialFibresLandmarksView_h
+#ifndef AtrialFibresVisualiseView_h
+#define AtrialFibresVisualiseView_h
 
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
@@ -37,20 +37,17 @@ PURPOSE.  See the above copyright notices for more information.
 #include <CemrgAtriaClipper.h>
 #include <CemrgScarAdvanced.h>
 
-#include "ui_AtrialFibresLandmarksViewControls.h"
-#include "ui_AtrialFibresLandmarksViewRough.h"
-#include "ui_AtrialFibresLandmarksViewRefined.h"
+#include "ui_AtrialFibresVisualiseViewControls.h"
 
 /**
-  \brief AtrialFibresLandmarksView
+  \brief AtrialFibresVisualiseView
 
   \warning  This class is not yet documented. Use "git blame" and ask the author to provide basic documentation.
 
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-typedef std::pair<vtkIdType, double> SeedRadiusPairType;
-class AtrialFibresLandmarksView : public QmitkAbstractView {
+class AtrialFibresVisualiseView : public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -59,23 +56,14 @@ class AtrialFibresLandmarksView : public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
-    static void SetDirectoryFile(const QString directory, const QString fileName, const QString whichAtrium);
-    ~AtrialFibresLandmarksView();
-
-    // helper functions
-    std::string GetShortcuts();
-    std::string GetRoughPointsGuide();
-    std::string GetRefinedPointsGiude();
-    std::string GetStructureIdFromLabel(bool refinedLandmarks, int label);
-
-    int GetIndex(std::vector<int> v, int value);
+    static void SetDirectoryFile(const QString directory, const QString fileName);
+    ~AtrialFibresVisualiseView();
 
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
-    void Help(bool firstTime=false);
-    void SaveRoughPoints();
-    void SaveRefinedPoints();
+    void Help();
+    void LoadFibreFile();
 
 protected:
 
@@ -85,48 +73,21 @@ protected:
     virtual void OnSelectionChanged(
             berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
-    Ui::AtrialFibresLandmarksViewControls m_Controls;
-    Ui::AtrialFibresLandmarksViewRough m_Rough;
-    Ui::AtrialFibresLandmarksViewRefined m_Refined;
+    Ui::AtrialFibresVisualiseViewControls m_Controls;
 
 private:
 
     void iniPreSurf();
     void Visualiser(double opacity=1.0);
-    void VisualiserAuto(double opacity);
-    void VisualiserManual(double opacity);
 
     void SphereSourceVisualiser(vtkSmartPointer<vtkPolyData> pointSources, QString colour="1.0,0.0,0.0", double scaleFactor=0.01);
-    void PickCallBack(bool refinedLandmarks=false);
-    static void KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*);
-
-    void InitialisePickerObjects();
-
-    void UserSelectPvLabel(bool refinedLandmarks=false);
-    void UserSelectPvRoughLabel();
-    void UserSelectPvRefinedLabel();
-
-    void RoughUiEnableButtons();
-    void RefinedUiEnableButtons();
 
     static QString fileName;
     static QString directory;
-    static QString whichAtrium;
 
     mitk::Surface::Pointer surface;
     vtkSmartPointer<vtkActor> surfActor;
-    bool isLeftAtrium;
 
-    std::vector<int> roughSeedLabels;
-    vtkSmartPointer<vtkIdList> roughSeedIds;
-    vtkSmartPointer<vtkPolyData> roughLineSeeds;
-
-    std::vector<int> refinedSeedLabels;
-    vtkSmartPointer<vtkIdList> refinedSeedIds;
-    vtkSmartPointer<vtkPolyData> refinedLineSeeds;
-
-    QDialog* inputsRough;
-    QDialog* inputsRefined;
     double maxScalar, minScalar;
 
     vtkSmartPointer<vtkRenderer> renderer;
@@ -135,4 +96,4 @@ private:
 
 };
 
-#endif // AtrialFibresLandmarksView_h
+#endif // AtrialFibresVisualiseView_h

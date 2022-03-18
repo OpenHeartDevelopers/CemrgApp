@@ -82,7 +82,7 @@ public:
     bool GetUserRemeshingInputs();
     bool GetUserScarProjectionInputs();
     bool GetUserConvertFormatInputs(QString inname, QString inext, bool cleanmesh=false);
-    bool GetUserUacOptionsInputs();
+    bool GetUserUacOptionsInputs(bool enableFullUiOptions=true);
     bool GetUserEditLabelsInputs();
     bool LoadSurfaceChecks();
 
@@ -92,6 +92,7 @@ public:
     void SetManualModeButtons(bool b);
     void SetAutomaticModeButtons(bool b);
     void SetTagNameFromPath(QString path);
+    void SetFibresVariables(QString uaccmd_prefix="");
     void UserLoadSurface();
     bool UserSelectUacMesh();
     void CheckLoadedMeshQuality();
@@ -144,6 +145,7 @@ protected slots:
     void UacFibreMapping();
 
     void ScarProjection();
+    void SimpleVisualisation();
     void Reset();
 
 protected:
@@ -180,10 +182,14 @@ private:
     int uiSelector_pipeline; // =0 (imgAuto), =1 (imgManual), =2 (surf)
     bool uiSelector_imgauto_skipCemrgNet, uiSelector_imgauto_skipLabel, uiSelector_img_scar, uiSelector_man_useCemrgNet;
     bool uiUac_meshtype_labelled;
-    int uiUac_typeIndex, uiUac_fibreFileIndex, uiUac_surftypeIndex;
-    QStringList uiUac_fibreFile, uiUac_type, uiUac_surftype;
+    int uiUac_whichAtriumIndex, uiUac_fibreFileIndex, uiUac_surftypeIndex;
+    QStringList uiUac_fibreFile, uiUac_whichAtrium, uiUac_surftype;
     QString uac_fibreField, uac_fibreFieldOutputName, uacMeshName;
     QStringList uiLabels;
+
+    // fibres variables
+    QString uac_anatomy, uac_surftype, uac_whichAtrium, uac_fibre, uaccmd;
+    QStringList fibreAtlas;
 
     const int APPENDAGECUT   = 19;
     const int APPENDAGEUNCUT = 20;

@@ -166,6 +166,8 @@ public:
     inline std::string GetPrefix() { return (_leftrightpre + _prefix); };
     inline std::string PathAndPrefix() { return (GetOutputPath() + GetPrefix()); };
 
+    inline double GetLargestSurfaceArea(){return fi1_largestSurfaceArea;};
+
     inline bool isPointIDArrayEmpty() { return (_pointidarray.empty()); };
 
     inline void ClearLeftRightPrefix() { _leftrightpre = ""; };

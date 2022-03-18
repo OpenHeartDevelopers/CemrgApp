@@ -7,6 +7,7 @@ set(INTERNAL_CPP_FILES
   AtrialFibresView.cpp
   AtrialFibresClipperView.cpp
   AtrialFibresLandmarksView.cpp
+  AtrialFibresVisualiseView.cpp
 )
 
 set(UI_FILES
@@ -25,6 +26,7 @@ set(UI_FILES
   src/internal/AtrialFibresLandmarksViewControls.ui
   src/internal/AtrialFibresLandmarksViewRough.ui
   src/internal/AtrialFibresLandmarksViewRefined.ui
+  src/internal/AtrialFibresVisualiseViewControls.ui
 )
 
 set(MOC_H_FILES
@@ -32,6 +34,7 @@ set(MOC_H_FILES
   src/internal/AtrialFibresView.h
   src/internal/AtrialFibresClipperView.h
   src/internal/AtrialFibresLandmarksView.h
+  src/internal/AtrialFibresVisualiseView.h
 )
 
 # list of resource files which can be used by the plug-in
