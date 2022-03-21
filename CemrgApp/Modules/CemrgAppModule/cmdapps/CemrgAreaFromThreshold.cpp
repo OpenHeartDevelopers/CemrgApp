@@ -73,6 +73,7 @@ in the framework.
 #include <CemrgCommonUtils.h>
 
 QString num2str(double num);
+mitk::Surface::Pointer GetThresholdedImage(mitk::Surface::Pointer surf, double thresho, double maxval);
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -103,7 +104,10 @@ int main(int argc, char* argv[]) {
         "greater_than_threshold", "geq", mitkCommandLineParser::Bool,
         "Exact Threshold(s)", "Calculate values greater than threshold (Default = false)");
     parser.addArgument( // optional
-        "output", "o", mitkCommandLineParser::String,
+        "output_dir", "odir", mitkCommandLineParser::String,
+        "Output filename", "If file exists, appends at the end. (Default: output.csv)");
+    parser.addArgument( // optional
+        "output_file", "ofile", mitkCommandLineParser::String,
         "Output filename", "If file exists, appends at the end. (Default: output.csv)");
     parser.addArgument( // optional
         "output_mesh", "omsh", mitkCommandLineParser::String,
@@ -132,8 +136,9 @@ int main(int argc, char* argv[]) {
 
     // Default values for optional arguments
     auto geqThreshold = false;
+    std::string outDir = "";
     std::string outFilename = "output.csv";
-    std::string omshFilename = "";
+    std::string outMeshname = "";
     auto verbose = false;
 
     // Parse, cast and set optional argument
@@ -142,12 +147,16 @@ int main(int argc, char* argv[]) {
         geqThreshold = us::any_cast<bool>(parsedArgs["greater_than_threshold"]);
     }
 
-    if (parsedArgs.end() != parsedArgs.find("output")) {
-        outFilename = us::any_cast<std::string>(parsedArgs["output"]);
+    if (parsedArgs.end() != parsedArgs.find("output_dir")) {
+        outDir = us::any_cast<std::string>(parsedArgs["output_dir"]);
+    }
+
+    if (parsedArgs.end() != parsedArgs.find("output_file")) {
+        outFilename = us::any_cast<std::string>(parsedArgs["output_file"]);
     }
 
     if (parsedArgs.end() != parsedArgs.find("output_mesh")) {
-        omshFilename = us::any_cast<std::string>(parsedArgs["output_mesh"]);
+        outMeshname = us::any_cast<std::string>(parsedArgs["output_mesh"]);
     }
 
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
@@ -178,11 +187,16 @@ int main(int argc, char* argv[]) {
         }
 
         // output name (outFilename)
-        QString output_name = direct + "/" + QString::fromStdString(outFilename);
+        QString output_dir = direct;
+        if(!QString::fromStdString(outDir).isEmpty()){
+            QDir out_dir(QString::fromStdString(outDir));
+            output_dir = out_dir.absolutePath();
+        }
+        QString output_name = output_dir + "/" + QString::fromStdString(outFilename);
         bool outputFileExists = QFile::exists(output_name);
 
-        // output mesh (omshFilename)
-        QString omsh_name = direct + "/" + QString::fromStdString(omshFilename);
+        // output mesh (outMeshname)
+        QString omsh_name = output_dir + "/" + QString::fromStdString(outMeshname);
 
         MITK_INFO(verbose) << "Arguments parsed";
 
@@ -192,7 +206,8 @@ int main(int argc, char* argv[]) {
         // csadv parameters
         mitk::Surface::Pointer tempsurf = mitk::Surface::New();
         tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
-        CemrgCommonUtils::SetCellDataToPointData(tempsurf);
+        QString tmpsurf = direct + "/" + "tmp.vtk";
+        CemrgCommonUtils::SetCellDataToPointData(tempsurf, tmpsurf);
 
         std::unique_ptr<CemrgScarAdvanced> csadv(new CemrgScarAdvanced());
 
@@ -222,22 +237,21 @@ int main(int argc, char* argv[]) {
         prodFile1 << direct.toStdString() << ",";
         for (unsigned long ix = 0; ix < thres.size(); ix++) {
             double th = thres.at(ix);
-            double maxval = (geqThreshold) ? 500 : th;
+            double maxval = (geqThreshold) ? 1000 : th;
 
-            MITK_INFO << ("Threshold: " + QString::number(th)).toStdString();
-            std::string threShellPath = csadv->ThresholdedShell(th);
-            mitk::Surface::Pointer threShell = mitk::IOUtil::Load<mitk::Surface>(threShellPath);
-            QFile::remove(QString::fromStdString(threShellPath));
+            MITK_INFO(verbose) << ("Threshold: " + QString::number(th)).toStdString();
+            mitk::Surface::Pointer threShell = GetThresholdedImage(tempsurf, th, maxval);
 
-            std::string outMeshName = (omsh_name+"_"+num2str(th)+".vtk").toStdString();
+            std::string outMeshName = (omsh_name+"_thr"+num2str(th)+".vtk").toStdString();
             mitk::IOUtil::Save(threShell, outMeshName);
 
-            // area calculation and saving
+            MITK_INFO << "area calculation and saving";
             csadv->GetSurfaceAreaFromThreshold(th, maxval);
             prodFile1 << csadv->GetLargestSurfaceArea();
             prodFile1 << ",";
         }
         prodFile1 << '\n';
+        prodFile1.close();
 
         MITK_INFO(verbose) << "Goodbye!";
     } catch (const std::exception &e) {
@@ -255,5 +269,26 @@ QString num2str(double num){
     if (index>0){
         res.replace(index, 1, "dot");
     }
+    return res;
+}
+mitk::Surface::Pointer GetThresholdedImage(mitk::Surface::Pointer surf, double thresho, double maxval) {
+
+    vtkSmartPointer<vtkIntArray> exploration_values = vtkSmartPointer<vtkIntArray>::New();
+    vtkFloatArray* scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetCellData()->GetScalars());
+    vtkSmartPointer<vtkPolyData> temp = vtkSmartPointer<vtkPolyData>::New();
+    temp->DeepCopy(surf->GetVtkPolyData());
+
+    for (int i = 0; i < surf->GetVtkPolyData()->GetNumberOfCells(); i++) {
+        // exploration_values->InsertNextTuple1(0);
+        if (scalars->GetTuple1(i) >= thresho && scalars->GetTuple1(i) <= maxval)
+            exploration_values->InsertNextTuple1(1);
+        else
+            exploration_values->InsertNextTuple1(0);
+    }
+
+    temp->GetCellData()->SetScalars(exploration_values);
+    mitk::Surface::Pointer res = mitk::Surface::New();
+    res->SetVtkPolyData(temp);
+
     return res;
 }

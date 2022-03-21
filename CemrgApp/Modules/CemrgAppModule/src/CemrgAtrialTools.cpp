@@ -422,7 +422,6 @@ void CemrgAtrialTools::ProjectTagsOnSurface(ImageType::Pointer im, QString dir, 
         labelSegIm = SurfSegmentation(im, dir, "segmentation.vtk", th, bl, smth, ds);
     } else{
         mitk::CastToMitkImage(im, labelSegIm);
-        QString path = dir + "/";
     }
 
     std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
