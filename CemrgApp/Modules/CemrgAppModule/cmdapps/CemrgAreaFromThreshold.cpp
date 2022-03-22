@@ -206,8 +206,7 @@ int main(int argc, char* argv[]) {
         // csadv parameters
         mitk::Surface::Pointer tempsurf = mitk::Surface::New();
         tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
-        QString tmpsurf = direct + "/" + "tmp.vtk";
-        CemrgCommonUtils::SetCellDataToPointData(tempsurf, tmpsurf);
+        CemrgCommonUtils::SetCellDataToPointData(tempsurf); // to calculate areas
 
         std::unique_ptr<CemrgScarAdvanced> csadv(new CemrgScarAdvanced());
 
@@ -226,7 +225,7 @@ int main(int argc, char* argv[]) {
         }
 
         if(!outputFileExists){
-            prodFile1 << "FOLDER,";
+            prodFile1 << "CASE,";
             for (unsigned long ix = 0; ix < thres.size(); ix++) {
                 prodFile1 << thres.at(ix);
                 prodFile1 << ",";
@@ -234,13 +233,15 @@ int main(int argc, char* argv[]) {
             prodFile1 << '\n';
         }
 
-        prodFile1 << direct.toStdString() << ",";
+        QDir indir(direct);
+        prodFile1 << indir.dirName().toStdString() << ","; // assumes direct is the path to a case PATIENT_XYZ
         for (unsigned long ix = 0; ix < thres.size(); ix++) {
             double th = thres.at(ix);
             double maxval = (geqThreshold) ? 1000 : th;
 
             MITK_INFO(verbose) << ("Threshold: " + QString::number(th)).toStdString();
             mitk::Surface::Pointer threShell = GetThresholdedImage(tempsurf, th, maxval);
+            threShell->GetVtkPolyData()->GetCellData()->GetScalars()->SetName("elemTag");
 
             std::string outMeshName = (omsh_name+"_thr"+num2str(th)+".vtk").toStdString();
             mitk::IOUtil::Save(threShell, outMeshName);
