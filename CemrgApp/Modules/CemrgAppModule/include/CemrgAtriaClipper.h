@@ -110,7 +110,7 @@ private:
     //const int RIGHTINFERIORPV = 17;
     //const int RIGHTCOMMONPV   = 18;
     //const int APPENDAGECUT    = 19;
-    const int APPENDAGEUNCUT  = 20;
+    const int APPENDAGEUNCUT = 20;
     //const int DEFAULTVALUE    = 21;
 };
 

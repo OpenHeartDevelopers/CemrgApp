@@ -58,12 +58,12 @@ protected:
     mitk::Point3D ZeroPoint(mitk::Point3D apex, mitk::Point3D point);
     void ZeroVTKMesh(mitk::Point3D apex, mitk::Surface::Pointer surface);
 
-    mitk::Point3D RotatePoint(mitk::Matrix<double,3,3> rotationMatrix, mitk::Point3D point);
-    void RotateVTKMesh(mitk::Matrix<double,3,3> rotationMatrix, mitk::Surface::Pointer surface);
+    mitk::Point3D RotatePoint(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Point3D point);
+    void RotateVTKMesh(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Surface::Pointer surface);
 
     double GetCellArea(vtkSmartPointer<vtkPolyData> pd, vtkIdType cellID);
     mitk::Point3D GetCellCenter(vtkSmartPointer<vtkPolyData> pd, vtkIdType cellID);
-    mitk::Matrix<double,3,3> GetCellAxes(vtkSmartPointer<vtkCell> &cell, mitk::Point3D &termPt, mitk::Matrix<double,3,3> &J);
+    mitk::Matrix<double, 3, 3> GetCellAxes(vtkSmartPointer<vtkCell> &cell, mitk::Point3D &termPt, mitk::Matrix<double, 3, 3> &J);
 
 private:
 
@@ -75,18 +75,16 @@ private:
     mitk::Point3D Cross(mitk::Point3D vec1, mitk::Point3D vec2);
     std::vector<double> GetMinMax(vtkSmartPointer<vtkPolyData> pd, int dimension);
     mitk::Point3D Circlefit3d(mitk::Point3D point1, mitk::Point3D point2, mitk::Point3D point3);
-    mitk::Matrix<double,3,3> CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2);
+    mitk::Matrix<double, 3, 3> CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2);
 
-    void AssignpLabels(
-            int layer, std::vector<double>& pLabel, std::vector<int> index, std::vector<double> pAngles, double sepA, double freeA);
-    void AssigncLabels(
-            int layer, std::vector<int>& refCellLabels, std::vector<int> index, std::vector<double> cAngles, double sepA, double freeA);
+    void AssignpLabels(int layer, std::vector<double>& pLabel, std::vector<int> index, std::vector<double> pAngles, double sepA, double freeA);
+    void AssigncLabels(int layer, std::vector<int>& refCellLabels, std::vector<int> index, std::vector<double> cAngles, double sepA, double freeA);
 
     QString projectDirectory;
     std::vector<double> refArea;
     std::vector<double> refAhaArea;
-    std::vector<mitk::Matrix<double,3,3>> refJ;
-    std::vector<mitk::Matrix<double,3,3>> refQ;
+    std::vector<mitk::Matrix<double, 3, 3>> refJ;
+    std::vector<mitk::Matrix<double, 3, 3>> refQ;
     std::vector<int> refCellLabels;
     std::vector<double> refPointLabels;
     mitk::Surface::Pointer refSurface;

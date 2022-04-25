@@ -307,7 +307,7 @@
       <string notr="true">color: rgb(115, 210, 22);</string>
      </property>
      <property name="text">
-      <string>Evaluate PVI</string>
+      <string>Compare Pre/Post Ablation</string>
      </property>
     </widget>
    </item>

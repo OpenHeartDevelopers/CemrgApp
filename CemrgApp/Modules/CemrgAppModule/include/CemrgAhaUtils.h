@@ -32,8 +32,10 @@ PURPOSE.  See the above copyright notices for more information.
 // Qmitk
 #include <mitkImage.h>
 #include <mitkPointSet.h>
-//#include <vtkFloatArray.h>
 #include <MitkCemrgAppModuleExports.h>
+
+// VTK
+//#include <vtkFloatArray.h>
 #include <vtkSmartPointer.h>
 //#include <vtkMatrix3x3.h>
 
@@ -50,10 +52,10 @@ public:
 private:
 
     // Copied from Strain for AHA mapping
-    mitk::Matrix<double,3,3> CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2);
+    mitk::Matrix<double, 3, 3> CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2);
     mitk::Point3D Circlefit3d(mitk::Point3D point1, mitk::Point3D point2, mitk::Point3D point3);
-    mitk::Point3D RotatePoint(mitk::Matrix<double,3,3> rotationMatrix, mitk::Point3D point);
-    void RotateVTKMesh(mitk::Matrix<double,3,3> rotationMatrix, mitk::Surface::Pointer surface);
+    mitk::Point3D RotatePoint(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Point3D point);
+    void RotateVTKMesh(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Surface::Pointer surface);
     mitk::Point3D ZeroPoint(mitk::Point3D apex, mitk::Point3D point);
     void ZeroVTKMesh(mitk::Point3D apex, mitk::Surface::Pointer surface);
 };

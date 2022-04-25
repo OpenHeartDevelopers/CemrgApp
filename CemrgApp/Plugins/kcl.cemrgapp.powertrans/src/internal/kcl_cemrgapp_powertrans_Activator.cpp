@@ -31,22 +31,19 @@ PURPOSE.  See the above copyright notices for more information.
 
 namespace mitk {
 
-ctkPluginContext* kcl_cemrgapp_powertrans_Activator::pluginContext = nullptr;
+    ctkPluginContext* kcl_cemrgapp_powertrans_Activator::pluginContext = nullptr;
 
-void kcl_cemrgapp_powertrans_Activator::start(ctkPluginContext *context) {
+    void kcl_cemrgapp_powertrans_Activator::start(ctkPluginContext *context) {
+        BERRY_REGISTER_EXTENSION_CLASS(powertransView, context);
+        pluginContext = context;
+    }
 
-    BERRY_REGISTER_EXTENSION_CLASS(powertransView, context);
-    pluginContext = context;
-}
+    void kcl_cemrgapp_powertrans_Activator::stop(ctkPluginContext *context) {
+        Q_UNUSED(context)
+        pluginContext = nullptr;
+    }
 
-void kcl_cemrgapp_powertrans_Activator::stop(ctkPluginContext *context) {
-
-    Q_UNUSED(context)
-    pluginContext = nullptr;
-}
-
-ctkPluginContext* kcl_cemrgapp_powertrans_Activator::getContext() {
-
-    return pluginContext;
-}
+    ctkPluginContext* kcl_cemrgapp_powertrans_Activator::getContext() {
+        return pluginContext;
+    }
 }

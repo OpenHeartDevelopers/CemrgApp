@@ -57,7 +57,7 @@ PURPOSE.  See the above copyright notices for more information.
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class ScarCalculationsView : public QmitkAbstractView {
+class ScarCalculationsView: public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -71,6 +71,7 @@ public:
     static void GetInputsFromFile();
     static bool CheckForRequiredFiles();
     static int SearchDirectory(QString searchDir);
+    ScarCalculationsView();
     ~ScarCalculationsView();
 
 protected slots:
@@ -89,8 +90,7 @@ protected slots:
 
 protected:
 
-    virtual void OnSelectionChanged(
-            berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
+    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
     virtual void CreateQtPartControl(QWidget *parent) override;
     virtual void SetFocus() override;
 

@@ -89,17 +89,25 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFileInfo>
 #include <QStringList>
 
+// C++ Standard
+#include <numeric>
+
 // CemrgAppModule
 #include <CemrgAtriaClipper.h>
 #include <CemrgCommandLine.h>
 #include <CemrgMeasure.h>
 #include <CemrgCommonUtils.h>
-#include <numeric>
 
 const std::string AtrialScarView::VIEW_ID = "org.mitk.views.scar";
 
-void AtrialScarView::CreateQtPartControl(QWidget *parent) {
+AtrialScarView::AtrialScarView(){
+    this->fileName = "";
+    this->directory = "";
+    this->debugSCARname = "";
+    this->alternativeNiftiFolder = "";
+}
 
+void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
     connect(m_Controls.button_1, SIGNAL(clicked()), this, SLOT(LoadDICOM()));
@@ -149,26 +157,20 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
 }
 
 void AtrialScarView::SetFocus() {
-
     m_Controls.button_1->setFocus();
 }
 
-void AtrialScarView::OnSelectionChanged(
-        berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
+void AtrialScarView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, const QList<mitk::DataNode::Pointer>& /*nodes*/) {
 }
 
 void AtrialScarView::LoadDICOM() {
 
-    int reply1 = QMessageBox::No;
-#if defined(__APPLE__)
     MITK_INFO << "Ask user about alternative DICOM reader";
-    reply1 = QMessageBox::question(NULL, "Question",
-                                   "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
-#endif
+    int reply = QMessageBox::question(NULL, "Question", "Use alternative DICOM reader?", QMessageBox::Yes, QMessageBox::No);
 
-    if (reply1 == QMessageBox::Yes) {
+    if (reply == QMessageBox::Yes) {
 
-        QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+        QString dicomFolder = QFileDialog::getExistingDirectory(NULL, "Open folder with DICOMs.", mitk::IOUtil::GetProgramPath().c_str(), QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         QString tmpNiftiFolder = cmd->DockerDicom2Nifti(dicomFolder);
 
@@ -180,21 +182,21 @@ void AtrialScarView::LoadDICOM() {
             QDir niftiFolder(tmpNiftiFolder);
             QStringList niftiFiles = niftiFolder.entryList();
 
-            if (niftiFiles.size()>0) {
+            if (niftiFiles.size() > 0) {
 
                 QString thisFile, path;
-                for(int ix=0; ix<niftiFiles.size(); ix++) {
+                for (int ix = 0; ix < niftiFiles.size(); ix++) {
 
                     // load here files
                     thisFile = niftiFiles.at(ix);
                     if (thisFile.contains(".nii", Qt::CaseSensitive)) {
-                        if (thisFile.contains("lge", Qt::CaseInsensitive) ||  thisFile.contains("mra", Qt::CaseInsensitive)) {
+                        if (thisFile.contains("lge", Qt::CaseInsensitive) || thisFile.contains("mra", Qt::CaseInsensitive)) {
 
                             path = niftiFolder.absolutePath() + "/" + thisFile;
                             mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(path.toStdString());
                             std::string key = "dicom.series.SeriesDescription";
                             mitk::DataStorage::SetOfObjects::Pointer set = mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
-                            set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), thisFile.left(thisFile.length()-4).toStdString().c_str());
+                            set->Begin().Value()->GetData()->GetPropertyList()->SetStringProperty(key.c_str(), thisFile.left(thisFile.length() - 4).toStdString().c_str());
 
                         }//_if
                     }//_if
@@ -220,18 +222,15 @@ void AtrialScarView::LoadDICOM() {
 }
 
 void AtrialScarView::ProcessIMGS() {
-
     //Toggle visibility of buttons
-    if (m_Controls.button_2_1->isVisible()){
+    if (m_Controls.button_2_1->isVisible()) {
         m_Controls.button_2_1->setVisible(false);
-    }
-    else{
+    } else {
         m_Controls.button_2_1->setVisible(true);
     }
 }
 
 void AtrialScarView::ConvertNII() {
-
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
     if (nodes.size() != 2) {
@@ -249,20 +248,20 @@ void AtrialScarView::ConvertNII() {
         std::string seriesDescription;
         node->GetData()->GetPropertyList()->GetStringProperty("dicom.series.SeriesDescription", seriesDescription);
 
-        if (seriesDescription.find("LGE")      != seriesDescription.npos) indexNodes.push_back(0);
+        if (seriesDescription.find("LGE") != seriesDescription.npos) indexNodes.push_back(0);
         else if (seriesDescription.find("MRA") != seriesDescription.npos) indexNodes.push_back(1);
 
         //Trim whitespaces
-        seriesDescription = QString::fromStdString(seriesDescription).replace(")","").toStdString();
-        seriesDescription = QString::fromStdString(seriesDescription).replace("(","").toStdString();
-        seriesDescription = QString::fromStdString(seriesDescription).simplified().replace(" ","").toStdString();
+        seriesDescription = QString::fromStdString(seriesDescription).replace(")", "").toStdString();
+        seriesDescription = QString::fromStdString(seriesDescription).replace("(", "").toStdString();
+        seriesDescription = QString::fromStdString(seriesDescription).simplified().replace(" ", "").toStdString();
         seriesDscrps.push_back(seriesDescription);
     }//_for
 
     //Sort indexes based on comparing values
     std::vector<int> index(indexNodes.size());
     std::iota(index.begin(), index.end(), 0);
-    std::sort(index.begin(), index.end(), [&](int i1, int i2) {return indexNodes[i1]<indexNodes[i2];});
+    std::sort(index.begin(), index.end(), [&](int i1, int i2) {return indexNodes[i1] < indexNodes[i2]; });
 
     //Warning for cases when type is not found
     size_t length1 = nodes.size();
@@ -270,7 +269,7 @@ void AtrialScarView::ConvertNII() {
     bool test = std::adjacent_find(indexNodes.begin(), indexNodes.end(), std::not_equal_to<int>()) == indexNodes.end();
     if (length1 != length2 || test) {
         QMessageBox::warning(NULL, "Attention",
-                             "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
+            "Cannot find the type of images automatically. Revert to user order and selections in the data manager: LGE at the top, then CEMRA at the bottom!");
         index.resize(nodes.size());
         std::iota(index.begin(), index.end(), 0);
     }//_if
@@ -278,16 +277,14 @@ void AtrialScarView::ConvertNII() {
     //Convert to Nifti
     int ctr = 0;
     QString path, type;
-    bool successfulNitfi, resampleImage, reorientToRAI;
-    resampleImage = true;
-    reorientToRAI = true;
+    bool resampleImage = true, reorientToRAI = true;
 
     this->BusyCursorOn();
     mitk::ProgressBar::GetInstance()->AddStepsToDo(index.size());
     foreach (int idx, index) {
-        type = (ctr==0) ? "LGE":"MRA";
+        type = (ctr == 0) ? "LGE" : "MRA";
         path = directory + "/dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
+        bool successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), path, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
             std::string key = "dicom.series.SeriesDescription";
@@ -310,7 +307,7 @@ void AtrialScarView::ConvertNII() {
 void AtrialScarView::AnalysisChoice() {
 
     int reply = QMessageBox::question(
-                NULL, "Question", "Do you want an automatic analysis?", QMessageBox::Yes, QMessageBox::No);
+        NULL, "Question", "Do you want an automatic analysis?", QMessageBox::Yes, QMessageBox::No);
 
     if (reply == QMessageBox::Yes) {
 
@@ -343,9 +340,9 @@ void AtrialScarView::AutomaticAnalysis() {
 
     if (directory.isEmpty()) {
         direct = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory",
-                    mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory",
+            mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         directory = direct;
     } else {
         direct = directory;
@@ -355,7 +352,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
     MITK_INFO(debugging) << "[DEBUG] Searching for CEMRGNET output";
 
-    while(searchit.hasNext()) {
+    while (searchit.hasNext()) {
         QFileInfo searchfinfo(searchit.next());
         if (searchfinfo.fileName().contains(".nii", Qt::CaseSensitive)) {
             if (searchfinfo.fileName().contains("dcm-LGE", Qt::CaseSensitive))
@@ -369,14 +366,14 @@ void AtrialScarView::AutomaticAnalysis() {
         }
     }//_while
 
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     m_UIcemrgnet.setupUi(inputs);
     connect(m_UIcemrgnet.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_UIcemrgnet.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
     int dialogCode = inputs->exec();
 
     QString meType_UI;
-    int minStep_UI =-1, maxStep_UI = 3;
+    int minStep_UI = -1, maxStep_UI = 3;
     int methodType_UI = 2, thresh_methodType_UI = 1;
     QStringList separated_thresh_list;
     std::vector<double> values_vector;
@@ -396,7 +393,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
         MITK_INFO << ("[UI] Using: " + meType_UI + " Intensity projection.").toStdString();
         MITK_INFO << ("[UI] In/out values: (" + QString::number(minStep_UI) + ", " +
-                      QString::number(maxStep_UI) + ")").toStdString();
+            QString::number(maxStep_UI) + ")").toStdString();
         MITK_INFO << QString::number(methodType_UI);
         MITK_INFO << "[UI] Thresholding information.";
 
@@ -407,7 +404,7 @@ void AtrialScarView::AutomaticAnalysis() {
         if (m_UIcemrgnet.iir_radioButton->isChecked()) { // IIR method
             whichThresh = "IIR";
             thresh_list = m_UIcemrgnet.iir_textEdit->toPlainText();
-            separated_thresh_list << "0.97" << "1.16";
+            separated_thresh_list << "0.97" << "1.2" << "1.32";
         } else if (m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
             whichThresh = "MEAN+SD";
             thresh_list = m_UIcemrgnet.meanSD_textEdit->toPlainText();
@@ -424,7 +421,7 @@ void AtrialScarView::AutomaticAnalysis() {
             MITK_INFO << "[UI] Creating list of thresholds";
             separated_thresh_list.removeLast();
             separated_thresh_list.removeLast();
-            separated_thresh_list = thresh_list.split("," , QString::SkipEmptyParts);
+            separated_thresh_list = thresh_list.split(",", QString::SkipEmptyParts);
             int listspaces = separated_thresh_list.removeAll(" ");
             int listduplicates = separated_thresh_list.removeDuplicates();
             separated_thresh_list.sort();
@@ -435,11 +432,10 @@ void AtrialScarView::AutomaticAnalysis() {
 
         }//_if
 
-        double tryNumber;
-        bool vOK;
-        for(int ix=0; ix<separated_thresh_list.size(); ix++) {
+        for (int ix = 0; ix < separated_thresh_list.size(); ix++) {
             MITK_INFO << separated_thresh_list.at(ix);
-            tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
+            bool vOK;
+            double tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
             if (vOK) values_vector.push_back(tryNumber);
         }
 
@@ -450,8 +446,8 @@ void AtrialScarView::AutomaticAnalysis() {
 
         MITK_INFO << "[ATTENTION] Cancelled automatic analysis.";
         QMessageBox::warning(
-                    NULL, "Automatic analysis cancelled",
-                    "'Cancel' button pressed, no calculations were made.");
+            NULL, "Automatic analysis cancelled",
+            "'Cancel' button pressed, no calculations were made.");
         inputs->close();
         inputs->deleteLater();
         return;
@@ -480,7 +476,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
         if (!cnnPath.isEmpty()) {
 
-            MITK_INFO << ("Successful prediction with file "+cnnPath).toStdString();
+            MITK_INFO << ("Successful prediction with file " + cnnPath).toStdString();
             // QString direct = finfo.absolutePath();
             MITK_INFO << "[AUTOMATIC_ANALYSIS][1] Adjust CNN label to MRA";
             mitk::Image::Pointer mraIMG = mitk::IOUtil::Load<mitk::Image>(mraPath.toStdString());
@@ -502,12 +498,11 @@ void AtrialScarView::AutomaticAnalysis() {
             changeFilter->SetOutputOrigin(origin);
             changeFilter->Update();
 
-            mitk::Image::Pointer cnnLA = mitk::Image::New();
             cnnIMG->Initialize(changeFilter->GetOutput());
             cnnIMG->SetVolume(changeFilter->GetOutput()->GetScalarPointer());
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][2] Image registration";
-            QString cnnPath = direct + "/LA.nii";
+            cnnPath = direct + "/LA.nii";
             QString laregPath = direct + "/LA-reg.nii";
 
             mitk::IOUtil::Save(cnnIMG, cnnPath.toStdString());
@@ -531,8 +526,7 @@ void AtrialScarView::AutomaticAnalysis() {
             lblShpKpNObjImgFltr1->SetInput(connected1->GetOutput());
             lblShpKpNObjImgFltr1->SetBackgroundValue(0);
             lblShpKpNObjImgFltr1->SetNumberOfObjects(1);
-            lblShpKpNObjImgFltr1->SetAttribute(
-                        LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+            lblShpKpNObjImgFltr1->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
             lblShpKpNObjImgFltr1->Update();
 
             DuplicatorType::Pointer duplicator = DuplicatorType::New();
@@ -544,7 +538,7 @@ void AtrialScarView::AutomaticAnalysis() {
                     itDUP.Set(1);
             QString segCleanPath = direct + "/prodClean.nii";
             mitk::IOUtil::Save(mitk::ImportItkImage(duplicator->GetOutput()), segCleanPath.toStdString());
-            MITK_INFO << ("[...][3.1] Saved file: "+segCleanPath).toStdString();
+            MITK_INFO << ("[...][3.1] Saved file: " + segCleanPath).toStdString();
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][4] Vein clipping mesh";
             QString output1 = cmd->ExecuteSurf(direct, segCleanPath, "close", 1, .5, 0, 10);
@@ -558,7 +552,7 @@ void AtrialScarView::AutomaticAnalysis() {
 
             vtkSmartPointer<vtkPointLocator> pointLocator = vtkSmartPointer<vtkPointLocator>::New();
             vtkSmartPointer<vtkPolyData> pd = shell->Clone()->GetVtkPolyData();
-            for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+            for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
                 double* point = pd->GetPoint(i);
                 point[0] = -point[0];
                 point[1] = -point[1];
@@ -572,8 +566,7 @@ void AtrialScarView::AutomaticAnalysis() {
             typedef itk::BinaryMorphologicalOpeningImageFilter<ImageTypeCHAR, ImageTypeCHAR, CrossType> MorphFilterType;
             typedef itk::RelabelComponentImageFilter<ImageTypeCHAR, ImageTypeCHAR> RelabelFilterType;
 
-            ImageTypeCHAR::Pointer veinsSegImage = ImageTypeCHAR::New();
-            veinsSegImage = lblShpKpNObjImgFltr1->GetOutput();
+            ImageTypeCHAR::Pointer veinsSegImage = lblShpKpNObjImgFltr1->GetOutput();
             ItType itORG(orgSegImage, orgSegImage->GetRequestedRegion());
             ItType itVEN(veinsSegImage, veinsSegImage->GetRequestedRegion());
             itORG.GoToBegin();
@@ -607,7 +600,7 @@ void AtrialScarView::AutomaticAnalysis() {
             relabeler->SetInput(connected2->GetOutput());
             relabeler->Update();
             mitk::IOUtil::Save(mitk::ImportItkImage(relabeler->GetOutput()), (direct + "/prodSeparatedVeins.nii").toStdString());
-            MITK_INFO << ("[...][5.1] Saved file: "+direct + "/prodSeparatedVeins.nii").toStdString();
+            MITK_INFO << ("[...][5.1] Saved file: " + direct + "/prodSeparatedVeins.nii").toStdString();
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][6] Find vein landmark";
             veinsSegImage = relabeler->GetOutput();
@@ -617,12 +610,12 @@ void AtrialScarView::AutomaticAnalysis() {
             std::vector<std::vector<double>> veinsCentre;
             const int nveins = static_cast<int>(connected2->GetObjectCount());
 
-            MITK_INFO << ("[...][6.1] Number of veins found: "+QString::number(nveins)).toStdString();
-            for (int j=0; j<nveins; j++) {
+            MITK_INFO << ("[...][6.1] Number of veins found: " + QString::number(nveins)).toStdString();
+            for (int j = 0; j < nveins; j++) {
                 int ctrVeinsVoxels = 0;
                 std::vector<double> veinLandmark(3, 0.0);
                 for (itLMK.GoToBegin(); !itLMK.IsAtEnd(); ++itLMK) {
-                    if ((int)itLMK.Get() == (j+1)) {
+                    if ((int)itLMK.Get() == (j + 1)) {
                         ImageTypeCHAR::PointType point;
                         veinsSegImage->TransformIndexToPhysicalPoint(itLMK.GetIndex(), point);
                         veinLandmark[0] += point[0];
@@ -636,7 +629,7 @@ void AtrialScarView::AutomaticAnalysis() {
                 veinLandmark[2] /= ctrVeinsVoxels;
                 veinsCentre.push_back(veinLandmark);
             }//_nveins
-            for (int j=0; j<nveins; j++) {
+            for (int j = 0; j < nveins; j++) {
                 double veinLandmark[3];
                 veinLandmark[0] = veinsCentre.at(j)[0];
                 veinLandmark[1] = veinsCentre.at(j)[1];
@@ -645,7 +638,7 @@ void AtrialScarView::AutomaticAnalysis() {
                 pickedSeedIds->InsertNextId(id);
             }//_nveins
             std::vector<int> pickedSeedLabels;
-            for (int j=0; j<nveins; j++)
+            for (int j = 0; j < nveins; j++)
                 pickedSeedLabels.push_back(21);
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
@@ -706,7 +699,7 @@ void AtrialScarView::AutomaticAnalysis() {
             vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
             implicitFn->SetInput(ClipperSurface->GetVtkPolyData());
             vtkMTimeType mtime = implicitFn->GetMTime();
-            std::cout << "MTime: " << mtime<< std::endl ;
+            std::cout << "MTime: " << mtime << std::endl;
             vtkSmartPointer<vtkClipPolyData> mvclipper = vtkSmartPointer<vtkClipPolyData>::New();
             mvclipper->SetClipFunction(implicitFn);
             mvclipper->SetInputData(LAShell->GetVtkPolyData());
@@ -783,8 +776,7 @@ void AtrialScarView::AutomaticAnalysis() {
             erosionFilter->SetInput(segITK);
             erosionFilter->SetKernel(binaryBall);
             erosionFilter->UpdateLargestPossibleRegion();
-            mitk::Image::Pointer roiImage = mitk::Image::New();
-            roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
+            mitk::Image::Pointer roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
             ImageType::Pointer lgeFloat = ImageType::New();
             mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
             double mean = 0.0, stdv = 0.0;
@@ -793,13 +785,12 @@ void AtrialScarView::AutomaticAnalysis() {
             QString prodPath = direct + "/";
             scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
             MITK_INFO << "[...][11.2] Saving to files.";
-            double thisThresh, thisPercentage, thisValue;
             ofstream prodFile1, prodFileExplanation;
             prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
-            for(int ix=0; (unsigned) ix < values_vector.size(); ix++) {
-                thisValue = values_vector.at(ix);
-                thisThresh = (threshType == 1) ? mean*thisValue : mean + thisValue*stdv;
-                thisPercentage = scar->Thresholding(thisThresh);
+            for (unsigned int ix = 0; ix < values_vector.size(); ix++) {
+                double thisValue = values_vector.at(ix);
+                double thisThresh = (threshType == 1) ? mean * thisValue : mean + thisValue * stdv;
+                double thisPercentage = scar->Thresholding(thisThresh);
                 prodFile1 << thisValue << "\n";
                 prodFile1 << threshType << "\n";
                 prodFile1 << mean << "\n";
@@ -820,9 +811,9 @@ void AtrialScarView::AutomaticAnalysis() {
             prodFileExplanation.close();
             timerLog->StopTimer();
 
-            QStringList rtminsec = QString::number(timerLog->GetElapsedTime()/60).split(".");
+            QStringList rtminsec = QString::number(timerLog->GetElapsedTime() / 60).split(".");
             QString rtmin = rtminsec.at(0);
-            QString rtsec = QString::number(("0."+rtminsec.at(1)).toFloat()*60, 'f',1);
+            QString rtsec = QString::number(("0." + rtminsec.at(1)).toFloat() * 60, 'f', 1);
             QString outstr = "Operation finshed in " + rtmin + " min and " + rtsec + " s.";
             MITK_INFO << "[AUTOMATIC_ANALYSIS][FINISHED]";
             QMessageBox::information(NULL, "Automatic analysis", outstr);
@@ -837,12 +828,12 @@ void AtrialScarView::SegmentIMGS() {
 
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
-    int reply1 = QMessageBox::question(
-                NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
+    int reply = QMessageBox::question(
+        NULL, "Question", "Do you have a segmentation to load?", QMessageBox::Yes, QMessageBox::No);
 
-    if (reply1 == QMessageBox::Yes) {
+    if (reply == QMessageBox::Yes) {
         QString path = QFileDialog::getOpenFileName(NULL, "Open Segmentation file",
-                                                    directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
+            directory.toStdString().c_str(), QmitkIOUtil::GetFileOpenFilterString());
         if (path.isEmpty()) return;
         mitk::IOUtil::Load(path.toStdString(), *this->GetDataStorage());
         mitk::RenderingManager::GetInstance()->InitializeViewsByBoundingObjects(this->GetDataStorage());
@@ -853,10 +844,10 @@ void AtrialScarView::SegmentIMGS() {
 
     } else {
 
-        int reply2 = QMessageBox::question(
-                    NULL, "Question", "Do you want an automatic segmentation?", QMessageBox::Yes, QMessageBox::No);
+        reply = QMessageBox::question(
+            NULL, "Question", "Do you want an automatic segmentation?", QMessageBox::Yes, QMessageBox::No);
 
-        if (reply2 == QMessageBox::Yes) {
+        if (reply == QMessageBox::Yes) {
 
             //Check for selection of image
             QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
@@ -955,7 +946,7 @@ void AtrialScarView::NodeAdded(const mitk::DataNode* node) {
                 bool ok;
                 QString tmpFileName = fileName;
                 fileName = QInputDialog::getText(
-                            NULL, tr("Save Segmentation As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
+                    NULL, tr("Save Segmentation As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
                 if (ok && !fileName.isEmpty() && fileName.endsWith(".nii")) {
                     segNode->SetName(fileName.left(fileName.lastIndexOf(QChar('.'))).toStdString());
                     path = directory + "/" + fileName;
@@ -998,8 +989,8 @@ void AtrialScarView::Register() {
 
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(
-                NULL, "Image Registration",
-                "Have you completed steps 1 to 4 before using this feature?", QMessageBox::Yes|QMessageBox::No);
+        NULL, "Image Registration",
+        "Have you completed steps 1 to 4 before using this feature?", QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::No)
         return;
 
@@ -1065,14 +1056,14 @@ void AtrialScarView::Transform() {
 
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(
-                NULL, "Image Transformation",
-                "Have you completed image registration before using this step?", QMessageBox::Yes|QMessageBox::No);
+        NULL, "Image Transformation",
+        "Have you completed image registration before using this step?", QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::No)
         return;
 
     //Check for selection of images
     QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
-    if (nodes.size() != 1){
+    if (nodes.size() != 1) {
         MITK_WARN << ("[Transform] Problem with selection. Selection size: " + QString::number(nodes.size())).toStdString();
         QMessageBox::warning(NULL, "Attention", "Please select the corresponding segmentation to transform!");
         return;
@@ -1172,7 +1163,7 @@ void AtrialScarView::ExtraCalcsEvaluatePvi() {
     ScarCalculationsView::SetCalculationsPaths(directory);
     if (!ScarCalculationsView::CheckForRequiredFiles()) {
         QMessageBox::warning(NULL, "Attention - Required files missing",
-                             "Check all the files in the PRE/ANALYSIS/ and POST/ANALYSIS folders are correctly named.");
+            "Check all the files in the PRE/ANALYSIS/ and POST/ANALYSIS folders are correctly named.");
         directory = QString();
         return;
     }
@@ -1286,7 +1277,7 @@ void AtrialScarView::CreateSurf() {
             }//_if
 
             //Ask for user input to set the parameters
-            QDialog* inputs = new QDialog(0,0);
+            QDialog* inputs = new QDialog(0, 0);
             m_UIMeshing.setupUi(inputs);
             connect(m_UIMeshing.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
             connect(m_UIMeshing.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -1305,7 +1296,7 @@ void AtrialScarView::CreateSurf() {
                 if (!ok1 || !ok2 || !ok3 || !ok4)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
                 if (!ok1) iter = 1;
-                if (!ok2) th   = 0.5;
+                if (!ok2) th = 0.5;
                 if (!ok3) blur = 0;
                 if (!ok4) smth = 10;
                 //_if
@@ -1323,7 +1314,7 @@ void AtrialScarView::CreateSurf() {
                 //Add the mesh to storage
                 std::string meshName = segNode->GetName() + "-Mesh";
                 CemrgCommonUtils::AddToStorage(
-                            CemrgCommonUtils::LoadVTKMesh(path.toStdString()), meshName, this->GetDataStorage());
+                    CemrgCommonUtils::LoadVTKMesh(path.toStdString()), meshName, this->GetDataStorage());
                 inputs->deleteLater();
                 remove(pathTemp.toStdString().c_str());
 
@@ -1389,7 +1380,7 @@ void AtrialScarView::SelectLandmarks() {
         double x_c = 0;
         double y_c = 0;
         double z_c = 0;
-        for(int i=0; i<pointSet->GetSize(); i++) {
+        for (int i = 0; i < pointSet->GetSize(); i++) {
             x_c = x_c + pointSet->GetPoint(i).GetElement(0);
             y_c = y_c + pointSet->GetPoint(i).GetElement(1);
             z_c = z_c + pointSet->GetPoint(i).GetElement(2);
@@ -1399,11 +1390,11 @@ void AtrialScarView::SelectLandmarks() {
         z_c /= pointSet->GetSize();
         //double distance[pointSet->GetSize()];
         double * distance = new double[pointSet->GetSize()];
-        for(int i=0; i<pointSet->GetSize(); i++) {
+        for (int i = 0; i < pointSet->GetSize(); i++) {
             double x_d = pointSet->GetPoint(i).GetElement(0) - x_c;
             double y_d = pointSet->GetPoint(i).GetElement(1) - y_c;
             double z_d = pointSet->GetPoint(i).GetElement(2) - z_c;
-            distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+            distance[i] = sqrt(pow(x_d, 2) + pow(y_d, 2) + pow(z_d, 2));
         }//_for
         double radius = *std::max_element(distance, distance + pointSet->GetSize());
 
@@ -1493,7 +1484,7 @@ void AtrialScarView::ClipMitralValve() {
     //Reverse coordination of surface for writing MIRTK style
     mitk::Surface::Pointer surfCloned = surface->Clone();
     vtkSmartPointer<vtkPolyData> pd = surfCloned->GetVtkPolyData();
-    for (int i=0; i<pd->GetNumberOfPoints(); i++) {
+    for (int i = 0; i < pd->GetNumberOfPoints(); i++) {
         double* point = pd->GetPoint(i);
         point[0] = -point[0];
         point[1] = -point[1];
@@ -1541,7 +1532,7 @@ void AtrialScarView::ScarMap() {
             if (scar) {
 
                 //Ask for user input to set the parameters
-                QDialog* inputs = new QDialog(0,0);
+                QDialog* inputs = new QDialog(0, 0);
                 m_UIScar.setupUi(inputs);
                 connect(m_UIScar.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
                 connect(m_UIScar.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -1560,7 +1551,7 @@ void AtrialScarView::ScarMap() {
                     //Set default values
                     if (!ok1 || !ok2)
                         QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                    if (!ok1) minStep =-1;
+                    if (!ok1) minStep = -1;
                     if (!ok2) maxStep = 3;
                     //_if
 
@@ -1716,7 +1707,7 @@ void AtrialScarView::Threshold() {
             //Convert images to right type
             mitk::Image::Pointer roi;
             mitk::Image::Pointer lgeImage = mitk::Image::New();
-            itk::Image<float,3>::Pointer itkImage = itk::Image<float,3>::New();
+            itk::Image<float, 3>::Pointer itkImage = itk::Image<float, 3>::New();
             mitk::CastToItkImage(image, itkImage);
             mitk::CastToMitkImage(itkImage, lgeImage);
             try {
@@ -1726,8 +1717,7 @@ void AtrialScarView::Threshold() {
                 QMessageBox::critical(NULL, "Attention", "The loaded or created segmentation was not found!");
                 return;
             }//_try
-            mitk::Image::Pointer roiImage = mitk::Image::New();
-            itk::Image<float,3>::Pointer roiItkImage = itk::Image<float,3>::New();
+            itk::Image<float, 3>::Pointer roiItkImage = itk::Image<float, 3>::New();
             mitk::CastToItkImage(roi, roiItkImage);
             if (scar) {
 
@@ -1748,7 +1738,7 @@ void AtrialScarView::Threshold() {
                 erosionFilter->SetInput(roiItkImage);
                 erosionFilter->SetKernel(binaryCross);
                 erosionFilter->UpdateLargestPossibleRegion();
-                roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
+                mitk::Image::Pointer roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
                 CemrgCommonUtils::AddToStorage(roiImage, "Eroded ROI", this->GetDataStorage());
 
                 //Calculate mean, std of ROI
@@ -1764,7 +1754,7 @@ void AtrialScarView::Threshold() {
     }//_data
 
     //Ask for user input to set the parameters
-    QDialog* inputs = new QDialog(0,0);
+    QDialog* inputs = new QDialog(0, 0);
     m_UISQuant.setupUi(inputs);
     connect(m_UISQuant.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
     connect(m_UISQuant.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
@@ -1787,7 +1777,7 @@ void AtrialScarView::Threshold() {
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
 
         double percentage = 0;
-        double thresh = (methodType == 1) ? mean*value : mean+value*stdv;
+        double thresh = (methodType == 1) ? mean * value : mean + value * stdv;
 
         /*
          * Producibility Test
@@ -1893,8 +1883,8 @@ void AtrialScarView::Reset(bool allItems) {
 
         //Check if we got the default datastorage and if there is anything else then helper object in the storage
         if (dataStorageRef->IsDefault() && dataStorage->GetSubset(
-                    mitk::NodePredicateNot::New(
-                        mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true))))->empty())
+            mitk::NodePredicateNot::New(
+                mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true))))->empty())
             return;
 
         //Remove everything or keep images
@@ -1918,7 +1908,7 @@ void AtrialScarView::Reset(bool allItems) {
         //Close all editors with this data storage as input
         mitk::DataStorageEditorInput::Pointer dsInput(new mitk::DataStorageEditorInput(dataStorageRef));
         QList<berry::IEditorReference::Pointer> dsEditors =
-                this->GetSite()->GetPage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
+            this->GetSite()->GetPage()->FindEditors(dsInput, QString(), berry::IWorkbenchPage::MATCH_INPUT);
 
         if (!dsEditors.empty()) {
             QList<berry::IEditorReference::Pointer> editorsToClose = dsEditors;
@@ -1947,8 +1937,8 @@ bool AtrialScarView::RequestProjectDirectoryFromUser() {
 
         MITK_INFO << "Directory is empty. Requesting user for directory.";
         directory = QFileDialog::getExistingDirectory(
-                    NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
-                    QFileDialog::ShowDirsOnly|QFileDialog::DontUseNativeDialog);
+            NULL, "Open Project Directory", mitk::IOUtil::GetProgramPath().c_str(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
         MITK_INFO << ("Directory selected:" + directory).toStdString();
         if (directory.isEmpty() || directory.simplified().contains(" ")) {
             MITK_WARN << "Please select a project directory with no spaces in the path!";
