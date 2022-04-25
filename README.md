@@ -27,3 +27,8 @@ Contacts
 --------
 - http://www.cemrgapp.com/
 - info@cemrgapp.com
+
+Report bugs and issues
+----------------------
+1. Check our wiki page with instructions for [reporting bugs](https://github.com/CemrgDevelopers/CemrgApp/wiki/Reporting-bugs)
+2. Use our [issue report template](https://github.com/CemrgDevelopers/CemrgApp/wiki/ISSUE_TEMPLATE.md) to log your report 

@@ -199,7 +199,7 @@
     <item row="2" column="0">
      <widget class="QPlainTextEdit" name="iir_textEdit">
       <property name="placeholderText">
-       <string>Default: 0.97, 1.16</string>
+       <string>Default: 0.97, 1.2, 1.32</string>
       </property>
      </widget>
     </item>

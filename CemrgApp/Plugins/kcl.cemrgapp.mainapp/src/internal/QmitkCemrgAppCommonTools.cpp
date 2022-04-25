@@ -56,8 +56,9 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
 
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
-    connect(m_Controls.button_1, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
-    connect(m_Controls.button_2, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
+    connect(m_Controls.btn_loadmesh, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
+    connect(m_Controls.btn_convert2carto, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
+    connect(m_Controls.btn_vtk2cart, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertCarpToVtk);
     connect(m_Controls.button_mirtk, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsSelection);
     connect(m_Controls.button_mirtk_reg, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsRegister);
     connect(m_Controls.button_mirtk_tx, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsTransform);

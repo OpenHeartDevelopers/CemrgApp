@@ -404,7 +404,7 @@ void AtrialScarView::AutomaticAnalysis() {
         if (m_UIcemrgnet.iir_radioButton->isChecked()) { // IIR method
             whichThresh = "IIR";
             thresh_list = m_UIcemrgnet.iir_textEdit->toPlainText();
-            separated_thresh_list << "0.97" << "1.16";
+            separated_thresh_list << "0.97" << "1.2" << "1.32";
         } else if (m_UIcemrgnet.meanSD_radioButton->isChecked()) { // SDev method
             whichThresh = "MEAN+SD";
             thresh_list = m_UIcemrgnet.meanSD_textEdit->toPlainText();
