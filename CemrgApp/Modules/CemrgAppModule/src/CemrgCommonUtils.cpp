@@ -989,6 +989,30 @@ void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QStri
     }
 }
 
+void CemrgCommonUtils::GetMinMaxScalars(mitk::Surface::Pointer surf, double& min_val, double& max_val, bool fromCellData){
+    double max_scalar=-1, min_scalar=1e9;
+    vtkIdType total;
+    vtkSmartPointer<vtkFloatArray> scalars = vtkSmartPointer<vtkFloatArray>::New();
+    if (fromCellData){
+        scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetCellData()->GetScalars());
+        total=surf->GetVtkPolyData()->GetNumberOfPoints();
+    } else{
+        scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetPointData()->GetScalars());
+        total=surf->GetVtkPolyData()->GetNumberOfCells();
+    }
+
+    for (vtkIdType i = 0; i < total; i++) {
+        double s = scalars->GetTuple1(i);
+        if (s > max_scalar)
+            max_scalar = s;
+        if (s < min_scalar)
+            min_scalar = s;
+    }
+
+    min_val=min_scalar;
+    max_val=max_scalar;
+}
+
 //UTILities for CARP - operations with .elem and .pts files
 void CemrgCommonUtils::OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling) {
     if (QFileInfo::exists(imagePath) && QFileInfo::exists(pointPath)) {

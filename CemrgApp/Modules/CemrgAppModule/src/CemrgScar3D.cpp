@@ -47,6 +47,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkCellData.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkIdList.h>
+#include <vtkMassProperties.h>
 
 // ITK
 #include <itkPoint.h>
@@ -318,6 +319,13 @@ double CemrgScar3D::Thresholding(double thresh) {
     }
     double percentage = (ctr2 * 100.0) / (scalars->GetNumberOfTuples() - ctr1);
     return percentage;
+}
+
+void CemrgScar3D::GetSurfaceAreaAndVolume(mitk::Surface::Pointer surf, double& totalVolume, double& totalArea){
+    vtkSmartPointer<vtkMassProperties> mpwhole = vtkSmartPointer<vtkMassProperties>::New();
+    mpwhole->SetInputData(surf->GetVtkPolyData());
+    totalVolume=mpwhole->GetVolume();
+    totalArea=mpwhole->GetSurfaceArea();
 }
 
 void CemrgScar3D::SaveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name) {

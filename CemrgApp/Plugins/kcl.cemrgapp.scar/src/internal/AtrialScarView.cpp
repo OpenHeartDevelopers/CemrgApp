@@ -1729,12 +1729,6 @@ void AtrialScarView::Threshold() {
                     return;
                 }
 
-                if(!pathToScarMap.isEmpty()){
-                    MITK_INFO << "Saving normalised scar map.";
-                    mitk::Surface::Pointer scarShell = mitk::IOUtil::Load<mitk::Surface>(pathToScarMap.toStdString());
-                    scar->SaveNormalisedScalars(mean, scarShell, (directory + "/" + "MaxScar_Normalised.vtk"));
-                }
-
             } else {
                 QMessageBox::warning(NULL, "Attention", "The scar map from the previous step has not been generated!");
                 return;
@@ -1766,7 +1760,9 @@ void AtrialScarView::Threshold() {
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
 
         double percentage = 0;
+        double scarArea = 0;
         double thresh = (methodType == 1) ? mean * value : mean + value * stdv;
+        double totalVolume=0.0, totalArea=0.0;
 
         /*
          * Producibility Test
@@ -1776,7 +1772,28 @@ void AtrialScarView::Threshold() {
          * End Test
          **/
 
-        if (scar) percentage = scar->Thresholding(thresh);
+
+        if (scar){
+            percentage = scar->Thresholding(thresh);
+
+            if(pathToScarMap.isEmpty()){
+                pathToScarMap = QFileDialog::getOpenFileName(NULL, "Open Max Scar file", directory.toStdString().c_str(), tr("Mesh (*.vtk)"));
+            }
+
+            mitk::Surface::Pointer scarShell = mitk::IOUtil::Load<mitk::Surface>(pathToScarMap.toStdString());
+
+            MITK_INFO << "Getting Scar Area and shell volume/area";
+            scar->GetSurfaceAreaAndVolume(scarShell, totalVolume, totalArea);
+            std::cout << "vol: " << totalVolume;
+            std::cout << ", area: " << totalArea << '\n';
+
+            scarArea = totalArea * percentage;
+            std::cout << "Scar are: " << scarArea << '\n';
+
+            MITK_INFO << "Saving normalised scar map.";
+            scar->SaveNormalisedScalars(mean, scarShell, (directory + "/" + "MaxScar_Normalised.vtk"));
+        }
+
         std::ostringstream os;
         os << std::fixed << std::setprecision(2) << percentage;
         QString message = "The percentage scar is " + QString::fromStdString(os.str()) + "% of total segmented volume.";

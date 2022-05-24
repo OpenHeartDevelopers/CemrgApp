@@ -47,6 +47,7 @@ public:
     mitk::Surface::Pointer ClipMesh3D(mitk::Surface::Pointer surface, mitk::PointSet::Pointer landmarks);
     bool CalculateMeanStd(mitk::Image::Pointer lgeImage, mitk::Image::Pointer roiImage, double& mean, double& stdv);
     double Thresholding(double thresh);
+    void GetSurfaceAreaAndVolume(mitk::Surface::Pointer surf, double& totalVolume, double& totalArea);
     void SaveScarDebugImage(QString name, QString dir);
     void SaveNormalisedScalars(double divisor, mitk::Surface::Pointer surface, QString name);
     void PrintThresholdingResults(QString dir, std::vector<double> values_vector, int threshType, double mean, double stdv, bool printGuide = true);

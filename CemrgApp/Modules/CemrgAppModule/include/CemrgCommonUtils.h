@@ -79,6 +79,7 @@ public:
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata = true);
     static void FillHoles(mitk::Surface::Pointer surf, QString dir = "", QString vtkname = "");
+    static void GetMinMaxScalars(mitk::Surface::Pointer surf, double& min_val, double& max_val, bool fromCellData=false);
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
