@@ -360,15 +360,17 @@ void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> valu
         double thisValue = values_vector.at(ix);
         double thisThresh = (threshType == 1) ? mean * thisValue : mean + thisValue * stdv;
         double thisPercentage = Thresholding(thisThresh);
+
+        if (ix>0) {
+            prodFile1 << "=============== separation ================\n";
+        }
+
         prodFile1 << thisValue << "\n";
         prodFile1 << threshType << "\n";
         prodFile1 << mean << "\n";
         prodFile1 << stdv << "\n";
         prodFile1 << thisThresh << "\n";
         prodFile1 << "SCORE: " << thisPercentage << "\n";
-        if (!printGuide) {
-            prodFile1 << "=============== separation ================\n";
-        }
     }
     prodFile1.close();
 
@@ -389,7 +391,7 @@ void CemrgScar3D::PrintThresholdingResults(QString dir, std::vector<double> valu
 void CemrgScar3D::PrintSingleThresholdingResult(QString dir, double value, int threshType, double mean, double stdv) {
     std::vector<double> v;
     v.push_back(value);
-    PrintThresholdingResults(dir, v, threshType, mean, stdv, false);
+    PrintThresholdingResults(dir, v, threshType, mean, stdv, true);
 }
 
 double CemrgScar3D::GetMinScalar() const {
