@@ -105,6 +105,7 @@ AtrialScarView::AtrialScarView(){
     this->directory = "";
     this->debugSCARname = "";
     this->alternativeNiftiFolder = "";
+    this->pathToScarMap = "";
 }
 
 void AtrialScarView::CreateQtPartControl(QWidget *parent) {
@@ -376,6 +377,7 @@ void AtrialScarView::AutomaticAnalysis() {
     int minStep_UI = -1, maxStep_UI = 3;
     int methodType_UI = 2, thresh_methodType_UI = 1;
     QStringList separated_thresh_list;
+    bool voxelBasedProjection = false;
     std::vector<double> values_vector;
 
     if (dialogCode == QDialog::Accepted) {
@@ -390,6 +392,8 @@ void AtrialScarView::AutomaticAnalysis() {
 
         methodType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? 2 : 1;
         meType_UI = m_UIcemrgnet.maxProjection_radioButton->isChecked() ? "Max" : "Mean";
+
+        voxelBasedProjection = m_UIcemrgnet.voxel_checkbox->isChecked();
 
         MITK_INFO << ("[UI] Using: " + meType_UI + " Intensity projection.").toStdString();
         MITK_INFO << ("[UI] In/out values: (" + QString::number(minStep_UI) + ", " +
@@ -737,6 +741,7 @@ void AtrialScarView::AutomaticAnalysis() {
             scar->SetMinStep(minStep);
             scar->SetMaxStep(maxStep);
             scar->SetMethodType(methodType);
+            scar->SetVoxelBasedProjection(voxelBasedProjection);
             ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
             mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>((direct + "/PVeinsCroppedImage.nii").toStdString()), segITK);
             ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
@@ -785,30 +790,7 @@ void AtrialScarView::AutomaticAnalysis() {
             QString prodPath = direct + "/";
             scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
             MITK_INFO << "[...][11.2] Saving to files.";
-            ofstream prodFile1, prodFileExplanation;
-            prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
-            for (unsigned int ix = 0; ix < values_vector.size(); ix++) {
-                double thisValue = values_vector.at(ix);
-                double thisThresh = (threshType == 1) ? mean * thisValue : mean + thisValue * stdv;
-                double thisPercentage = scar->Thresholding(thisThresh);
-                prodFile1 << thisValue << "\n";
-                prodFile1 << threshType << "\n";
-                prodFile1 << mean << "\n";
-                prodFile1 << stdv << "\n";
-                prodFile1 << thisThresh << "\n";
-                prodFile1 << "SCORE: " << thisPercentage << "\n";
-                prodFile1 << "=============== separation ================\n";
-            }
-            prodFileExplanation.open((prodPath + "prodThresholds_Guide.txt").toStdString());
-            prodFileExplanation << "VALUE\n";
-            prodFileExplanation << "THRESHOLD TYPE: (1 = V*IIR, 2 = MEAN + V*STDev)\n";
-            prodFileExplanation << "MEAN INTENSITY\n";
-            prodFileExplanation << "STANDARD DEVIATION (STDev)\n";
-            prodFileExplanation << "THRESHOLD\n";
-            prodFileExplanation << "SCAR SCORE (percentage)\n";
-            prodFileExplanation << "=============== separation ================";
-            prodFile1.close();
-            prodFileExplanation.close();
+            scar->PrintThresholdingResults(direct, values_vector, threshType, mean, stdv);
             timerLog->StopTimer();
 
             QStringList rtminsec = QString::number(timerLog->GetElapsedTime() / 60).split(".");
@@ -1643,8 +1625,8 @@ void AtrialScarView::ScarMap() {
                     //Save the vtk mesh
                     QString name(imgNode->GetName().c_str());
                     name = name.right(name.length() - name.lastIndexOf("-") - 1);
-                    QString path = directory + "/" + name + "-" + meType + "Scar.vtk";
-                    mitk::IOUtil::Save(shell, path.toStdString());
+                    pathToScarMap = directory + "/" + name + "-" + meType + "Scar.vtk";
+                    mitk::IOUtil::Save(shell, pathToScarMap.toStdString());
 
                     mitk::ProgressBar::GetInstance()->Progress();
                     this->BusyCursorOff();
@@ -1741,10 +1723,17 @@ void AtrialScarView::Threshold() {
                 mitk::Image::Pointer roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
                 CemrgCommonUtils::AddToStorage(roiImage, "Eroded ROI", this->GetDataStorage());
 
-                //Calculate mean, std of ROI
+                MITK_INFO << "Calculate mean, std of ROI";
                 bool success = scar->CalculateMeanStd(lgeImage, roiImage, mean, stdv);
-                if (!success)
+                if (!success){
                     return;
+                }
+
+                if(!pathToScarMap.isEmpty()){
+                    MITK_INFO << "Saving normalised scar map.";
+                    mitk::Surface::Pointer scarShell = mitk::IOUtil::Load<mitk::Surface>(pathToScarMap.toStdString());
+                    scar->SaveNormalisedScalars(mean, scarShell, (directory + "/" + "MaxScar_Normalised.vtk"));
+                }
 
             } else {
                 QMessageBox::warning(NULL, "Attention", "The scar map from the previous step has not been generated!");
@@ -1782,15 +1771,7 @@ void AtrialScarView::Threshold() {
         /*
          * Producibility Test
          **/
-        QString prodPath = directory + "/";
-        ofstream prodFile1;
-        prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
-        prodFile1 << value << "\n";
-        prodFile1 << methodType << "\n";
-        prodFile1 << mean << "\n";
-        prodFile1 << stdv << "\n";
-        prodFile1 << thresh << "\n";
-        prodFile1.close();
+        scar->PrintSingleThresholdingResult(directory, value, methodType, mean, stdv);
         /*
          * End Test
          **/
