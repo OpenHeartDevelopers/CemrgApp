@@ -97,6 +97,7 @@
    </property>
    <property name="font">
     <font>
+     <pointsize>11</pointsize>
      <underline>true</underline>
     </font>
    </property>
@@ -115,6 +116,7 @@
    </property>
    <property name="font">
     <font>
+     <pointsize>11</pointsize>
      <underline>true</underline>
     </font>
    </property>
@@ -159,6 +161,7 @@
    </property>
    <property name="font">
     <font>
+     <pointsize>11</pointsize>
      <underline>true</underline>
     </font>
    </property>
@@ -171,7 +174,7 @@
     <rect>
      <x>30</x>
      <y>290</y>
-     <width>439</width>
+     <width>499</width>
      <height>127</height>
     </rect>
    </property>
@@ -187,7 +190,7 @@
      <widget class="QLabel" name="label_5">
       <property name="font">
        <font>
-        <pointsize>11</pointsize>
+        <pointsize>10</pointsize>
         <underline>true</underline>
        </font>
       </property>
@@ -217,7 +220,7 @@
      <widget class="QLabel" name="label_6">
       <property name="font">
        <font>
-        <pointsize>11</pointsize>
+        <pointsize>10</pointsize>
         <underline>true</underline>
        </font>
       </property>
@@ -284,13 +287,26 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>230</y>
+     <y>240</y>
      <width>411</width>
      <height>16</height>
     </rect>
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="voxel_checkbox">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>220</y>
+     <width>151</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Voxel-based method</string>
    </property>
   </widget>
  </widget>
