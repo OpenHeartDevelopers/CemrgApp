@@ -1784,11 +1784,7 @@ void AtrialScarView::Threshold() {
 
             MITK_INFO << "Getting Scar Area and shell volume/area";
             scar->GetSurfaceAreaAndVolume(scarShell, totalVolume, totalArea);
-            std::cout << "vol: " << totalVolume;
-            std::cout << ", area: " << totalArea << '\n';
-
             scarArea = totalArea * percentage;
-            std::cout << "Scar are: " << scarArea << '\n';
 
             MITK_INFO << "Saving normalised scar map.";
             scar->SaveNormalisedScalars(mean, scarShell, (directory + "/" + "MaxScar_Normalised.vtk"));
@@ -1796,7 +1792,10 @@ void AtrialScarView::Threshold() {
 
         std::ostringstream os;
         os << std::fixed << std::setprecision(2) << percentage;
-        QString message = "The percentage scar is " + QString::fromStdString(os.str()) + "% of total segmented volume.";
+        QString message = "The percentage scar is " + QString::fromStdString(os.str()) + "% of total segmented volume.\n";
+        message += "The total estimated atrial surface area is " + QString::number(totalArea) + "mm^2";
+        message += "\nThe estimated fibrosis area is " + QString::number(scarArea)+ "mm^2";
+        message += "\n\nThe estimated atrial volume is " + QString::number(totalVolume) + "mm^3";
         QMessageBox::information(NULL, "Scar Quantification", message);
 
         mitk::ProgressBar::GetInstance()->Progress();
