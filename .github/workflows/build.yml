@@ -133,7 +133,6 @@ jobs:
         name: Packages
         path: CemrgApp-Linux.zip
 
-
   # Build-Windows:
   #   runs-on: windows-2016
   #   needs: [Variables]
@@ -213,7 +212,6 @@ jobs:
   #     with:
   #       name: Packages
   #       path: CemrgApp-Windows.zip
-
 
   Build-macOS:
     runs-on: macos-10.15
