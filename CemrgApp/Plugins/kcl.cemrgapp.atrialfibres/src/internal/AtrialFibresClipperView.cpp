@@ -670,23 +670,35 @@ void AtrialFibresClipperView::InterPvSpacing(){
         cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
 
         std::string line, header;
-        std::getline(fi, header);
-
+        for (int ix = 0; ix < 3; ix++) {
+            std::getline(fi, header);
+            std::cout << "File head: " << header << '\n';
+        }
 
         while(std::getline(fi, line)){
             QString qline =  QString::fromStdString(line);
-            vtkIdType vId;
-            vId = qline.section(',', 1, 1).toInt();
+            double testScalar = qline.section(',', 6, 6).toDouble();
+            if (testScalar > 0) {
+                vtkIdType vId;
+                vId = qline.section(',', 1, 1).toInt();
 
-            vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-            cellIds->Initialize();
+                vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+                cellIds->Initialize();
 
-            surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
-            for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
-                cellScalars->SetTuple1(cellIds->GetId(ix), labelInCorridor);
+                surface->GetVtkPolyData()->GetPointCells(vId, cellIds);
+                for (vtkIdType ix = 0; ix < cellIds->GetNumberOfIds() ; ix++) {
+                    cellScalars->SetTuple1(cellIds->GetId(ix), labelInCorridor);
+                }
             }
         }
         fi.close();
+        int replyDelete = QMessageBox::question(NULL, "Remove corridor files?", "Remove corridor files?", QMessageBox::Yes, QMessageBox::No);
+        if (replyDelete==QMessageBox::Yes) {
+            QFile::remove(path2corridor);
+            QFile::remove(prodPathOut + "exploration_corridor.vtk");
+            QFile::remove(prodPathOut + "exploration_connectivity.vtk");
+            QFile::remove(prodPathOut + "exploration_scalars.vtk");
+        }
 
         surface->GetVtkPolyData()->GetCellData()->SetScalars(cellScalars);
 
@@ -1278,6 +1290,7 @@ void AtrialFibresClipperView::ResetCorridorObjects(){
     corridorLineSeeds = vtkSmartPointer<vtkPolyData>::New();
     corridorLineSeeds->Initialize();
     corridorLineSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
+    renderer->RemoveAllViewProps();
 }
 
 bool AtrialFibresClipperView::IsPointSelectionControlsAvailable(){

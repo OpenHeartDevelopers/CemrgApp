@@ -993,15 +993,38 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
 }
 
 QStringList CemrgCommandLine::GetOpenCarpDockerDefaultArguments(QString volume){
+
+    QString petscPath = QCoreApplication::applicationDirPath() + "/petsc_opts";
+    QString parab="ilu_cg_opts", ellip="amg_cg_opts";
+
+    QString parabFile = petscPath+"/"+parab;
+    QString ellipFile = petscPath+"/"+ellip;
+
+    QString parabDestination = volume+"/"+parab;
+    QString ellipDestination = volume+"/"+ellip;
+
+    if(!QFile::exists(parabDestination)){
+        MITK_INFO << ("Copying: ["+parabFile+ "]").toStdString();
+        MITK_INFO << ("Into: ["+parabDestination+ "]").toStdString();
+        MITK_INFO(QFile::copy(parabFile, parabDestination)) << "Success!";
+    }
+
+    if(!QFile::exists(ellipDestination)){
+        MITK_INFO << "Copying: [" << ellipFile.toStdString();
+        MITK_INFO << "Into: [" << ellipDestination.toStdString();
+        MITK_INFO(QFile::copy(ellipFile, ellipDestination)) << "Success!";
+    }
+
+    QDir home(volume);
     QStringList defaultArguments;
     defaultArguments << "run" << "--rm" << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
     defaultArguments << "docker.opencarp.org/opencarp/opencarp:latest";
     defaultArguments << "openCARP";
     defaultArguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
     defaultArguments << "-parab_options_file";
-    defaultArguments << "/usr/local/lib/python3.6/dist-packages/carputils/resources/petsc_options/ilu_cg_opts";
+    defaultArguments << home.relativeFilePath(parab);
     defaultArguments << "-ellip_options_file";
-    defaultArguments << "/usr/local/lib/python3.6/dist-packages/carputils/resources/petsc_options/amg_cg_opts";
+    defaultArguments << home.relativeFilePath(ellip);
 
     return defaultArguments;
 }
