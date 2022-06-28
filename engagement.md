@@ -3,6 +3,9 @@ layout: page
 title: Engagement
 permalink: /engagement/
 ---
+- [Ask questions](#ask-questions)
+- [Raise issues](#raise-issues)
+- [Contributors](#contributors)
 
 ## Ask questions
 The best place to ask questions about the functionalities or how to do tasks, 
