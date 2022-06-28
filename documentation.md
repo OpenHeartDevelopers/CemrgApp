@@ -3,7 +3,7 @@ layout: page
 title: Documentation
 permalink: /documentation/
 ---
-
+**Contents:**
 - [Installation](#installation)
     - [Troubleshooting linux](#troubleshooting-linux)
 - [Basic Usage](#basic-usage)

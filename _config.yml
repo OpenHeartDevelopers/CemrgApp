@@ -53,6 +53,7 @@ header_pages:
 - documentation.md
 - engagement.md
 - examples.md
+- contributors.md
 
 # Build settings
 theme: minima
