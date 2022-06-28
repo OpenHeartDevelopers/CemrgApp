@@ -17,6 +17,6 @@ CemrgApp comes packaged in binaries, which can be installed easily.
 
 ## Advanced CemrgApp functionalities through Docker 
 
-Installing Docker is necessary to use CemrgApp's Advanced Modules, like the 
-automatic segmentation in the Scar Plugin. 
+Installing Docker is necessary to use CemrgApp's Advanced Modules, 
+like the automatic segmentation in the Scar Plugin. 
 
