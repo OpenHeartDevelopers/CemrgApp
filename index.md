@@ -14,7 +14,11 @@ title: CemrgApp Home
 
 <img align="right" height="18%" rotate="180" width="18%" src="./assets/logo.svg">
 
-An Interactive Medical Imaging Platform with Image Processing and Computer Vision Toolkits for Cardiovascular Research.
+The Cardiac Electro-Mechanics Research Group Application (CemrgApp) is a platform with 
+custom image processing and computer vision toolkits for applying statistical, 
+machine learning, and simulation approaches to cardiovascular data. 
+CemrgApp provides an integrated environment, where cardiac data visualisation and 
+workflow prototyping are presented through a common user friendly graphical interface.
 
 Links:
 
@@ -23,8 +27,10 @@ Links:
 + [Visit our wiki Page](https://github.com/CemrgDevelopers/CemrgApp/wiki)
 
 
-Please cite the following article, if you use CemrgApp in your project:
-```
+## Cite us
+
+If you use CemrgApp in your project, please cite the following project:
+```bibtex
 Razeghi O, Solís-Lemus J, Lee A et al.
 CemrgApp: An interactive medical imaging application with image processing, computer vision, and machine learning toolkits for cardiovascular research.
 SoftwareX. 2020;12:100570. doi:10.1016/j.softx.2020.100570
