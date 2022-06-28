@@ -12,7 +12,7 @@ title: Home
 
 ## Welcome to the CemrgApp page
 
-<img align="right" height="25%" rotate="180" width="25%" src="./assets/logo.svg">
+<img align="right" height="25%" rotate="180" width="25%" src="./assets/logo-gray.svg">
 
 The Cardiac Electro-Mechanics Research Group Application (CemrgApp) is a platform with 
 custom image processing and computer vision toolkits for applying statistical, 
