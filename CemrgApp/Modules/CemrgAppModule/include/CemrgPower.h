@@ -32,8 +32,10 @@ PURPOSE.  See the above copyright notices for more information.
 // Qmitk
 #include <mitkImage.h>
 #include <mitkPointSet.h>
-#include <vtkFloatArray.h>
 #include <MitkCemrgAppModuleExports.h>
+
+// VTK
+#include <vtkFloatArray.h>
 #include <vtkSmartPointer.h>
 #include <vtkMatrix3x3.h>
 
@@ -55,17 +57,17 @@ private:
 
     double sinc(const double x);
     void normalise(double v[]);
-    void crossProduct(double a[],double b[], double product[]);
+    void crossProduct(double a[], double b[], double product[]);
     double dotProduct(double a[], double b[]);
     std::vector<mitk::Point3D> ConvertMPS(mitk::DataNode::Pointer node);
     void fcn_RotationToUnity(const double v[], vtkSmartPointer<vtkMatrix3x3>& RotationMatrix);
     void fcn_RotationFromTwoVectors(double a[], double b[], vtkSmartPointer<vtkMatrix3x3>& RotationMatrix);
 
     // Copied from Strain for AHA mapping
-    mitk::Matrix<double,3,3> CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2);
+    mitk::Matrix<double, 3, 3> CalcRotationMatrix(mitk::Point3D point1, mitk::Point3D point2);
     mitk::Point3D Circlefit3d(mitk::Point3D point1, mitk::Point3D point2, mitk::Point3D point3);
-    mitk::Point3D RotatePoint(mitk::Matrix<double,3,3> rotationMatrix, mitk::Point3D point);
-    void RotateVTKMesh(mitk::Matrix<double,3,3> rotationMatrix, mitk::Surface::Pointer surface);
+    mitk::Point3D RotatePoint(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Point3D point);
+    void RotateVTKMesh(mitk::Matrix<double, 3, 3> rotationMatrix, mitk::Surface::Pointer surface);
     mitk::Point3D ZeroPoint(mitk::Point3D apex, mitk::Point3D point);
     void ZeroVTKMesh(mitk::Point3D apex, mitk::Surface::Pointer surface);
 };

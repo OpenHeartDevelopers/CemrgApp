@@ -56,15 +56,15 @@ public:
     void CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position);
     void ResetCtrLinesClippingPlanes();
 
-    inline mitk::Image::Pointer GetClippedSegImage() const{return clippedSegImage;};
-    inline mitk::Surface::Pointer GetClippedSurface() const{return clippedSurface;};
-    inline std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> GetCentreLines() const{return centreLines;};
-    inline std::vector<vtkSmartPointer<vtkRegularPolygonSource>> GetCentreLinePolyPlanes() const{return centreLinePolyPlanes;};
-    inline std::vector<std::vector<double>> GetMClipperAngles(){return normalPlAngles;};
-    inline std::vector<int> GetManualType() const{return manuals;};
-    inline void SetToAutomaticClipperMode(int clippersIndex){manuals[clippersIndex] = 0;};
-    inline void SetRadiusAdjustment(double value){radiusAdj = value;};
-    inline bool GetCentreLinesOrientation(){return ctrlnOrientation;};
+    inline mitk::Image::Pointer GetClippedSegImage() const { return clippedSegImage; };
+    inline mitk::Surface::Pointer GetClippedSurface() const { return clippedSurface; };
+    inline std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> GetCentreLines() const { return centreLines; };
+    inline std::vector<vtkSmartPointer<vtkRegularPolygonSource>> GetCentreLinePolyPlanes() const { return centreLinePolyPlanes; };
+    inline std::vector<std::vector<double>> GetMClipperAngles() { return normalPlAngles; };
+    inline std::vector<int> GetManualType() const { return manuals; };
+    inline void SetToAutomaticClipperMode(int clippersIndex) { manuals[clippersIndex] = 0; };
+    inline void SetRadiusAdjustment(double value) { radiusAdj = value; };
+    inline bool GetCentreLinesOrientation() { return ctrlnOrientation; };
 
     void SetMClipperAngles(double* value, int clippersIndex);
     void SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutterSeeds, int clippersIndex);
@@ -105,7 +105,7 @@ private:
     //const int RIGHTINFERIORPV = 17;
     //const int RIGHTCOMMONPV   = 18;
     //const int APPENDAGECUT    = 19;
-    const int APPENDAGEUNCUT  = 20;
+    const int APPENDAGEUNCUT = 20;
     //const int DEFAULTVALUE    = 21;
 };
 

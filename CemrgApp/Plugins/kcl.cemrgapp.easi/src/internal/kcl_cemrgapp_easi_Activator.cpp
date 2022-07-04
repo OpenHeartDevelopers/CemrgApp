@@ -31,22 +31,19 @@ PURPOSE.  See the above copyright notices for more information.
 
 namespace mitk {
 
-ctkPluginContext* kcl_cemrgapp_easi_Activator::pluginContext = nullptr;
+    ctkPluginContext* kcl_cemrgapp_easi_Activator::pluginContext = nullptr;
 
-void kcl_cemrgapp_easi_Activator::start(ctkPluginContext *context) {
+    void kcl_cemrgapp_easi_Activator::start(ctkPluginContext *context) {
+        BERRY_REGISTER_EXTENSION_CLASS(EASIView, context);
+        pluginContext = context;
+    }
 
-    BERRY_REGISTER_EXTENSION_CLASS(EASIView, context);
-    pluginContext = context;
-}
+    void kcl_cemrgapp_easi_Activator::stop(ctkPluginContext *context) {
+        Q_UNUSED(context);
+        pluginContext = nullptr;
+    }
 
-void kcl_cemrgapp_easi_Activator::stop(ctkPluginContext *context) {
-
-    Q_UNUSED(context);
-    pluginContext = nullptr;
-}
-
-ctkPluginContext* kcl_cemrgapp_easi_Activator::getContext() {
-
-    return pluginContext;
-}
+    ctkPluginContext* kcl_cemrgapp_easi_Activator::getContext() {
+        return pluginContext;
+    }
 }

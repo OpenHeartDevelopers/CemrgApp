@@ -1,0 +1,43 @@
+# -*- getpot -*- (GetPot mode activation for emacs)
+#-------------------------------------------------
+#      Data file for meshtools3d utility 
+#-------------------------------------------------
+#  this file will be parsered; in this example all options are reported
+# if no option is specified, a default one will be taken inside the code
+# see CGAL doc for meshing otpions.
+
+[segmentation]
+seg_dir = ./
+seg_name = sphere.inr
+mesh_from_segmentation = 0 #1
+
+[meshing]
+facet_angle         = 30
+facet_size          = 0.8
+facet_distance      = 4
+cell_rad_edge_ratio = 2.0
+cell_size           = 0.8
+rescaleFactor       = 1000 # rescaling for carp and vtk output 
+
+[laplacesolver]
+abs_toll        = 1e-6
+rel_toll        = 1e-6
+itr_max         = 700
+dimKrilovSp     = 500
+verbose         = 1 
+
+[others]
+eval_thickness  = 1
+thickalgo       = 1 #1: Martin's algo; 2: Cesare's algo
+
+[output]
+outdir          = ../sphereCoarse4ThicknessOUT
+name            = sphere
+out_medit       = 1
+out_carp        = 1
+out_carp_binary = 0
+out_vtk         = 1
+out_vtk_binary  = 1
+out_potential   = 1
+debug_output    = 0
+debug_frequency = 500

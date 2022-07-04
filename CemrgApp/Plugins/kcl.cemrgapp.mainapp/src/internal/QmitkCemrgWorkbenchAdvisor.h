@@ -14,17 +14,17 @@
  PURPOSE.  See the above copyright notices for more information.
 
  =========================================================================*/
-/*=========================================================================
- *
- * CemrgApp Main App
- *
- * Cardiac Electromechanics Research Group
- * http://www.cemrgapp.com
- * orod.razeghi@kcl.ac.uk
- *
- * This software is distributed WITHOUT ANY WARRANTY or SUPPORT!
- *
-=========================================================================*/
+ /*=========================================================================
+  *
+  * CemrgApp Main App
+  *
+  * Cardiac Electromechanics Research Group
+  * http://www.cemrgapp.com
+  * orod.razeghi@kcl.ac.uk
+  *
+  * This software is distributed WITHOUT ANY WARRANTY or SUPPORT!
+  *
+ =========================================================================*/
 
 #ifndef QMITKCEMRGWORKBENCHADVISOR_H_
 #define QMITKCEMRGWORKBENCHADVISOR_H_

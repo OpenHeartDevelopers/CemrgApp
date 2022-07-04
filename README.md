@@ -1,5 +1,10 @@
 Cardiac Electromechanics Research Group App
 -------------------------------------------
+[![Build](https://github.com/CemrgDevelopers/CemrgApp/actions/workflows/build.yml/badge.svg)](https://github.com/CemrgDevelopers/CemrgApp/actions/workflows/build.yml)
+[![Tests](https://github.com/CemrgDevelopers/CemrgApp/actions/workflows/test.yml/badge.svg)](https://github.com/CemrgDevelopers/CemrgApp/actions/workflows/test.yml)
+[![Code Analysis](https://github.com/CemrgDevelopers/CemrgApp/actions/workflows/analysis.yml/badge.svg)](https://github.com/CemrgDevelopers/CemrgApp/actions/workflows/analysis.yml)
+[![Code Coverage](https://codecov.io/gh/CemrgDevelopers/CemrgApp/branch/master/graph/badge.svg?token=7WKASERDCM)](https://codecov.io/gh/CemrgDevelopers/CemrgApp)
+
 CemrgApp is an MITK based interactive medical imaging application with image processing and computer vision toolkits for cardiovascular research.
 
 License

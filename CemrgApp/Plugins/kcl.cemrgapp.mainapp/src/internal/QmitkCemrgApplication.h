@@ -31,7 +31,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 #include <berryIApplication.h>
 
-class QmitkCemrgApplication : public QObject, public berry::IApplication {
+class QmitkCemrgApplication: public QObject, public berry::IApplication {
 
     Q_OBJECT
     Q_INTERFACES(berry::IApplication)

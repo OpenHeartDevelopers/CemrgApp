@@ -29,24 +29,21 @@ PURPOSE.  See the above copyright notices for more information.
 #include "kcl_cemrgapp_mmeasurement_Activator.h"
 #include "MmeasurementView.h"
 
-namespace mitk{
+namespace mitk {
 
-ctkPluginContext* kcl_cemrgapp_mmeasurement_Activator::pluginContext = nullptr;
+    ctkPluginContext* kcl_cemrgapp_mmeasurement_Activator::pluginContext = nullptr;
 
-void kcl_cemrgapp_mmeasurement_Activator::start(ctkPluginContext *context)  {
+    void kcl_cemrgapp_mmeasurement_Activator::start(ctkPluginContext *context) {
+        BERRY_REGISTER_EXTENSION_CLASS(MmeasurementView, context);
+        pluginContext = context;
+    }
 
-    BERRY_REGISTER_EXTENSION_CLASS(MmeasurementView, context);
-    pluginContext = context;
-}
+    void kcl_cemrgapp_mmeasurement_Activator::stop(ctkPluginContext *context) {
+        Q_UNUSED(context)
+        pluginContext = nullptr;
+    }
 
-void kcl_cemrgapp_mmeasurement_Activator::stop(ctkPluginContext *context) {
-
-    Q_UNUSED(context)
-    pluginContext = nullptr;
-}
-
-ctkPluginContext* kcl_cemrgapp_mmeasurement_Activator::getContext() {
-
-    return pluginContext;
-}
+    ctkPluginContext* kcl_cemrgapp_mmeasurement_Activator::getContext() {
+        return pluginContext;
+    }
 }

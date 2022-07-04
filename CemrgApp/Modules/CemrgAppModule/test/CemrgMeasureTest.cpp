@@ -33,8 +33,10 @@ typedef CemrgMeasure::Points Points;
 
 void TestCemrgMeasure::initTestCase() {
     // Create surface data
-    for (size_t i = 0; i < surfaceData.size(); i++)
-        surfaceData[i].second = mitk::IOUtil::Load<mitk::Surface>(surfaceData[i].first);
+    for (size_t i = 0; i < surfaceData.size(); i++) {
+        surfaceData[i].first = QFINDTESTDATA(CemrgTestData::surfacePaths[i]);
+        surfaceData[i].second = mitk::IOUtil::Load<mitk::Surface>(surfaceData[i].first.toStdString());
+    }
 }
 
 void TestCemrgMeasure::cleanupTestCase() {
@@ -135,16 +137,13 @@ void TestCemrgMeasure::GetSphericity_data() {
     QTest::addColumn<vtkPolyData*>("polyData");
     QTest::addColumn<double>("result");
 
-    const array<double, 5> sphericityData {
+    const array<double, CemrgTestData::surfacePaths.size()> sphericityData {
         65.06623281457561347452,
         20.59264742863982178278,
         30.61636022943845603095,
         99.64016354530460262140,
         66.26402857707076066163
     };
-
-    // To prevent creating a bug in the test code
-    QVERIFY(surfaceData.size() == sphericityData.size());
 
     for (size_t i = 0; i < sphericityData.size(); i++)
         QTest::newRow(("Test " + QFileInfo(surfaceData[i].first).fileName().toStdString()).c_str()) << surfaceData[i].second->GetVtkPolyData() << sphericityData[i];
@@ -161,16 +160,13 @@ void TestCemrgMeasure::calcVolumeMesh_data() {
     QTest::addColumn<mitk::Surface::Pointer>("surface");
     QTest::addColumn<double>("result");
 
-    const array<double, 5> volumeMeshData {
+    const array<double, CemrgTestData::surfacePaths.size()> volumeMeshData {
         1253966.56670495495200157166,
         6649.51557345613582583610,
         1258.14200772278718432062,
         13756.31573527904947695788,
         108985.12497850439103785902
     };
-
-    // To prevent creating a bug in the test code
-    QVERIFY(surfaceData.size() == volumeMeshData.size());
 
     for (size_t i = 0; i < volumeMeshData.size(); i++)
         QTest::newRow(("Test " + QFileInfo(surfaceData[i].first).fileName().toStdString()).c_str()) << surfaceData[i].second << volumeMeshData[i];
@@ -187,16 +183,13 @@ void TestCemrgMeasure::calcSurfaceMesh_data() {
     QTest::addColumn<mitk::Surface::Pointer>("surface");
     QTest::addColumn<double>("result");
 
-    const array<double, 5> surfaceMeshData {
+    const array<double, CemrgTestData::surfacePaths.size()> surfaceMeshData {
         87203.96462370984954759479,
         5998.53801315712826180970,
         1746.24837584279430302558,
         2784.97791560359246432199,
         14338.23953928404807811603
     };
-
-    // To prevent creating a bug in the test code
-    QVERIFY(surfaceData.size() == surfaceMeshData.size());
 
     for (size_t i = 0; i < surfaceMeshData.size(); i++)
         QTest::newRow(("Test " + QFileInfo(surfaceData[i].first).fileName().toStdString()).c_str()) << surfaceData[i].second << surfaceMeshData[i];

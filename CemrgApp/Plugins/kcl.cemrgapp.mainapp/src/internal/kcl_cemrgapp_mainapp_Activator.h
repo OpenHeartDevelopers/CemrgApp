@@ -34,28 +34,28 @@ PURPOSE.  See the above copyright notices for more information.
 
 namespace mitk {
 
-class kcl_cemrgapp_mainapp_Activator : public berry::AbstractUICTKPlugin {
+    class kcl_cemrgapp_mainapp_Activator: public berry::AbstractUICTKPlugin {
 
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "kcl_cemrgapp_mainapp")
-    Q_INTERFACES(ctkPluginActivator)
+        Q_OBJECT
+        Q_PLUGIN_METADATA(IID "kcl_cemrgapp_mainapp")
+        Q_INTERFACES(ctkPluginActivator)
 
-public:
+    public:
 
-    kcl_cemrgapp_mainapp_Activator();
-    ~kcl_cemrgapp_mainapp_Activator() override;
+        kcl_cemrgapp_mainapp_Activator();
+        ~kcl_cemrgapp_mainapp_Activator() override;
 
-    static kcl_cemrgapp_mainapp_Activator* GetDefault();
-    ctkPluginContext* GetPluginContext() const;
-    void start(ctkPluginContext*) override;
-    QString GetQtHelpCollectionFile() const;
+        static kcl_cemrgapp_mainapp_Activator* GetDefault();
+        ctkPluginContext* GetPluginContext() const;
+        void start(ctkPluginContext*) override;
+        QString GetQtHelpCollectionFile() const;
 
-private:
+    private:
 
-    static kcl_cemrgapp_mainapp_Activator* inst;
-    ctkPluginContext* context;
-    mutable QString helpCollectionFile;
-};
+        static kcl_cemrgapp_mainapp_Activator* inst;
+        ctkPluginContext* context;
+        mutable QString helpCollectionFile;
+    };
 }
 
 #endif /* MITK_CEMRGAPP_PLUGIN_ACTIVATOR_H_ */

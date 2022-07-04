@@ -101,7 +101,7 @@ def create_comment_for_output(tool_output, prefix, files_changed_in_pr):
             file_path_end_idx = line.index(':')
             file_path = line[:file_path_end_idx]
             line = line[file_path_end_idx+1:]
-            file_line_start = int(line[:line.index(']')])
+            file_line_start = int(line[:line.index(':')])
             file_line_end = get_file_line_end(file_path, file_line_start)
             description = f"\n```diff\n!Line: {file_line_start} - {line[line.index(' ')+1:]}``` \n"
 
@@ -127,7 +127,7 @@ def read_files_and_parse_results(files_changed_in_pr):
     with open(cppcheck_file_name, 'r') as file:
         cppcheck_content = file.readlines()
 
-    line_prefix = f'[{WORK_DIR}'
+    line_prefix = f'{WORK_DIR}'
 
     cppcheck_comment, cppcheck_issues_found = create_comment_for_output(cppcheck_content, line_prefix, files_changed_in_pr)
 

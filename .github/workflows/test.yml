@@ -25,15 +25,21 @@ jobs:
         sudo apt update
         sudo DEBIAN_FRONTEND=noninteractive apt install doxygen graphviz libfreetype6-dev libglu1-mesa-dev libssl-dev libtiff5-dev libwrap0-dev libxcomposite1 libxcursor1 libxi-dev libxkbcommon-x11-0 libxt-dev mesa-common-dev libtbb2 -y
         sudo apt remove --auto-remove icu-devtools libicu-dev -y
-    
+
     - name: Install Qt
       run: |
         sudo pip3 install --upgrade setuptools
         sudo pip3 install aqtinstall
         sudo aqt install --outputdir /Qt 5.12.10 linux desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
-    
+
     - name: Clone MITK
       run: sudo git clone --branch v2021.02 https://phabricator.mitk.org/source/mitk.git /MITK
+
+    - name: Disable tests for CppMicroServices
+      run: sudo sed -i 's/set(US_BUILD_TESTING ON)/set(US_BUILD_TESTING OFF)/' /MITK/Modules/CMakeLists.txt
+
+    - name: Change timestamps of the MITK directory
+      run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
 
     - name: Disable tests for CppMicroServices
       run: sudo sed -i 's/set(US_BUILD_TESTING ON)/set(US_BUILD_TESTING OFF)/' /MITK/Modules/CMakeLists.txt
@@ -48,9 +54,12 @@ jobs:
 
     - name: Move CemrgApp to root
       run: sudo mv CemrgApp /
-    
+
     - name: Build
       working-directory: /Build
+      env:
+        CC: gcc-6
+        CXX: g++-6
       run: make -j4
 
     - name: Test
