@@ -114,7 +114,7 @@ void MmeasurementView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*sourc
 
 void MmeasurementView::LoadDICOM() {
     // Use MITK DICOM editor
-    QString editor_id = "org.mitk.editors.dicomeditor";
+    QString editor_id = "org.mitk.editors.dicombrowser";
     berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
     this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 }
