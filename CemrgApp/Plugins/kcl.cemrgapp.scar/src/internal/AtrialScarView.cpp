@@ -780,7 +780,7 @@ void AtrialScarView::AutomaticAnalysis() {
             QString prodPath = direct + "/";
             scar->SaveNormalisedScalars(mean, scarShell, (prodPath + "MaxScar_Normalised.vtk"));
             MITK_INFO << "[...][11.2] Saving to files.";
-            ofstream prodFile1, prodFileExplanation;
+            std::ofstream prodFile1, prodFileExplanation;
             prodFile1.open((prodPath + "prodThresholds.txt").toStdString());
             for (unsigned int ix = 0; ix < values_vector.size(); ix++) {
                 double thisValue = values_vector.at(ix);

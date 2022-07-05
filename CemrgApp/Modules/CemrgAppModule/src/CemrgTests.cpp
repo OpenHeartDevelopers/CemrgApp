@@ -85,8 +85,6 @@ void autoNIIconvert() {
             }
         }
         file1.close();
-        int ctr = 0;
-        bool first = true;
         std::ifstream file2("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
         if (file2.is_open()) {
             bool first = true;
@@ -354,7 +352,7 @@ void RRcalcsAuto() {
     std::string lineD;
 
     //1
-    ifstream dirc("/home/or15/Desktop/Proj/RZ/StrainsWork/TrackTSFFD/Transforms/dirPaths.txt");
+    std::ifstream dirc("/home/or15/Desktop/Proj/RZ/StrainsWork/TrackTSFFD/Transforms/dirPaths.txt");
     std::vector<int> DS = {2, 5, 6, 8, 9, 10, 12, 13, 16, 17};
 
     if (dirc.is_open()) {

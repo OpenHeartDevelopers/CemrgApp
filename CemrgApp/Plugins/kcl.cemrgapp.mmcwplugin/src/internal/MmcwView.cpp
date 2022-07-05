@@ -709,11 +709,11 @@ void MmcwView::Tracking() {
 
         QString aPath;
         if (time.isEmpty()) {
-            ofstream file;
+            std::ofstream file;
 
             MITK_INFO << "[ATTENTION] Saving imgTimes.lst file to project directory.";
             time = directory + "/imgTimes.lst";
-            file.open(time.toStdString(), ofstream::binary);
+            file.open(time.toStdString(), std::ofstream::binary);
             file << "dcm- .nii\n";
 
             for (int i = 0; i < timePoints; i++) {

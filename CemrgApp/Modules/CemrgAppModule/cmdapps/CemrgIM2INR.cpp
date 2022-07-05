@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input", "i", mitkCommandLineParser::InputFile,
+        "input", "i", mitkCommandLineParser::File,
         "Input image", "Full path of image file.",
         us::Any(), false);
     parser.addArgument(

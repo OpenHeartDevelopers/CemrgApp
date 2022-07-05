@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input-lge", "i", mitkCommandLineParser::InputFile,
+        "input-lge", "i", mitkCommandLineParser::File,
         "LGE path", "Full path of LGE.nii file.",
         us::Any(), false);
     parser.addArgument( // optional

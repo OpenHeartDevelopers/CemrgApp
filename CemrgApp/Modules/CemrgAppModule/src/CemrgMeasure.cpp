@@ -49,7 +49,6 @@ void CemrgMeasure::Convert(QString dir, mitk::DataNode::Pointer node) {
     }
 
     std::ofstream file;
-    double x, y, z;
     file.open(dir.toStdString() + "/input.vtk");
 
     //Header
