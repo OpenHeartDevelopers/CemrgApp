@@ -106,6 +106,7 @@ private:
     QString directory;
     QString debugSCARname;
     QString alternativeNiftiFolder;
+    QString pathToScarMap;
     std::unique_ptr<CemrgScar3D> scar;
     bool _useDockerInPlugin = false; // change to FALSE to use MIRTK static libraries
 };
