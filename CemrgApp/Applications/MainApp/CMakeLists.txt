@@ -3,11 +3,6 @@ if(MITK_BUILD_APP_CemrgApp)
   project(MainApp)
 
   set(MY_APP_NAME CemrgApp)
-  set(_app_options)
-
-  if(MITK_SHOW_CONSOLE_WINDOW)
-    list(APPEND _app_options SHOW_CONSOLE)
-  endif()
 
   # Create a cache entry for the provisioning file which is used to export
   # the file name in the MITKConfig.cmake file. This will keep external projects
@@ -25,7 +20,7 @@ if(MITK_BUILD_APP_CemrgApp)
 
     org.mitk.gui.qt.datamanager
     org.mitk.gui.qt.basicimageprocessing
-    org.mitk.gui.qt.dicom
+    org.mitk.gui.qt.dicombrowser
     #org.mitk.gui.qt.diffusionimaging
     #org.mitk.gui.qt.diffusionimaging.registration
     org.mitk.gui.qt.pointsetinteraction
@@ -75,7 +70,6 @@ if(MITK_BUILD_APP_CemrgApp)
     #PLUGINS ${_plugins}
     EXCLUDE_PLUGINS ${_exclude_plugins}
     SOURCES ${_src_files}
-    ${_app_options}
   )
 
   mitk_use_modules(TARGET ${MY_APP_NAME}
@@ -100,6 +94,5 @@ if(MITK_BUILD_APP_CemrgApp)
   if(MITK_MODULES_ENABLED_PLUGINS)
     add_dependencies(${MY_APP_NAME} ${MITK_MODULES_ENABLED_PLUGINS})
   endif()
-
 
 endif()

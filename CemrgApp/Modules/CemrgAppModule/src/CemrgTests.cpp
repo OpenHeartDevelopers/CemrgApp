@@ -49,7 +49,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPointLocator.h>
 #include <mitkBoundingObjectCutter.h>
 #include <itkConformalFlatteningMeshFilter.h>
-#include <mitkMeshUtil.h>
 #include <vtkUnstructuredGridWriter.h>
 #include <vtkUnstructuredGridReader.h>
 #include <vtkExtractUnstructuredGrid.h>
@@ -59,12 +58,13 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolygon.h>
 #include <vtkDelaunay2D.h>
 #include <vtkLookupTable.h>
+#include <vtkCellData.h>
 
 
 void autoNIIconvert() {
 
     std::string frames;
-    ifstream file0("/home/or15/Desktop/MRI/process/frames.txt");
+    std::ifstream file0("/home/or15/Desktop/MRI/process/frames.txt");
     if (file0.is_open())
         getline(file0, frames);
     file0.close();
@@ -75,7 +75,7 @@ void autoNIIconvert() {
         mitk::Image::Pointer img3D = mitk::Image::New();
 
         std::string line;
-        ifstream file1("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
+        std::ifstream file1("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
         if (file1.is_open()) {
             getline(file1, line);
             while (getline(file1, line)) {
@@ -85,7 +85,7 @@ void autoNIIconvert() {
             }
         }
         file1.close();
-        ifstream file2("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
+        std::ifstream file2("/home/or15/Desktop/MRI/process/" + QString::number(i).toStdString() + "/path.txt");
         if (file2.is_open()) {
             bool first = true;
             int ctr = 0;
@@ -269,7 +269,7 @@ void MeshError() {
             }//_if
         }//_for
 
-        ofstream file;
+        std::ofstream file;
         QString pathOutput = "/home/or15/Desktop/Proj/RZ/StrainsWork/MeshError/N" + QString::number(i) + "/distances.csv";
         file.open(pathOutput.toStdString());
         for (size_t j = 0; j < distances.size(); j++) {
@@ -320,6 +320,7 @@ void polygonCutter() {
     writer->Write();
 }
 
+/**** The MeshUtil class was removed from the MITK ****
 void flattening() {
 
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>("/home/or15/Downloads/LGECART30MIN-Scar.vtk");
@@ -341,6 +342,7 @@ void flattening() {
     surface->SetVtkPolyData(MeshUtil<MeshType>::MeshToPolyData(mesh));
     mitk::IOUtil::Save(surface, "/home/or15/Downloads/test.vtk");
 }
+*/
 
 void RRcalcsAuto() {
 
@@ -350,7 +352,7 @@ void RRcalcsAuto() {
     std::string lineD;
 
     //1
-    ifstream dirc("/home/or15/Desktop/Proj/RZ/StrainsWork/TrackTSFFD/Transforms/dirPaths.txt");
+    std::ifstream dirc("/home/or15/Desktop/Proj/RZ/StrainsWork/TrackTSFFD/Transforms/dirPaths.txt");
     std::vector<int> DS = {2, 5, 6, 8, 9, 10, 12, 13, 16, 17};
 
     if (dirc.is_open()) {
@@ -386,7 +388,7 @@ void RRcalcsAuto() {
                             else
                                 values.push_back(rr->CalcDistance(points));
                         }
-                        ofstream file;
+                        std::ofstream file;
                         QString path = QString::fromStdString(prePath) + QString::fromStdString(permStr) + ".csv";
                         file.open(path.toStdString());
                         for (size_t z = 0; z < values.size(); z++) {
@@ -408,8 +410,8 @@ void RRcnvrtAuto() {
 
     //Converts user MPS to input.vtk for later calcs
     std::string lineF, lineD;
-    ifstream file("/home/or15/Desktop/Proj/Tom/Points/Tools/filPaths.txt");
-    ifstream dirc("/home/or15/Desktop/Proj/Tom/Points/Tools/dirPaths.txt");
+    std::ifstream file("/home/or15/Desktop/Proj/Tom/Points/Tools/filPaths.txt");
+    std::ifstream dirc("/home/or15/Desktop/Proj/Tom/Points/Tools/dirPaths.txt");
     if (file.is_open() && dirc.is_open()) {
         while (getline(file, lineF)) {
 
@@ -804,7 +806,7 @@ void curvesCalculator() {
                 fileName = "LNG.csv";
                 plotValueVectors = plotValueVectorsLNG;
             }//_if
-            ofstream file;
+            std::ofstream file;
             file.open(directory.toStdString() + "/" + fileName.toStdString());
 
             std::vector<double> values;

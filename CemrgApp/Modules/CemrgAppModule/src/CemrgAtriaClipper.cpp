@@ -91,17 +91,17 @@ bool CemrgAtriaClipper::ComputeCtrLines(std::vector<int> pickedSeedLabels, vtkSm
         MITK_INFO << "Producibility test. ";
         QString prodPath = directory + "/";
         mitk::IOUtil::Save(surface, (prodPath + "prodLineSurface.vtk").toStdString());
-        ofstream prodFile1;
+        std::ofstream prodFile1;
         prodFile1.open((prodPath + "prodSeedLabels.txt").toStdString());
         for (unsigned int i = 0; i < pickedSeedLabels.size(); i++)
             prodFile1 << pickedSeedLabels.at(i) << "\n";
         prodFile1.close();
-        ofstream prodFile2;
+        std::ofstream prodFile2;
         prodFile2.open((prodPath + "prodSeedIds.txt").toStdString());
         for (unsigned int i = 0; i < pickedSeedIds->GetNumberOfIds(); i++)
             prodFile2 << pickedSeedIds->GetId(i) << "\n";
         prodFile2.close();
-        ofstream prodFile3;
+        std::ofstream prodFile3;
         prodFile3.open((prodPath + "prodLineFlip.txt").toStdString());
         prodFile3 << autoLines << "\n";
         prodFile3.close();
@@ -324,7 +324,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             vtkSmartPointer<vtkDoubleArray> diams = vtkDoubleArray::SafeDownCast(line->GetPointData()->GetArray("CenterlineSectionMinSizeArrayName"));
             double diam = diams->GetValue(position);
 
-            ofstream morphResult;
+            std::ofstream morphResult;
             QString morphPath = directory + "/morphResults.txt";
             morphResult.open(morphPath.toStdString(), std::ios_base::app);
             if (i == 0)
@@ -372,7 +372,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
             mitk::Surface::Pointer prodSurf = mitk::Surface::New();
             prodSurf->SetVtkPolyData(circle);
             mitk::IOUtil::Save(prodSurf, (prodPath + "prodCutter" + QString::number(i) + ".vtk").toStdString());
-            ofstream prodFile1;
+            std::ofstream prodFile1;
             prodFile1.open((prodPath + "prodCutter" + QString::number(i) + "TNormals.txt").toStdString());
             prodFile1 << centreLinePolyPlanes.at(i)->GetNormal()[0] << "\n";
             prodFile1 << centreLinePolyPlanes.at(i)->GetNormal()[1] << "\n";

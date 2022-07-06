@@ -114,7 +114,7 @@ void MmeasurementView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*sourc
 
 void MmeasurementView::LoadDICOM() {
     // Use MITK DICOM editor
-    QString editor_id = "org.mitk.editors.dicomeditor";
+    QString editor_id = "org.mitk.editors.dicombrowser";
     berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
     this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 }
@@ -553,7 +553,7 @@ void MmeasurementView::Tracking() {
             QMessageBox::warning(NULL, "Attention", "Reverting to default time or parameter file!");
 
         if (time.isEmpty()) {
-            ofstream file;
+            std::ofstream file;
             //Absolute path
             QString aPath = QCoreApplication::applicationDirPath() + "/MLib";
             file.open(aPath.toStdString() + "/imgTimes.lst");
@@ -711,7 +711,7 @@ void MmeasurementView::WriteFileButton() {
         fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
         if (ok && !fileName.isEmpty() && fileName.endsWith(".csv")) {
 
-            ofstream file;
+            std::ofstream file;
             file.open(directory.toStdString() + "/" + fileName.toStdString());
             std::vector<double> values;
             for (int i = 0; i < timePoints * smoothness; i++)

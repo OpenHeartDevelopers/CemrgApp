@@ -49,23 +49,23 @@ int main(int argc, char* argv[]) {
     // How should arguments be prefixed
     parser.setArgumentPrefix("--", "-");
 
-    // Add arguments. Unless specified otherwise, each argument is optional.
-    // See mitkCommandLineParser::addArgument() for more information.
-    parser.addArgument(
-        "input", "i", mitkCommandLineParser::InputFile,
-        "Input Image", "Any image format known to MITK.",
-        us::Any(), false);
-    parser.addArgument(
-        "output", "o", mitkCommandLineParser::OutputFile,
-        "Output file", "Where to save the output.",
-        us::Any(), false);
-    parser.addArgument(
-        "offset", "f", mitkCommandLineParser::Int,
-        "Offset", "the offset integer to add to each voxel.",
-        us::Any(), false);
-    parser.addArgument( // optional
-        "verbose", "v", mitkCommandLineParser::Bool,
-        "Verbose Output", "Whether to produce verbose output");
+  // Add arguments. Unless specified otherwise, each argument is optional.
+  // See mitkCommandLineParser::addArgument() for more information.
+  parser.addArgument(
+    "input", "i", mitkCommandLineParser::File,
+    "Input Image", "Any image format known to MITK.",
+    us::Any(), false);
+  parser.addArgument(
+    "output", "o", mitkCommandLineParser::File,
+    "Output file", "Where to save the output.",
+    us::Any(), false);
+  parser.addArgument(
+    "offset", "f", mitkCommandLineParser::Int,
+    "Offset", "the offset integer to add to each voxel.",
+    us::Any(), false);
+  parser.addArgument( // optional
+    "verbose", "v", mitkCommandLineParser::Bool,
+    "Verbose Output", "Whether to produce verbose output");
 
     // Parse arguments.
     // This method returns a mapping of long argument names to their values.

@@ -92,11 +92,11 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::InputFile,
+    //   "input-path", "p", mitkCommandLineParser::File,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input", "i", mitkCommandLineParser::InputFile,
+        "input", "i", mitkCommandLineParser::File,
         "Input image", "Full path of image file.",
         us::Any(), false);
     parser.addArgument(
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
 
                 MITK_INFO(verbose) << "Write to binary file";
                 std::string path = outputPath.toStdString();
-                ofstream myFile(path, ios::out | ios::binary);
+                std::ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
                 myFile.write((char*)pv, dimensions * sizeof(uint8_t));
                 myFile.close();

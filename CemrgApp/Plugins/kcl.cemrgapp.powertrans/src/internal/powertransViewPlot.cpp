@@ -628,7 +628,7 @@ void powertransViewPlot::WritePlotToCSV(QString dir) {
         fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
         if (ok && !fileName.isEmpty() && fileName.endsWith(".csv")) {
 
-            ofstream file;
+            std::ofstream file;
             file.open(dir.toStdString() + "/" + fileName.toStdString());
             std::vector<double> values;
             for (int i = 0; i < 16; i++) {

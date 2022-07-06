@@ -46,6 +46,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPlaneSource.h>
 #include <vtkProbeFilter.h>
 #include <vtkRegularPolygonSource.h>
+#include <vtkUnsignedCharArray.h>
 
 // C++ Standard
 #include <numeric>
@@ -312,9 +313,9 @@ std::vector<mitk::Surface::Pointer> CemrgStrains::ReferenceGuideLines(mitk::Data
     //Calculate points
     mitk::Point3D A1, A2, AB;
     mitk::Point3D PNT1, PNT2;
-    A1 = RIV1 - APEX;
-    A2 = RIV2 - APEX;
-    AB = CNTR - APEX;
+    A1 = mitk::Point3D(RIV1 - APEX);
+    A2 = mitk::Point3D(RIV2 - APEX);
+    AB = mitk::Point3D(CNTR - APEX);
     PNT1.SetElement(0, APEX.GetElement(0) + Dot(A1, AB) / Dot(AB, AB) * AB.GetElement(0));
     PNT1.SetElement(1, APEX.GetElement(1) + Dot(A1, AB) / Dot(AB, AB) * AB.GetElement(1));
     PNT1.SetElement(2, APEX.GetElement(2) + Dot(A1, AB) / Dot(AB, AB) * AB.GetElement(2));

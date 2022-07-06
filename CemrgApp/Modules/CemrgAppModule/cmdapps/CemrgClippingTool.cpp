@@ -92,17 +92,17 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::InputFile,
+    //   "input-path", "p", mitkCommandLineParser::File,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input-vtk", "i", mitkCommandLineParser::InputFile,
-        "segmentation (vtk) path", "Full path of segmentation.vtk file.",
-        us::Any(), false);
+                "input-vtk", "i", mitkCommandLineParser::File,
+                "segmentation (vtk) path", "Full path of segmentation.vtk file.",
+                us::Any(), false);
     parser.addArgument(
-        "output", "o", mitkCommandLineParser::OutputFile,
-        "Output file", "Where to save the output.",
-        us::Any(), false);
+                "output", "o", mitkCommandLineParser::File,
+                "Output file", "Where to save the output.",
+                us::Any(), false);
     parser.addArgument(
         "clipper", "c", mitkCommandLineParser::String,
         "Mitral valve file (.nii/.vtk)", "Image (or VTK) of mitral valve to be cut");

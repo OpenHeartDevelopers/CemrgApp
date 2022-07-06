@@ -85,11 +85,11 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::InputFile,
+    //   "input-path", "p", mitkCommandLineParser::File,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input-lge", "i", mitkCommandLineParser::InputFile,
+        "input-lge", "i", mitkCommandLineParser::File,
         "LGE path", "Full path of LGE.nii file.",
         us::Any(), false);
     parser.addArgument( // optional
@@ -256,7 +256,7 @@ int main(int argc, char* argv[]) {
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
 
         MITK_INFO(verbose) << "Writing to pordStats file" + prothresfile.toStdString();
-        ofstream prodFile1;
+        std::ofstream prodFile1;
         prodFile1.open((outputFolder + prothresfile).toStdString());
         prodFile1 << methodPref.toStdString() << std::endl;
         prodFile1 << mean << std::endl;

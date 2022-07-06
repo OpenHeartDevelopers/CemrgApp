@@ -60,12 +60,12 @@ jobs:
 
 
   Build-Linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [Variables]
     steps:
     - name: Download precompiled Build folder
       run: |
-        wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EU8n4C0PlPxDgLk6PFrprY8B4KwiDaYotmur5m0q3px81w?download=1
+        wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/ETN8L5OcVupGiMInP8o9MtUBNflJb57nK1Dg-jnikW0iwg?download=1
         7z x Build.zip
         rm Build.zip
         sudo mv Build /
@@ -80,7 +80,7 @@ jobs:
     - name: Install missing packages
       run: |
         sudo apt update
-        sudo DEBIAN_FRONTEND=noninteractive apt install libxt-dev libtiff5-dev libfontconfig1 mesa-common-dev libglu1-mesa-dev libxcomposite1 libxcursor1 libxrender1 libxi6 libxtst6 libasound2 libnspr4 libnss3 libxkbcommon-dev libxkbcommon-x11-dev doxygen git cmake python3-pip gcc-6 g++-6 -y
+        sudo DEBIAN_FRONTEND=noninteractive apt install doxygen graphviz libfreetype6-dev libglu1-mesa-dev libssl-dev libtiff5-dev libwrap0-dev libxcomposite1 libxcursor1 libxi-dev libxkbcommon-x11-0 libxt-dev mesa-common-dev -y
         sudo apt remove --auto-remove icu-devtools libicu-dev -y
 
     - name: Install Qt
@@ -90,9 +90,9 @@ jobs:
         sudo aqt install --outputdir /Qt 5.12.10 linux desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
 
     - name: Clone MITK
-      run: sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
+      run: sudo git clone --branch v2021.02 https://phabricator.mitk.org/source/mitk.git /MITK
 
-    - name: Change timestamps of MITK directory
+    - name: Change timestamps of the MITK directory
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
 
     - name: Clone CemrgApp
@@ -119,7 +119,7 @@ jobs:
       run: |
         make package -j4
         cd _CPack_Packages/Linux/TGZ
-        mv MITK-v2018.04.2-linux-x86_64 CemrgApp-Linux
+        mv MITK-v2021.02-linux-x86_64 CemrgApp-Linux
         rm CemrgApp-Linux/Mitk*
         rm CemrgApp-Linux/bin/MitkWorkbench*
         mv /Externals/* CemrgApp-Linux/bin/
@@ -222,7 +222,7 @@ jobs:
     - name: Download precompiled Build folder
       working-directory: /Users/Shared
       run: |
-        wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EVzkObB3qiZLpEQsCLB3pdcBjaGDuzLapXFvujnDP_xr1A?download=1
+        wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EX4dERE2ilFNmuv2Od0GaOoBuUSgzBS_TzwEqf9KVtmsXQ?download=1
         7z x Build.zip
         rm Build.zip
 
@@ -233,15 +233,8 @@ jobs:
         7z x Externals.zip
         rm Externals.zip
 
-    - name: Download patch for MITK
-      working-directory: /Users/Shared
-      run: |
-        wget -q -O Patch.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EQ5LKrqH_fZNt9eGA7RBcC4B9YyyF0SwFeo9hIm9zkqLTQ?download=1
-        7z x Patch.zip
-        rm Patch.zip
-
     - name: Install missing packages
-      run: brew install gmp doxygen llvm@9
+      run: brew install doxygen libomp
 
     - name: Install Qt
       working-directory: /Users/Shared
@@ -251,15 +244,9 @@ jobs:
         python3 -m aqt install --outputdir Qt 5.12.10 mac desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
 
     - name: Clone MITK
-      run: git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /Users/Shared/MITK
+      run: git clone --branch v2021.02 https://phabricator.mitk.org/source/mitk.git /Users/Shared/MITK
 
-    - name: Patch MITK
-      working-directory: /Users/Shared
-      run: |
-        cp Patch/usServiceListeners.cpp MITK/Modules/CppMicroServices/core/src/service/usServiceListeners.cpp
-        cp Patch/usListenerFunctors_p.h MITK/Modules/CppMicroServices/core/src/util/usListenerFunctors_p.h
-
-    - name: Change timestamps of MITK directory
+    - name: Change timestamps of the MITK directory
       run: find /Users/Shared/MITK/ -exec touch -a -m -t 202104010000 {} \;
 
     - name: Clone CemrgApp
@@ -277,17 +264,6 @@ jobs:
         sudo echo ${{ needs.Variables.outputs.tag }} >> CemrgApp/Applications/MainApp/version.txt
         sudo echo ${{ needs.Variables.outputs.sha }} >> CemrgApp/Applications/MainApp/version.txt
 
-    - name: Set environment variables
-      run: |
-        echo "/usr/local/opt/llvm@9/bin:$PATH" >> $GITHUB_PATH
-        echo "LDFLAGS=-L/usr/local/opt/llvm@9/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I/usr/local/opt/llvm@9/include" >> $GITHUB_ENV
-        echo "LLVM_VERSION=9.0" >> $GITHUB_ENV
-        echo "LLVM_DIRECTORY=/usr/local/opt/llvm@9" >> $GITHUB_ENV
-        echo "CC=/usr/local/opt/llvm@9/bin/clang" >> $GITHUB_ENV
-        echo "CXX=/usr/local/opt/llvm@9/bin/clang++" >> $GITHUB_ENV
-        echo "CPLUS_INCLUDE_PATH=/usr/local/opt/llvm@9/include/c++/v1:/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include" >> $GITHUB_ENV
-
     - name: Build
       working-directory: /Users/Shared/Build
       run: |
@@ -300,7 +276,7 @@ jobs:
       run: make package -j6
 
     - name: Create DMG
-      working-directory: /Users/Shared/Build/MITK-build/_CPack_Packages/Darwin/DragNDrop/MITK-v2018.04.2-local_changes-macos-x86_64
+      working-directory: /Users/Shared/Build/MITK-build/_CPack_Packages/Darwin/DragNDrop/MITK-v2021.02-macos-x86_64
       run: |
         rsync -au MitkWorkbench.app/Contents/Frameworks/ CemrgApp.app/Contents/Frameworks
         rsync -au MitkWorkbench.app/Contents/MacOS/ CemrgApp.app/Contents/MacOS
