@@ -78,7 +78,7 @@ powertransViewPlot::powertransViewPlot(){
     this->strain = std::unique_ptr<CemrgStrains>(new CemrgStrains());;
     this->AHA_camera = vtkSmartPointer<vtkCamera>::New();
     this->AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
-    this->AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+    this->AHA_interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
 }
 
 void powertransViewPlot::SetFocus() {
@@ -97,12 +97,12 @@ void powertransViewPlot::CreateQtPartControl(QWidget *parent) {
 
     //AHA bullseye plot
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->SetRenderWindow(renderWindow);
+    m_Controls.widget_1->setRenderWindow(renderWindow);
 
     AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
     AHA_renderer->SetBackground(0, 0, 0);
-    m_Controls.widget_1->GetRenderWindow()->AddRenderer(AHA_renderer);
-    AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+    m_Controls.widget_1->renderWindow()->AddRenderer(AHA_renderer);
+    AHA_interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonPressEvent);
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
     AHA_interactor->RemoveObservers(vtkCommand::RightButtonPressEvent);

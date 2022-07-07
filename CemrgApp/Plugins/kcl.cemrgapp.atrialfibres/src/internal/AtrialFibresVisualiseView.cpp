@@ -67,7 +67,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkClipPolyData.h>
 #include <vtkHedgeHog.h>
-#include <vtkNamedColors.h>
+// #include <vtkNamedColors.h>
 
 //ITK
 #include <itkAddImageFilter.h>
@@ -119,14 +119,14 @@ void AtrialFibresVisualiseView::CreateQtPartControl(QWidget *parent) {
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->SetRenderWindow(renderWindow);
-    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->setRenderWindow(renderWindow);
+    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
 
     //Setup keyboard interactor
     // callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     // callBack->SetCallback(KeyCallBackFunc);
     // callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     // interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -162,7 +162,7 @@ void AtrialFibresVisualiseView::LoadFibreFile(){
     MITK_INFO << ("Fibres read. Number of fibres: " + QString::number(vectorField.size())).toStdString();
 
     // rearrange vectorfield into vtkFlostArray fibres
-    vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
+    // vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
     vtkSmartPointer<vtkFloatArray> fibres = vtkSmartPointer<vtkFloatArray>::New();
     fibres->SetNumberOfComponents(3);
     fibres->SetNumberOfTuples(vectorField.size());
@@ -186,7 +186,7 @@ void AtrialFibresVisualiseView::LoadFibreFile(){
 
     vtkNew<vtkActor> fibresActor;
     fibresActor->SetMapper(fibresMapper);
-    fibresActor->GetProperty()->SetColor(colors->GetColor3d("Gold").GetData());
+    // fibresActor->GetProperty()->SetColor(colors->GetColor3d("Gold").GetData());
 
     renderer->AddActor(fibresActor);
 }
