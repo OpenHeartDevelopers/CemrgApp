@@ -26,6 +26,24 @@ Links:
 + [Download our latest version](https://github.com/CemrgDevelopers/CemrgApp/releases/tag/v2.2)
 + [Visit our wiki Page](https://github.com/CemrgDevelopers/CemrgApp/wiki)
 
+### Stable Release (v2.2)
+
+| OS                     | download link                                                                                                   |
+|:-----------------------|:----------------------------------------------------------------------------------------------------------------|
+| Linux (Ubuntu 18.04)   | [Download ZIP](https://github.com/CemrgAppDevelopers/CemrgApp/releases/download/v2.2/CemrgApp-Linux-v2.2.zip)   |
+| macOS (Catalina 10.15) | [Download DMG](https://github.com/CemrgAppDevelopers/CemrgApp/releases/download/v2.2/CemrgApp-macOS-v2.2.dmg)   |
+| Windows 10             | [Donwload ZIP](https://github.com/CemrgAppDevelopers/CemrgApp/releases/download/v2.2/CemrgApp-Windows-v2.2.zip) |
+
+## About 
+CemrgApp has different **perspectives**, small apps with a specific purpose. 
+Check the [Examples](https://cemrgappdevelopers.github.io/CemrgApp/engagement/)
+page to learn more. Currently, the available perspectives are: 
+
++ Motion Quantification
++ Anatomical Measurements
++ Scar Quantification
++ Morphological Measurements
++ Electrophysiology Simulations
 
 ## Cite us
 
