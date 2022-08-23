@@ -5,9 +5,9 @@ permalink: /contributors/
 ---
 
 # Developers 
-| Dr Orod Razeghi   | Dr Jose Alonso Solis-Lemus* | Dr Elliot Fairweather* |
-| Dr Caroline Roney | Dr Cesare Corrado*          | Dr Angela Lee*         |
-|                   |                            |                       |
+| Dr Orod Razeghi <br> [github](https://github.com/OrodRazeghi)  | Dr Jose Alonso Solis-Lemus <br> [github](https://github.com/alonsoJASL), [scholar](https://scholar.google.com/citations?user=2_095cQAAAAJ&hl=en&oi=sra) | Dr Elliot Fairweather <br> [github](https://github.com/epmfairweather) |
+| Dr Caroline Roney | Dr Cesare Corrado          | Dr Angela Lee         |
+| Rosie Barrows |                            |                       |
 |                   |                            |                       |
 > * - CEMRG @ KCL 
 
@@ -15,7 +15,6 @@ permalink: /contributors/
 
 | Prof Steven Niederer | Dr Steven Williams | Dr Iain Sim       | Dr Irum Kotadia |
 | Dr Neil Bodagh       | Dr John Whitaker   | Dr Louisa O'Neill | Dr Mark O'Neill |
-|                      |                    |                   |                 |
-|                      |                    |                   |                 |
+
 
 
