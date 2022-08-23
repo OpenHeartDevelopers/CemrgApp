@@ -9,7 +9,7 @@ permalink: /contributors/
 | Dr Caroline Roney | Dr Cesare Corrado          | Dr Angela Lee         |
 | Rosie Barrows |                            |                       |
 |                   |                            |                       |
-> * - CEMRG @ KCL 
+
 
 # Academic Collaborators
 
