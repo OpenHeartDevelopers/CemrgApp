@@ -20,7 +20,11 @@ machine learning, and simulation approaches to cardiovascular data.
 CemrgApp provides an integrated environment, where cardiac data visualisation and 
 workflow prototyping are presented through a common user friendly graphical interface.
 
-Links:
+
+Explore in this website our [Resources page](/resources) with links to videos and examples.
+
+
+External links:
 
 + [Project on Github](https://github.com/CemrgDevelopers/CemrgApp)
 + [Download our latest version](https://github.com/CemrgDevelopers/CemrgApp/releases/tag/v2.2)
