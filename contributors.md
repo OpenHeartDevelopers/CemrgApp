@@ -7,10 +7,11 @@ permalink: /contributors/
 # Developers 
 + Dr Orod Razeghi [github](https://github.com/OrodRazeghi)
 + Dr Jose Alonso Solis-Lemus [github](https://github.com/alonsoJASL), [scholar](https://scholar.google.com/citations?user=2_095cQAAAAJ&hl=en&oi=sra)
++ Dr Angela Lee [github](https://github.com/angela337)
++ Dr Caroline Roney [github](https://github.com/caroroney)
++ Dr Cesare Corrado 
 + Dr Elliot Fairweather [github](https://github.com/epmfairweather)
-+ Dr Caroline Roney
-+ Dr Cesare Corrado
-+ Dr Angela Lee
++ Dr Rasheed Karim [github](https://github.com/drkarim)
 + Rosie Barrows
 
 # Academic Collaborators
