@@ -340,6 +340,9 @@ mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer
 
     ImageType::Pointer outputImg = ImageType::New();
     ImageType::IndexType start;
+    double origin[3];
+    image->GetGeometry()->GetOrigin().ToArray(origin);
+
     start[0] = 0; start[1] = 0; start[2] = 0;
 
     ImageType::SizeType size;
@@ -375,6 +378,7 @@ mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer
     paste->SetDestinationIndex(indexForOutput);
 
     image = mitk::ImportItkImage(paste->GetOutput())->Clone();
+    image->GetGeometry()->SetOrigin(origin);
 
     return image;
 }
@@ -1034,7 +1038,6 @@ mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Point
     for (int jx = 0; jx < 3; jx++) {
         origin[jx] = bounds[2*jx] + spacing[jx]/2;
     }
-    std::cout << "o = (" << origin[0] << ", " << origin[1] << ", " << origin[2] << ")"<< '\n';
 
     //Prepare empty image
     vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
@@ -1068,7 +1071,6 @@ mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Point
     imgstenc->SetBackgroundValue(otval);
     imgstenc->Update();
 
-    //VTK to ITK conversion
     mitk::Image::Pointer cutImg = mitk::Image::New();
     cutImg->Initialize(imgstenc->GetOutput());
     cutImg->SetVolume(imgstenc->GetOutput()->GetScalarPointer());

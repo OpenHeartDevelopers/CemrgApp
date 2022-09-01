@@ -375,8 +375,10 @@ void AtrialFibresView::AnalysisChoice(){
             // Create fake segmentation image for labelling
             double origin[3] = {0, 0, 0};
             double spacing[3] = {1, 1, 1};
+
             CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing);
             CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
+            MITK_INFO << ("Origin set to: (" + QString::number(origin[0]) + ", " + QString::number(origin[1]) + ", " + QString::number(origin[2]) +")").toStdString();
 
             mitk::Image::Pointer im = CemrgCommonUtils::ReturnBinarised(mitk::IOUtil::Load<mitk::Image>(StdStringPath(tagName+".nii")));
             // CemrgCommonUtils::Binarise(im);
