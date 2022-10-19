@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     std::string output_subfolder = "OUTPUT";
     auto singlevoxelprojection = false;
     auto multithreshold = false;
-    auto inThresholdString = (method == 2) ? "3.3" : "1.2";
+    std::string inThresholdString = (method == 2) ? "3.3" : "1.2";
     auto verbose = false;
 
     // Parse, cast and set optional argument
@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
         prodFile1 << stdv << std::endl;
 
         QString thres_str = QString::fromStdString(inThresholdString);
-        if (multithreshold && (thres_str.length()==3 && thres_str.contains('.')) {
+        if (multithreshold && (thres_str.length()==3 && thres_str.contains('.'))) {
             thres_str = (method == 2) ? "1.0:0.1:5.0" : "0.7:0.01:1.61";
         }
 
@@ -297,12 +297,12 @@ int main(int argc, char* argv[]) {
         int ix = 0;
         bool ok_to_double = true;
         while (ix<thres_list.size() && ok_to_double) {
-            input_threshold_vector.push_back(thres_list.at(ix).toDouble(ok_to_double));
+            input_threshold_vector.push_back(thres_list.at(ix).toDouble(&ok_to_double));
             ix++;
         }
 
         if (!ok_to_double){
-            MITK_ERROR << ("Error parsing value: " + QString::number(thres_list.at(ix - 1))).toStdString();
+            MITK_ERROR << ("Error parsing value: " + thres_list.at(ix - 1)).toStdString();
             return EXIT_FAILURE;
         }  
 
@@ -321,8 +321,8 @@ int main(int argc, char* argv[]) {
         for (auto & this_value : threshold_vector)  { 
 
             double this_thres = (method == 2) ? mean + this_value * stdv : mean * this_value;
-            double thispercentage = scar->Thresholding(thisthres);
-            prodFile1 << "V=" << this_value << ", SCORE=" << thispercentage << std::endl;
+            double this_percentage = scar->Thresholding(this_thres);
+            prodFile1 << "V=" << this_value << ", SCORE=" << this_percentage << std::endl;
         }
 
         prodFile1.close();
