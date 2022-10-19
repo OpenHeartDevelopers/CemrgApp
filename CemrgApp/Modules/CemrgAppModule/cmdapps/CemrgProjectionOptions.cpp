@@ -93,11 +93,17 @@ int main(int argc, char* argv[]) {
         "LGE path", "Full path of LGE.nii file.",
         us::Any(), false);
     parser.addArgument( // optional
+        "output-subfolder", "o", mitkCommandLineParser::File,
+        "Output subfolder name", "Name of output subfolder (Default=OUTPUT)");
+    parser.addArgument( // optional
         "thresholds-method", "m", mitkCommandLineParser::Int,
         "Thresholds method", "Choose between IIR*V (1) and M + STDV*V (2). (Default=2)");
     parser.addArgument( // optional
         "single-voxel-projection", "svp", mitkCommandLineParser::Bool,
         "Single Voxel Projection", "Project LGE voxels onto Scar Map ONLY ONCE (Default=OFF)");
+    parser.addArgument(     // optional
+            "threshold-values", "tv", mitkCommandLineParser::String,
+            "Threshold(s)", "Specific threshold (-t 1.2):\n Multithresholds (-t 0.97,1.2,1.32)\n Sweeps (-t 0.7:0.01:1.61)");
     parser.addArgument( // optional
         "multi-thresholds", "t", mitkCommandLineParser::Bool,
         "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1:0.1:5\n\t (V*IIR) V = 0.7:0.01:1.61");
@@ -124,16 +130,26 @@ int main(int argc, char* argv[]) {
 
     // Default values for optional arguments
     // std::string prodthresfile = "prodThresholds.txt";
-    auto thresmethod = 2;
+    auto method = 2;
+    std::string output_subfolder = "OUTPUT";
     auto singlevoxelprojection = false;
     auto multithreshold = false;
+    auto inThresholdString = (method == 2) ? "3.3" : "1.2";
     auto verbose = false;
 
     // Parse, cast and set optional argument
     MITK_INFO << "Parsing optional arguments";
 
+    if (parsedArgs.end() != parsedArgs.find("output-subfolder")) {
+        output_subfolder = us::any_cast<std::string>(parsedArgs["output-subfolder"]);
+    }
+    
     if (parsedArgs.end() != parsedArgs.find("thresholds-method")) {
-        thresmethod = us::any_cast<int>(parsedArgs["thresholds-method"]);
+        method = us::any_cast<int>(parsedArgs["thresholds-method"]);
+    }
+
+    if (parsedArgs.end() != parsedArgs.find("threshold-values")) {
+        inThresholdString = us::any_cast<std::string>(parsedArgs["threshold-values"]);
     }
 
     if (parsedArgs.end() != parsedArgs.find("multi-thresholds")) {
@@ -156,7 +172,6 @@ int main(int argc, char* argv[]) {
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
 
-        int method = thresmethod;
         QString methodPref = (method == 2) ? "MplusSD_" : "IIR_";
         MITK_INFO(method == 1) << "IIR METHOD";
         MITK_INFO(method == 2) << "M + SD METHOD";
@@ -174,7 +189,7 @@ int main(int argc, char* argv[]) {
         QFileInfo fi(lgename);
         QString direct = fi.absolutePath();
         QString lgePath = fi.absoluteFilePath();
-        QString outputFolder = direct + "/" + fi.baseName() + "_OUTPUT" + "/";
+        QString outputFolder = direct + "/" + QString::fromStdString(output_subfolder) + "/";
 
         QDir d(outputFolder);
 
@@ -262,27 +277,55 @@ int main(int argc, char* argv[]) {
         prodFile1 << mean << std::endl;
         prodFile1 << stdv << std::endl;
 
-        if (multithreshold) {
-            MITK_INFO << "Scores for multiple thresholds.";
-            prodFile1 << "MULTIPLE SCORES:" << std::endl;
-            double startVal, endVal, increment;
+        QString thres_str = QString::fromStdString(inThresholdString);
+        if (multithreshold && (thres_str.length()==3 && thres_str.contains('.')) {
+            thres_str = (method == 2) ? "1.0:0.1:5.0" : "0.7:0.01:1.61";
+        }
 
-            startVal = (method == 2) ? 1.0 : 0.7;
-            endVal = (method == 2) ? 5.0 : 1.61;
-            increment = (method == 2) ? 0.1 : 0.01;
+        bool is_sweep_threshold = false;
+        std::vector<double> input_threshold_vector, threshold_vector;
+        QStringList thres_list = QStringList();
+        if (thres_str.contains(',')){
+            thres_list = thres_str.split(',');
+        } else if(thres_str.contains(':')){
+            thres_list = thres_str.split(':');
+            is_sweep_threshold = true;
+        } else{
+            thres_list << thres_str;
+        }
 
-            double thisVal = startVal;
-            while (thisVal <= endVal) {
-                double thisthres = (method == 2) ? mean + thisVal * stdv : mean * thisVal;
-                double thispercentage = scar->Thresholding(thisthres);
-                prodFile1 << "V=" << thisVal << ", SCORE=" << thispercentage << std::endl;
+        int ix = 0;
+        bool ok_to_double = true;
+        while (ix<thres_list.size() && ok_to_double) {
+            input_threshold_vector.push_back(thres_list.at(ix).toDouble(ok_to_double));
+            ix++;
+        }
 
-                thisVal += increment;
+        if (!ok_to_double){
+            MITK_ERROR << ("Error parsing value: " + QString::number(thres_list.at(ix - 1))).toStdString();
+            return EXIT_FAILURE;
+        }  
+
+        if(is_sweep_threshold) {
+            double value = input_threshold_vector.at(0);
+            double increment = (input_threshold_vector.size() == 2) ? 1 : input_threshold_vector.at(1);
+            double endVal = input_threshold_vector.back();
+            while (value < endVal){
+                threshold_vector.push_back(value);
+                value += increment;
             }
+        } else {
+            threshold_vector.assign(input_threshold_vector.begin(), input_threshold_vector.end()); 
+        }
+
+        for (auto & this_value : threshold_vector)  { 
+
+            double this_thres = (method == 2) ? mean + this_value * stdv : mean * this_value;
+            double thispercentage = scar->Thresholding(thisthres);
+            prodFile1 << "V=" << this_value << ", SCORE=" << thispercentage << std::endl;
         }
 
         prodFile1.close();
-
 
         MITK_INFO(verbose) << "Goodbye!";
     } catch (const std::exception &e) {
