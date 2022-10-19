@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     splash.setWindowFlags(Qt::SplashScreen | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
     splash.show();
     if (!version.isEmpty())
-        splash.showMessage("CemrgApp " + version + " (" + sha + ")\nPowered by: MITK v2021.02", Qt::AlignLeft, Qt::white);
+        splash.showMessage("CemrgApp " + version + " (" + sha + ")\nPowered by: MITK v2021.10", Qt::AlignLeft, Qt::white);
     QTimer::singleShot(4000, &splash, SLOT(close()));
 
     // -------------------------------------------------------------------
