@@ -745,6 +745,126 @@ QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString 
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerUacMainMode(QString dir, QString stage, QString atrium, QString layer, QString fibre, QString meshname, QStringList tags, QStringList landmarks, bool fourch, bool noraa, int scale){
+   SetDockerImageUac("3.0-beta");
+   QString executablePath;
+#if defined(__APPLE__)
+   executablePath = "/usr/local/bin/";
+#endif
+   QString executableName = executablePath + "docker";
+   QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+   QDir home(dir);
+   QStringList arguments = GetDockerArguments(home.absolutePath());
+
+   QString uaccmd = "uac";
+   arguments << uaccmd;
+   arguments << "--uac-stage" << stage;
+   arguments << "--atrium" << atrium;
+   arguments << "--layer" << layer;
+   arguments << "--fibre" << fibre;
+   arguments << "--msh" << meshname;
+
+   arguments << "--tags";
+   for (int ix = 0; ix < tags.size(); ix++) {
+       arguments << tags.at(ix);
+   }
+
+   if (landmarks.size() > 0) {
+       arguments << "--landmarks" << home.relativeFilePath(landmarks.at(0));
+       if (landmarks.size() > 1) {
+           arguments << "--regions" << home.relativeFilePath(landmarks.at(1));
+       }
+   }
+
+   if (fourch) {
+       arguments << "--fourch";
+   }
+
+   if (noraa) {
+       arguments << "--noraa";
+   }
+
+   arguments << QString::number(scale);
+
+   QStringList outputs;
+   if (stage.compare("1")) {
+       outputs << "LSbc1.vtx" << "LSbc2.vtx" << "PAbc1.vtx" << "PAbc2.vtx";
+
+   } else if (stage.compare("2a")){
+       outputs << "AnteriorMesh.elem" << "AnteriorMesh.pts" << "PosteriorMesh.elem" << "PosteriorMesh.pts";
+
+   } else if (stage.compare("2b")){
+       outputs << "Labelled_Coords_2D_Rescaling_v3_C.elem" << "Labelled_Coords_2D_Rescaling_v3_C.pts";
+   }
+
+   QString outPath = home.absolutePath() + "/" + outputs.at(0);
+   bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if(successful){
+        MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << ("Error running UAC command: " + uaccmd).toStdString();
+    }
+
+    return outAbsolutePath;
+
+}
+
+QString CemrgCommandLine::DockerUacFibreMappingMode(QString dir, QString atrium, QString layer, QString fibre, QString meshname, bool msh_endo_epi, QString output, bool fourch, QString tags, QString biproj){
+   SetDockerImageUac("3.0-beta");
+   QString executablePath;
+#if defined(__APPLE__)
+   executablePath = "/usr/local/bin/";
+#endif
+   QString executableName = executablePath + "docker";
+   QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+   QDir home(dir);
+   QStringList arguments = GetDockerArguments(home.absolutePath());
+
+
+   QString uaccmd = "fibremap";
+
+   arguments << uaccmd ;
+   arguments << "--atrium" << atrium;
+   arguments << "--layer" << layer;
+   arguments << "--fibre" << fibre;
+   arguments << "--msh" << meshname;
+   arguments << "--output" << output;
+
+   if (fourch) {
+       arguments << "--fourch";
+   }
+
+   if (msh_endo_epi){
+       arguments << "--msh-endo" << "Labelled";
+       arguments << "--msh-epi" << "Labelled";
+   }
+
+   arguments << "--tags" << tags;
+   arguments << "--fibre-biproj" << biproj;
+
+   QString omsh = output;
+   omsh += layer.contains("bilayer") ? "Bilayer" : "";
+
+   QStringList outputs;
+   outputs << omsh+".pts" << omsh+".elem";
+
+   QString outPath = home.absolutePath() + "/" + outputs.at(0);
+   bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if(successful){
+        MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << ("Error running UAC command: " + uaccmd).toStdString();
+    }
+
+    return outAbsolutePath;
+}
+
 QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
     // Method equivalent to:  meshtool extract surface
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");

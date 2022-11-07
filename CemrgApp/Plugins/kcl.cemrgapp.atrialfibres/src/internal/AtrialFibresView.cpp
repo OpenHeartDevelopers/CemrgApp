@@ -1329,8 +1329,15 @@ void AtrialFibresView::UacFibreMapping(){
     cmdargs << uac_fibreFieldOutputName;// output of fibremapping
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-    cmd->SetDockerImageUac();
-    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, QStringList(), "Fibre_1.vpts");
+    // cmd->SetDockerImageUac();
+    // uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, QStringList(), "Fibre_1.vpts");
+
+    QString _atrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex).toLower();
+    QString _layer = uiUac_surftype.at(uiUac_surftypeIndex).toLower(); // check name
+    QString _fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex); // check name
+    QString _omsh = "alt_fibres_";
+
+    QString alt_uac = cmd->DockerUacFibreMappingMode(directory, _atrium, _layer, _fibre, uacMeshName, false, _omsh);
 
     bool uacOutputSuccess = cmd->IsOutputSuccessful(uacOutput);
     MITK_WARN(!uacOutputSuccess) << ("Not found " + uaccmd).toStdString();
