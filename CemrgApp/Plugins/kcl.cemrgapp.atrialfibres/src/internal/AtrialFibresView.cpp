@@ -1318,15 +1318,15 @@ void AtrialFibresView::UacFibreMapping(){
     std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
 
     outputFiles.clear();
-    outputFiles << "Fibre_1.vpts";
+    // outputFiles << "Fibre_1.vpts";
 
-    QStringList cmdargs;
-    cmdargs << (uac_fibreField+".lon");
-    if(uiUac_surftypeIndex==2){
-        cmdargs << (uac_fibreField+".lon");
-        uaccmd += "_Bilayer";
-    }
-    cmdargs << uac_fibreFieldOutputName;// output of fibremapping
+    // QStringList cmdargs;
+    // cmdargs << (uac_fibreField+".lon");
+    // if(uiUac_surftypeIndex==2){
+    //     cmdargs << (uac_fibreField+".lon");
+    //     uaccmd += "_Bilayer";
+    // }
+    // cmdargs << uac_fibreFieldOutputName;// output of fibremapping
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     // cmd->SetDockerImageUac();
@@ -1335,7 +1335,7 @@ void AtrialFibresView::UacFibreMapping(){
     QString _atrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex).toLower();
     QString _layer = uiUac_surftype.at(uiUac_surftypeIndex).toLower(); // check name
     QString _fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex); // check name
-    QString _omsh = "alt_fibres_";
+    QString _omsh = "fibres_" + _fibre;
 
     QString alt_uac = cmd->DockerUacFibreMappingMode(directory, _atrium, _layer, _fibre, uacMeshName, false, _omsh);
 
@@ -1729,8 +1729,8 @@ bool AtrialFibresView::GetUserUacOptionsInputs(bool enableFullUiOptions){
     bool userInputAccepted=false;
 
     if(uiUac_fibreFile.size() == 0){
-        uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A";
-        uiUac_whichAtrium << "LA" << "RA" << "4Ch";
+        uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A" << "L";
+        uiUac_whichAtrium << "LA" << "RA";
         uiUac_surftype << "Endo" << "Epi" << "Bilayer";
     }
 
