@@ -13,7 +13,7 @@ permalink: /community/
 The best place to ask questions about the functionalities or how to do tasks, 
 is in the [Discussions page](https://github.com/CemrgAppDevelopers/CemrgApp/discussions). 
 You only need a github account, which can be setup for free. 
-The answer to your question will remain in there, helping others with a similar 
+The answer to your question will remain in there, helping others with a similar query.
 
 ## Report issues with CemrgApp 
 If you find an issue or a bug, then go to our issues page. 
