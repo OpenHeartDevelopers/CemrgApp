@@ -57,3 +57,16 @@ Razeghi O, Solís-Lemus J, Lee A et al.
 CemrgApp: An interactive medical imaging application with image processing, computer vision, and machine learning toolkits for cardiovascular research.
 SoftwareX. 2020;12:100570. doi:10.1016/j.softx.2020.100570
 ```
+```bibtex
+@article{RAZEGHI2020100570,
+	title = {CemrgApp: An interactive medical imaging application with image processing, computer vision, and machine learning toolkits for cardiovascular research},
+	journal = {SoftwareX},
+	volume = {12},
+	pages = {100570},
+	year = {2020},
+	issn = {2352-7110},
+	doi = {https://doi.org/10.1016/j.softx.2020.100570},
+	url = {https://www.sciencedirect.com/science/article/pii/S2352711020302831},
+	author = {Orod Razeghi and José Alonso Solís-Lemus and Angela W.C. Lee and Rashed Karim and Cesare Corrado and Caroline H. Roney and Adelaide {de Vecchi} and Steven A. Niederer}
+}
+```
