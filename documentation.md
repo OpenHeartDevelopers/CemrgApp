@@ -1,7 +1,8 @@
 ---
 layout: page
 title: Documentation
-url: https://github.com/CemrgAppDevelopers/CemrgApp/wiki 
+permalink: /documentation/
 ---
 
-[**Visit our wiki page**](https://github.com/CemrgAppDevelopers/CemrgApp/wiki)
+**Contents**
++ [Visit our wiki page](https://github.com/CemrgAppDevelopers/CemrgApp/wiki)
