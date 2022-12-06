@@ -40,7 +40,7 @@ External links:
 
 ## About 
 CemrgApp has different **perspectives**, small apps with a specific purpose. 
-Check the [Examples](https://cemrgappdevelopers.github.io/CemrgApp/engagement/)
+Check the [Resources](https://cemrgappdevelopers.github.io/CemrgApp/resources/)
 page to learn more. Currently, the available perspectives are: 
 
 + Motion Quantification
