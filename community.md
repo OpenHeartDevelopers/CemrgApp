@@ -5,7 +5,7 @@ permalink: /community/
 ---
 
 **Contents**
-+ [Discussions page](#discussions-page)
++ [Discussions Page](#discussions-page)
 + [Report Issues](#report-issues-with-cemrgapp)
 
 
