@@ -4,7 +4,7 @@ title: Resources
 permalink: /resources/
 ---
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc on emacs -->
-**Table of Contents**
+**Contents**
 
 - [Tutorials](#tutorials)
 - [Default Parameter Files](#default-parameter-files)
