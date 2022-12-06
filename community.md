@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Engagement
-permalink: /engagement/
+title: Community
+permalink: /community/
 ---
 
 **Contents**
