@@ -21,7 +21,7 @@ CemrgApp provides an integrated environment, where cardiac data visualisation an
 workflow prototyping are presented through a common user friendly graphical interface.
 
 
-Explore in this website our [Resources page](/resources) with links to videos and examples.
+Explore in this website our [Resources page](https://github.com/CemrgDevelopers/CemrgApp/resources) with links to videos and examples.
 
 
 External links:
