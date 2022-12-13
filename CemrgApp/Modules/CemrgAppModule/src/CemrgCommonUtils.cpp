@@ -1686,9 +1686,9 @@ void CemrgCommonUtils::VtkScalarToFile(QString vtkPath, QString outPath, QString
 
     std::ofstream fo(outPath.toStdString());
 
-    double s;
+
     for (vtkIdType ix=0;ix<numObjects;ix++) {
-        s = scalars->GetTuple1(ix);
+        double s = scalars->GetTuple1(ix);
         fo << std::setprecision(12) << s;
         if(ix<numObjects-1){
             fo << std::endl;

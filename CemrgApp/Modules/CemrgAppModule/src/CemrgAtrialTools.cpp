@@ -444,7 +444,7 @@ void CemrgAtrialTools::ProjectTagsOnExistingSurface(ImageType::Pointer im, QStri
     mitk::Image::Pointer labelSegIm = mitk::Image::New();
     mitk::CastToMitkImage(im, labelSegIm);
 
-    QString path = dir + "/";
+
     std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
     scar->SetMinStep(-1);
     scar->SetMaxStep(3);
@@ -540,7 +540,7 @@ void CemrgAtrialTools::SetSurfaceLabels(QString correctLabels, QString naiveLabe
     std::ifstream fileCorrect, fileNaive;
     fileCorrect.open(correctLabels.toStdString());
     fileNaive.open(naiveLabels.toStdString());
-    int correctlabel, naivelabel;
+
     std::string line, nline;
 
     while(std::getline(fileCorrect, line)){
@@ -548,8 +548,8 @@ void CemrgAtrialTools::SetSurfaceLabels(QString correctLabels, QString naiveLabe
 
         QString qline =  QString::fromStdString(line);
         QString qlineNaive = QString::fromStdString(nline);
-        correctlabel = qline.toInt();
-        naivelabel = qlineNaive.toInt();
+        int correctlabel = qline.toInt();
+        int naivelabel = qlineNaive.toInt();
 
         if(correctlabel == laap){
             naivelaap = naivelabel;
@@ -566,11 +566,10 @@ void CemrgAtrialTools::SetSurfaceLabels(QString correctLabels, QString naiveLabe
 
     if(HasSurface()){
         MITK_INFO << "Attempting to correct naive labels for default ones";
-        double testScalar;
-        vtkFloatArray *cellScalars = vtkFloatArray::New();
-        cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+
+        vtkFloatArray *cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
         for (vtkIdType ix = 0; ix < surface->GetVtkPolyData()->GetNumberOfCells(); ix++) {
-            testScalar = cellScalars->GetTuple1(ix);
+            double testScalar = cellScalars->GetTuple1(ix);
 
             if(testScalar == naivelaap){
                 cellScalars->SetTuple1(ix, laap);
@@ -696,12 +695,12 @@ bool CemrgAtrialTools::CheckLabelConnectivity(mitk::Surface::Pointer externalSur
         v.push_back(abody);
     }
 
-    int currentNumRegions, totalWrongLabels=0;
-    double currentLabel;
+    int totalWrongLabels=0;
+
     for (unsigned int jx = 0; jx < v.size(); jx++) {
-        currentLabel = (double) v.at(jx);
+        double currentLabel = (double) v.at(jx);
         vtkSmartPointer<vtkConnectivityFilter> cf = GetLabelConnectivity(externalSurface, currentLabel);
-        currentNumRegions = cf->GetNumberOfExtractedRegions();
+        int currentNumRegions = cf->GetNumberOfExtractedRegions();
         if(currentNumRegions>1){
             totalWrongLabels++;
             labelsVector.push_back(currentLabel);
@@ -740,8 +739,7 @@ void CemrgAtrialTools::FixSingleLabelConnectivityInSurface(mitk::Surface::Pointe
         }
     }
 
-    vtkFloatArray *cellScalars = vtkFloatArray::New();
-    cellScalars = vtkFloatArray::SafeDownCast(externalSurface->GetVtkPolyData()->GetCellData()->GetScalars());
+    vtkFloatArray *cellScalars = vtkFloatArray::SafeDownCast(externalSurface->GetVtkPolyData()->GetCellData()->GetScalars());
 
     vtkNew<vtkCellLocator> cellLocator;
     cellLocator->SetDataSet(externalSurface->GetVtkPolyData());
@@ -1003,8 +1001,7 @@ mitk::Image::Pointer CemrgAtrialTools::ImErode(ImageType::Pointer input, int vxl
     erosionFilter->SetKernel(binaryBall);
     erosionFilter->UpdateLargestPossibleRegion();
 
-    mitk::Image::Pointer roiImage = mitk::Image::New();
-    roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
+    mitk::Image::Pointer roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
 
     return roiImage;
 }

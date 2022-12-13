@@ -1033,7 +1033,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
         arguments << ("-scale="+QString::number(scale));
     }
 
-    QString fileExt = "";
+
     QString outPath = home.absolutePath() + "/" + omsh;
     bool isConvertToCarp = ofmt.contains("carp", Qt::CaseInsensitive);
     outPath += (isConvertToCarp) ? ".pts" : ".vtk";
@@ -1057,7 +1057,7 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
         executablePath = "/usr/local/bin/";
 #endif
     QString executableName = executablePath+"docker";
-    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
 
     QDir home(dir);
 
@@ -1074,7 +1074,7 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
     arguments << ("-smth="+QString::number(smth));
     arguments << ("-iter="+QString::number(iter));
 
-    QString fileExt = "";
+
     QString outPath = home.absolutePath() + "/" + outMesh;
     outPath += (ofmt.contains("carp", Qt::CaseInsensitive)) ? ".pts" : ".vtk";
 
@@ -1082,7 +1082,7 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
 
     if (successful) {
         MITK_INFO << "Surface remeshing successful.";
-        outAbsolutePath = outPath;
+
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
     }

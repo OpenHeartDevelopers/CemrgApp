@@ -531,11 +531,11 @@ void AtrialFibresClipperView::SaveLabels(){
     fileDiscardIds.open((prodPath + "prodDiscardSeedIds.txt").toStdString());
     fileLabelInShell.open((prodPath + "prodNaiveSeedLabels.txt").toStdString());
 
-    vtkFloatArray *scalars = vtkFloatArray::New();
+
     mitk::Surface::Pointer tempsurf = mitk::Surface::New();
     tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
     CemrgCommonUtils::SetCellDataToPointData(tempsurf);
-    scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
 
     // 14=ignore, 18=discard
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
@@ -666,8 +666,8 @@ void AtrialFibresClipperView::InterPvSpacing(){
         MITK_INFO << ("[InterPvSpacing] Opened file :" + path2corridor).toStdString();
 
         MITK_INFO << "[InterPvSpacing] Update shell and save it";
-        vtkFloatArray *cellScalars = vtkFloatArray::New();
-        cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        vtkFloatArray *cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+
 
         std::string line, header;
         for (int ix = 0; ix < 3; ix++) {
@@ -780,7 +780,7 @@ void AtrialFibresClipperView::Visualiser(double opacity){
 }
 
 void AtrialFibresClipperView::VisualiserAuto(double opacity) {
-    double max_scalar=-1, min_scalar=1e9, s;
+    double max_scalar=-1, min_scalar=1e9;
     try{
         vtkFloatArray *scalars = vtkFloatArray::New();
         scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
@@ -789,7 +789,7 @@ void AtrialFibresClipperView::VisualiserAuto(double opacity) {
         MITK_INFO(debugging) << ("Created scalars vector. Number: " + QString::number(numScalars)).toStdString();
 
         for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
-            s = scalars->GetTuple1(i);
+            double s = scalars->GetTuple1(i);
             if (s > max_scalar)
                 max_scalar = s;
             if (s < min_scalar)
@@ -920,11 +920,11 @@ void AtrialFibresClipperView::UpdateClipperSeedIds(int newPickedId, int currentI
     std::cout << "Current ID: " << currentId << " New picked ID: " << newPickedId << '\n';
 
     // check new picked id has the correct label in surface
-    vtkFloatArray *scalars = vtkFloatArray::New();
+
     mitk::Surface::Pointer tempsurf = mitk::Surface::New();
     tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
     CemrgCommonUtils::SetCellDataToPointData(tempsurf);
-    scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
     int currentLabel = (int) scalars->GetTuple1(currentId);
     int newLabel = (int) scalars->GetTuple1(newPickedId);
 
@@ -947,11 +947,11 @@ int AtrialFibresClipperView::GetPickedId(){
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
+
     int pickedSeedId = -1;
     double minDistance = 1E10;
     for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
+        double distance = vtkMath::Distance2BetweenPoints(
                     pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
@@ -1004,11 +1004,11 @@ void AtrialFibresClipperView::ManualCutterCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
+
     int pickedSeedId = -1;
     double minDistance = 1E10;
     for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
+        double distance = vtkMath::Distance2BetweenPoints(
                     pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;

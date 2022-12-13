@@ -126,6 +126,11 @@ int main(int argc, char* argv[]) {
         "Whether to produce verbose output"
     );
 
+    parser.addArgument("debug", "d",
+        mitkCommandLineParser::Bool, "Debug Output",
+        "Whether to produce debug output"
+    );
+
     // Parse arguments.
     // This method returns a mapping of long argument names to their values.
     auto parsedArgs = parser.parseArguments(argc, argv);
@@ -143,6 +148,7 @@ int main(int argc, char* argv[]) {
 
     // Default values for optional arguments
     auto verbose = false;
+    auto debug = false;
     std::string output = "labelledSurface.vtk";
 
     // Parse, cast and set optional arguments
@@ -152,11 +158,13 @@ int main(int argc, char* argv[]) {
     if (parsedArgs.end() != parsedArgs.find("output")){
         output = us::any_cast<bool>(parsedArgs["output"]);
     }
+    if (parsedArgs.end() != parsedArgs.find("debug")){
+        debug = us::any_cast<bool>(parsedArgs["debug"]);
+    }
 
     try{
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
-        bool debug = true;
 
         // PARSING ARGUMENTS
         QString inname = QString::fromStdString(input1);
