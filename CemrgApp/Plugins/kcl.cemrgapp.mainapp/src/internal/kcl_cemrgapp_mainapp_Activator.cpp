@@ -29,6 +29,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include "kcl_cemrgapp_mainapp_Activator.h"
 #include "perspectives/QmitkCemrgJBPerspective.h"
 #include "perspectives/QmitkCemrgHCPerspective.h"
+#include "perspectives/QmitkCemrgAtrialFibresPerspective.h"
 #include "perspectives/QmitkCemrgRRPerspective.h"
 #include "perspectives/QmitkCemrgEasiPerspective.h"
 #include "perspectives/QmitkCemrgPowertransPerspective.h"
@@ -58,13 +59,14 @@ namespace mitk {
 
     void kcl_cemrgapp_mainapp_Activator::start(ctkPluginContext* context) {
 
-        berry::AbstractUICTKPlugin::start(context);
         this->context = context;
+        berry::AbstractUICTKPlugin::start(context);
 
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgApplication, context);
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgAppCommonTools, context);
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgJBPerspective, context);
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgHCPerspective, context);
+        BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgAtrialFibresPerspective, context);
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgRRPerspective, context);
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgEasiPerspective, context);
         BERRY_REGISTER_EXTENSION_CLASS(QmitkCemrgPowertransPerspective, context);

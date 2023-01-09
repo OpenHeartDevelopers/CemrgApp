@@ -8,6 +8,7 @@ set(INTERNAL_CPP_FILES
   QmitkCemrgWorkbenchAdvisor.cpp
   perspectives/QmitkCemrgJBPerspective.cpp
   perspectives/QmitkCemrgHCPerspective.cpp
+  perspectives/QmitkCemrgAtrialFibresPerspective.cpp
   perspectives/QmitkCemrgRRPerspective.cpp
   perspectives/QmitkCemrgEasiPerspective.cpp
   perspectives/QmitkCemrgPowertransPerspective.cpp
@@ -17,6 +18,7 @@ set(INTERNAL_CPP_FILES
 set(UI_FILES
   src/internal/QmitkCemrgAppCartoExport.ui
   src/internal/QmitkCemrgAppCommonToolsControls.ui
+  src/internal/QmitkCemrgAppImagePadding.ui
 )
 
 set(MOC_H_FILES
@@ -26,6 +28,7 @@ set(MOC_H_FILES
   src/internal/QmitkCemrgWorkbenchAdvisor.h
   src/internal/perspectives/QmitkCemrgJBPerspective.h
   src/internal/perspectives/QmitkCemrgHCPerspective.h
+  src/internal/perspectives/QmitkCemrgAtrialFibresPerspective.h
   src/internal/perspectives/QmitkCemrgRRPerspective.h
   src/internal/perspectives/QmitkCemrgEasiPerspective.h
   src/internal/perspectives/QmitkCemrgPowertransPerspective.h

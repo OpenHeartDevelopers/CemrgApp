@@ -710,6 +710,161 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QStringList fibreAtlas, QString meshname, QStringList cmdargs, QStringList landmarks, QString outnameext){
+    SetDockerImageUac();
+    QString executablePath;
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+
+    arguments << uaccmd;
+    arguments << fibreAtlas; // append list
+    arguments << meshname;
+    arguments << cmdargs; // append list
+
+    for (int ix = 0; ix < landmarks.size(); ix++) {
+        arguments << home.relativeFilePath(landmarks.at(ix));
+    }
+
+    // output filename checked when running ExecuteCommand
+    QString outPath = home.absolutePath() + "/" + outnameext;
+    bool successful = ExecuteCommand(executableName, arguments, outPath, outnameext.isEmpty());
+
+    if(successful){
+        MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << ("Error running UAC command: " + uaccmd).toStdString();
+    }
+
+    return outAbsolutePath;
+}
+
+QString CemrgCommandLine::DockerUacMainMode(QString dir, QString stage, QString atrium, QString layer, QString fibre, QString meshname, QStringList tags, QStringList landmarks, bool fourch, bool noraa, int scale){
+   SetDockerImageUac("3.0-beta");
+   QString executablePath;
+#if defined(__APPLE__)
+   executablePath = "/usr/local/bin/";
+#endif
+   QString executableName = executablePath + "docker";
+   QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+   QDir home(dir);
+   QStringList arguments = GetDockerArguments(home.absolutePath());
+
+   QString uaccmd = "uac";
+   arguments << uaccmd;
+   arguments << "--uac-stage" << stage;
+   arguments << "--atrium" << atrium;
+   arguments << "--layer" << layer;
+   arguments << "--fibre" << fibre;
+   arguments << "--msh" << meshname;
+
+   arguments << "--tags";
+   for (int ix = 0; ix < tags.size(); ix++) {
+       arguments << tags.at(ix);
+   }
+
+   if (landmarks.size() > 0) {
+       arguments << "--landmarks" << home.relativeFilePath(landmarks.at(0));
+       if (landmarks.size() > 1) {
+           arguments << "--regions" << home.relativeFilePath(landmarks.at(1));
+       }
+   }
+
+   if (fourch) {
+       arguments << "--fourch";
+   }
+
+   if (noraa) {
+       arguments << "--noraa";
+   }
+
+   arguments << QString::number(scale);
+
+   QStringList outputs;
+   if (stage.compare("1")) {
+       outputs << "LSbc1.vtx" << "LSbc2.vtx" << "PAbc1.vtx" << "PAbc2.vtx";
+
+   } else if (stage.compare("2a")){
+       outputs << "AnteriorMesh.elem" << "AnteriorMesh.pts" << "PosteriorMesh.elem" << "PosteriorMesh.pts";
+
+   } else if (stage.compare("2b")){
+       outputs << "Labelled_Coords_2D_Rescaling_v3_C.elem" << "Labelled_Coords_2D_Rescaling_v3_C.pts";
+   }
+
+   QString outPath = home.absolutePath() + "/" + outputs.at(0);
+   bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if(successful){
+        MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << ("Error running UAC command: " + uaccmd).toStdString();
+    }
+
+    return outAbsolutePath;
+
+}
+
+QString CemrgCommandLine::DockerUacFibreMappingMode(QString dir, QString atrium, QString layer, QString fibre, QString meshname, bool msh_endo_epi, QString output, bool fourch, QString tags, QString biproj){
+   SetDockerImageUac("3.0-beta");
+   QString executablePath;
+#if defined(__APPLE__)
+   executablePath = "/usr/local/bin/";
+#endif
+   QString executableName = executablePath + "docker";
+   QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+   QDir home(dir);
+   QStringList arguments = GetDockerArguments(home.absolutePath());
+
+
+   QString uaccmd = "fibremap";
+
+   arguments << uaccmd ;
+   arguments << "--atrium" << atrium;
+   arguments << "--layer" << layer;
+   arguments << "--fibre" << fibre;
+   arguments << "--msh" << meshname;
+   arguments << "--output" << output;
+
+   if (fourch) {
+       arguments << "--fourch";
+   }
+
+   if (msh_endo_epi){
+       arguments << "--msh-endo" << "Labelled";
+       arguments << "--msh-epi" << "Labelled";
+   }
+
+   arguments << "--tags" << tags;
+   arguments << "--fibre-biproj" << biproj;
+
+   QString omsh = output;
+   omsh += layer.contains("bilayer") ? "Bilayer" : "";
+
+   QStringList outputs;
+   outputs << omsh+".pts" << omsh+".elem";
+
+   QString outPath = home.absolutePath() + "/" + outputs.at(0);
+   bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if(successful){
+        MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << ("Error running UAC command: " + uaccmd).toStdString();
+    }
+
+    return outAbsolutePath;
+}
+
 QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
     // Method equivalent to:  meshtool extract surface
     SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
@@ -816,6 +971,125 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
     return outAbsolutePath;
 }
 
+QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType){
+    // Method equivalent to: meshtool interpolate dataType
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+    if(!dataType.contains("elemdata") && !dataType.contains("nodedata") && !dataType.contains("clouddata")){
+        MITK_ERROR << "Incorrect parameter seleted";
+    } else{
+        QStringList arguments = GetDockerArguments(home.absolutePath());
+        arguments << "interpolate" << dataType;
+        if(dataType.contains("clouddata")){
+            arguments << ("-pts="+meshname);
+        } else{
+            arguments << ("-imsh="+meshname);
+        }
+        arguments << ("-omsh="+outmesh);
+        arguments << ("-idat="+idatExt);
+        arguments << ("-odat="+odatExt);
+
+        QString outPath = home.absolutePath() + "/" + odatExt;
+
+        bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+        if (successful) {
+            MITK_INFO << "Interpolating data successful.";
+            outAbsolutePath = outPath;
+        } else{
+            MITK_WARN << "Error with MESHTOOL Docker container.";
+        }
+    }
+    return outAbsolutePath;
+}
+
+QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale){
+    // Method equivalent to: meshtool convert
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+    QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+    QDir home(dir);
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "convert";
+    arguments << ("-imsh="+imsh);
+    arguments << ("-ifmt="+ifmt);
+    arguments << ("-omsh="+omsh);
+    arguments << ("-ofmt="+ofmt);
+
+    if(scale>0){
+        arguments << ("-scale="+QString::number(scale));
+    }
+
+
+    QString outPath = home.absolutePath() + "/" + omsh;
+    bool isConvertToCarp = ofmt.contains("carp", Qt::CaseInsensitive);
+    outPath += (isConvertToCarp) ? ".pts" : ".vtk";
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath, !isConvertToCarp);
+
+    if (successful) {
+        MITK_INFO << "Surface remeshing successful.";
+        outAbsolutePath = outPath;
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    return outAbsolutePath;
+}
+
+void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QString outMesh, double qualityThres, QString ifmt, QString ofmt){
+    // Method equivalent to: meshtool clean quality
+    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    QString executablePath = "";
+#if defined(__APPLE__)
+        executablePath = "/usr/local/bin/";
+#endif
+    QString executableName = executablePath+"docker";
+
+
+    QDir home(dir);
+
+    double smth=0.75;
+    int iter=200;
+
+    QStringList arguments = GetDockerArguments(home.absolutePath());
+    arguments << "clean" << "quality";
+    arguments << ("-msh="+meshname);
+    arguments << ("-ifmt="+ifmt);
+    arguments << ("-outmsh="+outMesh);
+    arguments << ("-ofmt="+ofmt);
+    arguments << ("-thr="+QString::number(qualityThres));
+    arguments << ("-smth="+QString::number(smth));
+    arguments << ("-iter="+QString::number(iter));
+
+
+    QString outPath = home.absolutePath() + "/" + outMesh;
+    outPath += (ofmt.contains("carp", Qt::CaseInsensitive)) ? ".pts" : ".vtk";
+
+    bool successful = ExecuteCommand(executableName, arguments, outPath);
+
+    if (successful) {
+        MITK_INFO << "Surface remeshing successful.";
+
+    } else{
+        MITK_WARN << "Error with MESHTOOL Docker container.";
+    }
+    // return outAbsolutePath;
+}
+
+
 /***************************************************************************
  *********************** Docker Helper Functions ***************************
  ***************************************************************************/
@@ -838,6 +1112,43 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
     return argumentList;
 }
 
+QStringList CemrgCommandLine::GetOpenCarpDockerDefaultArguments(QString volume){
+
+    QString petscPath = QCoreApplication::applicationDirPath() + "/petsc_opts";
+    QString parab="ilu_cg_opts", ellip="amg_cg_opts";
+
+    QString parabFile = petscPath+"/"+parab;
+    QString ellipFile = petscPath+"/"+ellip;
+
+    QString parabDestination = volume+"/"+parab;
+    QString ellipDestination = volume+"/"+ellip;
+
+    if(!QFile::exists(parabDestination)){
+        MITK_INFO << ("Copying: ["+parabFile+ "]").toStdString();
+        MITK_INFO << ("Into: ["+parabDestination+ "]").toStdString();
+        MITK_INFO(QFile::copy(parabFile, parabDestination)) << "Success!";
+    }
+
+    if(!QFile::exists(ellipDestination)){
+        MITK_INFO << "Copying: [" << ellipFile.toStdString();
+        MITK_INFO << "Into: [" << ellipDestination.toStdString();
+        MITK_INFO(QFile::copy(ellipFile, ellipDestination)) << "Success!";
+    }
+
+    QDir home(volume);
+    QStringList defaultArguments;
+    defaultArguments << "run" << "--rm" << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
+    defaultArguments << "docker.opencarp.org/opencarp/opencarp:latest";
+    defaultArguments << "openCARP";
+    defaultArguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
+    defaultArguments << "-parab_options_file";
+    defaultArguments << home.relativeFilePath(parab);
+    defaultArguments << "-ellip_options_file";
+    defaultArguments << home.relativeFilePath(ellip);
+
+    return defaultArguments;
+}
+
 QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroName, QStringList oneName, QStringList regionLabels){
     SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
     QString executablePath;
@@ -856,15 +1167,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
         if(!outDir.exists()){
             MITK_INFO << ("Error creating directory: " + outPath).toStdString();
         } else{
-            QStringList arguments;
-            arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
-            arguments << "docker.opencarp.org/opencarp/opencarp:latest";
-            arguments << "openCARP";
-            arguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
-            arguments << "-parab_options_file";
-            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/ilu_cg_opts";
-            arguments << "-ellip_options_file";
-            arguments << "/usr/local/lib/python3.6/dist-packages/carputils-0.0.0-py3.6-linux-x86_64.egg/carputils/resources/petsc_options/amg_cg_opts";
+            QStringList arguments = GetOpenCarpDockerDefaultArguments(home.absolutePath());
             arguments << "-simID" << home.relativeFilePath(outPath);
             arguments << "-meshname" << meshName;
             arguments << "-experiment" << "2";
@@ -917,6 +1220,40 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
                 if(successful){
                     outAbsolutePath =  outPathFile;
                 }
+            } else{
+                MITK_WARN << "Error with openCARP LAPLACE SOLVES Docker container.";
+            }
+        }
+
+        return outAbsolutePath;
+}
+
+QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString simID){
+    SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
+    QString executablePath;
+    #if defined(__APPLE__)
+            executablePath = "/usr/local/bin/";
+    #endif
+        QString executableName = executablePath+"docker";
+        QString outAbsolutePath = "ERROR_IN_PROCESSING";
+
+        QDir home(dir);
+        QString outPath = home.absolutePath() + "/" + simID;
+        QString outPhieFilePath = outPath; // + "/phie.igb";
+        QDir outDir(outPath);
+
+        MITK_INFO(outDir.mkpath(outPath)) << "Output directory created.";
+        if(!outDir.exists()){
+            MITK_INFO << ("Error creating directory: " + outPath).toStdString();
+        } else{
+            QStringList arguments = GetOpenCarpDockerDefaultArguments(home.absolutePath());
+
+            arguments << "+F" << home.relativeFilePath(paramfile);
+            arguments << "-simID" << home.relativeFilePath(outPath);
+
+            bool successful = ExecuteCommand(executableName, arguments, outPhieFilePath, false);
+            if (successful) {
+                outAbsolutePath =  outPhieFilePath;
             } else{
                 MITK_WARN << "Error with openCARP LAPLACE SOLVES Docker container.";
             }

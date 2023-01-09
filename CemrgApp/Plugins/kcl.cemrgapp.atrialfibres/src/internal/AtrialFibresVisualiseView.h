@@ -16,7 +16,7 @@ PURPOSE.  See the above copyright notices for more information.
 =========================================================================*/
 /*=========================================================================
  *
- * CemrgApp Common Tools
+ * Morphological Quantification
  *
  * Cardiac Electromechanics Research Group
  * http://www.cemrgapp.com
@@ -26,22 +26,28 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-#ifndef QmitkCemrgAppCommonTools_h
-#define QmitkCemrgAppCommonTools_h
+#ifndef AtrialFibresVisualiseView_h
+#define AtrialFibresVisualiseView_h
 
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
-#include "ui_QmitkCemrgAppCartoExport.h"
-#include "ui_QmitkCemrgAppImagePadding.h"
-#include "ui_QmitkCemrgAppCommonToolsControls.h"
+#include <QMessageBox>
+#include <vtkIdList.h>
+#include <vtkActor.h>
+#include <CemrgAtriaClipper.h>
+#include <CemrgScarAdvanced.h>
+
+#include "ui_AtrialFibresVisualiseViewControls.h"
 
 /**
-  \brief QmitkCemrgAppCommonTools
+  \brief AtrialFibresVisualiseView
+
   \warning  This class is not yet documented. Use "git blame" and ask the author to provide basic documentation.
+
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
-class QmitkCemrgAppCommonTools: public QmitkAbstractView {
+class AtrialFibresVisualiseView : public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -50,28 +56,44 @@ class QmitkCemrgAppCommonTools: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    static void SetDirectoryFile(const QString directory, const QString fileName);
+    ~AtrialFibresVisualiseView();
 
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
-    void LoadMesh();
-    void ConvertToCarto();
-    void ConvertToCartoUIUpdate();
-    void ConvertToCartoUITextUpdate();
-    void ConvertCarpToVtk();
-    void PadImageEdgesWithConstant();
-    void BinariseImage();
-    void ResampleReorientConvert();
+    void Help();
+    void LoadFibreFile();
 
 protected:
 
     virtual void CreateQtPartControl(QWidget *parent) override;
     virtual void SetFocus() override;
-    virtual void OnSelectionChanged(berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
+    /// \brief called by QmitkFunctionality when DataManager's selection has changed
+    virtual void OnSelectionChanged(
+            berry::IWorkbenchPart::Pointer source, const QList<mitk::DataNode::Pointer>& nodes) override;
 
-    Ui::QmitkCemrgAppCommonToolsControls m_Controls;
-    Ui::QmitkCemrgAppCartoExport m_CartoUIThresholding;
-    Ui::QmitkCemrgAppImagePadding m_ImagePadding;
+    Ui::AtrialFibresVisualiseViewControls m_Controls;
+
+private:
+
+    void iniPreSurf();
+    void Visualiser(double opacity=1.0);
+
+    void SphereSourceVisualiser(vtkSmartPointer<vtkPolyData> pointSources, QString colour="1.0,0.0,0.0", double scaleFactor=0.01);
+
+    static QString fileName;
+    static QString directory;
+
+    mitk::Surface::Pointer surface;
+    vtkSmartPointer<vtkActor> surfActor;
+
+    double maxScalar, minScalar;
+
+    vtkSmartPointer<vtkRenderer> renderer;
+    vtkSmartPointer<vtkCallbackCommand> callBack;
+    vtkSmartPointer<vtkRenderWindowInteractor> interactor;
+
 };
 
-#endif // QmitkCemrgAppCommonTools_h
+#endif // AtrialFibresVisualiseView_h

@@ -279,6 +279,9 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
     typedef itk::GrayscaleDilateImageFilter<ImageType, ImageType, BallType> DilationFilterType;
     typedef itk::ImageDuplicator<ImageType> DuplicatorType;
 
+    // Set segImage>0 as 1, and everything else as 0
+    CemrgCommonUtils::Binarise(segImage);
+
     //Cast Seg to ITK formats
     ImageType::Pointer segItkImage = ImageType::New();
     CastToItkImage(segImage, segItkImage);
@@ -446,6 +449,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         dilationFilter->SetKernel(binaryBall);
         dilationFilter->UpdateLargestPossibleRegion();
         cutImg = mitk::ImportItkImage(dilationFilter->GetOutput())->Clone();
+
         CastToItkImage(cutImg, cutItkImage);
 
         //Subtract images
@@ -453,6 +457,7 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
         subFilter->SetInput1(segItkImage);
         subFilter->SetInput2(cutItkImage);
         subFilter->UpdateLargestPossibleRegion();
+
 
         //Duplicate subtract images
         DuplicatorType::Pointer duplicator = DuplicatorType::New();

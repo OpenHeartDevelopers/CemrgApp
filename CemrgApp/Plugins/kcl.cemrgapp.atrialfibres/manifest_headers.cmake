@@ -1,0 +1,5 @@
+set(Plugin-Name "AtrialFibres")
+set(Plugin-Version "1.3")
+set(Plugin-Vendor "KCL")
+set(Plugin-ContactAddress "")
+set(Require-Plugin org.mitk.gui.qt.common)

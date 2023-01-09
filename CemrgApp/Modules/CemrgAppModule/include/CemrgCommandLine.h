@@ -67,12 +67,26 @@ public:
     //Execute Docker Specific Functions
     QString DockerCemrgNetPrediction(QString mra);
     QString DockerDicom2Nifti(QString path2dicomfolder);
+    QString DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QStringList fibreAtlas, QString meshname, QStringList cmdargs, QStringList landmarks, QString outnameext="");
+    QString DockerUacFibreMapping(QString dir, QString uaccmd, QStringList fibreAtlas, QString meshname, QStringList cmdargs, QString landmarks, QString outnameext);
+    QString DockerUacMainMode(QString dir, QString stage, QString atrium, QString layer, QString fibre, QString meshname, QStringList tags, QStringList landmarks, bool fourch=false, bool noraa=false, int scale=1000);
+    QString DockerUacFibreMappingMode(QString dir, QString atrium, QString layer, QString fibre, QString meshname, bool msh_endo_epi, QString output, bool fourch=false, QString tags="11", QString biproj="100");
+
+    // openCARP docker
     QString OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroNames, QStringList oneNames, QStringList regionLabels);
+    QString OpenCarpDocker(QString dir, QString paramfile, QString simID);
 
     // meshtool routines
     QString DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix); // extract surface
-    QString DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad = true); // extract gradient
-    QString DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax = 1, double hmin = 0.98, double havg = 0.3, double surfCorr = 0.95); // resample surfmesh
+    QString DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad=true); // extract gradient
+    QString DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax=1, double hmin=0.98, double havg=0.3, double surfCorr=0.95); // resample surfmesh
+    QString DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale=-1);
+    QString DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType);
+    void DockerCleanMeshQuality(QString dir, QString meshname, QString outMesh, double qualityThres, QString ifmt="vtk", QString ofmt="vtk_polydata");
+
+    inline QString DockerInterpolatePoint(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, meshname, outmesh, idatExt, odatExt,"nodedata");}; // meshtool interpolate nodedata
+    inline QString DockerInterpolateCell(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, meshname, outmesh, idatExt, odatExt,"elemdata");}; // meshtool interpolate elemdata
+    inline QString DockerInterpolateCloudPoint(QString dir, QString ptsname, QString outmesh, QString idatExt, QString odatExt){return DockerInterpolateData(dir, ptsname, outmesh, idatExt, odatExt,"clouddata");}; // meshtool interpolate clouddata
 
     inline void SetDebug(bool b) { _debugvar = b; };
     inline void SetDebugOn() { SetDebug(true); };
@@ -80,11 +94,14 @@ public:
 
     //Docker Helper Functions
     void SetUseDockerContainers(bool dockerContainersOnOff);
-    inline void SetUseDockerContainersOn() { SetUseDockerContainers(true); };
-    inline void SetUseDockerContainersOff() { SetUseDockerContainers(false); };
-    inline void SetDockerImage(QString dockerimage) { _dockerimage = dockerimage; };
-    inline QString GetDockerImage() { return _dockerimage; };
+    inline void SetUseDockerContainersOn() {SetUseDockerContainers(true);};
+    inline void SetUseDockerContainersOff() {SetUseDockerContainers(false);};
+    inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
+    inline QString GetDockerImage() {return _dockerimage;};
+    inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
+    inline void SetDockerImageUac(QString uac_tag="latest"){_dockerimage = "cemrg/uac:"+uac_tag;};// modify when docker image has been pushed to hub
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
+    QStringList GetOpenCarpDockerDefaultArguments(QString volume);
 
     //Helper Functions
     bool CheckForStartedProcess();
