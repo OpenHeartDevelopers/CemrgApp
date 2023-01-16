@@ -1237,7 +1237,7 @@ void AtrialFibresView::UacCalculationRefined(){
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - Start";
         cmd->SetDockerImageUac();
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
-        MITK_INFO << (("TIMELOG|UacCalculation_Stage2| UAC 2.1 - End " + uacOutput).toStdString();
+        MITK_INFO << ("TIMELOG|UacCalculation_Stage2| UAC 2.1 - End " + uacOutput).toStdString();
 
         if (!IsOutputFileCorrect(directory, outputFiles)){
             MITK_INFO << "TIMELOG|UacCalculation_Stage2| End (FAILED)";
