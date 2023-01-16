@@ -221,7 +221,7 @@ void AtrialFibresVisualiseView::Visualiser(double opacity){
     double max_scalar=-1, min_scalar=1e9;
     // vtkFloatArray *scalars = vtkFloatArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    svtkFloatArray *scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
     for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
         double s = scalars->GetTuple1(i);
         if (s > max_scalar)
