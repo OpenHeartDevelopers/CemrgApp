@@ -70,6 +70,7 @@ public:
 
     // helper functions
     std::string GetShortcuts();
+    std::string GetHelp();
     bool IsPointSelectionControlsAvailable();
     bool IsClipperManualControlsAvailable();
     void UserSelectPvLabel();
@@ -105,6 +106,7 @@ protected slots:
     void PvClipperSelector(int);
 
     void ClipPVs();
+    void Help();
 
 
 protected:

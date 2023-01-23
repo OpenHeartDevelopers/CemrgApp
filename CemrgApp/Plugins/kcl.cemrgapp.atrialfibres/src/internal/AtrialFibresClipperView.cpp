@@ -1261,9 +1261,17 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
 
         }//_if
     }//_if_main
+    //
+    if (key == "h" || key == "H"){
+        self->Help();
+    }
 
 }
 
+void AtrialFibresClipperView::Help(){
+    std::string str = GetHelp();
+    QMessageBox::information(NULL, "Help", str.c_str());
+}
 // helper functions
 void AtrialFibresClipperView::InitialisePickerObjects(){
     pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
@@ -1319,6 +1327,7 @@ std::string AtrialFibresClipperView::GetShortcuts(){
     } else{
         res += "R: reset centrelines\nSpace: add seed point\nDelete: remove seed point";
     }
+    res += "\nH: Show help";
     return res;
 }
 
@@ -1456,4 +1465,26 @@ void AtrialFibresClipperView::PrintCorridorIds(){
     } else {
         std::cout << "[PriontCorridorIds] No points in corridor" << '\n';
     }
+}
+
+
+std::string AtrialFibresClipperView::GetHelp(){
+    std::string msg = "";
+    if (automaticPipeline) {
+        msg += "FIX LABELS: \n\n  * Press X to select (blue) seed points for fixing labels\n";
+        msg += "  * Click the Fix Meshing button at the top.";
+        msg += "\n  * Select the structure (LA body, LSPV, LIPV, etc...)";
+        msg += "\n\nIDENITFY PVs";
+        msg += "\n  * Press SPACE to select (red) seed points";
+        msg += "\n  * Click the Store Landmarks and Labels, then the Click the Display PV Clippers button";
+        msg += "\n  * Edit the sphere clippers' size, then click Save Clippers";
+    } else{
+        msg += "\n\nIDENTIFY START OF PVs";
+        msg += "\n  * Press SPACE to select (red) seed points in all PVs and Appendage";
+        msg += "\n  * Click the Find Centrelines button";
+        msg += "\n  * Click the Display Disk Clippers button - edit disks";
+        msg += "\n  * Click the Mark PV Start on Image button";
+    }
+
+    return msg;
 }
