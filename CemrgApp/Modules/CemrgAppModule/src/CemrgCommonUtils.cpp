@@ -347,7 +347,7 @@ mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer
     start[0] = 0; start[1] = 0; start[2] = 0;
 
     ImageType::SizeType size;
-    size[0] = image->GetDimension(0) + 2*vxlsToE}xtend;
+    size[0] = image->GetDimension(0) + 2*vxlsToExtend;
     size[1] = image->GetDimension(1) + 2*vxlsToExtend;
     size[2] = image->GetDimension(2) + 2*vxlsToExtend;
 
