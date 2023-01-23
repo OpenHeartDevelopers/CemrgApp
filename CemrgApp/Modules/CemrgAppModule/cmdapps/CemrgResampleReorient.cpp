@@ -88,12 +88,15 @@ int main(int argc, char* argv[]) {
         "NIFTI file path", "Full path of .nii file.",
         us::Any(), false);
     parser.addArgument(
-        "output", "o", mitkCommandLineParser::OutputFile,
+        "output", "o", mitkCommandLineParser::File,
         "Output file", "Where to save the output.",
         us::Any(), false);
     parser.addArgument( // optional
-        "reorient", "r", mitkCommandLineParser::Bool,
+        "reorient", "ro", mitkCommandLineParser::Bool,
         "Reorient to RAI", "Whether the nifti should be reoriented to RAI configuration (default=true)");
+    parser.addArgument( // optional
+        "resample", "rs", mitkCommandLineParser::Bool,
+        "Resample to be isotropic", "Whether the nifti should be resampled to isotropic (default=true)");
     parser.addArgument( // optional
         "verbose", "v", mitkCommandLineParser::Bool,
         "Verbose Output", "Whether to produce verbose output (default=false)");
@@ -118,6 +121,7 @@ int main(int argc, char* argv[]) {
     // Default values for optional arguments
     auto verbose = false;
     auto reorientToRAI = true;
+    auto resampleToIso = true;
 
     // Parse, cast and set optional arguments
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
@@ -125,6 +129,9 @@ int main(int argc, char* argv[]) {
     }
     if (parsedArgs.end() != parsedArgs.find("reorient")) {
         reorientToRAI = us::any_cast<bool>(parsedArgs["reorient"]);
+    }
+    if (parsedArgs.end() != parsedArgs.find("resample")) {
+        resampleToIso = us::any_cast<bool>(parsedArgs["resample"]);
     }
 
     try {
@@ -147,10 +154,11 @@ int main(int argc, char* argv[]) {
         QString imagePath = fi.absoluteFilePath();
 
         MITK_INFO << "Resampling image to isometric.";
+        MITK_INFO(verbose && resampleToIso) << "Resampling to Iso.";
         MITK_INFO(verbose && reorientToRAI) << "Reorienting image to RAI.";
-        mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampling(imagePath, reorientToRAI);
+        mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(imagePath, resampleToIso, reorientToRAI);
         MITK_INFO << "Saving...";
-        mitk::IOUtil::Save(image, imagePath.toStdString());
+        mitk::IOUtil::Save(image, outname.toStdString());
 
         MITK_INFO(verbose) << "Goodbye!";
     } catch (const std::exception &e) {
