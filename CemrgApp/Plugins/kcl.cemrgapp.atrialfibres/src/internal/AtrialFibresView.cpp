@@ -376,7 +376,8 @@ void AtrialFibresView::AnalysisChoice(){
             double origin[3] = {0, 0, 0};
             double spacing[3] = {1, 1, 1};
             int pad_scale = 1; // pad_scale*spacing added to bounds in function below
-            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing);
+            QString output_path = ""; // makes input to be overwritten
+            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing, output_path, pad_scale);
             // CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
 
             mitk::Image::Pointer im = CemrgCommonUtils::ReturnBinarised(mitk::IOUtil::Load<mitk::Image>(StdStringPath(tagName+".nii")));
