@@ -1033,7 +1033,7 @@ mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Point
 
     // prepare for padding (pad_num=0 by default, so it does not affect)
     for (int ix; ix<3; ix++) {
-        double pad_offset = pad_num*spacing[jx];
+        double pad_offset = pad_num*spacing[ix];
         bounds[2*ix] -= pad_offset;
         bounds[2*ix + 1] += pad_offset;
     }
