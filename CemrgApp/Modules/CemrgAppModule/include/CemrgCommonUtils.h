@@ -80,8 +80,8 @@ public:
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
     static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
     static void FillHoles(mitk::Surface::Pointer surf, QString dir="", QString vtkname="");
-    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
-    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="");
+    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num=0);
+    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="", int pad_num=0);
     static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre);
 
     //Tracking Utils
