@@ -322,6 +322,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="button_c_fixpv">
+     <property name="styleSheet">
+      <string notr="true">color: rgb(115, 210, 22);</string>
+     </property>
+     <property name="text">
+      <string>Fix PV Clipping Errors</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="Line" name="line_2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

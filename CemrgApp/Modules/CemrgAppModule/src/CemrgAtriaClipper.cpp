@@ -31,6 +31,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkIOUtil.h>
 #include <mitkImageCast.h>
 #include <mitkITKImageImport.h>
+#include <mitkMorphologicalOperations.h>
 #include "CemrgAtriaClipper.h"
 
 // VTK
@@ -900,4 +901,98 @@ void CemrgAtriaClipper::SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutt
 
     manuals[clippersIndex] = 2;
     centreLinePointPlanes.at(clippersIndex) = pickedCutterSeeds->GetPoints();
+}
+
+mitk::Image::Pointer CemrgAtriaClipper::FixClippingErrors(mitk::Image::Pointer image, int strel_radius){
+    using ImageType = itk::Image<short, 3>;
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<ImageType, ImageType>;
+    using LabelShapeKeepNObjImgFilterType = itk::LabelShapeKeepNObjectsImageFilter<ImageType>;
+
+    // start routine
+    mitk::Image::Pointer vimage = image->Clone();
+    ImageType::Pointer veins = ImageType::New();
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    // V2=imopen(V==1, strel('sphere', 3))
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while (!imIter.IsAtEnd()){
+        short value = (imIter.Get() == 1) ? 1 : 0;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    mitk::Image::Pointer remove_veins = mitk::Image::New();
+    mitk::CastToMitkImage(im, remove_veins);
+
+    try {
+        mitk::MorphologicalOperations::StructuralElementType structuralElement = mitk::MorphologicalOperations::Ball;
+        mitk::MorphologicalOperations::Opening(remove_veins, strel_radius, structuralElement);
+    }
+    catch (const itk::ExceptionObject &exception) {
+        MITK_WARN << "Exception caught: " << exception.GetDescription();
+        return NULL;
+    }
+
+    ImageType::Pointer imop = ImageType::New();
+    mitk::CastToItkImage(remove_veins, imop);
+
+    // Extract largest connected component from V2
+    ConnectedComponentImageFilterType::Pointer conn1 = ConnectedComponentImageFilterType::New();
+    conn1->SetInput(imop);
+    conn1->Update();
+
+    LabelShapeKeepNObjImgFilterType::Pointer keepObjs = LabelShapeKeepNObjImgFilterType::New();
+    keepObjs->SetInput(conn1->GetOutput());
+    keepObjs->SetBackgroundValue(0);
+    keepObjs->SetNumberOfObjects(1);
+    keepObjs->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+    keepObjs->Update();
+
+    // Iterate to reattach where V==3
+    // mitk::Image::Pointer vimage = mitk::IOUtil::Load<mitk::Image>(pathPVeinsCropped.toStdString());
+    // ImageType::Pointer veins = ImageType::New();
+    mitk::CastToItkImage(vimage, veins);
+
+    ImageType::Pointer outIm = keepObjs->GetOutput();
+    IteratorType outImIter(outIm, outIm->GetLargestPossibleRegion());
+    IteratorType veinsIter(veins, veins->GetLargestPossibleRegion());
+
+    outImIter.GoToBegin();
+    veinsIter.GoToBegin();
+    while (!outImIter.IsAtEnd()){
+        short value = (veinsIter.Get() == 3) ? 3 : outImIter.Get();
+        outImIter.Set(value);
+
+        ++outImIter;
+        ++veinsIter;
+    }
+
+    mitk::Image::Pointer outputImg = mitk::Image::New();
+    mitk::CastToMitkImage(outIm, outputImg);
+
+    return outputImg;
+    // end routine
+}
+
+void CemrgAtriaClipper::FixClippingErrors(QString imagePath, int strel_radius, bool rewrite){
+    QFileInfo fi(imagePath);
+    mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(imagePath.toStdString());
+
+    if (image){
+        QString prefix = (rewrite) ? "" : "New_";
+        QString outputPath = fi.absolutePath() + "/" + prefix + fi.baseName() + "." + fi.completeSuffix();
+
+        mitk::Image::Pointer outputImg = CemrgAtriaClipper::FixClippingErrors(image, strel_radius);
+        if (outputImg) {
+            // Save image
+            mitk::IOUtil::Save(outputImg, outputPath.toStdString());
+        } else {
+            MITK_WARN << "File not created. Errors in processing.";
+        }
+    } // if_image
 }

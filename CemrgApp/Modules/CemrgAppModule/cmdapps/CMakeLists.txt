@@ -7,6 +7,7 @@ option(BUILD_CEMRG_IM2INR "Build image to inr command line app. " ON)
 option(BUILD_CEMRG_VENTRICLE_SEGMENTATION_RELABEL "Build ventricle segmentation relabelling command line app" ON)
 option(BUILD_CEMRG_MORPH_ANALYSIS "Build atrial morph analysis" ON)
 option(BUILD_CEMRG_RESAMPLE_REORIENT "Build resample-reorient command-line app" ON)
+option(BUILD_CEMRG_APPLY_EXT_CLIPPERS "Build apply external clippers command-line app" ON)
 
 if(BUILD_CemrgCMDApps)
   mitkFunctionCreateCommandLineApp(
@@ -77,5 +78,13 @@ if(BUILD_CEMRG_RESAMPLE_REORIENT)
     NAME CemrgResampleReorient
     DEPENDS MitkCemrgAppModule
     CPP_FILES CemrgResampleReorient.cpp
+  )
+endif()
+
+if(BUILD_CEMRG_APPLY_EXT_CLIPPERS)
+  mitkFunctionCreateCommandLineApp(
+    NAME CemrgApplyExternalClippers
+    DEPENDS MitkCemrgAppModule
+    CPP_FILES CemrgApplyExternalClippers.cpp
   )
 endif()
