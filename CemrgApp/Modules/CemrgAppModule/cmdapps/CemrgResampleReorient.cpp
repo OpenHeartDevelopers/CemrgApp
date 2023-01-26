@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
         "NIFTI file path", "Full path of .nii file.",
         us::Any(), false);
     parser.addArgument(
-        "output", "o", mitkCommandLineParser::File,
+        "output", "o", mitkCommandLineParser::String,
         "Output file", "Where to save the output.",
         us::Any(), false);
     parser.addArgument( // optional

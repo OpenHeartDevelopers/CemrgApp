@@ -85,15 +85,15 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::File,
+    //   "input-path", "p", mitkCommandLineParser::String,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input-lge", "i", mitkCommandLineParser::File,
+        "input-lge", "i", mitkCommandLineParser::String,
         "LGE path", "Full path of LGE.nii file.",
         us::Any(), false);
     parser.addArgument( // optional
-        "output-subfolder", "o", mitkCommandLineParser::File,
+        "output-subfolder", "o", mitkCommandLineParser::String,
         "Output subfolder name", "Name of output subfolder (Default=OUTPUT)");
     parser.addArgument( // optional
         "thresholds-method", "m", mitkCommandLineParser::Int,

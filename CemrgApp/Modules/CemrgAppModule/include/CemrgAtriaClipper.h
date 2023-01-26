@@ -75,7 +75,7 @@ public:
     void SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutterSeeds, int clippersIndex);
 
     static mitk::Image::Pointer FixClippingErrors(mitk::Image::Pointer image, int strel_radius = 3);
-    static void FixVlippingErrors(QString imagePath, int strel_radius = 3, bool rewrite=false);
+    static void FixClippingErrors(QString imagePath, int strel_radius = 3, bool rewrite=false);
 
 private:
 

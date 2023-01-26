@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 
     // Add arguments. Unless specified otherwise, each argument is optional.
     parser.addArgument(
-        "input", "i", mitkCommandLineParser::File,
+        "input", "i", mitkCommandLineParser::String,
         "Segmentation (LA-reg) NIFTI file path", "Full path of .nii file.",
         us::Any(), false);
     parser.addArgument( // optional
