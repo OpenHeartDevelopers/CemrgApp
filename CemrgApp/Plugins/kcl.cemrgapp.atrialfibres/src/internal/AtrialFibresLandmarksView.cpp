@@ -139,14 +139,14 @@ void AtrialFibresLandmarksView::CreateQtPartControl(QWidget *parent) {
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->setRenderWindow(renderWindow);
-    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->SetRenderWindow(renderWindow);
+    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
     //Setup keyboard interactor
     callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     callBack->SetCallback(KeyCallBackFunc);
     callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -200,7 +200,7 @@ void AtrialFibresLandmarksView::SaveRoughPoints(){
     MITK_INFO << "[SaveRoughPoints] Saving rough points to file.";
     QString prodPath = directory + "/";
     QString outname = (isLeftAtrium) ? "prodLaRoughLandmarks" : "prodRaLandmarks";
-    std::ofstream fileRough, fileRoughLabels;
+    ofstream fileRough, fileRoughLabels;
 
     MITK_INFO << "[SaveRoughPoints] Saving TXT file.";
     fileRough.open((prodPath + outname + ".txt").toStdString());
@@ -244,8 +244,8 @@ void AtrialFibresLandmarksView::SaveRefinedPoints(){
     MITK_INFO << "[SaveRefinedPoints] Saving refined points to file.";
     QString prodPath = directory + "/";
     QString outname = (isLeftAtrium) ? "prodLaRefinedLandmarks" : "prodRaRegion";
-    std::ofstream fileRefined;
-    std::ofstream fileRough, fileRefinedLabels;
+    ofstream fileRefined;
+    ofstream fileRough, fileRefinedLabels;
 
     MITK_INFO << "[SaveRefinedPoints] Saving TXT file.";
     fileRefined.open((prodPath + outname + ".txt").toStdString());
@@ -415,7 +415,7 @@ void AtrialFibresLandmarksView::PickCallBack(bool refinedLandmarks) {
         refinedLineSeeds->Modified();
     }
 
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*) {
@@ -476,7 +476,7 @@ void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, v
             self->roughSeedLabels.pop_back();
         }//_if
 
-        self->m_Controls.widget_1->renderWindow()->Render();
+        self->m_Controls.widget_1->GetRenderWindow()->Render();
     } else if (key == "X" || key == "x"){
         if(self->m_Controls.button_save2_refined->isEnabled()){
             bool refinedLandmarks = true;
@@ -531,7 +531,7 @@ void AtrialFibresLandmarksView::KeyCallBackFunc(vtkObject*, long unsigned int, v
                 self->refinedSeedLabels.pop_back();
             }//_if
 
-            self->m_Controls.widget_1->renderWindow()->Render();
+            self->m_Controls.widget_1->GetRenderWindow()->Render();
         }
     } else if (key == "H" || key == "h"){
         self->Help();

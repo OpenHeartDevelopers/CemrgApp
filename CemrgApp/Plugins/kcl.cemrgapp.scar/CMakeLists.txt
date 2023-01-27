@@ -4,5 +4,4 @@ mitk_create_plugin(
   EXPORT_DIRECTIVE SCAR_EXPORT
   EXPORTED_INCLUDE_SUFFIXES src
   MODULE_DEPENDS MitkQtWidgetsExt MitkCemrgAppModule
-  PACKAGE_DEPENDS PRIVATE VTK|CommonSystem
 )

@@ -67,7 +67,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkClipPolyData.h>
 #include <vtkHedgeHog.h>
-// #include <vtkNamedColors.h>
+#include <vtkNamedColors.h>
 
 //ITK
 #include <itkAddImageFilter.h>
@@ -119,14 +119,14 @@ void AtrialFibresVisualiseView::CreateQtPartControl(QWidget *parent) {
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->setRenderWindow(renderWindow);
-    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->SetRenderWindow(renderWindow);
+    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
     //Setup keyboard interactor
     // callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     // callBack->SetCallback(KeyCallBackFunc);
     // callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     // interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -162,7 +162,7 @@ void AtrialFibresVisualiseView::LoadFibreFile(){
     MITK_INFO << ("Fibres read. Number of fibres: " + QString::number(vectorField.size())).toStdString();
 
     // rearrange vectorfield into vtkFlostArray fibres
-    // vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
+    vtkSmartPointer<vtkNamedColors> colors = vtkSmartPointer<vtkNamedColors>::New();
     vtkSmartPointer<vtkFloatArray> fibres = vtkSmartPointer<vtkFloatArray>::New();
     fibres->SetNumberOfComponents(3);
     fibres->SetNumberOfTuples(vectorField.size());
@@ -186,7 +186,7 @@ void AtrialFibresVisualiseView::LoadFibreFile(){
 
     vtkNew<vtkActor> fibresActor;
     fibresActor->SetMapper(fibresMapper);
-    // fibresActor->GetProperty()->SetColor(colors->GetColor3d("Gold").GetData());
+    fibresActor->GetProperty()->SetColor(colors->GetColor3d("Gold").GetData());
 
     renderer->AddActor(fibresActor);
 }
@@ -218,12 +218,12 @@ void AtrialFibresVisualiseView::iniPreSurf() {
 
 void AtrialFibresVisualiseView::Visualiser(double opacity){
     MITK_INFO << "[Visualiser]";
-    double max_scalar=-1, min_scalar=1e9,s;
-    vtkFloatArray *scalars = vtkFloatArray::New();
+    double max_scalar=-1, min_scalar=1e9;
+    // vtkFloatArray *scalars = vtkFloatArray::New();
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
-    scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
     for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
-        s = scalars->GetTuple1(i);
+        double s = scalars->GetTuple1(i);
         if (s > max_scalar)
             max_scalar = s;
         if (s < min_scalar)

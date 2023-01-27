@@ -150,14 +150,14 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->setRenderWindow(renderWindow);
-    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->SetRenderWindow(renderWindow);
+    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
     MITK_INFO << "Setup keyboard interactor";
     callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     callBack->SetCallback(KeyCallBackFunc);
     callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -271,7 +271,7 @@ void AtrialFibresClipperView::CtrLines() {
         linesActor->GetProperty()->SetColor(1,0,0);
         renderer->AddActor(linesActor);
     }//_for
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 
     //Adjust controllers
     m_Controls.button_man1_ctrlines->setEnabled(false);
@@ -332,7 +332,7 @@ void AtrialFibresClipperView::CtrPlanes() {
             comboText = "APPENDAGE";
         m_Controls.comboBox->insertItem(i, comboText);
     }//_for
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 
     //Adjust controllers
     m_Controls.comboBox->setCurrentIndex(0);
@@ -432,7 +432,7 @@ void AtrialFibresClipperView::CtrPlanesPlacer() {
     clipper->CalcParamsOfPlane(ctrPlane, indexBox, position);
 
     ctrPlane->Update();
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void AtrialFibresClipperView::CtrLinesSelector(int index) {
@@ -472,7 +472,7 @@ void AtrialFibresClipperView::CtrLinesSelector(int index) {
     m_Controls.slider->setValue(position);
     m_Controls.spinBox->setValue(adjust);
     pickedCutterSeeds->SetPoints(vtkSmartPointer<vtkPoints>::New());
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void AtrialFibresClipperView::PvClipperRadius(){
@@ -523,7 +523,7 @@ void AtrialFibresClipperView::SaveLabels(){
     QString prodPath = directory + "/";
     std::vector<int> ignoredIds;
     int ignored=0, discarded=0;
-    std::ofstream fileLabels, fileIds, fileLabelInShell, fileIgnoreIds, fileDiscardIds;
+    ofstream fileLabels, fileIds, fileLabelInShell, fileIgnoreIds, fileDiscardIds;
 
     fileLabels.open((prodPath + "prodSeedLabels.txt").toStdString());
     fileIds.open((prodPath + "prodSeedIds.txt").toStdString());
@@ -531,11 +531,11 @@ void AtrialFibresClipperView::SaveLabels(){
     fileDiscardIds.open((prodPath + "prodDiscardSeedIds.txt").toStdString());
     fileLabelInShell.open((prodPath + "prodNaiveSeedLabels.txt").toStdString());
 
-    vtkFloatArray *scalars = vtkFloatArray::New();
+
     mitk::Surface::Pointer tempsurf = mitk::Surface::New();
     tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
     CemrgCommonUtils::SetCellDataToPointData(tempsurf);
-    scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
 
     // 14=ignore, 18=discard
     for (unsigned int i=0; i<pickedSeedLabels.size(); i++){
@@ -580,7 +580,7 @@ void AtrialFibresClipperView::ShowPvClippers(){
     bool showOnRenderer= true;
     CreateSphereClipperAndRadiiVectors(showOnRenderer);
 
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 
     m_Controls.slider_auto->setEnabled(true);
     m_Controls.slider_auto->setRange(4, 30);
@@ -666,8 +666,8 @@ void AtrialFibresClipperView::InterPvSpacing(){
         MITK_INFO << ("[InterPvSpacing] Opened file :" + path2corridor).toStdString();
 
         MITK_INFO << "[InterPvSpacing] Update shell and save it";
-        vtkFloatArray *cellScalars = vtkFloatArray::New();
-        cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        vtkFloatArray *cellScalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+
 
         std::string line, header;
         for (int ix = 0; ix < 3; ix++) {
@@ -780,7 +780,7 @@ void AtrialFibresClipperView::Visualiser(double opacity){
 }
 
 void AtrialFibresClipperView::VisualiserAuto(double opacity) {
-    double max_scalar=-1, min_scalar=1e9, s;
+    double max_scalar=-1, min_scalar=1e9;
     try{
         vtkFloatArray *scalars = vtkFloatArray::New();
         scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
@@ -789,7 +789,7 @@ void AtrialFibresClipperView::VisualiserAuto(double opacity) {
         MITK_INFO(debugging) << ("Created scalars vector. Number: " + QString::number(numScalars)).toStdString();
 
         for (vtkIdType i=0;i<surface->GetVtkPolyData()->GetNumberOfCells();i++) {
-            s = scalars->GetTuple1(i);
+            double s = scalars->GetTuple1(i);
             if (s > max_scalar)
                 max_scalar = s;
             if (s < min_scalar)
@@ -920,11 +920,11 @@ void AtrialFibresClipperView::UpdateClipperSeedIds(int newPickedId, int currentI
     std::cout << "Current ID: " << currentId << " New picked ID: " << newPickedId << '\n';
 
     // check new picked id has the correct label in surface
-    vtkFloatArray *scalars = vtkFloatArray::New();
+
     mitk::Surface::Pointer tempsurf = mitk::Surface::New();
     tempsurf->SetVtkPolyData(surface->GetVtkPolyData());
     CemrgCommonUtils::SetCellDataToPointData(tempsurf);
-    scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
+    vtkFloatArray *scalars = vtkFloatArray::SafeDownCast(tempsurf->GetVtkPolyData()->GetPointData()->GetScalars());
     int currentLabel = (int) scalars->GetTuple1(currentId);
     int newLabel = (int) scalars->GetTuple1(newPickedId);
 
@@ -947,11 +947,11 @@ int AtrialFibresClipperView::GetPickedId(){
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
+
     int pickedSeedId = -1;
     double minDistance = 1E10;
     for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
+        double distance = vtkMath::Distance2BetweenPoints(
                     pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
@@ -982,7 +982,7 @@ void AtrialFibresClipperView::PickCallBack(bool pvCorridor) {
         corridorLineSeeds->Modified();
     }
 
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void AtrialFibresClipperView::ManualCutterCallBack() {
@@ -1004,11 +1004,11 @@ void AtrialFibresClipperView::ManualCutterCallBack() {
     double* pickPosition = picker->GetPickPosition();
     vtkIdList* pickedCellPointIds = surface->GetVtkPolyData()->GetCell(picker->GetCellId())->GetPointIds();
 
-    double distance;
+
     int pickedSeedId = -1;
     double minDistance = 1E10;
     for (int i=0; i<pickedCellPointIds->GetNumberOfIds(); i++) {
-        distance = vtkMath::Distance2BetweenPoints(
+        double distance = vtkMath::Distance2BetweenPoints(
                     pickPosition, surface->GetVtkPolyData()->GetPoint(pickedCellPointIds->GetId(i)));
         if (distance < minDistance) {
             minDistance = distance;
@@ -1021,7 +1021,7 @@ void AtrialFibresClipperView::ManualCutterCallBack() {
     double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedId);
     pickedCutterSeeds->GetPoints()->InsertNextPoint(point);
     pickedCutterSeeds->Modified();
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, void* ClientData, void*) {
@@ -1074,7 +1074,7 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                 self->pickedSeedLabels.pop_back();
             }//_if
 
-            self->m_Controls.widget_1->renderWindow()->Render();
+            self->m_Controls.widget_1->GetRenderWindow()->Render();
         } else if (key == "X" || key == "x"){
             if(self->automaticPipeline){
                 if(self->corridorCount<self->corridorMax){
@@ -1211,7 +1211,7 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
                 for (unsigned int i=0; i<self->clipperActors.size(); i++)
                 self->clipperActors.at(i)->GetProperty()->SetOpacity(1.0);
             }//_if
-            self->m_Controls.widget_1->renderWindow()->Render();
+            self->m_Controls.widget_1->GetRenderWindow()->Render();
 
         }//_if_key
 
@@ -1261,8 +1261,8 @@ void AtrialFibresClipperView::KeyCallBackFunc(vtkObject*, long unsigned int, voi
 
         }//_if
     }//_if_main
-     //
-    if(key == "h" || key == "H"){
+    //
+    if (key == "h" || key == "H"){
         self->Help();
     }
 
@@ -1272,7 +1272,6 @@ void AtrialFibresClipperView::Help(){
     std::string str = GetHelp();
     QMessageBox::information(NULL, "Help", str.c_str());
 }
-
 // helper functions
 void AtrialFibresClipperView::InitialisePickerObjects(){
     pickedSeedIds = vtkSmartPointer<vtkIdList>::New();
@@ -1467,6 +1466,7 @@ void AtrialFibresClipperView::PrintCorridorIds(){
         std::cout << "[PriontCorridorIds] No points in corridor" << '\n';
     }
 }
+
 
 std::string AtrialFibresClipperView::GetHelp(){
     std::string msg = "";

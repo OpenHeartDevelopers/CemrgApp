@@ -1,4 +1,4 @@
-#/*=========================================================================
+/*=========================================================================
 
 Program:   Medical Imaging & Interaction Toolkit
 Language:  C++
@@ -214,8 +214,8 @@ void ScarCalculationsView::GetInputsFromFile() {
             else
                 prodPath = ScarCalculationsView::postdir + "/";
 
-            std::ifstream prodFileRead;
-            std::ofstream prodFileWrite;
+            ifstream prodFileRead;
+            ofstream prodFileWrite;
             prodFileRead.open((prodPath + "prodThresholds.txt").toStdString());
             prodFileWrite.open((prodPathOut + "prodThresholds" + need2load.at(i) + ".txt").toStdString());
 
@@ -258,14 +258,14 @@ void ScarCalculationsView::CreateQtPartControl(QWidget *parent) {
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
         vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->setRenderWindow(renderWindow);
-    m_Controls.widget_1->renderWindow()->AddRenderer(renderer);
+    m_Controls.widget_1->SetRenderWindow(renderWindow);
+    m_Controls.widget_1->GetRenderWindow()->AddRenderer(renderer);
 
     //Setup keyboard interactor
     callBack = vtkSmartPointer<vtkCallbackCommand>::New();
     callBack->SetCallback(KeyCallBackFunc);
     callBack->SetClientData(this);
-    interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
+    interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
     interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
     interactor->GetInteractorStyle()->KeyPressActivationOff();
     interactor->GetInteractorStyle()->AddObserver(vtkCommand::KeyPressEvent, callBack);
@@ -336,7 +336,7 @@ void ScarCalculationsView::iniPreSurf() {
     // Load file information
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
-    std::ifstream prodFileRead;
+    ifstream prodFileRead;
     QString prodPathAdv = ScarCalculationsView::advdir + "/";
     prodFileRead.open((prodPathAdv + "prodThresholdsPre.txt").toStdString());
 
@@ -404,7 +404,7 @@ void ScarCalculationsView::KeyCallBackFunc(vtkObject*, long unsigned int, void* 
         for (int i = 0; i < points->GetNumberOfPoints() - 1; i++)
             newPoints->InsertNextPoint(points->GetPoint(i));
         self->pickedLineSeeds->SetPoints(newPoints);
-        self->m_Controls.widget_1->renderWindow()->Render();
+        self->m_Controls.widget_1->GetRenderWindow()->Render();
 
     } else if (key == "r" || key == "R") {
         MITK_INFO << "[INFO][KeyCallBackFunc] Pressed R key.\n";
@@ -542,7 +542,7 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
     // Load file information
     MITK_INFO << "Loading threshold information from file";
     double datainfo[5];
-    std::ifstream prodFileRead;
+    ifstream prodFileRead;
     QString prodPathAdv = ScarCalculationsView::advdir + "/";
     QString shellpath = prodPathAdv;
 
@@ -595,7 +595,7 @@ void ScarCalculationsView::CtrlPrePostSelection(const QString& text) {
 
     Visualiser();
     csadv->SetMaxScalar(this->maxScalar);
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
     SetShortcutLegend();
 }
 
@@ -633,7 +633,7 @@ void ScarCalculationsView::EditThreshold() {
 
     csadv->ResetValues();
     BinVisualiser();
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void ScarCalculationsView::SetNewThreshold(const QString& text) {
@@ -668,7 +668,7 @@ void ScarCalculationsView::SetNewThreshold(const QString& text) {
 
     csadv->ResetValues();
     BinVisualiser();
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void ScarCalculationsView::SaveNewThreshold() {
@@ -720,7 +720,7 @@ void ScarCalculationsView::SaveNewThreshold() {
 
     Visualiser();
     csadv->SetMaxScalar(this->maxScalar);
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
     SetShortcutLegend();
 }
 
@@ -779,7 +779,7 @@ void ScarCalculationsView::CancelThresholdEdit() {
 
     Visualiser();
     csadv->SetMaxScalar(this->maxScalar);
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
     SetShortcutLegend();
 }
 
@@ -810,7 +810,7 @@ void ScarCalculationsView::PickCallBack() {
     double* point = surface->GetVtkPolyData()->GetPoint(pickedSeedId);
     pickedLineSeeds->GetPoints()->InsertNextPoint(point);
     pickedLineSeeds->Modified();
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 // Button functionalities
@@ -897,7 +897,7 @@ void ScarCalculationsView::GapMeasurement() {
                 renderer->AddActor(this->dijkstraActors[i]);
             }
 
-            m_Controls.widget_1->renderWindow()->Render();
+            m_Controls.widget_1->GetRenderWindow()->Render();
 
             QMessageBox::warning(NULL, "F&I T2 - FINISHED CALCULATION",
                 (csadv->PrintAblationGapsResults(mean, stdv, value)).c_str());
@@ -941,7 +941,7 @@ void ScarCalculationsView::GapMeasurementVisualisation(const QString& text) {
 
             csadv->ResetValues();
             BinVisualiser();
-            m_Controls.widget_1->renderWindow()->Render();
+            m_Controls.widget_1->GetRenderWindow()->Render();
         }
     } else
         MITK_INFO << "Empty name of file. ";
@@ -1037,7 +1037,7 @@ void ScarCalculationsView::BeforeAndAfterCompVisualisation() {
 
     csadv->ResetValues();
     BinVisualiser();
-    m_Controls.widget_1->renderWindow()->Render();
+    m_Controls.widget_1->GetRenderWindow()->Render();
 }
 
 void ScarCalculationsView::Sphericity() {
@@ -1076,7 +1076,7 @@ void ScarCalculationsView::TransformMeshesForComparison() {
 void ScarCalculationsView::GetThresholdValuesFromFile(QString filepath) {
 
     double data1[5];
-    std::ifstream prodFileRead;
+    ifstream prodFileRead;
     prodFileRead.open(filepath.toStdString());
 
     MITK_INFO << "READ FILE: " + filepath;
@@ -1095,7 +1095,7 @@ void ScarCalculationsView::GetThresholdValuesFromFile(QString filepath) {
 void ScarCalculationsView::SetThresholdValuesToFile(QString filepath) {
 
     double data1[5];
-    std::ofstream prodFileWrite;
+    ofstream prodFileWrite;
     prodFileWrite.open(filepath.toStdString());
 
     data1[0] = value;

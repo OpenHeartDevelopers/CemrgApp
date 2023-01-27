@@ -305,7 +305,7 @@ void AtrialFibresView::ConvertNII() {
     //Convert to Nifti
     int ctr = 0;
     QString prodPath, type;
-    bool successfulNitfi, resampleImage, reorientToRAI;
+    bool resampleImage, reorientToRAI;
     resampleImage = true;
     reorientToRAI = true;
 
@@ -314,7 +314,7 @@ void AtrialFibresView::ConvertNII() {
     foreach (int idx, index) {
         type = (ctr==0) ? "LGE":"MRA";
         prodPath = directory + "/" + "dcm-" + type + "-" + seriesDscrps.at(idx).c_str() + ".nii";
-        successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), prodPath, resampleImage, reorientToRAI);
+        bool successfulNitfi = CemrgCommonUtils::ConvertToNifti(nodes.at(idx)->GetData(), prodPath, resampleImage, reorientToRAI);
         if (successfulNitfi) {
             this->GetDataStorage()->Remove(nodes.at(idx));
             std::string key = "dicom.series.SeriesDescription";
@@ -375,10 +375,10 @@ void AtrialFibresView::AnalysisChoice(){
             // Create fake segmentation image for labelling
             double origin[3] = {0, 0, 0};
             double spacing[3] = {1, 1, 1};
-
-            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing);
-            CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
-            MITK_INFO << ("Origin set to: (" + QString::number(origin[0]) + ", " + QString::number(origin[1]) + ", " + QString::number(origin[2]) +")").toStdString();
+            int pad_scale = 1; // pad_scale*spacing added to bounds in function below
+            QString output_path = ""; // makes input to be overwritten
+            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing, output_path, pad_scale);
+            // CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
 
             mitk::Image::Pointer im = CemrgCommonUtils::ReturnBinarised(mitk::IOUtil::Load<mitk::Image>(StdStringPath(tagName+".nii")));
             // CemrgCommonUtils::Binarise(im);
@@ -577,7 +577,7 @@ void AtrialFibresView::SegmentIMGS() {
             if(!analysisOnLge && fi.baseName().contains("-reg")){
                 std::string msg = "Registered segmentation " + fi.baseName().toStdString() + " found.";
                 msg += "\nConsider LGE scar projection analysis?";
-                int replyLgeAnalysis = Ask("Question", msg.c_str());
+                int replyLgeAnalysis = Ask("Question", msg);
                 if(replyLgeAnalysis==QMessageBox::Yes){
                     analysisOnLge = true;
                     tagName += "-reg";
@@ -851,7 +851,7 @@ void AtrialFibresView::ClipMV(){
     if (!LoadSurfaceChecks()) return;
 
     //Read in and copy
-    QString path = Path(tagName+".vtk");
+    // QString path = Path(tagName+".vtk");
     // mitk::Surface::Pointer surface = CemrgCommonUtils::LoadVTKMesh(path.toStdString());
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(StdStringPath(tagName+".vtk"));
     if (surface->GetVtkPolyData() == NULL) {
@@ -994,7 +994,7 @@ void AtrialFibresView::CleanMeshQuality(){
 
     if(userInputsAccepted){
         MITK_INFO << "[CleanMeshQuality] Cleaning mesh";
-        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+        // std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
 
         cmd->DockerCleanMeshQuality(directory, fi.baseName(), uiFormat_outName, 0.2, inExt, uiFormat_outExt);
@@ -1013,7 +1013,7 @@ void AtrialFibresView::MeshingOptions(){
     QFileInfo fi(meshPath);
 
     QString meshName = fi.baseName();
-    QString prodPath = directory + "/";
+    // QString prodPath = directory + "/";
 
     MITK_INFO << "[MeshingOptions] Remeshing";
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
@@ -1033,7 +1033,7 @@ void AtrialFibresView::MeshingOptions(){
             QString fieldName = "scar";
             CemrgCommonUtils::VtkCellScalarToFile(pathNoExt+".vtk", pathNoExt+"_elem.dat", fieldName);
             CemrgCommonUtils::VtkPointScalarToFile(pathNoExt+".vtk", pathNoExt+"_pts.dat", fieldName);
-            std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+            // std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
             cmd->SetUseDockerContainers(true);
             // convert to carp simple
             cmd->DockerConvertMeshFormat(directory, meshName, "vtk", meshName+"-temp", "carp_txt", 1);
@@ -1075,7 +1075,7 @@ void AtrialFibresView::MeshingOptions(){
             MITK_INFO(QFile::remove(Path(cleanInName+".fcon"))) << "Removed .fcon file";
 
             MITK_INFO << "[MeshingOptions] Cleaning up mesh quality";
-            std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+            // std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
             cmd->SetUseDockerContainers(true);
 
             cmd->DockerCleanMeshQuality(directory, cleanInName, cleanOutName, 0.2, "vtk", "vtk_polydata");
@@ -1164,7 +1164,7 @@ void AtrialFibresView::UacCalculationRough(){
         cmd->SetDockerImageUac();
         MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 start";
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
-        MITK_INFO << "TIMELOG|UacCalculation_Stage1| UAC 1 end";
+        MITK_INFO << ("TIMELOG|UacCalculation_Stage1| UAC 1 end " + uacOutput).toStdString();
 
         outputFiles << "LSbc1.vtx" << "LSbc2.vtx";
         outputFiles << "PAbc1.vtx" << "PAbc2.vtx";
@@ -1185,7 +1185,7 @@ void AtrialFibresView::UacCalculationRough(){
         QString lrLapSolve, paLapSolve;
         lrLapSolve = cmd->OpenCarpDocker(directory, lr_par, "LR_UAC_N2");
         paLapSolve = cmd->OpenCarpDocker(directory, pa_par, "PA_UAC_N2");
-        MITK_INFO << "TIMELOG|UacCalculation_Stage1| openCARP end";
+        MITK_INFO << ("TIMELOG|UacCalculation_Stage1| openCARP end " + lrLapSolve + " - " + paLapSolve).toStdString();
 
         bool uacOutputSuccess = IsOutputFileCorrect(directory, outputFiles);
         MITK_ERROR(!uacOutputSuccess) << ("Problem with " + uaccmd).toStdString();
@@ -1239,7 +1239,7 @@ void AtrialFibresView::UacCalculationRefined(){
         MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - Start";
         cmd->SetDockerImageUac();
         uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, uiLabels, landmarksFilesList);
-        MITK_INFO << "TIMELOG|UacCalculation_Stage2| UAC 2.1 - End";
+        MITK_INFO << ("TIMELOG|UacCalculation_Stage2| UAC 2.1 - End " + uacOutput).toStdString();
 
         if (!IsOutputFileCorrect(directory, outputFiles)){
             MITK_INFO << "TIMELOG|UacCalculation_Stage2| End (FAILED)";
@@ -1264,7 +1264,7 @@ void AtrialFibresView::UacCalculationRefined(){
         udpLapSolve = cmd->OpenCarpDocker(directory, udp_par, "UD_Post_UAC");
         lraLapSolve = cmd->OpenCarpDocker(directory, lra_par, "LR_Ant_UAC");
         udaLapSolve = cmd->OpenCarpDocker(directory, uda_par, "UD_Ant_UAC");
-        MITK_INFO << "TIMELOG|UacCalculation_Stage2| openCARP - End";
+        MITK_INFO << ("TIMELOG|UacCalculation_Stage2| openCARP - End " + lrpLapSolve + "-" + udpLapSolve + "-" + lraLapSolve + "-" + udaLapSolve).toStdString();
 
         SetFibresVariables("UAC_2B_");
 
@@ -1283,7 +1283,7 @@ void AtrialFibresView::UacCalculationRefined(){
         msg += (uacOutputSuccess) ? "successful" : "failed";
         QMessageBox::information(NULL, "Attention", msg.c_str());
 
-        MITK_INFO << "TIMELOG|UacCalculation_Stage2| End";
+        MITK_INFO << ("TIMELOG|UacCalculation_Stage2| End " + uacOutput).toStdString();
     }
 }
 
@@ -1320,20 +1320,27 @@ void AtrialFibresView::UacFibreMapping(){
     std::cout << "[output]" << uac_fibreFieldOutputName.toStdString() << '\n';
 
     outputFiles.clear();
-    outputFiles << "Fibre_1.vpts";
+    // outputFiles << "Fibre_1.vpts";
 
-    QStringList cmdargs;
-    cmdargs << (uac_fibreField+".lon");
-    if(uiUac_surftypeIndex==2){
-        cmdargs << (uac_fibreField+".lon");
-        uaccmd += "_Bilayer";
-    }
-    cmdargs << uac_fibreFieldOutputName;// output of fibremapping
+    // QStringList cmdargs;
+    // cmdargs << (uac_fibreField+".lon");
+    // if(uiUac_surftypeIndex==2){
+    //     cmdargs << (uac_fibreField+".lon");
+    //     uaccmd += "_Bilayer";
+    // }
+    // cmdargs << uac_fibreFieldOutputName;// output of fibremapping
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-    cmd->SetDockerImageUac();
-    uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, QStringList(), "Fibre_1.vpts");
+    // cmd->SetDockerImageUac();
+    // uacOutput = cmd->DockerUniversalAtrialCoordinates(directory, uaccmd, fibreAtlas, uacMeshName, cmdargs, QStringList(), "Fibre_1.vpts");
 
+    QString _atrium = uiUac_whichAtrium.at(uiUac_whichAtriumIndex).toLower();
+    QString _layer = uiUac_surftype.at(uiUac_surftypeIndex).toLower(); // check name
+    QString _fibre = uiUac_fibreFile.at(uiUac_fibreFileIndex); // check name
+    QString _omsh = "fibres_" + _fibre;
+
+    QString alt_uac = cmd->DockerUacFibreMappingMode(directory, _atrium, _layer, _fibre, uacMeshName, false, _omsh);
+    MITK_INFO << alt_uac.toStdString();
     bool uacOutputSuccess = cmd->IsOutputSuccessful(uacOutput);
     MITK_WARN(!uacOutputSuccess) << ("Not found " + uaccmd).toStdString();
 
@@ -1440,13 +1447,13 @@ void AtrialFibresView::UacCalculationVerifyLabels(){
 
 bool AtrialFibresView::IsOutputFileCorrect(QString dir, QStringList filenames){
     bool success = true;
-    bool okSingleTest;
+
     int countfails = 0;
     QString checkOutputMsg = "";
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     for (int ix = 0; ix < filenames.size(); ix++) {
-        okSingleTest = cmd->IsOutputSuccessful(dir + "/" + filenames.at(ix));
+        bool okSingleTest = cmd->IsOutputSuccessful(dir + "/" + filenames.at(ix));
 
         if (!okSingleTest){
             MITK_ERROR << ("File(s) not created - " + filenames.at(ix)).toStdString();
@@ -1724,8 +1731,8 @@ bool AtrialFibresView::GetUserUacOptionsInputs(bool enableFullUiOptions){
     bool userInputAccepted=false;
 
     if(uiUac_fibreFile.size() == 0){
-        uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A";
-        uiUac_whichAtrium << "LA" << "RA" << "4Ch";
+        uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A" << "L";
+        uiUac_whichAtrium << "LA" << "RA";
         uiUac_surftype << "Endo" << "Epi" << "Bilayer";
     }
 
@@ -2106,11 +2113,11 @@ bool AtrialFibresView::GetUserScarProjectionInputs(){
             separated_thresh_list.sort();
         }//_if
 
-        double tryNumber;
+
         bool vOK;
         for(int ix=0; ix<separated_thresh_list.size(); ix++) {
             MITK_INFO << separated_thresh_list.at(ix);
-            tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
+            double tryNumber = separated_thresh_list.at(ix).toDouble(&vOK);
             if (vOK) uiScar_thresValues.push_back(tryNumber);
         }
 
@@ -2255,7 +2262,7 @@ bool AtrialFibresView::LoadSurfaceChecks(){
         }
     } else{
         std::string msg = ("Load automatically file called: [" + tagName + ".vtk]?").toStdString();
-        int reply2 = Ask("Surface file to load", msg.c_str());
+        int reply2 = Ask("Surface file to load", msg);
         if(reply2==QMessageBox::No){
             UserLoadSurface();
         }

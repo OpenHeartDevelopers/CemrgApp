@@ -340,6 +340,7 @@ mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer
 
     ImageType::Pointer outputImg = ImageType::New();
     ImageType::IndexType start;
+
     double origin[3];
     image->GetGeometry()->GetOrigin().ToArray(origin);
 
@@ -762,7 +763,7 @@ bool CemrgCommonUtils::ConvertToCarto(
     outputPath = outputPath + "-carto.vtk";
 
     //File
-    std::ofstream cartoFile;
+    ofstream cartoFile;
     cartoFile.open(outputPath);
 
     //Header
@@ -1025,10 +1026,17 @@ mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(
     return node;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]){
+mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num){
     vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
     double bounds[6];
     pd->GetBounds(bounds);
+
+    // prepare for padding (pad_num=0 by default, so it does not affect)
+    for (int ix; ix<3; ix++) {
+        double pad_offset = pad_num*spacing[ix];
+        bounds[2*ix] -= pad_offset;
+        bounds[2*ix + 1] += pad_offset;
+    }
 
     int dimensions[3];
     for (int ix = 0; ix < 3; ix++) {
@@ -1071,6 +1079,7 @@ mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Point
     imgstenc->SetBackgroundValue(otval);
     imgstenc->Update();
 
+    //VTK to ITK conversion
     mitk::Image::Pointer cutImg = mitk::Image::New();
     cutImg->Initialize(imgstenc->GetOutput());
     cutImg->SetVolume(imgstenc->GetOutput()->GetScalarPointer());
@@ -1079,7 +1088,7 @@ mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Point
 
 }
 
-void CemrgCommonUtils::SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath){
+void CemrgCommonUtils::SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath, int pad_num){
     QString out;
 
     if(outputPath.isEmpty()){
@@ -1089,7 +1098,7 @@ void CemrgCommonUtils::SaveImageFromSurfaceMesh(QString surfPath, double origin[
         out = outputPath;
     }
     mitk::Surface::Pointer surf = mitk::IOUtil::Load<mitk::Surface>(surfPath.toStdString());
-    mitk::Image::Pointer im = CemrgCommonUtils::ImageFromSurfaceMesh(surf, origin, spacing);
+    mitk::Image::Pointer im = CemrgCommonUtils::ImageFromSurfaceMesh(surf, origin, spacing, pad_num);
 
     mitk::IOUtil::Save(im, out.toStdString());
 }
@@ -1688,9 +1697,9 @@ void CemrgCommonUtils::VtkScalarToFile(QString vtkPath, QString outPath, QString
 
     std::ofstream fo(outPath.toStdString());
 
-    double s;
+
     for (vtkIdType ix=0;ix<numObjects;ix++) {
-        s = scalars->GetTuple1(ix);
+        double s = scalars->GetTuple1(ix);
         fo << std::setprecision(12) << s;
         if(ix<numObjects-1){
             fo << std::endl;

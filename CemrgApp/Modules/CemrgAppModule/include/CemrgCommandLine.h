@@ -69,6 +69,8 @@ public:
     QString DockerDicom2Nifti(QString path2dicomfolder);
     QString DockerUniversalAtrialCoordinates(QString dir, QString uaccmd, QStringList fibreAtlas, QString meshname, QStringList cmdargs, QStringList landmarks, QString outnameext="");
     QString DockerUacFibreMapping(QString dir, QString uaccmd, QStringList fibreAtlas, QString meshname, QStringList cmdargs, QString landmarks, QString outnameext);
+    QString DockerUacMainMode(QString dir, QString stage, QString atrium, QString layer, QString fibre, QString meshname, QStringList tags, QStringList landmarks, bool fourch=false, bool noraa=false, int scale=1000);
+    QString DockerUacFibreMappingMode(QString dir, QString atrium, QString layer, QString fibre, QString meshname, bool msh_endo_epi, QString output, bool fourch=false, QString tags="11", QString biproj="100");
 
     // openCARP docker
     QString OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroNames, QStringList oneNames, QStringList regionLabels);
@@ -97,7 +99,7 @@ public:
     inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
     inline QString GetDockerImage() {return _dockerimage;};
     inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
-    inline void SetDockerImageUac(){_dockerimage = "cemrg/uac:latest";};// modify when docker image has been pushed to hub
+    inline void SetDockerImageUac(QString uac_tag="latest"){_dockerimage = "cemrg/uac:"+uac_tag;};// modify when docker image has been pushed to hub
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
     QStringList GetOpenCarpDockerDefaultArguments(QString volume);
 
