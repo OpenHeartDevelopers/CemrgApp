@@ -85,17 +85,17 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::File,
+    //   "input-path", "p", mitkCommandLineParser::InputFile,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-                "input-lge", "i", mitkCommandLineParser::File,
-                "LGE path", "Full path of LGE.nii file.",
-                us::Any(), false);
+        "input-lge", "i", mitkCommandLineParser::InputFile,
+        "LGE path", "Full path of LGE.nii file.",
+        us::Any(), false);
     parser.addArgument(
-                "output", "o", mitkCommandLineParser::File,
-                "Output file", "Where to save the output.",
-                us::Any(), false);
+        "output", "o", mitkCommandLineParser::OutputFile,
+        "Output file", "Where to save the output.",
+        us::Any(), false);
     parser.addArgument( // optional
         "segmentation-ref", "s", mitkCommandLineParser::String,
         "Segmentation Reference VTK shell", "(Not supported) Segmentation VTK to create ScarMap.");
@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
         int method;
         double value, thres, percentage;
         double data1[5];
-        std::ifstream prodFileRead;
+        ifstream prodFileRead;
         QString fileRead = prodPath + "prodThresholds.txt";
         prodFileRead.open(fileRead.toStdString());
 
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
 
         prodFileRead.close();
 
-        std::ofstream prodFile1;
+        ofstream prodFile1;
         prodFile1.open((prodPath + prothresfile).toStdString());
         prodFile1 << value << std::endl;
         prodFile1 << method << std::endl;

@@ -113,7 +113,7 @@ void YZSegView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/, co
 
 void YZSegView::LoadDICOM() {
     //Use MITK DICOM editor
-    QString editor_id = "org.mitk.editors.dicombrowser";
+    QString editor_id = "org.mitk.editors.dicomeditor";
     berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
     this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 }

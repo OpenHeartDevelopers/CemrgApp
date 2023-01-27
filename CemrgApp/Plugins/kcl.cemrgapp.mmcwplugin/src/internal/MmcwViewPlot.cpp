@@ -73,7 +73,7 @@ MmcwViewPlot::MmcwViewPlot() {
     this->strain = std::unique_ptr<CemrgStrains>(new CemrgStrains());;
     this->AHA_camera = vtkSmartPointer<vtkCamera>::New();
     this->AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
-    this->AHA_interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
+    this->AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
 }
 
 void MmcwViewPlot::SetFocus() {
@@ -97,13 +97,13 @@ void MmcwViewPlot::CreateQtPartControl(QWidget *parent) {
 
     //AHA bullseye plot
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_Controls.widget_1->setRenderWindow(renderWindow);
+    m_Controls.widget_1->SetRenderWindow(renderWindow);
 
     AHA_renderer = vtkSmartPointer<vtkRenderer>::New();
     AHA_renderer->SetBackground(0, 0, 0);
     m_Controls.horizontalSlider->setMaximum(noFrames * smoothness);
-    m_Controls.widget_1->renderWindow()->AddRenderer(AHA_renderer);
-    AHA_interactor = m_Controls.widget_1->renderWindow()->GetInteractor();
+    m_Controls.widget_1->GetRenderWindow()->AddRenderer(AHA_renderer);
+    AHA_interactor = m_Controls.widget_1->GetRenderWindow()->GetInteractor();
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonPressEvent);
     AHA_interactor->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
     AHA_interactor->RemoveObservers(vtkCommand::RightButtonPressEvent);
@@ -628,8 +628,7 @@ void MmcwViewPlot::WritePlotToCSV(QString dir) {
             fileName = "SQZ_at_pacing_0.66.csv";
         fileName = QInputDialog::getText(NULL, tr("Save As"), tr("File Name:"), QLineEdit::Normal, fileName, &ok);
         if (ok && !fileName.isEmpty() && fileName.endsWith(".csv")) {
-
-            std::ofstream file;
+            ofstream file;
             file.open(dir.toStdString() + "/" + fileName.toStdString());
             std::vector<double> values;
             for (int i = 0; i < 16; i++) {

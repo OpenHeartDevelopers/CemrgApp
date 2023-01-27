@@ -32,6 +32,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
 #include "ui_QmitkCemrgAppCartoExport.h"
+#include "ui_QmitkCemrgAppImagePadding.h"
 #include "ui_QmitkCemrgAppCommonToolsControls.h"
 
 /**
@@ -58,6 +59,9 @@ protected slots:
     void ConvertToCartoUIUpdate();
     void ConvertToCartoUITextUpdate();
     void ConvertCarpToVtk();
+    void PadImageEdgesWithConstant();
+    void BinariseImage();
+    void ResampleReorientConvert();
 
 protected:
 
@@ -67,6 +71,7 @@ protected:
 
     Ui::QmitkCemrgAppCommonToolsControls m_Controls;
     Ui::QmitkCemrgAppCartoExport m_CartoUIThresholding;
+    Ui::QmitkCemrgAppImagePadding m_ImagePadding;
 };
 
 #endif // QmitkCemrgAppCommonTools_h

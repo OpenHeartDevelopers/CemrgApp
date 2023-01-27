@@ -109,8 +109,8 @@ void EASIView::OnSelectionChanged(
 
 void EASIView::LoadDICOM() {
 
-    //Use MITK DICOM browser
-    QString editor_id = "org.mitk.editors.dicombrowser";
+    //Use MITK DICOM editor
+    QString editor_id = "org.mitk.editors.dicomeditor";
     berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
     this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 }
@@ -446,7 +446,7 @@ void EASIView::CreateMesh() {
 
                 //Write to binary file
                 std::string path = (directory + "/converted.inr").toStdString();
-                std::ofstream myFile(path, ios::out | ios::binary);
+                ofstream myFile(path, ios::out | ios::binary);
                 myFile.write((char*)header, 256 * sizeof(char));
                 myFile.write((char*)pv, dimensions * sizeof(uint8_t));
                 myFile.close();
@@ -577,7 +577,7 @@ void EASIView::ConfrmSITE() {
 void EASIView::Simulation() {
 
     std::string line;
-    std::ifstream file("/home/or15/Work/Strain/ResolutionStudy/paths.txt");
+    ifstream file("/home/or15/Work/Strain/ResolutionStudy/paths.txt");
 
     if (file.is_open()) {
         while (getline(file, line)) {
@@ -619,7 +619,7 @@ void EASIView::Simulation() {
                         fileName = "LV-LNG.csv";
                         plotValueVectors = plotValueVectorsLNG;
                     }//_if
-                    std::ofstream fileLV;
+                    ofstream fileLV;
                     fileLV.open(directory.toStdString() + "/" + fileName.toStdString());
                     std::vector<double> values;
                     for (int s = 0; s < 16; s++) {
@@ -648,7 +648,7 @@ void EASIView::Simulation() {
                 QString fileName;
                 fileName = "LA-SQZ.csv";
 
-                std::ofstream fileLA;
+                ofstream fileLA;
                 fileLA.open(directory.toStdString() + "/" + fileName.toStdString());
                 std::vector<double> values;
                 for (int f = 0; f < 10; f++)

@@ -201,7 +201,7 @@ void AtrialScarView::LoadDICOM() {
             } else {
 
                 MITK_WARN << "Problem with conversion.";
-                QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK DICOM browser?");
+                QMessageBox::warning(NULL, "Attention", "Problem with alternative conversion. Try MITK Dicom editor?");
                 return;
 
             }//_if
@@ -209,8 +209,8 @@ void AtrialScarView::LoadDICOM() {
 
     } else {
 
-        MITK_INFO << "Using MITK DICOM browser";
-        QString editor_id = "org.mitk.editors.dicombrowser";
+        MITK_INFO << "Using MITK DICOM editor";
+        QString editor_id = "org.mitk.editors.dicomeditor";
         berry::IEditorInput::Pointer input(new berry::FileEditorInput(QString()));
         this->GetSite()->GetPage()->OpenEditor(input, editor_id);
 
@@ -637,8 +637,9 @@ void AtrialScarView::AutomaticAnalysis() {
                 pickedSeedIds->InsertNextId(id);
             }//_nveins
             std::vector<int> pickedSeedLabels;
-            for (int j = 0; j < nveins; j++)
+            for (int j=0; j<nveins; j++){
                 pickedSeedLabels.push_back(21);
+            }
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
 
@@ -751,6 +752,7 @@ void AtrialScarView::AutomaticAnalysis() {
             resampleFilter->UpdateLargestPossibleRegion();
             segITK = resampleFilter->GetOutput();
             mitk::IOUtil::Save(mitk::ImportItkImage(segITK), (direct + "/PVeinsCroppedImage.nii").toStdString());
+
             scar->SetScarSegImage(mitk::ImportItkImage(segITK));
             mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
             MITK_INFO << "[...][10.1] Converting cell to point data";
@@ -1446,7 +1448,7 @@ void AtrialScarView::ScarMap() {
                      * Producibility Test
                      **/
                     QString prodPath = directory + "/";
-                    std::ofstream prodFile1;
+                    ofstream prodFile1;
                     prodFile1.open((prodPath + "prodScarMapInputs.txt").toStdString());
                     prodFile1 << minStep << "\n";
                     prodFile1 << maxStep << "\n";
