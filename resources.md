@@ -12,14 +12,14 @@ permalink: /resources/
 
 <!-- markdown-toc end -->
 
-# Tutorials 
+## Tutorials 
 
 We are contiously creating video tutorials to help our users with the specific workflows and other data processing features built within CemrgApp. The videps are hosted on our [YouTube](https://www.youtube.com/channel/UCOp6Hyaq6p2cD46ENmW8RWA) channel.
 
-# Default Parameter Files 
+## Default Parameter Files 
 
 A set of default parameters, mainly for our image regestration algorithms, can be found in our maintained Github [repository](https://github.com/CemrgAppDevelopers/resources) for useful resources.
 
-# Standard Operating Procedure Documents 
+## Standard Operating Procedure Documents 
 
 We also have standard operating procedure (SOP) documents available in our Github resoources [repository](https://github.com/CemrgAppDevelopers/resources).
