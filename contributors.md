@@ -4,7 +4,7 @@ title: Contributors
 permalink: /contributors/
 ---
 
-## Developers 
+## Research Software Developers 
 + Dr Orod Razeghi [github](https://github.com/OrodRazeghi)
 + Dr Jose Alonso Solis-Lemus [github](https://github.com/alonsoJASL), [scholar](https://scholar.google.com/citations?user=2_095cQAAAAJ&hl=en&oi=sra)
 + Dr Angela Lee [github](https://github.com/angela337)
