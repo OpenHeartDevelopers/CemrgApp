@@ -103,6 +103,9 @@ int main(int argc, char* argv[]) {
         "output", "o", mitkCommandLineParser::String,
         "Output filename", "Name of output file. NO EXTENSION (default=test).");
     parser.addArgument(
+        "dicom-folder-input", "dcm", mitkCommandLineParser::Bool,
+        "Specify input is dicom folder", "Specify if input is a folder with DICOM files.");
+    parser.addArgument(
         "output-format", "ofmt", mitkCommandLineParser::String,
         "Output format (extension)", "Extension of output format (default=nii).");
     parser.addArgument(
@@ -137,6 +140,7 @@ int main(int argc, char* argv[]) {
     // Default values for optional arguments
     std::string outFilename = "test";
     std::string outExt = "nii";
+    auto inDcmFolder = false;
     auto resample = true;
     auto reorient = true;
     auto binarise = false;
@@ -145,6 +149,9 @@ int main(int argc, char* argv[]) {
     // Parse, cast and set optional arguments
     if (parsedArgs.end() != parsedArgs.find("output"))
         outFilename = us::any_cast<std::string>(parsedArgs["output"]);
+
+    if (parsedArgs.end() != parsedArgs.find("dicom-folder-input"))
+        inDcmFolder = us::any_cast<bool>(parsedArgs["dicom-folder-input"]);
 
     if (parsedArgs.end() != parsedArgs.find("output-format"))
         outExt = us::any_cast<std::string>(parsedArgs["output-format"]);
@@ -196,7 +203,12 @@ int main(int argc, char* argv[]) {
         MITK_INFO << ("OUTPUT: " + outputPath).toStdString();
 
         MITK_INFO(verbose) << "Loading Image.";
-        mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(inputPath.toStdString());
+        mitk::Image::Pointer image;
+        if (inDcmFolder) {
+            image = mitk::IOUtil::Load<mitk::Image>(direct.toStdString());
+        } else {
+            image = mitk::IOUtil::Load<mitk::Image>(inputPath.toStdString());
+        }
         if (!image) {
             MITK_ERROR << "Problem loading image.";
             return EXIT_FAILURE;
