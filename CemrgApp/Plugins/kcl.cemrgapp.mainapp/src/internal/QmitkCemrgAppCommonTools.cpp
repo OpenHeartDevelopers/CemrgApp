@@ -339,14 +339,6 @@ void QmitkCemrgAppCommonTools::ResampleReorientConvert(){
     QFileInfo fi(pathToImage);
     QString pathToOutput=fi.absolutePath() + "/" + fi.baseName() + ".nii";
     bool success = CemrgCommonUtils::ImageConvertFormat(pathToImage, pathToOutput, resamplebool, reorientbool, isBinary);
-    // mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool, isBinary);
-    // if(isBinary){
-    //     image = CemrgCommonUtils::ReturnBinarised(image);
-    // }
-    //
-    // QFileInfo fi(pathToImage);
-    // QString outPath = fi.absolutePath() + "/" + fi.baseName() + ".nii";
-    // mitk::IOUtil::Save(image, outPath.toStdString());
 
     if(success){
         title = "Attention";
