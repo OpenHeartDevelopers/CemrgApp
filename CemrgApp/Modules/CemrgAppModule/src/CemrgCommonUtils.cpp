@@ -287,26 +287,6 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, 
     return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI, isBinary);
 }
 
-// void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
-//     using ImageType = itk::Image<float, 3>;
-//     using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
-
-//     ImageType::Pointer im = ImageType::New();
-//     mitk::CastToItkImage(image, im);
-
-//     IteratorType imIter(im, im->GetLargestPossibleRegion());
-
-//     imIter.GoToBegin();
-//     while(!imIter.IsAtEnd()){
-//         float value = (imIter.Get() > background) ? 1 : 0;
-//         imIter.Set(value);
-
-//         ++imIter;
-//     }
-
-//     image = mitk::ImportItkImage(im)->Clone();
-// }
-
 mitk::Image::Pointer CemrgCommonUtils::ReturnBinarised(mitk::Image::Pointer image){
     using ImageType = itk::Image<float, 3>;
     using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
@@ -318,7 +298,7 @@ mitk::Image::Pointer CemrgCommonUtils::ReturnBinarised(mitk::Image::Pointer imag
 
     imIter.GoToBegin();
     while(!imIter.IsAtEnd()){
-        float value = (imIter.Get() > background) ? 1 : 0;
+        float value = (imIter.Get() > 0) ? 1 : 0;
         imIter.Set(value);
 
         ++imIter;
@@ -522,26 +502,6 @@ mitk::Image::Pointer CemrgCommonUtils::AddImage(mitk::Image::Pointer im1, mitk::
     mitk::Image::Pointer outputIm = mitk::ImportItkImage(sum->GetOutput())->Clone();
     return outputIm;
 }
-
-// void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, short threshold, short foreground, short background){
-//     using ImageType = itk::Image<short, 3>;
-//     using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
-//
-//     ImageType::Pointer im = ImageType::New();
-//     mitk::CastToItkImage(image, im);
-//
-//     IteratorType imIter(im, im->GetLargestPossibleRegion());
-//
-//     imIter.GoToBegin();
-//     while(!imIter.IsAtEnd()){
-//         float value = (imIter.Get() > threshold) ? foreground : background;
-//         imIter.Set(value);
-//
-//         ++imIter;
-//     }
-//
-//     image = mitk::ImportItkImage(im)->Clone();
-// }
 
 mitk::Image::Pointer CemrgCommonUtils::ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background){
     using ImageType = itk::Image<short, 3>;
