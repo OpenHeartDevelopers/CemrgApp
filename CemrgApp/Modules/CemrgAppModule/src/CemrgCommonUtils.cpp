@@ -93,7 +93,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QFileInfo>
 #include <QDir>
 #include <QTextStream>
-
+#include <QJsonParseError>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 #include "CemrgCommonUtils.h"
 
@@ -1026,7 +1028,139 @@ mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(
     return node;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num){
+QJsonObject CemrgCommonUtils::ReadJSONFile(QString dir, QString fname) {
+    fname += (!fname.endsWith(".json")) ? ".json" : "";
+    QFile file(dir + "/" + fname);
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning("Failed to open file");
+        return QJsonObject();
+    }
+
+    QByteArray jsonData = file.readAll();
+
+    QJsonParseError error;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &error);
+
+    MITK_WARN((jsonDoc.isNull())) << ("Failed to parse JSON: " + error.errorString()).toStdString();
+
+    QJsonObject jsonObj = jsonDoc.object();
+
+    file.close();
+
+    return jsonObj;
+}
+
+bool CemrgCommonUtils::WriteJSONFile(QJsonObject json, QString dir, QString fname) {
+    // Create the JSON document
+    QJsonDocument jsonDoc(json);
+    bool success = true;
+
+    // Open the file for writing
+    fname += (!fname.endsWith(".json")) ? ".json" : "";
+    QFile file(dir + "/" + fname);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning("Failed to open file");
+        success = false;
+    }
+
+    file.write(jsonDoc.toJson());
+    file.close();
+
+    return success;
+}
+
+bool CemrgCommonUtils::ModifyJSONFile(QString dir, QString fname, QString key, QString value, QString type) {
+    bool success = true;
+    QJsonObject json = ReadJSONFile(dir, fname);
+
+    if (json.empty()) {
+        return false;
+    }
+
+    if (value.isEmpty()) {
+        json.remove(key);
+    } else {
+        // Determine the data type of the value
+        QJsonValue jsonValue;
+        QJsonArray json_array;
+        if (type == "string") {
+            jsonValue = QJsonValue::fromVariant(value);
+        }
+        else if (type == "int") {
+            jsonValue = QJsonValue::fromVariant(value.toInt());
+        }
+        else if (type == "float" || type == "double") {
+            jsonValue = QJsonValue::fromVariant(value.toDouble());
+        }
+        else if (type == "bool") {
+            jsonValue = QJsonValue::fromVariant(value.toLower() == "true");
+        }
+        else if (type == "array") {
+            // split value
+            QStringList array_values = value.split(",");
+            for (int ix = 0; ix < array_values.size(); ix++) {
+                // QJsonValue json_value = array_values.at(ix).toDouble();
+                json_array.push_back(array_values.at(ix).toDouble());
+            }
+        }
+        else {
+            // If the data type is not recognized, use a null value
+            jsonValue = QJsonValue();
+        }
+
+        // Add the key-value pair to the object
+        json[key] = (type == "array") ? json_array : jsonValue;
+    }
+
+    success = WriteJSONFile(json, dir, fname);
+    return success;
+}
+
+QJsonObject CemrgCommonUtils::CreateJSONObject(QStringList keys_list, QStringList values_list, QStringList types_list) {
+    QJsonObject jsonObj;
+
+    for (int i = 0; i < keys_list.size(); i++) {
+        QString key = keys_list.at(i);
+        QString value = values_list.at(i);
+        QString type = types_list.at(i);
+
+        // Determine the data type of the value
+        QJsonValue jsonValue;
+        QJsonArray json_array;
+        if (type == "string") {
+            jsonValue = QJsonValue::fromVariant(value);
+        }
+        else if (type == "int") {
+            jsonValue = QJsonValue::fromVariant(value.toInt());
+        }
+        else if (type == "float" || type == "double") {
+            jsonValue = QJsonValue::fromVariant(value.toDouble());
+        }
+        else if (type == "bool") {
+            jsonValue = QJsonValue::fromVariant(value.toLower() == "true");
+        }
+        else  if (type == "array") {
+            // split value
+            QStringList array_values = value.split(",");
+            for (int ix = 0; ix < array_values.size(); ix++) {
+                // QJsonValue json_value = array_values.at(ix).toDouble();
+                json_array.push_back(array_values.at(ix).toDouble());
+            }
+        }
+        else {
+            // If the data type is not recognized, use a null value
+            jsonValue = QJsonValue();
+        }
+
+        // Add the key-value pair to the object
+        jsonObj[key] = (type == "array") ? json_array : jsonValue;
+    }
+
+    return jsonObj;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]){
     vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
     double bounds[6];
     pd->GetBounds(bounds);
