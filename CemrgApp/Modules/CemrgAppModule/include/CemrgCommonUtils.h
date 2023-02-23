@@ -35,6 +35,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkDataNode.h>
 #include <mitkDataStorage.h>
 #include <QString>
+#include <QJsonObject>
 
 class MITKCEMRGAPPMODULE_EXPORT CemrgCommonUtils {
 
@@ -51,11 +52,12 @@ public:
 
     //Sampling Utils
     static mitk::Image::Pointer Downsample(mitk::Image::Pointer image, int factor);
-    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample = false, bool reorientToRAI = false);
-    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample = false, bool reorientToRAI = false);
+    static mitk::Image::Pointer IsoImageResampleReorient(mitk::Image::Pointer image, bool resample=false, bool reorientToRAI=false, bool isBinary=false);
+    static mitk::Image::Pointer IsoImageResampleReorient(QString imPath, bool resample=false, bool reorientToRAI=false, bool isBinary=false);
 
     // Image Analysis Utils
-    static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath = "");
+    static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
+    static mitk::Image::Pointer ReturnBinarised(mitk::Image::Pointer image);
 
     static void Binarise(mitk::Image::Pointer image){image = CemrgCommonUtils::ImageThreshold(image, 0, 1, 0);};
     static mitk::Image::Pointer ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background);
@@ -64,31 +66,47 @@ public:
     static mitk::Image::Pointer AddImage(mitk::Image::Pointer im1, mitk::Image::Pointer im2);
 
     //Nifti Conversion Utils
-    static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample = false, bool reorient = false);
-    static void RoundPixelValues(QString pathToImage, QString outputPath = "");
+    static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
+    static void RoundPixelValues(QString pathToImage, QString outputPath="");
+    static mitk::Image::Pointer PadImageWithConstant(mitk::Image::Pointer image, int vxlsToExtend=2, short constant=0);
+    static void SavePadImageWithConstant(QString inputPath, QString outputPath="", int vxlsToExtend=2, short constant=0);
+    static bool ImageConvertFormat(QString pathToImage, QString pathToOutput, bool optResample=true, bool optReorient=true, bool optImgBinary=false);
 
     // static void RoundPointDataValues(vtkSmartPointer<vtkPolyData> pd);
 
-    //Mesh Utils
+    // Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
-    static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh=0.5, double blur=0.8, double smoothIterations=3, double decimation=0.5);
-    static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath="");
+    static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh = 0.5, double blur = 0.8, double smoothIterations = 3, double decimation = 0.5);
+    static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath = "");
+    static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname = "segmentation.vtk");
     static void ClipWithPolydata(mitk::Surface::Pointer surface, mitk::Surface::Pointer clipper, QString saveToPath);
-    static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname="segmentation.vtk");
-    static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
+
+    static QString M3dlibParamFileGenerator(QString dir, QString filename = "param-template.par", QString thicknessCalc = "0");
+    static QString OpenCarpParamFileGenerator(QString dir, QString filename, QString meshname, QString zeroBoundaryName, QString oneBoundaryName);
+
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
-    static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata = true);
+    static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData> &pd, bool celldata = true);
     static void FillHoles(mitk::Surface::Pointer surf, QString dir = "", QString vtkname = "");
-    static void GetMinMaxScalars(mitk::Surface::Pointer surf, double& min_val, double& max_val, bool fromCellData=false);
+    static void GetMinMaxScalars(mitk::Surface::Pointer surf, double &min_val, double &max_val, bool fromCellData = false);
+
+    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
+    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath = "");
+
+    static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double *centre);
+
+    static void SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath = "", QString fieldname = "scalars");
+    static void SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories = false, QString outputPath = "");
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
 
     //Generic
-    static mitk::DataNode::Pointer AddToStorage(
-            mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init=true);
+    static mitk::DataNode::Pointer AddToStorage(mitk::BaseData *data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init = true);
     static QString GetFilePath(QString dir, QString nameSubstring, QString extension);
-
+    static QJsonObject CreateJSONObject(QStringList keys_list, QStringList values_list, QStringList types_list);
+    static QJsonObject ReadJSONFile(QString dir, QString fname);
+    static bool WriteJSONFile(QJsonObject json, QString dir, QString fname);
+    static bool ModifyJSONFile(QString dir, QString fname, QString key, QString value = "", QString type = "");
 
     //Carp Utils
     static void OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling = 1000);
@@ -98,9 +116,14 @@ public:
     static void RectifyFileValues(QString pathToFile, double minVal = 0.0, double maxVal = 1.0);
     static int GetTotalFromCarpFile(QString pathToFile, bool totalAtTop = true);
     static std::vector<double> ReadScalarField(QString pathToFile);
+    static std::vector<double> ReadVectorField(QString pathToFile, bool totalAtTop=true);
     static void CarpToVtk(QString elemPath, QString ptsPath, QString outputPath, bool saveRegionlabels = true);
     static void AppendScalarFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader = true);
     static void AppendVectorFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader = true);
+
+    static void VtkScalarToFile(QString vtkPath, QString outPath, QString fieldName="scalars", bool isElem=false);
+    static void VtkPointScalarToFile(QString vtkPath, QString outPath, QString fieldName="scalars");
+    static void VtkCellScalarToFile(QString vtkPath, QString outPath, QString fieldName="scalars");
 
 private:
 

@@ -59,6 +59,9 @@ void QmitkCemrgAppCommonTools::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.btn_loadmesh, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::LoadMesh);
     connect(m_Controls.btn_convert2carto, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertToCarto);
     connect(m_Controls.btn_vtk2cart, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ConvertCarpToVtk);
+    connect(m_Controls.btn_padimage, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::PadImageEdgesWithConstant);
+    connect(m_Controls.btn_binariseimage, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::BinariseImage);
+    connect(m_Controls.btn_resamplereorient, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::ResampleReorientConvert);
     connect(m_Controls.button_mirtk, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsSelection);
     connect(m_Controls.button_mirtk_reg, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsRegister);
     connect(m_Controls.button_mirtk_tx, &QPushButton::clicked, this, &QmitkCemrgAppCommonTools::MirtkOptsTransform);
@@ -259,6 +262,96 @@ void QmitkCemrgAppCommonTools::ConvertCarpToVtk() {
             appendScalarFieldReply = QMessageBox::question(NULL, "Question",
                 "Append another scalar field from a file?", QMessageBox::Yes, QMessageBox::No);
         }
+    }
+}
+
+void QmitkCemrgAppCommonTools::PadImageEdgesWithConstant(){
+    QString pathToImage = "";
+    pathToImage = QFileDialog::getOpenFileName(NULL, "Open image file");
+    if (pathToImage.isEmpty()) {
+        QMessageBox::warning(NULL, "Attention", "Select Correct Input (.nii) File!");
+        return;
+    }
+
+    //Ask for user input to set the parameters
+    QDialog* inputs = new QDialog(0,0);
+    m_ImagePadding.setupUi(inputs);
+    connect(m_ImagePadding.buttonBox, SIGNAL(accepted()), inputs, SLOT(accept()));
+    connect(m_ImagePadding.buttonBox, SIGNAL(rejected()), inputs, SLOT(reject()));
+    int dialogCode = inputs->exec();
+    if (dialogCode == QDialog::Accepted) {
+        bool ok1, ok2;
+        int paddingSize = m_ImagePadding.lineEdit_2->text().toInt(&ok1);
+        int constantForPadding = m_ImagePadding.lineEdit_3->text().toDouble(&ok2);
+        QString outputName = m_ImagePadding.lineEdit_3->text();
+        QString outputPath = pathToImage;
+
+        if(!ok1){
+            paddingSize = 2;
+        }
+        if(!ok2){
+            constantForPadding = 0;
+        }
+        if(!outputName.isEmpty()){
+            QFileInfo fi(pathToImage);
+            outputPath = fi.absolutePath() + "/" + outputName + fi.suffix();
+        }
+
+        CemrgCommonUtils::SavePadImageWithConstant(pathToImage, outputPath, paddingSize, constantForPadding);
+
+        QMessageBox::information(NULL, "Attention", "Operation finished. File created");
+    }
+
+}
+
+void QmitkCemrgAppCommonTools::BinariseImage(){
+    QString pathToImage = "";
+    pathToImage = QFileDialog::getOpenFileName(NULL, "Open image file");
+    if (pathToImage.isEmpty()) {
+        QMessageBox::warning(NULL, "Attention", "Select Correct Input (.nii) File!");
+        return;
+    }
+
+    QFileInfo fi(pathToImage);
+    QString outPath = fi.absolutePath() + "/" + fi.baseName() + "-bin." + fi.suffix();
+
+    mitk::Image::Pointer im = mitk::IOUtil::Load<mitk::Image>(pathToImage.toStdString());
+    mitk::Image::Pointer outIm = CemrgCommonUtils::ReturnBinarised(im);
+
+    mitk::IOUtil::Save(outIm, outPath.toStdString());
+}
+
+void QmitkCemrgAppCommonTools::ResampleReorientConvert(){
+    QString pathToImage = "";
+    pathToImage = QFileDialog::getOpenFileName(NULL, "Open image file");
+    if (pathToImage.isEmpty()) {
+        QMessageBox::warning(NULL, "Attention", "Incorrect input!");
+        return;
+    }
+
+    std::string title, msg;
+    title = "Choose Image Type";
+    msg = "Is this a binary image (i.e a segmentation)?";
+    int replyImBinary = QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+
+    bool resamplebool=true, reorientbool=true;
+    bool isBinary=(replyImBinary==QMessageBox::Yes);
+    QFileInfo fi(pathToImage);
+    QString pathToOutput=fi.absolutePath() + "/" + fi.baseName() + ".nii";
+    bool success = CemrgCommonUtils::ImageConvertFormat(pathToImage, pathToOutput, resamplebool, reorientbool, isBinary);
+    // mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, resamplebool, reorientbool, isBinary);
+    // if(isBinary){
+    //     image = CemrgCommonUtils::ReturnBinarised(image);
+    // }
+    //
+    // QFileInfo fi(pathToImage);
+    // QString outPath = fi.absolutePath() + "/" + fi.baseName() + ".nii";
+    // mitk::IOUtil::Save(image, outPath.toStdString());
+
+    if(success){
+        title = "Attention";
+        msg = "Image resampled, reoriented and converted to NIFTI";
+        QMessageBox::information(NULL, title.c_str(), msg.c_str());
     }
 }
 

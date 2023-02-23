@@ -644,8 +644,9 @@ void AtrialScarView::AutomaticAnalysis() {
                 pickedSeedIds->InsertNextId(id);
             }//_nveins
             std::vector<int> pickedSeedLabels;
-            for (int j = 0; j < nveins; j++)
+            for (int j=0; j<nveins; j++){
                 pickedSeedLabels.push_back(21);
+            }
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][7] Clip the veins";
 
@@ -758,6 +759,7 @@ void AtrialScarView::AutomaticAnalysis() {
             resampleFilter->UpdateLargestPossibleRegion();
             segITK = resampleFilter->GetOutput();
             mitk::IOUtil::Save(mitk::ImportItkImage(segITK), (direct + "/PVeinsCroppedImage.nii").toStdString());
+
             scar->SetScarSegImage(mitk::ImportItkImage(segITK));
             mitk::Surface::Pointer scarShell = scar->Scar3D(direct.toStdString(), mitk::ImportItkImage(lgeITK));
             MITK_INFO << "[...][10.1] Converting cell to point data";

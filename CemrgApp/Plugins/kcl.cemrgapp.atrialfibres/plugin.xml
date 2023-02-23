@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+
+  <extension point="org.blueberry.ui.views">
+      <view id="org.mitk.views.atrialfibresview"
+          name="Cemrg Atrial Fibres"
+          class="AtrialFibresView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.views">
+    <view id="org.mitk.views.atrialfibresclipperview"
+          name="Cemrg Atrial Fibres Clippers"
+          class="AtrialFibresClipperView"
+          icon="resources/icon.xpm" />
+  </extension>
+
+  <extension point="org.blueberry.ui.views">
+    <view id="org.mitk.views.atrialfibreslandmarksview"
+          name="Cemrg Atrial Fibres Landmarks"
+          class="AtrialFibresLandmarksView"
+          icon="resources/icon.xpm" />
+  </extension>
+<!-- "org.mitk.views.atrialfibreslandmarksview" -->
+</plugin>

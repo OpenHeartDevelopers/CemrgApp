@@ -61,6 +61,27 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="btn_padimage">
+     <property name="text">
+      <string>Pad Image Edges with Constant</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_binariseimage">
+     <property name="text">
+      <string>Binarise Image</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_resamplereorient">
+     <property name="text">
+      <string>Convert to Nifti (resample)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="button_mirtk">
      <property name="text">
       <string>External Tools (MIRTK)</string>

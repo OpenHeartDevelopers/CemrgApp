@@ -34,6 +34,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <itkImageRegionIteratorWithIndex.h>
 #include <itkResampleImageFilter.h>
 #include <itkOrientImageFilter.h>
+#include <itkPasteImageFilter.h>
 
 // VTK
 #include <vtkPolyData.h>
@@ -69,6 +70,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolyDataConnectivityFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkCellDataToPointData.h>
+#include <vtkPointDataToCellData.h>
+#include <vtkPolyDataToImageStencil.h>
+#include <vtkImageStencil.h>
 #include <vtkFillHolesFilter.h>
 #include <vtkImplicitPolyDataDistance.h>
 
@@ -91,8 +95,11 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QDir>
 #include <QTextStream>
-
+#include <QJsonParseError>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 #include "CemrgCommonUtils.h"
 
@@ -210,24 +217,31 @@ mitk::Image::Pointer CemrgCommonUtils::Downsample(mitk::Image::Pointer image, in
     return image;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Pointer image, bool resample, bool reorientToRAI) {
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Pointer image, bool resample, bool reorientToRAI, bool isBinary) {
 
     MITK_INFO(resample) << "Resampling image to be isometric.";
     MITK_INFO(reorientToRAI) << "Doing a reorientation to RAI.";
 
     typedef itk::Image<short, 3> ImageType;
     typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleImageFilterType;
-    typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
     ImageType::Pointer itkInputImage = ImageType::New();
     ImageType::Pointer resampleOutput, outputImage;
     mitk::CastToItkImage(image, itkInputImage);
 
     if (resample) {
-
         ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
-        BSplineInterpolatorType::Pointer binterp = BSplineInterpolatorType::New();
-        binterp->SetSplineOrder(3);
-        resampler->SetInterpolator(binterp);
+
+        if(isBinary){
+            typedef itk::NearestNeighborInterpolateImageFunction<ImageType, double> NearestInterpolatorType;
+            NearestInterpolatorType::Pointer nnInterp = NearestInterpolatorType::New();
+            resampler->SetInterpolator(nnInterp);
+        } else{
+            typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
+            BSplineInterpolatorType::Pointer bsplineInterp = BSplineInterpolatorType::New();
+            bsplineInterp->SetSplineOrder(3);
+            resampler->SetInterpolator(bsplineInterp);
+        }
+
         resampler->SetInput(itkInputImage);
         resampler->SetOutputOrigin(itkInputImage->GetOrigin());
         ImageType::SizeType input_size = itkInputImage->GetLargestPossibleRegion().GetSize();
@@ -268,9 +282,51 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
     return image;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, bool resample, bool reorientToRAI) {
+mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, bool resample,  bool reorientToRAI, bool isBinary) {
 
-    return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI);
+    return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI, isBinary);
+}
+
+// void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
+//     using ImageType = itk::Image<float, 3>;
+//     using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+//     ImageType::Pointer im = ImageType::New();
+//     mitk::CastToItkImage(image, im);
+
+//     IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+//     imIter.GoToBegin();
+//     while(!imIter.IsAtEnd()){
+//         float value = (imIter.Get() > background) ? 1 : 0;
+//         imIter.Set(value);
+
+//         ++imIter;
+//     }
+
+//     image = mitk::ImportItkImage(im)->Clone();
+// }
+
+mitk::Image::Pointer CemrgCommonUtils::ReturnBinarised(mitk::Image::Pointer image){
+    using ImageType = itk::Image<float, 3>;
+    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        float value = (imIter.Get() > background) ? 1 : 0;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outImg = mitk::Image::New();
+    mitk::CastToMitkImage(im, outImg);
+    return outImg;
 }
 
 bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample, bool reorient) {
@@ -295,8 +351,75 @@ bool CemrgCommonUtils::ConvertToNifti(mitk::BaseData::Pointer oneNode, QString p
     return successful;
 }
 
-void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath) {
-    using ImageType = itk::Image<short, 3>;
+mitk::Image::Pointer CemrgCommonUtils::PadImageWithConstant(mitk::Image::Pointer image, int vxlsToExtend, short constant){
+    using ImageType = itk::Image<short,3>;
+    MITK_WARN(constant != 0) << "Constant != 0 not supported yet";
+
+    ImageType::Pointer inputImg = ImageType::New();
+    mitk::CastToItkImage(image, inputImg);
+
+    ImageType::Pointer outputImg = ImageType::New();
+    ImageType::IndexType start;
+    start[0] = 0; start[1] = 0; start[2] = 0;
+
+    ImageType::SizeType size;
+    size[0] = image->GetDimension(0) + 2*vxlsToExtend;
+    size[1] = image->GetDimension(1) + 2*vxlsToExtend;
+    size[2] = image->GetDimension(2) + 2*vxlsToExtend;
+
+    ImageType::RegionType region;
+    region.SetSize(size);
+    region.SetIndex(start);
+
+    outputImg->SetRegions(region);
+    outputImg->Allocate();
+
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    IteratorType imIter(outputImg, outputImg->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        imIter.Set(0);
+        ++imIter;
+    }
+
+    ImageType::IndexType indexForOutput;
+    indexForOutput[0] = vxlsToExtend;
+    indexForOutput[1] = vxlsToExtend;
+    indexForOutput[2] = vxlsToExtend;
+
+    using PasteImage = itk::PasteImageFilter<ImageType, ImageType>;
+    PasteImage::Pointer paste = PasteImage::New();
+    paste->SetSourceImage(inputImg);
+    paste->SetSourceRegion(inputImg->GetLargestPossibleRegion());
+    paste->SetDestinationImage(outputImg);
+    paste->SetDestinationIndex(indexForOutput);
+
+    image = mitk::ImportItkImage(paste->GetOutput())->Clone();
+
+    return image;
+}
+
+void CemrgCommonUtils::SavePadImageWithConstant(QString inputPath, QString outputPath, int vxlsToExtend, short constant){
+    QString out = (outputPath.isEmpty()) ? inputPath : outputPath;
+    mitk::Image::Pointer inImg = mitk::IOUtil::Load<mitk::Image>(inputPath.toStdString());
+    mitk::Image::Pointer outImg = CemrgCommonUtils::PadImageWithConstant(inImg, vxlsToExtend, constant);
+    mitk::IOUtil::Save(outImg, out.toStdString());
+}
+
+bool CemrgCommonUtils::ImageConvertFormat(QString pathToImage, QString pathToOutput, bool optResample, bool optReorient, bool optImgBinary){
+    mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(pathToImage, optResample, optReorient, optImgBinary);
+    if(optImgBinary){
+        image = CemrgCommonUtils::ReturnBinarised(image);
+    }
+
+    mitk::IOUtil::Save(image, pathToOutput.toStdString());
+
+    return (QFile::exists(pathToOutput));
+
+}
+
+void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath){
+    using ImageType = itk::Image<short,3>;
 
     ImageType::Pointer im = ImageType::New();
     mitk::CastToItkImage(image, im);
@@ -533,7 +656,34 @@ mitk::Surface::Pointer CemrgCommonUtils::ExtractSurfaceFromSegmentation(mitk::Im
     return shell;
 }
 
-mitk::Surface::Pointer CemrgCommonUtils::ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath) {
+void CemrgCommonUtils::SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath, QString fieldname){
+    vtkSmartPointer<vtkCellDataToPointData> cell_to_point = vtkSmartPointer<vtkCellDataToPointData>::New();
+    cell_to_point->SetInputData(surface->GetVtkPolyData());
+    cell_to_point->PassCellDataOn();
+    cell_to_point->SetContributingCellOption(0); // All=0, Patch=1, DataSetMax=2
+    cell_to_point->Update();
+    surface->SetVtkPolyData(cell_to_point->GetPolyDataOutput());
+    surface->GetVtkPolyData()->GetPointData()->GetScalars()->SetName(fieldname.toStdString().c_str());
+
+    if(!outputPath.isEmpty()){
+        mitk::IOUtil::Save(surface, outputPath.toStdString());
+    }
+}
+
+void CemrgCommonUtils::SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories, QString outputPath){
+    vtkSmartPointer<vtkPointDataToCellData> point_to_cell = vtkSmartPointer<vtkPointDataToCellData>::New();
+    point_to_cell->SetInputData(surface->GetVtkPolyData());
+    point_to_cell->PassPointDataOn();
+    point_to_cell->SetCategoricalData(categories);
+    point_to_cell->Update();
+    surface->SetVtkPolyData(point_to_cell->GetPolyDataOutput());
+
+    if(!outputPath.isEmpty()){
+        mitk::IOUtil::Save(surface, outputPath.toStdString());
+    }
+}
+
+mitk::Surface::Pointer CemrgCommonUtils::ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath){
     double centre[3] = {x_c, y_c, z_c};
     //Clipper
     vtkSmartPointer<vtkSphere> sphere = vtkSmartPointer<vtkSphere>::New();
@@ -697,7 +847,65 @@ QString CemrgCommonUtils::M3dlibParamFileGenerator(QString dir, QString filename
     }
 }
 
-bool CemrgCommonUtils::ConvertToCarto(std::string vtkPath, std::vector<double> thresholds, double meanBP, double stdvBP, int methodType, bool discreteScheme) {
+QString CemrgCommonUtils::OpenCarpParamFileGenerator(QString dir, QString filename, QString meshname, QString zeroBoundaryName, QString oneBoundaryName){
+    QString path2file = dir + "/" + filename;
+    QDir home(dir);
+    QFile fi(path2file);
+
+    if (fi.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream out(&fi);
+
+        out << "meshname " << "= " << meshname << "\n";
+        out << "experiment " << "= " << " 2" << "\n";
+        out << "bidomain " << "= " << " 1" << "\n";
+
+        out << "num_imp_regions " << "= " << " 1" << "\n";
+        out << "imp_region[0].im " << "= " << " MBRDR" << "\n";
+        out << "num_gregions " << "= " << " 1" << "\n";
+
+        out << "gregion[0].g_et " << "= " << " 1" << "\n";
+        out << "gregion[0].g_el " << "= " << " 1" << "\n";
+        out << "gregion[0].g_en " << "= " << " 1" << "\n";
+        out << "gregion[0].g_il " << "= " << " 1" << "\n";
+        out << "gregion[0].g_it " << "= " << " 1" << "\n";
+        out << "gregion[0].g_in " << "= " << " 1" << "\n";
+        out << "gregion[0].num_IDs " << "= " << " 1" << "\n";
+        out << "gregion[0].ID[0] " << "= " << " 2" << "\n";
+
+        out << "ellip_use_pt " << "= " << " 1" << "\n";
+        out << "parab_use_pt " << "= " << " 1" << "\n";
+
+        int ix = 0;
+        bool onlyOneStimulusCheck = zeroBoundaryName.isEmpty();
+        if(onlyOneStimulusCheck){
+            out << "num_stim " << "= " << " 1" << "\n";
+
+        } else {
+            out << "num_stim " << "= " << " 2" << "\n";
+            out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 3" << "\n";
+            out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << zeroBoundaryName << "\n";
+            ix++;
+        }
+
+        out << "stimulus["+ QString::number(ix)+"].stimtype " << "= " << " 2" << "\n";
+        out << "stimulus["+ QString::number(ix)+"].duration " << "= " << " 1" << "\n";
+        out << "stimulus["+ QString::number(ix)+"].strength " << "= " << " 1.0" << "\n";
+
+        if(onlyOneStimulusCheck){
+            out << "stimulus["+ QString::number(ix)+"].vtx_fcn  " << "= " << " 1" << "\n";
+        }
+        out << "stimulus["+ QString::number(ix)+"].vtx_file " << "= " << oneBoundaryName << "\n";
+
+        return path2file;
+
+    } else {
+        MITK_WARN << ("File " + path2file + "not created.").toStdString();
+        return "ERROR_IN_PROCESSING";
+    }
+}
+
+bool CemrgCommonUtils::ConvertToCarto(
+        std::string vtkPath, std::vector<double> thresholds, double meanBP, double stdvBP, int methodType, bool discreteScheme) {
 
     //Read vtk from the file
     vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
@@ -974,7 +1182,210 @@ mitk::DataNode::Pointer CemrgCommonUtils::AddToStorage(
     return node;
 }
 
-void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QString vtkname) {
+QJsonObject CemrgCommonUtils::ReadJSONFile(QString dir, QString fname) {
+    fname += (!fname.endsWith(".json")) ? ".json" : "";
+    QFile file(dir + "/" + fname);
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning("Failed to open file");
+        return QJsonObject();
+    }
+
+    QByteArray jsonData = file.readAll();
+
+    QJsonParseError error;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &error);
+
+    MITK_WARN((jsonDoc.isNull())) << ("Failed to parse JSON: " + error.errorString()).toStdString();
+
+    QJsonObject jsonObj = jsonDoc.object();
+
+    file.close();
+
+    return jsonObj;
+}
+
+bool CemrgCommonUtils::WriteJSONFile(QJsonObject json, QString dir, QString fname) {
+    // Create the JSON document
+    QJsonDocument jsonDoc(json);
+    bool success = true;
+
+    // Open the file for writing
+    fname += (!fname.endsWith(".json")) ? ".json" : "";
+    QFile file(dir + "/" + fname);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning("Failed to open file");
+        success = false;
+    }
+
+    file.write(jsonDoc.toJson());
+    file.close();
+
+    return success;
+}
+
+bool CemrgCommonUtils::ModifyJSONFile(QString dir, QString fname, QString key, QString value, QString type) {
+    bool success = true;
+    QJsonObject json = ReadJSONFile(dir, fname);
+
+    if (json.empty()) {
+        return false;
+    }
+
+    if (value.isEmpty()) {
+        json.remove(key);
+    } else {
+        // Determine the data type of the value
+        QJsonValue jsonValue;
+        QJsonArray json_array;
+        if (type == "string") {
+            jsonValue = QJsonValue::fromVariant(value);
+        }
+        else if (type == "int") {
+            jsonValue = QJsonValue::fromVariant(value.toInt());
+        }
+        else if (type == "float" || type == "double") {
+            jsonValue = QJsonValue::fromVariant(value.toDouble());
+        }
+        else if (type == "bool") {
+            jsonValue = QJsonValue::fromVariant(value.toLower() == "true");
+        }
+        else if (type == "array") {
+            // split value
+            QStringList array_values = value.split(",");
+            for (int ix = 0; ix < array_values.size(); ix++) {
+                // QJsonValue json_value = array_values.at(ix).toDouble();
+                json_array.push_back(array_values.at(ix).toDouble());
+            }
+        }
+        else {
+            // If the data type is not recognized, use a null value
+            jsonValue = QJsonValue();
+        }
+
+        // Add the key-value pair to the object
+        json[key] = (type == "array") ? json_array : jsonValue;
+    }
+
+    success = WriteJSONFile(json, dir, fname);
+    return success;
+}
+
+QJsonObject CemrgCommonUtils::CreateJSONObject(QStringList keys_list, QStringList values_list, QStringList types_list) {
+    QJsonObject jsonObj;
+
+    for (int i = 0; i < keys_list.size(); i++) {
+        QString key = keys_list.at(i);
+        QString value = values_list.at(i);
+        QString type = types_list.at(i);
+
+        // Determine the data type of the value
+        QJsonValue jsonValue;
+        QJsonArray json_array;
+        if (type == "string") {
+            jsonValue = QJsonValue::fromVariant(value);
+        }
+        else if (type == "int") {
+            jsonValue = QJsonValue::fromVariant(value.toInt());
+        }
+        else if (type == "float" || type == "double") {
+            jsonValue = QJsonValue::fromVariant(value.toDouble());
+        }
+        else if (type == "bool") {
+            jsonValue = QJsonValue::fromVariant(value.toLower() == "true");
+        }
+        else  if (type == "array") {
+            // split value
+            QStringList array_values = value.split(",");
+            for (int ix = 0; ix < array_values.size(); ix++) {
+                // QJsonValue json_value = array_values.at(ix).toDouble();
+                json_array.push_back(array_values.at(ix).toDouble());
+            }
+        }
+        else {
+            // If the data type is not recognized, use a null value
+            jsonValue = QJsonValue();
+        }
+
+        // Add the key-value pair to the object
+        jsonObj[key] = (type == "array") ? json_array : jsonValue;
+    }
+
+    return jsonObj;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]){
+    vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
+    double bounds[6];
+    pd->GetBounds(bounds);
+
+    int dimensions[3];
+    for (int ix = 0; ix < 3; ix++) {
+        dimensions[ix] = static_cast<int>(std::ceil((bounds[ix * 2 + 1] - bounds[ix * 2]) / spacing[ix]));
+    }
+
+    for (int jx = 0; jx < 3; jx++) {
+        origin[jx] = bounds[2*jx] + spacing[jx]/2;
+    }
+    std::cout << "o = (" << origin[0] << ", " << origin[1] << ", " << origin[2] << ")"<< '\n';
+
+    //Prepare empty image
+    vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
+    whiteImage->SetOrigin(origin);
+    whiteImage->SetSpacing(spacing);
+    whiteImage->SetDimensions(dimensions);
+    whiteImage->SetExtent(0, dimensions[0] - 1, 0, dimensions[1] - 1, 0, dimensions[2] - 1);
+    whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+
+    unsigned char inval = 1;
+    unsigned char otval = 0;
+
+    vtkIdType count = whiteImage->GetNumberOfPoints();
+    for (vtkIdType i = 0; i < count; ++i){
+        whiteImage->GetPointData()->GetScalars()->SetTuple1(i, inval);
+    }
+
+    //Image Stencil
+    vtkSmartPointer<vtkPolyDataToImageStencil> pol2stenc = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    pol2stenc->SetTolerance(0.5);
+    pol2stenc->SetInputData(pd);
+    pol2stenc->SetOutputOrigin(origin);
+    pol2stenc->SetOutputSpacing(spacing);
+    pol2stenc->SetOutputWholeExtent(whiteImage->GetExtent());
+    pol2stenc->Update();
+
+    vtkSmartPointer<vtkImageStencil> imgstenc = vtkSmartPointer<vtkImageStencil>::New();
+    imgstenc->SetInputData(whiteImage);
+    imgstenc->SetStencilConnection(pol2stenc->GetOutputPort());
+    imgstenc->ReverseStencilOff();
+    imgstenc->SetBackgroundValue(otval);
+    imgstenc->Update();
+
+    //VTK to ITK conversion
+    mitk::Image::Pointer cutImg = mitk::Image::New();
+    cutImg->Initialize(imgstenc->GetOutput());
+    cutImg->SetVolume(imgstenc->GetOutput()->GetScalarPointer());
+
+    return cutImg;
+
+}
+
+void CemrgCommonUtils::SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath){
+    QString out;
+
+    if(outputPath.isEmpty()){
+        QFileInfo fi(surfPath);
+        out = fi.absolutePath() + "/" + fi.baseName() + ".nii";
+    } else{
+        out = outputPath;
+    }
+    mitk::Surface::Pointer surf = mitk::IOUtil::Load<mitk::Surface>(surfPath.toStdString());
+    mitk::Image::Pointer im = CemrgCommonUtils::ImageFromSurfaceMesh(surf, origin, spacing);
+
+    mitk::IOUtil::Save(im, out.toStdString());
+}
+
+void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QString vtkname){
     vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
     vtkSmartPointer<vtkFillHolesFilter> fillholes = vtkSmartPointer<vtkFillHolesFilter>::New();
     fillholes->SetInputData(pd);
@@ -987,6 +1398,34 @@ void CemrgCommonUtils::FillHoles(mitk::Surface::Pointer surf, QString dir, QStri
         QString outPath = dir + "/" + vtkname;
         mitk::IOUtil::Save(surf, outPath.toStdString());
     }
+}
+
+double CemrgCommonUtils::GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre){
+    //Retrieve mean and distance of 3 points
+    double x_c = 0;
+    double y_c = 0;
+    double z_c = 0;
+    for(int i=0; i<landmarks->GetSize(); i++) {
+        x_c = x_c + landmarks->GetPoint(i).GetElement(0);
+        y_c = y_c + landmarks->GetPoint(i).GetElement(1);
+        z_c = z_c + landmarks->GetPoint(i).GetElement(2);
+    }//_for
+    x_c /= landmarks->GetSize();
+    y_c /= landmarks->GetSize();
+    z_c /= landmarks->GetSize();
+    double * distance = new double [landmarks->GetSize()];
+    for(int i=0; i<landmarks->GetSize(); i++) {
+        double x_d = landmarks->GetPoint(i).GetElement(0) - x_c;
+        double y_d = landmarks->GetPoint(i).GetElement(1) - y_c;
+        double z_d = landmarks->GetPoint(i).GetElement(2) - z_c;
+        distance[i] = sqrt(pow(x_d,2) + pow(y_d,2) + pow(z_d,2));
+    }//_for
+    double radius = *std::max_element(distance, distance + landmarks->GetSize());
+    centre[0] = x_c;
+    centre[1] = y_c;
+    centre[2] = z_c;
+
+    return radius;
 }
 
 void CemrgCommonUtils::GetMinMaxScalars(mitk::Surface::Pointer surf, double& min_val, double& max_val, bool fromCellData){
@@ -1470,6 +1909,25 @@ std::vector<double> CemrgCommonUtils::ReadScalarField(QString pathToFile) {
     return field;
 }
 
+std::vector<double> CemrgCommonUtils::ReadVectorField(QString pathToFile, bool totalAtTop) {
+    std::ifstream fi(pathToFile.toStdString());
+    int n = CemrgCommonUtils::GetTotalFromCarpFile(pathToFile, totalAtTop);
+    std::vector<double> field((n*3), 0.0);
+
+    for (int ix = 0; ix < n; ix++) {
+        if (fi.eof()) {
+            MITK_INFO << "File finished prematurely.";
+            break;
+        }
+        fi >> field[3*ix + 0];
+        fi >> field[3*ix + 1];
+        fi >> field[3*ix + 2];
+    }
+    fi.close();
+
+    return field;
+}
+
 void CemrgCommonUtils::AppendScalarFieldToVtk(QString vtkPath, QString fieldName, QString typeData, std::vector<double> field, bool setHeader) {
     std::ofstream VTKFile;
     short int precision = 12;
@@ -1524,4 +1982,41 @@ void CemrgCommonUtils::AppendVectorFieldToVtk(QString vtkPath, QString fieldName
     }
 
     VTKFile.close();
+}
+
+void CemrgCommonUtils::VtkScalarToFile(QString vtkPath, QString outPath, QString fieldName, bool isElem){
+    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(vtkPath.toStdString());
+    vtkFloatArray *scalars = vtkFloatArray::New();
+    vtkIdType numObjects;
+
+    std::cout << "fieldName: " << fieldName.toStdString() << '\n';
+
+    if (isElem){
+        // surface->GetVtkPolyData()->GetCellData()->SetActiveScalars(fieldName.toStdString().c_str());
+        scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        numObjects = surface->GetVtkPolyData()->GetNumberOfCells();
+    } else{
+        // surface->GetVtkPolyData()->GetCellData()->SetActiveScalars(fieldName.toStdString().c_str());
+        scalars = vtkFloatArray::SafeDownCast(surface->GetVtkPolyData()->GetCellData()->GetScalars());
+        numObjects = surface->GetVtkPolyData()->GetNumberOfCells();
+    }
+
+    std::ofstream fo(outPath.toStdString());
+
+
+    for (vtkIdType ix=0;ix<numObjects;ix++) {
+        double s = scalars->GetTuple1(ix);
+        fo << std::setprecision(12) << s;
+        if(ix<numObjects-1){
+            fo << std::endl;
+        }
+    }
+}
+
+void CemrgCommonUtils::VtkPointScalarToFile(QString vtkPath, QString outPath, QString fieldName){
+    VtkScalarToFile(vtkPath, outPath, fieldName, false);
+}
+
+void CemrgCommonUtils::VtkCellScalarToFile(QString vtkPath, QString outPath, QString fieldName){
+    VtkScalarToFile(vtkPath, outPath, fieldName, true);
 }
