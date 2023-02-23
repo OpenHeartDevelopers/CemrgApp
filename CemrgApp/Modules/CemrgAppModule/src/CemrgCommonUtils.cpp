@@ -1160,13 +1160,13 @@ QJsonObject CemrgCommonUtils::CreateJSONObject(QStringList keys_list, QStringLis
     return jsonObj;
 }
 
-mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]){
+mitk::Image::Pointer CemrgCommonUtils::ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num){
     vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
     double bounds[6];
     pd->GetBounds(bounds);
 
     // prepare for padding (pad_num=0 by default, so it does not affect)
-    for (int ix; ix<3; ix++) {
+    for (int ix = 0; ix < 3; ix++) {
         double pad_offset = pad_num*spacing[ix];
         bounds[2*ix] -= pad_offset;
         bounds[2*ix + 1] += pad_offset;
