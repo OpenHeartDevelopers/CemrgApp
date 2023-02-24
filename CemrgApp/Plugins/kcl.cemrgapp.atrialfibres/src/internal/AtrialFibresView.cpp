@@ -1581,8 +1581,6 @@ void AtrialFibresView::ScarProjection(){
 
 void AtrialFibresView::Reset() {
 
-
-
     try {
 
         ctkPluginContext* context = mitk::kcl_cemrgapp_atrialfibres_Activator::getContext();
@@ -1641,7 +1639,14 @@ void AtrialFibresView::Reset() {
 
     //Clear project directory
     directory.clear();
-    this->GetSite()->GetPage()->ResetPerspective();
+    cnnPath.clear();
+    fileName.clear();
+    tagName.clear();
+    refinedSuffix.clear();
+
+        this->GetSite()
+            ->GetPage()
+            ->ResetPerspective();
 }
 
 
