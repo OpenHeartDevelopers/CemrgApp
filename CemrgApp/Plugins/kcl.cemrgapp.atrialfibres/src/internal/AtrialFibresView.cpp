@@ -375,8 +375,10 @@ void AtrialFibresView::AnalysisChoice(){
             // Create fake segmentation image for labelling
             double origin[3] = {0, 0, 0};
             double spacing[3] = {1, 1, 1};
-            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing);
-            CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
+            int pad_scale = 1; // pad_scale*spacing added to bounds in function below
+            QString output_path = ""; // makes input to be overwritten
+            CemrgCommonUtils::SaveImageFromSurfaceMesh(Path(tagName+".vtk"), origin, spacing, output_path, pad_scale);
+            // CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
 
             mitk::Image::Pointer im = CemrgCommonUtils::ReturnBinarised(mitk::IOUtil::Load<mitk::Image>(StdStringPath(tagName+".nii")));
             // CemrgCommonUtils::Binarise(im);
@@ -1579,8 +1581,6 @@ void AtrialFibresView::ScarProjection(){
 
 void AtrialFibresView::Reset() {
 
-
-
     try {
 
         ctkPluginContext* context = mitk::kcl_cemrgapp_atrialfibres_Activator::getContext();
@@ -1639,7 +1639,14 @@ void AtrialFibresView::Reset() {
 
     //Clear project directory
     directory.clear();
-    this->GetSite()->GetPage()->ResetPerspective();
+    cnnPath.clear();
+    fileName.clear();
+    tagName.clear();
+    refinedSuffix.clear();
+
+        this->GetSite()
+            ->GetPage()
+            ->ResetPerspective();
 }
 
 

@@ -33,7 +33,7 @@
      <item row="1" column="2">
       <widget class="QPushButton" name="button_man2_clippers">
        <property name="text">
-        <string>Display Clippers</string>
+        <string>Display Disk Clippers</string>
        </property>
       </widget>
      </item>
