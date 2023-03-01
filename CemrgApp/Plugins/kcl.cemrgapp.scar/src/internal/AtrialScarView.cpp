@@ -2028,8 +2028,17 @@ mitk::Surface::Pointer AtrialScarView::LoadSurfaceFromSegmentation(QString dir, 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
 
     QString segvtk = CemrgCommonUtils::GetFilePath(dir, meshname, ".vtk");
-    if (segvtk.isEmpty())
-    {
+
+    bool file_found = !segvtk.isEmpty();
+    int reply_execute_surf = QMessageBox::No;
+
+    if (file_found) {
+        reply_execute_surf = Ask("File found. Replace?", "The <segmentation.vtk> file was found in the working folder.\n\n Overwrite it?");
+    }
+
+    bool execute_surf_option = (!file_found) || (reply_execute_surf == QMessageBox::Yes);
+
+    if (execute_surf_option) {
         QString segCleanPath = CemrgCommonUtils::GetFilePath(dir, segname, ".nii");
         segvtk = cmd->ExecuteSurf(dir, segCleanPath, "close", 1, .5, 0, 10);
     }

@@ -11,6 +11,7 @@ option(BUILD_CEMRG_IMAGE_CONVERT "Build image convert format" ON)
 option(BUILD_CEMRG_SURFACE_AREA "Build surface area calculator" ON)
 option(BUILD_CEMRG_RESAMPLE_REORIENT "Build resample-reorient command-line app" ON)
 option(BUILD_CEMRG_APPLY_EXT_CLIPPERS "Build apply external clippers command-line app" ON)
+option(BUILD_CEMRG_REGIONPROPS "Build apply external clippers command-line app" ON)
 
 if(BUILD_CemrgCMDApps)
   mitkFunctionCreateCommandLineApp(
@@ -113,5 +114,13 @@ if(BUILD_CEMRG_APPLY_EXT_CLIPPERS)
     NAME CemrgApplyExternalClippers
     DEPENDS MitkCemrgAppModule
     CPP_FILES CemrgApplyExternalClippers.cpp
+  )
+endif()
+
+if(BUILD_CEMRG_REGIONPROPS)
+  mitkFunctionCreateCommandLineApp(
+    NAME CemrgRegionprops
+    DEPENDS MitkCemrgAppModule
+    CPP_FILES CemrgAppRegionProperties.cpp
   )
 endif()

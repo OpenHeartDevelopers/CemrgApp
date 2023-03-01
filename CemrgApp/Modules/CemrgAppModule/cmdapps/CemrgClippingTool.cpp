@@ -96,11 +96,11 @@ int main(int argc, char* argv[]) {
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input-vtk", "i", mitkCommandLineParser::InputFile,
+        "input-vtk", "i", mitkCommandLineParser::String,
         "segmentation (vtk) path", "Full path of segmentation.vtk file.",
         us::Any(), false);
     parser.addArgument(
-        "output", "o", mitkCommandLineParser::OutputFile,
+        "output", "o", mitkCommandLineParser::String,
         "Output file", "Where to save the output.",
         us::Any(), false);
     parser.addArgument(
