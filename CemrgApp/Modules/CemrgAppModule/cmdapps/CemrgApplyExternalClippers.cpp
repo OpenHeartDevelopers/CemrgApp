@@ -90,6 +90,9 @@ int main(int argc, char* argv[]) {
         "Segmentation (LA-reg) NIFTI file path", "Full path of .nii file.",
         us::Any(), false);
     parser.addArgument( // optional
+        "mitral-valve", "mvname", mitkCommandLineParser::String,
+        "Mitral Valve Name", "Filename of mitral valve file (default=prodMVI)");
+    parser.addArgument( // optional
         "clip-mv", "mv", mitkCommandLineParser::Bool,
         "Cip Mitral Valve", "Whether to clip mitral valve (default=false)");
     parser.addArgument( // optional
@@ -115,13 +118,16 @@ int main(int argc, char* argv[]) {
     // Default values for optional arguments
     auto verbose = false;
     auto clipmv = false;
-
+    std::string inMvname = "prodMVI";
     // Parse, cast and set optional arguments
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
     if (parsedArgs.end() != parsedArgs.find("clip-mv")) {
         clipmv = us::any_cast<bool>(parsedArgs["clip-mv"]);
+    }
+    if (parsedArgs.end() != parsedArgs.find("mitral-valve")) {
+        inMvname = us::any_cast<std::string>(parsedArgs["mitral-valve"]);
     }
 
     try {
@@ -130,12 +136,15 @@ int main(int argc, char* argv[]) {
 
         // PARSING ARGUMENTS
         QString inputName = QString::fromStdString(inFilename);
+        QString mvName = QString::fromStdString(inMvname);
+        mvName += (!mvName.endsWith(".vtk")) ? ".vtk" : "";
 
         QFileInfo fi(inputName);
         QString base = "prodCutter";
         QString directory = fi.absolutePath();
 
         MITK_INFO(verbose) << directory.toStdString();
+        MITK_INFO(verbose) << mvName.toStdString();
 
         if(!clipmv){
             MITK_INFO(verbose) << "Looking for prodCutters";
@@ -182,7 +191,7 @@ int main(int argc, char* argv[]) {
             QString output2 = directory + "/segmentation.vtk";
             mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
 
-            QString mviPath = directory + "/prodMVI.vtk";
+            QString mviPath = directory + "/" + mvName;
             MITK_INFO << ("Clipping Mitral valve with file: " + mviPath).toStdString();
 
             mitk::Surface::Pointer mvclipper = mitk::IOUtil::Load<mitk::Surface>(mviPath.toStdString());

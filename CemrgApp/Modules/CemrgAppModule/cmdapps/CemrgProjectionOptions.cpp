@@ -92,6 +92,9 @@ int main(int argc, char* argv[]) {
         "input-lge", "i", mitkCommandLineParser::String,
         "LGE path", "Full path of LGE.nii file.",
         us::Any(), false);
+    parser.addArgument(
+        "input-segmentation", "seg", mitkCommandLineParser::String,
+        "Segmentation name", "Name of segmentation file without extension (default=PVeinsCroppedImage)");
     parser.addArgument( // optional
         "output-subfolder", "o", mitkCommandLineParser::String,
         "Output subfolder name", "Name of output subfolder (Default=OUTPUT)");
@@ -130,6 +133,7 @@ int main(int argc, char* argv[]) {
 
     // Default values for optional arguments
     // std::string prodthresfile = "prodThresholds.txt";
+    std::string segFilename = "PVeinsCroppedImage";
     auto method = 2;
     std::string output_subfolder = "OUTPUT";
     auto singlevoxelprojection = false;
@@ -139,6 +143,10 @@ int main(int argc, char* argv[]) {
 
     // Parse, cast and set optional argument
     MITK_INFO << "Parsing optional arguments";
+
+    if (parsedArgs.end() != parsedArgs.find("input-segmentation")) {
+        segFilename = us::any_cast<std::string>(parsedArgs["input-segmentation"]);
+    }
 
     if (parsedArgs.end() != parsedArgs.find("output-subfolder")) {
         output_subfolder = us::any_cast<std::string>(parsedArgs["output-subfolder"]);
@@ -178,11 +186,14 @@ int main(int argc, char* argv[]) {
 
         // PARSING ARGUMENTS
         QString lgename = QString::fromStdString(inFilename2);
+        QString pveinsname = QString::fromStdString(segFilename);
         QString segvtk = "segmentation.vtk";
         QString outname = methodPref + "MaxScar";
         outname += singlevoxelprojection ? "-single-voxel" : "-repeated-voxels";
         outname += ".vtk";
+        pveinsname += (!pveinsname.endsWith(".nii")) ? ".nii" : "";
 
+        MITK_INFO(verbose) << ("Segmentation name: " + pveinsname).toStdString();
         MITK_INFO(verbose) << "Obtaining input file path and working directory: ";
 
         // OBTAINING directory and lgepath variables
@@ -218,7 +229,7 @@ int main(int argc, char* argv[]) {
         ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
         ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
 
-        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>((direct + "/PVeinsCroppedImage.nii").toStdString()), segITK);
+        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>((direct + "/" + pveinsname).toStdString()), segITK);
         mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeITK);
 
         itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::Pointer resampleFilter;
@@ -230,7 +241,7 @@ int main(int argc, char* argv[]) {
         resampleFilter->SetDefaultPixelValue(0);
         resampleFilter->UpdateLargestPossibleRegion();
         segITK = resampleFilter->GetOutput();
-        mitk::IOUtil::Save(mitk::ImportItkImage(segITK), (direct + "/PVeinsCroppedImage.nii").toStdString());
+        mitk::IOUtil::Save(mitk::ImportItkImage(segITK), (direct + "/" + pveinsname).toStdString());
         scar->SetScarSegImage(mitk::ImportItkImage(segITK));
 
         //Thresholding
