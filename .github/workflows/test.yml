@@ -35,6 +35,18 @@ jobs:
     - name: Clone MITK
       run: sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
 
+    - name: Clone code_patches 
+      uses: actions/checkout@v2 
+      with: 
+        repository: OpenHeartDevelopers/code_patches 
+        path: code_patches
+      
+    - name: Patch MITK for CemrgApp 
+      working-directory: /MITK 
+      run: |
+        git apply code_patches/v2018.04.2/SRC_BASE.patch 
+        git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
+
     - name: Disable tests for CppMicroServices
       run: sudo sed -i 's/set(US_BUILD_TESTING ON)/set(US_BUILD_TESTING OFF)/' /MITK/Modules/CMakeLists.txt
 

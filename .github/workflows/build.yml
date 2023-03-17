@@ -92,6 +92,18 @@ jobs:
     - name: Clone MITK
       run: sudo git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /MITK
 
+    - name: Clone code_patches 
+      uses: actions/checkout@v2 
+      with: 
+        repository: OpenHeartDevelopers/code_patches 
+        path: code_patches
+      
+    - name: Patch MITK for CemrgApp 
+      working-directory: /MITK 
+      run: |
+        git apply code_patches/v2018.04.2/SRC_BASE.patch 
+        git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
+
     - name: Change timestamps of MITK directory
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
 
@@ -165,6 +177,18 @@ jobs:
   #
   #   - name: Clone MITK
   #     run: git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git c:\MITK
+  #
+  # - name: Clone code_patches 
+  #     uses: actions/checkout@v2 
+  #     with: 
+  #       repository: OpenHeartDevelopers/code_patches 
+  #       path: code_patches
+      
+  #   - name: Patch MITK for CemrgApp 
+  #     working-directory: c:\MITK
+  #     run: |
+  #       git apply code_patches/v2018.04.2/SRC_BASE.patch 
+  #       git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
   #
   #   - name: Change timestamps of MITK directory
   #     run: dir -R c:\MITK | foreach { $_.LastWriteTime = [DateTime]::ParseExact('01-04-21', 'dd-MM-yy', $null) }
@@ -252,6 +276,19 @@ jobs:
 
     - name: Clone MITK
       run: git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git /Users/Shared/MITK
+
+    - name: Clone code_patches 
+      uses: actions/checkout@v2 
+      with: 
+        repository: OpenHeartDevelopers/code_patches 
+        path: code_patches
+      
+    - name: Patch MITK for CemrgApp 
+      working-directory: /Users/Shared/MITK 
+      run: |
+        git apply code_patches/v2018.04.2/SRC_BASE.patch 
+        git apply code_patches/v2018.04.2/SRC_BASE_MACOS.patch
+        git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
 
     - name: Patch MITK
       working-directory: /Users/Shared
