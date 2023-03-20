@@ -97,12 +97,15 @@ jobs:
       with: 
         repository: OpenHeartDevelopers/code_patches 
         path: code_patches
+    
+    - name: Move code_patches to root 
+      run: sudo mv code_patches / 
       
     - name: Patch MITK for CemrgApp 
       working-directory: /MITK 
       run: |
-        git apply code_patches/v2018.04.2/SRC_BASE.patch 
-        git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
+        git apply /code_patches/v2018.04.2/SRC_BASE.patch 
+        git apply /code_patches/v2018.04.2/SRC_ROTMAT.patch 
 
     - name: Change timestamps of MITK directory
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
@@ -178,17 +181,24 @@ jobs:
   #   - name: Clone MITK
   #     run: git clone --branch v2018.04.2 https://phabricator.mitk.org/source/mitk.git c:\MITK
   #
-  # - name: Clone code_patches 
-  #     uses: actions/checkout@v2 
-  #     with: 
-  #       repository: OpenHeartDevelopers/code_patches 
-  #       path: code_patches
-      
+  #   - name: Clone code_patches 
+  #       uses: actions/checkout@v2 
+  #       with: 
+  #         repository: OpenHeartDevelopers/code_patches 
+  #         path: code_patches
+  #
+  #   - name: Copy code_patches to root 
+  #       shell: cmd 
+  #       run: |
+  #         mkdir c:\code_patches
+  #         xcopy /e .\code_patches\* c:\code_patches
+  #         rd /s /q code_patches
+  # 
   #   - name: Patch MITK for CemrgApp 
   #     working-directory: c:\MITK
   #     run: |
-  #       git apply code_patches/v2018.04.2/SRC_BASE.patch 
-  #       git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
+  #       git apply c:/code_patches/v2018.04.2/SRC_BASE.patch 
+  #       git apply c:/code_patches/v2018.04.2/SRC_ROTMAT.patch 
   #
   #   - name: Change timestamps of MITK directory
   #     run: dir -R c:\MITK | foreach { $_.LastWriteTime = [DateTime]::ParseExact('01-04-21', 'dd-MM-yy', $null) }
@@ -282,13 +292,16 @@ jobs:
       with: 
         repository: OpenHeartDevelopers/code_patches 
         path: code_patches
+
+    - name: Move code_patches  
+      run: sudo mv code_patches /Users/Shared/ 
       
     - name: Patch MITK for CemrgApp 
       working-directory: /Users/Shared/MITK 
       run: |
-        git apply code_patches/v2018.04.2/SRC_BASE.patch 
-        git apply code_patches/v2018.04.2/SRC_BASE_MACOS.patch
-        git apply code_patches/v2018.04.2/SRC_ROTMAT.patch 
+        git apply /Users/Shared/code_patches/v2018.04.2/SRC_BASE.patch 
+        git apply /Users/Shared/code_patches/v2018.04.2/SRC_BASE_MACOS.patch
+        git apply /Users/Shared/code_patches/v2018.04.2/SRC_ROTMAT.patch 
 
     - name: Patch MITK
       working-directory: /Users/Shared
