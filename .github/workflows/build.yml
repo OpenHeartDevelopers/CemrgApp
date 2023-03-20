@@ -104,8 +104,8 @@ jobs:
     - name: Patch MITK for CemrgApp 
       working-directory: /MITK 
       run: |
-        git apply /code_patches/v2018.04.2/SRC_BASE.patch 
-        git apply /code_patches/v2018.04.2/SRC_ROTMAT.patch 
+        sudo git apply /code_patches/v2018.04.2/SRC_BASE.patch 
+        sudo git apply /code_patches/v2018.04.2/SRC_ROTMAT.patch 
 
     - name: Change timestamps of MITK directory
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
@@ -299,9 +299,9 @@ jobs:
     - name: Patch MITK for CemrgApp 
       working-directory: /Users/Shared/MITK 
       run: |
-        git apply /Users/Shared/code_patches/v2018.04.2/SRC_BASE.patch 
-        git apply /Users/Shared/code_patches/v2018.04.2/SRC_BASE_MACOS.patch
-        git apply /Users/Shared/code_patches/v2018.04.2/SRC_ROTMAT.patch 
+        sudo git apply /Users/Shared/code_patches/v2018.04.2/SRC_BASE.patch 
+        sudo git apply /Users/Shared/code_patches/v2018.04.2/SRC_BASE_MACOS.patch
+        sudo git apply /Users/Shared/code_patches/v2018.04.2/SRC_ROTMAT.patch 
 
     - name: Patch MITK
       working-directory: /Users/Shared
