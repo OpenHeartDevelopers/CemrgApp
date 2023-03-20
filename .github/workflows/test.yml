@@ -6,6 +6,11 @@ jobs:
   Test-n-Coverage:
     runs-on: ubuntu-18.04
     steps:
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.16.x'
+
     - name: Download precompiled Build folder
       run: |
         wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/Ef5Vu6za325GoIIStbIcmg4BgWlVBGtUx6jp1GrxNLYrFw?download=1

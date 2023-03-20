@@ -63,6 +63,10 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [Variables]
     steps:
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.16.x'
     - name: Download precompiled Build folder
       run: |
         wget -q -O Build.zip https://emckclac-my.sharepoint.com/:u:/g/personal/k2143219_kcl_ac_uk/EU8n4C0PlPxDgLk6PFrprY8B4KwiDaYotmur5m0q3px81w?download=1
@@ -153,6 +157,10 @@ jobs:
   #   runs-on: windows-2016
   #   needs: [Variables]
   #   steps:
+  #   - name: Setup cmake
+  #    uses: jwlawson/actions-setup-cmake@v1.13
+  #    with:
+  #      cmake-version: '3.16.x'
   #   - name: Uninstall NSIS
   #     run: |
   #       & 'C:/Program Files (x86)/NSIS/uninst-nsis.exe' /S
@@ -253,6 +261,11 @@ jobs:
     runs-on: macos-10.15
     needs: [Variables]
     steps:
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.16.x'
+
     - name: Download precompiled Build folder
       working-directory: /Users/Shared
       run: |
