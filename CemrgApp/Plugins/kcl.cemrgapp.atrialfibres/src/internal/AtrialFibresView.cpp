@@ -1637,8 +1637,13 @@ void AtrialFibresView::Reset() {
         QMessageBox::warning(NULL, "Error", QString("An error occurred during Close Project: %1").arg(e.what()));
     }//_try
 
-    //Clear project directory
+    ///Clear project directory
     directory.clear();
+    cnnPath.clear();
+    fileName.clear();
+    tagName.clear();
+    refinedSuffix.clear();
+    
     this->GetSite()->GetPage()->ResetPerspective();
 }
 
