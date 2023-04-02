@@ -19,7 +19,7 @@ jobs:
         sudo aqt install --outputdir /Qt 5.12.10 linux desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
 
     - name: Clone CemrgApp
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Code Analysis
       env:

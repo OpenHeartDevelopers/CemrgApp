@@ -96,7 +96,7 @@ jobs:
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
 
     - name: Clone CemrgApp
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: CemrgApp
 
@@ -170,7 +170,7 @@ jobs:
   #     run: dir -R c:\MITK | foreach { $_.LastWriteTime = [DateTime]::ParseExact('01-04-21', 'dd-MM-yy', $null) }
   #
   #   - name: Clone CemrgApp
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v3
   #     with:
   #       path: CemrgApp
   #
@@ -263,7 +263,7 @@ jobs:
       run: find /Users/Shared/MITK/ -exec touch -a -m -t 202104010000 {} \;
 
     - name: Clone CemrgApp
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: CemrgApp
 

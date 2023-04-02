@@ -42,7 +42,7 @@ jobs:
       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
 
     - name: Clone CemrgApp
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: CemrgApp
 
@@ -64,7 +64,7 @@ jobs:
       run: ctest -R Cemrg -V
 
     - name: Code Coverage
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         functionalities: coveragepy

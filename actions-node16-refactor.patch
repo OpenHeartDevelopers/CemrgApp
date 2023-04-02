@@ -1,0 +1,66 @@
+diff --git a/.github/workflows/analysis.yml b/.github/workflows/analysis.yml
+index 8e7a748..5998bc4 100644
+--- a/.github/workflows/analysis.yml
++++ b/.github/workflows/analysis.yml
+@@ -19,7 +19,7 @@ jobs:
+         sudo aqt install --outputdir /Qt 5.12.10 linux desktop -m qtcharts qtnetworkauth qtpurchasing qtdatavis3d qtscript qtvirtualkeyboard qtwebengine qtwebglplugin
+ 
+     - name: Clone CemrgApp
+-      uses: actions/checkout@v2
++      uses: actions/checkout@v3
+ 
+     - name: Code Analysis
+       env:
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index d6db869..edab541 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -96,7 +96,7 @@ jobs:
+       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
+ 
+     - name: Clone CemrgApp
+-      uses: actions/checkout@v2
++      uses: actions/checkout@v3
+       with:
+         path: CemrgApp
+ 
+@@ -170,7 +170,7 @@ jobs:
+   #     run: dir -R c:\MITK | foreach { $_.LastWriteTime = [DateTime]::ParseExact('01-04-21', 'dd-MM-yy', $null) }
+   #
+   #   - name: Clone CemrgApp
+-  #     uses: actions/checkout@v2
++  #     uses: actions/checkout@v3
+   #     with:
+   #       path: CemrgApp
+   #
+@@ -263,7 +263,7 @@ jobs:
+       run: find /Users/Shared/MITK/ -exec touch -a -m -t 202104010000 {} \;
+ 
+     - name: Clone CemrgApp
+-      uses: actions/checkout@v2
++      uses: actions/checkout@v3
+       with:
+         path: CemrgApp
+ 
+diff --git a/.github/workflows/test.yml b/.github/workflows/test.yml
+index afca0db..005c9d6 100644
+--- a/.github/workflows/test.yml
++++ b/.github/workflows/test.yml
+@@ -42,7 +42,7 @@ jobs:
+       run: sudo find /MITK/ -exec touch -a -m -d 20210401 {} \;
+ 
+     - name: Clone CemrgApp
+-      uses: actions/checkout@v2
++      uses: actions/checkout@v3
+       with:
+         path: CemrgApp
+ 
+@@ -64,7 +64,7 @@ jobs:
+       run: ctest -R Cemrg -V
+ 
+     - name: Code Coverage
+-      uses: codecov/codecov-action@v1
++      uses: codecov/codecov-action@v3
+       with:
+         token: ${{ secrets.CODECOV_TOKEN }}
+         functionalities: coveragepy
