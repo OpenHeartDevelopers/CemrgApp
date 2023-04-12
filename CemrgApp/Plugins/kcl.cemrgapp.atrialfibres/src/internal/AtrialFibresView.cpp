@@ -1736,7 +1736,7 @@ bool AtrialFibresView::GetUserUacOptionsInputs(bool enableFullUiOptions){
     bool userInputAccepted=false;
 
     if(uiUac_fibreFile.size() == 0){
-        uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "A" << "L";
+        uiUac_fibreFile << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "a" << "l";
         uiUac_whichAtrium << "LA" << "RA";
         uiUac_surftype << "Endo" << "Epi" << "Bilayer";
     }
