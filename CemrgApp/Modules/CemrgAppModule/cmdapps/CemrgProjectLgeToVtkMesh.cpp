@@ -93,15 +93,15 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     parser.addArgument(
-        "input-lge", "lge", mitkCommandLineParser::InputFile,
+        "input-lge", "lge", mitkCommandLineParser::String,
         "LGE Image", "Full path to the .nii file with the lge score.",
         us::Any(), false);
     parser.addArgument(
-        "input-surface", "surf", mitkCommandLineParser::InputFile,
+        "input-surface", "surf", mitkCommandLineParser::String,
         "Surface Image", "Full path to the .vtk file with the surface.",
         us::Any(), false);
     parser.addArgument(
-        "output", "o", mitkCommandLineParser::OutputFile,
+        "output", "o", mitkCommandLineParser::String,
         "Output file", "Where to save the output.",
         us::Any(), false);
     parser.addArgument(

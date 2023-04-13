@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     parser.addArgument("input-segmentation", "i",
-        mitkCommandLineParser::InputFile,"Input segmentation (.nii)",
+        mitkCommandLineParser::String,"Input segmentation (.nii)",
         "Input segmentation file (commonly output of CEMRGNET)", us::Any(), false
     );
 

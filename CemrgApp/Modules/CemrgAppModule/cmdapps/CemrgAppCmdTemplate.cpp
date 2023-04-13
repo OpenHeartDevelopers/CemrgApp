@@ -52,11 +52,11 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     parser.addArgument(
-        "input", "i", mitkCommandLineParser::InputFile,
+        "input", "i", mitkCommandLineParser::String,
         "Input Image", "Any image format known to MITK.",
         us::Any(), false);
     parser.addArgument(
-        "output", "o", mitkCommandLineParser::OutputFile,
+        "output", "o", mitkCommandLineParser::String,
         "Output file", "Where to save the output.",
         us::Any(), false);
     parser.addArgument(

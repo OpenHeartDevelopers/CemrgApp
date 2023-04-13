@@ -829,7 +829,7 @@ QString CemrgCommandLine::DockerUacFibreMappingMode(QString dir, QString atrium,
 
    // test for numerical fibre file
    bool ok;
-   double test_numerical_fibre = fibre.toDouble(&ok);
+   fibre.toDouble(&ok);
    if (!ok) {
     MITK_INFO << ("Fibre file is not numerical, setting to lowercase: " + fibre).toStdString();
     fibre = fibre.toLower();
