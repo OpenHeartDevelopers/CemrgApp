@@ -61,6 +61,7 @@ PURPOSE.  See the above copyright notices for more information.
 
 // C++ Standard
 #include <numeric>
+#include <iostream>
 
 // CemrgApp
 #include "CemrgCommonUtils.h"
@@ -83,6 +84,14 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     mitk::CastToItkImage(lgeImage, scarImage);
     itkImageType::Pointer visitedImage = itkImageType::New();
     ItkDeepCopy(scarImage, visitedImage);
+
+    mitk::Image::Pointer corridor_im = CemrgCommonUtils::Zeros(lgeImage);
+    mitk::CastToItkImage(corridor_im, scarDebugCorridor);
+    typedef itk::ImageRegionIterator<itkImageType> ImIteratorType;
+    ImIteratorType corrIt(scarDebugCorridor, scarDebugCorridor->GetLargestPossibleRegion());
+    for (corrIt.GoToBegin(); !corrIt.IsAtEnd(); ++corrIt) {
+        corrIt.Set(DebugImageType::BACKGROUND);
+    }
 
     //Read in the mesh
     std::string path = directory + "/" + segname;
@@ -109,6 +118,13 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     vtkSmartPointer<vtkFloatArray> scalarsOnlyIntensity = vtkSmartPointer<vtkFloatArray>::New();
     itkImageType::IndexType pixelXYZ;
     itkImageType::PointType pointXYZ;
+
+    // Output file
+    std::ofstream scar_proj_file;
+    scar_proj_file.open(directory + "/scar_projection_lines.txt");
+    scar_proj_file << pd->GetNumberOfCells() << '\n';
+    scar_proj_file << this->minStep << '\n';
+    scar_proj_file << this->maxStep << '\n';
 
     double maxSdev = -1e9;
     double maxSratio = -1e9;
@@ -158,6 +174,11 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         pN[0] = pixelXYZ[0];
         pN[1] = pixelXYZ[1];
         pN[2] = pixelXYZ[2];
+
+        scar_proj_file << i << ", ";
+        scar_proj_file << cX << ", " << cY << ", " << cZ << ", ";
+        scar_proj_file << pN[0] << ", " << pN[1] << ", " << pN[2];
+        scar_proj_file << '\n';
 
         double scalar = GetIntensityAlongNormal(scarImage, visitedImage, pN[0], pN[1], pN[2], cX, cY, cZ);
 
@@ -211,6 +232,8 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         //      scalars->InsertTuple1(i, scalar);
         //      allScalarsInShell.push_back(scalar); }
     }//_for
+
+    scar_proj_file.close();
 
     scarDebugLabel = visitedImage;
     pd->GetCellData()->SetScalars(scalars);
@@ -476,10 +499,16 @@ double CemrgScar3D::GetIntensityAlongNormal(itkImageType::Pointer scarImage, itk
                 for (int c = -1; c <= 1; c++) {
                     if (x + a >= 0 && x + a < maxX && y + b >= 0 && y + b < maxY && z + c >= 0 && z + c < maxZ) {
                         mitk::Point3D tempPoint;
+                        itkImageType::IndexType pixel_xyz; 
+                        pixel_xyz[0] = x + a;
+                        pixel_xyz[1] = y + b;
+                        pixel_xyz[2] = z + c;
+
                         tempPoint.SetElement(0, x + a);
                         tempPoint.SetElement(1, y + b);
                         tempPoint.SetElement(2, z + c);
                         pointsOnAndAroundNormal.push_back(tempPoint);
+                        scarDebugCorridor->SetPixel(pixel_xyz, DebugImageType::CORRIDOR);
                     }
                 }
             }
@@ -558,7 +587,7 @@ double CemrgScar3D::GetStatisticalMeasure(std::vector<mitk::Point3D> pointsOnAnd
             pixel_xyz[0] = pointsOnAndAroundNormal.at(maxIndex).GetElement(0);
             pixel_xyz[1] = pointsOnAndAroundNormal.at(maxIndex).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(maxIndex).GetElement(2);
-            visitedImage->SetPixel(pixel_xyz, 1);
+            visitedImage->SetPixel(pixel_xyz, DebugImageType::PROJECTED);
         }
     }//_if_max
 
@@ -635,11 +664,26 @@ void CemrgScar3D::ItkDeepCopy(itkImageType::Pointer input, itkImageType::Pointer
         ++inputIterator;
         ++outputIterator;
     }
+
+    output->SetOrigin(input->GetOrigin());
+    output->SetSpacing(input->GetSpacing());
 }
 
 void CemrgScar3D::SaveScarDebugImage(QString name, QString dir) {
 
     typedef itk::Image<short, 3> ImageType;
+    typedef itk::ImageRegionIterator<itkImageType> ImIteratorType;
+    ImIteratorType corrIt(scarDebugCorridor, scarDebugCorridor->GetLargestPossibleRegion());
+    ImIteratorType debugIt(scarDebugLabel, scarDebugLabel->GetLargestPossibleRegion());
+
+    while (!debugIt.IsAtEnd()) {
+        if (debugIt.Get() == DebugImageType::PROJECTED) {
+            corrIt.Set(DebugImageType::PROJECTED);
+        }
+        ++corrIt;
+        ++debugIt;
+    }
+
     using WriterType = itk::ImageFileWriter< ImageType >;
     if (!name.contains(".nii", Qt::CaseSensitive))
         name = name + ".nii";
@@ -648,6 +692,6 @@ void CemrgScar3D::SaveScarDebugImage(QString name, QString dir) {
 
     WriterType::Pointer writer = WriterType::New();
     writer->SetFileName(debugSCARname.toStdString());
-    writer->SetInput(this->scarDebugLabel);
+    writer->SetInput(this->scarDebugCorridor);
     writer->Update();
 }

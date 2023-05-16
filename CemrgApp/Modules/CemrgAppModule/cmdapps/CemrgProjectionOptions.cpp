@@ -216,11 +216,11 @@ int main(int argc, char* argv[]) {
 
         int minStep = -1;
         int maxStep = 3;
-        int methodType = 2;
+        int measureType = 2; // Mean=1, Max=2, Cumulative=3, Mode=4
         std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
         scar->SetMinStep(minStep);
         scar->SetMaxStep(maxStep);
-        scar->SetMethodType(methodType);
+        scar->SetMethodType(measureType);
 
         MITK_INFO(singlevoxelprojection) << "Setting Single voxel projection";
         MITK_INFO(!singlevoxelprojection) << "Setting multiple voxels projection";

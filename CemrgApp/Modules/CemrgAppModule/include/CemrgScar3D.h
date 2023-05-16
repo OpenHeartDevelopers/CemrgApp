@@ -40,6 +40,7 @@ PURPOSE.  See the above copyright notices for more information.
 class MITKCEMRGAPPMODULE_EXPORT CemrgScar3D {
 
 public:
+    enum DebugImageType { BACKGROUND=0, CORRIDOR, PROJECTED };
 
     CemrgScar3D();
     mitk::Surface::Pointer Scar3D(std::string directory, mitk::Image::Pointer lgeImage, std::string segname = "segmentation.vtk");
@@ -75,7 +76,7 @@ private:
 
     typedef itk::Image<short, 3> itkImageType;
     itkImageType::Pointer scarSegImage;
-    itk::Image<short, 3>::Pointer scarDebugLabel;
+    itkImageType::Pointer scarDebugLabel, scarDebugCorridor;
 
     double GetIntensityAlongNormal(
         itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage,
