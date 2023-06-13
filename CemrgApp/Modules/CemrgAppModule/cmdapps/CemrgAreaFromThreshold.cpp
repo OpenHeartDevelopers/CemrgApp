@@ -90,11 +90,11 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::InputFile,
+    //   "input-path", "p", mitkCommandLineParser::String,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input", "i", mitkCommandLineParser::InputFile,
+        "input", "i", mitkCommandLineParser::String,
         "Surface mesh path", "Full path of mesh vtk polydata file.",
         us::Any(), false);
     parser.addArgument(

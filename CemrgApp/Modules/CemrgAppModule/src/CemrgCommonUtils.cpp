@@ -436,6 +436,26 @@ void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QS
     }
 }
 
+ mitk::Image::Pointer CemrgCommonUtils::Zeros(mitk::Image::Pointer image){
+    using ImageType = itk::Image<short,3>;
+    
+    ImageType::Pointer outputImg = ImageType::New();
+    mitk::CastToItkImage(image->Clone(), outputImg);
+
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    IteratorType imIter(outputImg, outputImg->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        imIter.Set(0);
+        ++imIter;
+    }
+    
+    mitk::Image::Pointer outim = mitk::Image::New();
+    mitk::CastToMitkImage(outputImg, outim);
+    
+    return outim;
+ }
+
 void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath) {
     QFileInfo fi(pathToImage);
     if (fi.exists()) {

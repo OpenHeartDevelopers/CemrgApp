@@ -57,8 +57,10 @@ public:
 
     // Image Analysis Utils
     static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
-    static void Binarise(mitk::Image::Pointer image, float background=0);
     static mitk::Image::Pointer ReturnBinarised(mitk::Image::Pointer image, float background=0);
+
+    static void Binarise(mitk::Image::Pointer image, float background=0);
+    static mitk::Image::Pointer Zeros(mitk::Image::Pointer image);
 
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);

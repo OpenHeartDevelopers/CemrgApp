@@ -85,11 +85,11 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     // parser.addArgument(
-    //   "input-path", "p", mitkCommandLineParser::InputFile,
+    //   "input-path", "p", mitkCommandLineParser::String,
     //   "Input Directory Path", "Path of directory containing LGE files.",
     //   us::Any(), false);
     parser.addArgument(
-        "input-lge", "i", mitkCommandLineParser::InputFile,
+        "input-lge", "i", mitkCommandLineParser::String,
         "LGE path", "Full path of LGE.nii file.",
         us::Any(), false);
     parser.addArgument( // optional
@@ -101,6 +101,12 @@ int main(int argc, char* argv[]) {
     parser.addArgument( // optional
         "multi-thresholds", "t", mitkCommandLineParser::Bool,
         "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1:0.1:5\n\t (V*IIR) V = 0.7:0.01:1.61");
+    parser.addArgument( // optional
+        "roi-radius", "radius", mitkCommandLineParser::Bool,
+        "ROI Radius ON", "Whether to create ROI radius");
+    parser.addArgument( // optional
+        "legacy-projection", "old", mitkCommandLineParser::Bool,
+        "Legacy (old) projection algorithm", "Legacy (old) projection algorithm");
     parser.addArgument( // optional
         "verbose", "v", mitkCommandLineParser::Bool,
         "Verbose Output", "Whether to produce verbose output");
@@ -127,6 +133,8 @@ int main(int argc, char* argv[]) {
     auto thresmethod = 2;
     auto singlevoxelprojection = false;
     auto multithreshold = false;
+    auto roi_radius = false;
+    auto legacy_projection = false;
     auto verbose = false;
 
     // Parse, cast and set optional argument
@@ -145,6 +153,16 @@ int main(int argc, char* argv[]) {
         singlevoxelprojection = us::any_cast<bool>(parsedArgs["single-voxel-projection"]);
     }
     std::cout << "single voxel " << singlevoxelprojection << '\n';
+
+    if (parsedArgs.end() != parsedArgs.find("roi-radius")) {
+        roi_radius = us::any_cast<bool>(parsedArgs["roi-radius"]);
+    }
+
+    if (parsedArgs.end() != parsedArgs.find("legacy-projection")) {
+        legacy_projection = us::any_cast<bool>(parsedArgs["legacy-projection"]);
+    }
+
+    roi_radius = roi_radius && !legacy_projection;
 
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
@@ -195,6 +213,8 @@ int main(int argc, char* argv[]) {
         scar->SetMinStep(minStep);
         scar->SetMaxStep(maxStep);
         scar->SetMethodType(methodType);
+        scar->SetRoiLegacyNormals(legacy_projection);
+        scar->SetRoiRadiusOption(roi_radius);
 
         MITK_INFO(singlevoxelprojection) << "Setting Single voxel projection";
         MITK_INFO(!singlevoxelprojection) << "Setting multiple voxels projection";
