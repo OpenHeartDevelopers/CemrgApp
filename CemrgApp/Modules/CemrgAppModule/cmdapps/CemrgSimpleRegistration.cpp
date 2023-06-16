@@ -54,11 +54,11 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     // See mitkCommandLineParser::addArgument() for more information.
     parser.addArgument(
-        "reference", "i", mitkCommandLineParser::InputFile,
+        "reference", "i", mitkCommandLineParser::String,
         "Input object (reference)", "Reference for registration. Accepts any image format known to MITK.",
         us::Any(), false);
     parser.addArgument(
-        "otherimage", "j", mitkCommandLineParser::InputFile,
+        "otherimage", "j", mitkCommandLineParser::String,
         "Input object (reference)", "Image to calculate transformation from. Accepts any image format known to MITK.",
         us::Any(), false);
     parser.addArgument( // optional
