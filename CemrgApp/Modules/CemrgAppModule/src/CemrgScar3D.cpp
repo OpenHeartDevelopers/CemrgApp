@@ -58,6 +58,7 @@ PURPOSE.  See the above copyright notices for more information.
 // Qt
 #include <QtDebug>
 #include <QMessageBox>
+#include <QDir>
 
 // C++ Standard
 #include <numeric>
@@ -73,8 +74,10 @@ CemrgScar3D::CemrgScar3D() {
     this->minStep = -3, this->maxStep = 3;
     this->minScalar = 1E10, this->maxScalar = -1;
     this->voxelBasedProjection = false;
-    this->debugging = false;
     this->scalars = vtkSmartPointer<vtkFloatArray>::New();
+
+    this->roiLegacyNormals = false;
+    this->roiRadiusOption = true;
 }
 
 mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::Pointer lgeImage, std::string segname) {
@@ -89,9 +92,11 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     mitk::CastToItkImage(corridor_im, scarDebugCorridor);
     typedef itk::ImageRegionIterator<itkImageType> ImIteratorType;
     ImIteratorType corrIt(scarDebugCorridor, scarDebugCorridor->GetLargestPossibleRegion());
+    
     for (corrIt.GoToBegin(); !corrIt.IsAtEnd(); ++corrIt) {
         corrIt.Set(DebugImageType::BACKGROUND);
     }
+    
 
     //Read in the mesh
     std::string path = directory + "/" + segname;
@@ -118,13 +123,6 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
     vtkSmartPointer<vtkFloatArray> scalarsOnlyIntensity = vtkSmartPointer<vtkFloatArray>::New();
     itkImageType::IndexType pixelXYZ;
     itkImageType::PointType pointXYZ;
-
-    // Output file
-    std::ofstream scar_proj_file;
-    scar_proj_file.open(directory + "/scar_projection_lines.txt");
-    scar_proj_file << pd->GetNumberOfCells() << '\n';
-    scar_proj_file << this->minStep << '\n';
-    scar_proj_file << this->maxStep << '\n';
 
     double maxSdev = -1e9;
     double maxSratio = -1e9;
@@ -166,19 +164,16 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         cY /= numPoints;
         cZ /= numPoints;
 
-        // ITK method
-        pointXYZ[0] = pN[0];
-        pointXYZ[1] = pN[1];
-        pointXYZ[2] = pN[2];
-        scarImage->TransformPhysicalPointToIndex(pointXYZ, pixelXYZ);
-        pN[0] = pixelXYZ[0];
-        pN[1] = pixelXYZ[1];
-        pN[2] = pixelXYZ[2];
-
-        scar_proj_file << i << ", ";
-        scar_proj_file << cX << ", " << cY << ", " << cZ << ", ";
-        scar_proj_file << pN[0] << ", " << pN[1] << ", " << pN[2];
-        scar_proj_file << '\n';
+        if (roiLegacyNormals) {
+            // ITK method
+            pointXYZ[0] = pN[0];
+            pointXYZ[1] = pN[1];
+            pointXYZ[2] = pN[2];
+            scarImage->TransformPhysicalPointToIndex(pointXYZ, pixelXYZ);
+            pN[0] = pixelXYZ[0];
+            pN[1] = pixelXYZ[1];
+            pN[2] = pixelXYZ[2];
+        }
 
         double scalar = GetIntensityAlongNormal(scarImage, visitedImage, pN[0], pN[1], pN[2], cX, cY, cZ);
 
@@ -232,8 +227,6 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
         //      scalars->InsertTuple1(i, scalar);
         //      allScalarsInShell.push_back(scalar); }
     }//_for
-
-    scar_proj_file.close();
 
     scarDebugLabel = visitedImage;
     pd->GetCellData()->SetScalars(scalars);
@@ -426,42 +419,12 @@ void CemrgScar3D::PrintSingleThresholdingResult(QString dir, double value, int t
     PrintThresholdingResults(dir, v, threshType, mean, stdv, true);
 }
 
-double CemrgScar3D::GetMinScalar() const {
-
-    return minScalar;
-}
-
-double CemrgScar3D::GetMaxScalar() const {
-
-    return maxScalar;
-}
-
-void CemrgScar3D::SetMinStep(int value) {
-
-    minStep = value;
-}
-
-void CemrgScar3D::SetMaxStep(int value) {
-
-    maxStep = value;
-}
-
-void CemrgScar3D::SetMethodType(int value) {
-
-    methodType = value;
-}
-
 void CemrgScar3D::SetScarSegImage(const mitk::Image::Pointer image) {
 
     //Setup roiImage
     itkImageType::Pointer itkImage = itkImageType::New();
     mitk::CastToItkImage(image, itkImage);
     this->scarSegImage = itkImage;
-}
-
-void CemrgScar3D::SetVoxelBasedProjection(bool value) {
-
-    voxelBasedProjection = value;
 }
 
 double CemrgScar3D::GetIntensityAlongNormal(itkImageType::Pointer scarImage, itkImageType::Pointer visitedImage,
@@ -489,24 +452,26 @@ double CemrgScar3D::GetIntensityAlongNormal(itkImageType::Pointer scarImage, itk
     int maxY = sizeOfImage[1];
     int maxZ = sizeOfImage[2];
 
+    int roi_lim = roiRadiusOption ? 1 : 0;
+
     for (double i = scar_step_min; i <= scar_step_max; i += scar_step_size) {
         double x = floor(centre_x + (i * n_x));
         double y = floor(centre_y + (i * n_y));
         double z = floor(centre_z + (i * n_z));
 
-        for (int a = -1; a <= 1; a++) {
-            for (int b = -1; b <= 1; b++) {
-                for (int c = -1; c <= 1; c++) {
+        for (int a = -roi_lim; a <= roi_lim; a++) {
+            for (int b = -roi_lim; b <= roi_lim; b++) {
+                for (int c = -roi_lim; c <= roi_lim; c++) {
                     if (x + a >= 0 && x + a < maxX && y + b >= 0 && y + b < maxY && z + c >= 0 && z + c < maxZ) {
                         mitk::Point3D tempPoint;
-                        itkImageType::IndexType pixel_xyz; 
+                        itkImageType::IndexType pixel_xyz;
                         pixel_xyz[0] = x + a;
                         pixel_xyz[1] = y + b;
                         pixel_xyz[2] = z + c;
-
-                        tempPoint.SetElement(0, x + a);
-                        tempPoint.SetElement(1, y + b);
-                        tempPoint.SetElement(2, z + c);
+                        
+                        tempPoint.SetElement(0, pixel_xyz[0]);
+                        tempPoint.SetElement(1, pixel_xyz[1]);
+                        tempPoint.SetElement(2, pixel_xyz[2]);
                         pointsOnAndAroundNormal.push_back(tempPoint);
                         scarDebugCorridor->SetPixel(pixel_xyz, DebugImageType::CORRIDOR);
                     }
@@ -587,7 +552,8 @@ double CemrgScar3D::GetStatisticalMeasure(std::vector<mitk::Point3D> pointsOnAnd
             pixel_xyz[0] = pointsOnAndAroundNormal.at(maxIndex).GetElement(0);
             pixel_xyz[1] = pointsOnAndAroundNormal.at(maxIndex).GetElement(1);
             pixel_xyz[2] = pointsOnAndAroundNormal.at(maxIndex).GetElement(2);
-            visitedImage->SetPixel(pixel_xyz, DebugImageType::PROJECTED);
+            visitedImage->SetPixel(pixel_xyz, 1);
+            scarDebugCorridor->SetPixel(pixel_xyz, DebugImageType::PROJECTED);
         }
     }//_if_max
 
@@ -694,4 +660,39 @@ void CemrgScar3D::SaveScarDebugImage(QString name, QString dir) {
     writer->SetFileName(debugSCARname.toStdString());
     writer->SetInput(this->scarDebugCorridor);
     writer->Update();
+}
+
+QString CemrgScar3D::GetPathToScarMap(QString dir, QString name) {
+    QString suffix = "";
+    QString prefix = ""; 
+    switch (methodType) {
+    case 1:
+        prefix = "Mean";
+        break;
+    case 2:
+        prefix = "Max";
+        break;
+    case 3:
+        prefix = "Sum";
+        break;
+    case 4:
+        prefix = "Mode";
+        break;
+    default:
+        break;
+    }
+
+    suffix += (roiLegacyNormals) ? "LegacyProjection" : "NormalProjection";
+    suffix += (roiRadiusOption) ? "_" : "_No";
+    suffix += "Radius";
+    suffix += (voxelBasedProjection) ? "_SingleVoxel" : "_RepeatedVoxels";
+    suffix += num2str(minStep);
+    suffix += num2str(maxStep);
+
+    QString prodPath = (dir.isEmpty()) ? "" : dir + "/";
+    QString pathToScarMap = prodPath + prefix + "Scar_" + suffix;
+    pathToScarMap += (name.isEmpty()) ? "" : "_" + name;
+
+    return pathToScarMap;
+
 }

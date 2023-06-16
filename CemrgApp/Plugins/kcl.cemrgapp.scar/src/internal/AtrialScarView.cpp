@@ -1591,11 +1591,14 @@ void AtrialScarView::ScarMap() {
                 if (dialogCode == QDialog::Accepted) {
 
                     bool ok1, ok2;
-                    int minStep = m_UIScar.lineEdit_1->text().toInt(&ok1);
-                    int maxStep = m_UIScar.lineEdit_2->text().toInt(&ok2);
+                    int minStep = m_UIScar.line_roi_minStep->text().toInt(&ok1);
+                    int maxStep = m_UIScar.line_roi_maxStep->text().toInt(&ok2);
                     int methodType = m_UIScar.radioButton_1->isChecked() ? 2 : 1;
                     QString meType = m_UIScar.radioButton_1->isChecked() ? "Max" : "Mean";
-                    bool voxelBasedProjection = m_UIScar.checkBox->isChecked();
+                    
+                    bool voxelBasedProjection = m_UIScar.check_roi_voxelBased->isChecked();
+                    bool UseRoiLegacyNormals = m_UIScar.check_roi_legacyNormals->isChecked();
+                    bool UseRoiRadius = m_UIScar.check_roi_radius->isChecked();
 
                     //Set default values
                     if (!ok1 || !ok2)
@@ -1604,6 +1607,19 @@ void AtrialScarView::ScarMap() {
                     if (!ok2) maxStep = 3;
                     //_if
 
+                    std::string msg;
+                    if (UseRoiLegacyNormals){
+                        msg = "Using an old version of the normals algorithm. Setting ROI radius option to ON.";
+                        UseRoiRadius = true;
+                        QMessageBox::warning(NULL, "Attention", msg.c_str());
+                        MITK_WARN << msg; 
+                    }
+
+                    if (!UseRoiRadius){
+                        msg = "The volume of the projection ROI is reduced and might cause a problem with scar calculation.";
+                        QMessageBox::warning(NULL, " Attention ", msg.c_str());
+                        MITK_WARN << msg;
+                    }
                     /*
                      * Producibility Test
                      **/
@@ -1625,6 +1641,9 @@ void AtrialScarView::ScarMap() {
                     scar->SetMaxStep(maxStep);
                     scar->SetMethodType(methodType);
                     scar->SetVoxelBasedProjection(voxelBasedProjection);
+                    scar->SetRoiLegacyNormals(UseRoiLegacyNormals);
+                    scar->SetRoiRadiusOption(UseRoiRadius);
+
                     mitk::Image::Pointer scarSegImg;
                     try {
                         QString path = directory + "/" + fileName;
@@ -1667,7 +1686,8 @@ void AtrialScarView::ScarMap() {
                     mitk::DataNode::Pointer node = CemrgCommonUtils::AddToStorage(shell, (meType + "Scar3D").toStdString(), this->GetDataStorage());
 
                     MITK_INFO << "Saving debug scar map labels.";
-                    scar->SaveScarDebugImage(meType + "_debugSCAR.nii", directory);
+                    // scar->SaveScarDebugImage(meType + "_debugSCAR.nii", directory);
+                    scar->SaveScarDebugImage("DebugSCAR_" + scar->GetPathToScarMap("", ""), directory);
 
                     //Check to remove the previous mesh node
                     sob = this->GetDataStorage()->GetAll();
@@ -1692,7 +1712,7 @@ void AtrialScarView::ScarMap() {
                     //Save the vtk mesh
                     QString name(imgNode->GetName().c_str());
                     name = name.right(name.length() - name.lastIndexOf("-") - 1);
-                    pathToScarMap = directory + "/" + name + "-" + meType + "Scar.vtk";
+                    pathToScarMap = scar->GetPathToScarMap(directory, name);
                     mitk::IOUtil::Save(shell, pathToScarMap.toStdString());
 
                     mitk::ProgressBar::GetInstance()->Progress();
