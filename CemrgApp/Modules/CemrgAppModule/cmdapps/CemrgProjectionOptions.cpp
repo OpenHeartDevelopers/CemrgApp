@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
         legacy_projection = us::any_cast<bool>(parsedArgs["legacy-projection"]);
     }
 
-    roi_radius = roi_radius && !legacy_projection;
+    roi_radius = roi_radius || legacy_projection;
 
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
