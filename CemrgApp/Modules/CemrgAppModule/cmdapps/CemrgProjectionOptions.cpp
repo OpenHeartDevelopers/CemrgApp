@@ -58,8 +58,10 @@ in the framework.
 #include <QString>
 #include <QDir>
 #include <QFileInfo>
+#include <QFile>
 #include <QProcess>
 #include <QMessageBox>
+#include <QJsonObject>
 
 // C++ Standard
 #include <algorithm>
@@ -69,6 +71,10 @@ in the framework.
 // CemrgApp
 #include <CemrgScar3D.h>
 #include <CemrgCommandLine.h>
+#include <CemrgCommonUtils.h>
+
+// helper functions
+QString ParseArgumentsToOutputFolder(std::string output_subfolder, int method, bool svp, bool old, QString limits, QString thresString);
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -99,6 +105,9 @@ int main(int argc, char* argv[]) {
         "output-subfolder", "o", mitkCommandLineParser::String,
         "Output subfolder name", "Name of output subfolder (Default=OUTPUT)");
     parser.addArgument( // optional
+        "options-file", "opts", mitkCommandLineParser::String,
+        "Option(s)", "JSON path with options. Gets copied into output-subfolder ");
+    parser.addArgument( // optional
         "thresholds-method", "m", mitkCommandLineParser::Int,
         "Thresholds method", "Choose between IIR*V (1) and M + STDV*V (2). (Default=2)");
     parser.addArgument( // optional
@@ -108,14 +117,14 @@ int main(int argc, char* argv[]) {
             "threshold-values", "tv", mitkCommandLineParser::String,
             "Threshold(s)", "Specific threshold (-t 1.2):\n Multithresholds (-t 0.97,1.2,1.32)\n Sweeps (-t 0.7:0.01:1.61)");
     parser.addArgument( // optional
-        "multi-thresholds", "t", mitkCommandLineParser::Bool,
-        "Multiple thresholds", "Produce the output for the scar score using multiple thresholds:\n\t  (mean+V*stdev) V = 1:0.1:5\n\t (V*IIR) V = 0.7:0.01:1.61");
-    parser.addArgument( // optional
         "roi-radius", "radius", mitkCommandLineParser::Bool,
         "ROI Radius ON", "Whether to create ROI radius");
     parser.addArgument( // optional
-        "legacy-projection", "old", mitkCommandLineParser::Bool,
+        "roi-legacy-projection", "old", mitkCommandLineParser::Bool,
         "Legacy (old) projection algorithm", "Legacy (old) projection algorithm");
+    parser.addArgument( // optional
+        "roi-limits", "limits", mitkCommandLineParser::String,
+        "Limits(s)", "Limits sent as string with two values separated by a comma (default='-1,3')");
     parser.addArgument( // optional
         "verbose", "v", mitkCommandLineParser::Bool,
         "Verbose Output", "Whether to produce verbose output");
@@ -141,11 +150,12 @@ int main(int argc, char* argv[]) {
     // std::string prodthresfile = "prodThresholds.txt";
     std::string segFilename = "PVeinsCroppedImage";
     auto method = 2;
-    std::string output_subfolder = "OUTPUT";
+    std::string output_subfolder = "";
+    std::string options_file = "";
     auto singlevoxelprojection = false;
-    auto multithreshold = false;
     std::string inThresholdString = (method == 2) ? "3.3" : "1.2";
     auto roi_radius = false;
+    std::string roi_limits = "-1,3";
     auto legacy_projection = false;
     auto verbose = false;
 
@@ -159,6 +169,10 @@ int main(int argc, char* argv[]) {
     if (parsedArgs.end() != parsedArgs.find("output-subfolder")) {
         output_subfolder = us::any_cast<std::string>(parsedArgs["output-subfolder"]);
     }
+
+    if (parsedArgs.end() != parsedArgs.find("options-file")) {
+        options_file = us::any_cast<std::string>(parsedArgs["options-file"]);
+    }
     
     if (parsedArgs.end() != parsedArgs.find("thresholds-method")) {
         method = us::any_cast<int>(parsedArgs["thresholds-method"]);
@@ -167,11 +181,6 @@ int main(int argc, char* argv[]) {
     if (parsedArgs.end() != parsedArgs.find("threshold-values")) {
         inThresholdString = us::any_cast<std::string>(parsedArgs["threshold-values"]);
     }
-
-    if (parsedArgs.end() != parsedArgs.find("multi-thresholds")) {
-        multithreshold = us::any_cast<bool>(parsedArgs["multi-thresholds"]);
-    }
-    std::cout << "multithresh" << multithreshold << '\n';
 
     if (parsedArgs.end() != parsedArgs.find("single-voxel-projection")) {
         singlevoxelprojection = us::any_cast<bool>(parsedArgs["single-voxel-projection"]);
@@ -182,28 +191,111 @@ int main(int argc, char* argv[]) {
         roi_radius = us::any_cast<bool>(parsedArgs["roi-radius"]);
     }
 
-    if (parsedArgs.end() != parsedArgs.find("legacy-projection")) {
-        legacy_projection = us::any_cast<bool>(parsedArgs["legacy-projection"]);
+    if (parsedArgs.end() != parsedArgs.find("roi-limits")) {
+        roi_limits = us::any_cast<bool>(parsedArgs["roi-limits"]);
     }
 
-    roi_radius = roi_radius || legacy_projection;
+    if (parsedArgs.end() != parsedArgs.find("roi-legacy-projection")) {
+        legacy_projection = us::any_cast<bool>(parsedArgs["roi-legacy-projection"]);
+    }
 
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
     std::cout << "verbose" << verbose << '\n';
 
+
     MITK_INFO << "Program starting...";
     try {
+        
         // Code the functionality of the cmd app here.
         MITK_INFO(verbose) << "Verbose mode ON.";
+
+        QString lgename = QString::fromStdString(inFilename2);
+        QFileInfo fi(lgename);
+        QString direct = fi.absolutePath();
+
+        // check if options_file is empty
+        QString opts = QString::fromStdString(options_file);
+        opts += (opts.endsWith(".json")) ? "" : ".json";
+        QFileInfo fopts(opts);
+        QString optsFile = "options.json";
+        if (fopts.exists() && fopts.isFile()) {
+            MITK_INFO << "Reading options file. THIS WILL OVERWRITE ANY OTHER ARGUMENTS PASSED IN THE COMMAND LINE.";
+            QJsonObject json = CemrgCommonUtils::ReadJSONFile(fopts.absolutePath(), fopts.fileName());
+            // output_dir
+            if (json.contains("output_dir")){
+                output_subfolder = json["output_dir"].toString().toStdString();
+            }
+            // thresholds_method
+            if (json.contains("thresholds_method")){
+                method = json["thresholds_method"].toInt();
+            }
+            // threshold_values
+            if (json.contains("threshold_values")){
+                inThresholdString = json["threshold_values"].toString().toStdString();
+            }
+            // single_voxel_projection
+            if (json.contains("single_voxel_projection")){
+                singlevoxelprojection = json["single_voxel_projection"].toBool();
+            }
+            // roi_radius
+            if (json.contains("roi_radius")){
+                roi_radius = json["roi_radius"].toBool();
+            }
+            // roi_legacy_projection
+            if (json.contains("roi_legacy_projection")){
+                legacy_projection = json["roi_legacy_projection"].toBool();
+            }
+            // roi_limits
+            if (json.contains("roi_limits")){
+                roi_limits = json["roi_limits"].toString().toStdString();
+            }
+
+            optsFile = fopts.fileName();
+        }
+
+        roi_radius = roi_radius || legacy_projection;
+
+        QString roiLimits = QString::fromStdString(roi_limits);
+        if (!roiLimits.contains(",")) {
+            MITK_WARN << "ROI limits not set correctly. Using default values.";
+            roiLimits = "-1,3";
+        }
+
+        QStringList limits_list = roiLimits.split(",");
+        MITK_WARN(limits_list.size() != 2) << ("ROI limits have more than 2 values, using first two: " + limits_list.at(0) + ", " + limits_list.at(1)).toStdString();
+        if (limits_list.size() < 2){
+            MITK_WARN << "ROI limits not set correctly. Using default values.";
+            limits_list.clear();
+            limits_list << "-1" << "3";
+        }
+        
+        QString thresString = QString::fromStdString(inThresholdString);
+
+        QString outputSubfolder = ParseArgumentsToOutputFolder(output_subfolder, method, singlevoxelprojection, legacy_projection, roiLimits, thresString);
+        QString lgePath = fi.absoluteFilePath();
+        QString outputFolder = direct + "/" + outputSubfolder + "/";
+
+        QDir d(outputFolder);
+
+        if (!d.exists(outputFolder)) {
+            MITK_INFO(d.mkpath(outputFolder)) << "Output folder created";
+        }
+
+        QStringList keys, values, types;
+        keys << "output_dir" << "thresholds_method" << "threshold_values" << "single_voxel_projection" << "roi_radius" << "roi_legacy_projection" << "roi_limits";
+        values << outputSubfolder << QString::number(method) << thresString << QString::number(singlevoxelprojection) << QString::number(roi_radius) << QString::number(legacy_projection) << roiLimits;
+        types << "string" << "int" << "string" << "bool" << "bool" << "bool" << "string";
+
+        QJsonObject json = CemrgCommonUtils::CreateJSONObject(keys, values, types);
+        CemrgCommonUtils::WriteJSONFile(json, outputFolder, optsFile);
 
         QString methodPref = (method == 2) ? "MplusSD_" : "IIR_";
         MITK_INFO(method == 1) << "IIR METHOD";
         MITK_INFO(method == 2) << "M + SD METHOD";
 
         // PARSING ARGUMENTS
-        QString lgename = QString::fromStdString(inFilename2);
         QString pveinsname = QString::fromStdString(segFilename);
         QString segvtk = "segmentation.vtk";
         QString outname = methodPref + "MaxScar";
@@ -214,26 +306,21 @@ int main(int argc, char* argv[]) {
         MITK_INFO(verbose) << ("Segmentation name: " + pveinsname).toStdString();
         MITK_INFO(verbose) << "Obtaining input file path and working directory: ";
 
-        // OBTAINING directory and lgepath variables
-        QFileInfo fi(lgename);
-        QString direct = fi.absolutePath();
-        QString lgePath = fi.absoluteFilePath();
-        QString outputFolder = direct + "/" + QString::fromStdString(output_subfolder) + "/";
-
-        QDir d(outputFolder);
-
-        if (!d.exists(outputFolder)) {
-            MITK_INFO(d.mkpath(outputFolder)) << "Output folder created";
-        }
-
-        typedef itk::Image<short, 3> ImageTypeCHAR;
-        typedef itk::Image<short, 3> ImageTypeSHRT;
-
         //Scar projection
         MITK_INFO(verbose) << "Performing Scar projection.";
+        MITK_INFO(verbose) << "Setting Scar projection parameters.";
 
-        int minStep = -1;
-        int maxStep = 3;
+        int small = limits_list.at(0).toInt();
+        int big = limits_list.at(1).toInt();
+
+        if (small > big) {
+            int aux = small;
+            small = big;
+            big = aux;
+        }
+    
+        int minStep = small;
+        int maxStep = big;
         int measureType = 2; // Mean=1, Max=2, Cumulative=3, Mode=4
         std::unique_ptr<CemrgScar3D> scar(new CemrgScar3D());
         scar->SetMinStep(minStep);
@@ -245,6 +332,9 @@ int main(int argc, char* argv[]) {
         MITK_INFO(singlevoxelprojection) << "Setting Single voxel projection";
         MITK_INFO(!singlevoxelprojection) << "Setting multiple voxels projection";
         scar->SetVoxelBasedProjection(singlevoxelprojection);
+
+        typedef itk::Image<short, 3> ImageTypeCHAR;
+        typedef itk::Image<short, 3> ImageTypeSHRT;
 
         ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
         ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
@@ -309,21 +399,17 @@ int main(int argc, char* argv[]) {
         prodFile1 << mean << std::endl;
         prodFile1 << stdv << std::endl;
 
-        QString thres_str = QString::fromStdString(inThresholdString);
-        if (multithreshold && (thres_str.length()==3 && thres_str.contains('.'))) {
-            thres_str = (method == 2) ? "1.0:0.1:5.0" : "0.7:0.01:1.61";
-        }
 
         bool is_sweep_threshold = false;
         std::vector<double> input_threshold_vector, threshold_vector;
         QStringList thres_list = QStringList();
-        if (thres_str.contains(',')){
-            thres_list = thres_str.split(',');
-        } else if(thres_str.contains(':')){
-            thres_list = thres_str.split(':');
+        if (thresString.contains(',')){
+            thres_list = thresString.split(',');
+        } else if(thresString.contains(':')){
+            thres_list = thresString.split(':');
             is_sweep_threshold = true;
         } else{
-            thres_list << thres_str;
+            thres_list << thresString;
         }
 
         int ix = 0;
@@ -367,4 +453,27 @@ int main(int argc, char* argv[]) {
         MITK_ERROR << "Unexpected error";
         return EXIT_FAILURE;
     }
+}
+
+QString ParseArgumentsToOutputFolder(std::string output_subfolder, int method, bool svp, bool old, QString limits, QString thresString){
+    QString outputSubFolder = QString::fromStdString(output_subfolder);
+   
+    if (outputSubFolder.isEmpty()) {
+        outputSubFolder = "OUTPUT_";
+        outputSubFolder += (method == 1) ? "IIR_" : "MSD_";
+        outputSubFolder += (old) ? "LEGACY_" : "";
+        outputSubFolder += (svp) ? "SVP_" : "";
+        outputSubFolder += "ROI";
+        outputSubFolder += limits.replace(".", "dot").replace(",", "to").replace("-", "neg");
+        outputSubFolder += "_THRES";
+
+        QString auxString = thresString;
+        if(auxString.contains(':')){
+            QStringList thres_list = auxString.split(':');
+            auxString = thres_list.at(0) + "to"+ thres_list.at(2) ;    
+        } 
+        outputSubFolder += auxString.replace(".", "dot").replace(",", "and").replace("-", "neg");
+    }
+
+    return outputSubFolder;
 }
