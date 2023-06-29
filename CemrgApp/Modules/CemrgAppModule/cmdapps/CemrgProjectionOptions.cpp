@@ -75,6 +75,7 @@ in the framework.
 
 // helper functions
 QString ParseArgumentsToOutputFolder(std::string output_subfolder, int method, bool svp, bool old, QString limits, QString thresString);
+mitk::Image::Pointer Clean(mitk::Image::Pointer segmentation);
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -252,7 +253,7 @@ int main(int argc, char* argv[]) {
                 roi_limits = json["roi_limits"].toString().toStdString();
             }
 
-            optsFile = fopts.fileName();
+            // optsFile = fopts.fileName();
         }
 
         roi_radius = roi_radius || legacy_projection;
@@ -339,7 +340,7 @@ int main(int argc, char* argv[]) {
         ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
         ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
 
-        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>((direct + "/" + pveinsname).toStdString()), segITK);
+        mitk::CastToItkImage(Clean(mitk::IOUtil::Load<mitk::Image>((direct + "/" + pveinsname).toStdString())), segITK);
         mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeITK);
 
         itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::Pointer resampleFilter;
@@ -371,6 +372,7 @@ int main(int argc, char* argv[]) {
         erosionFilter->UpdateLargestPossibleRegion();
         mitk::Image::Pointer roiImage = mitk::Image::New();
         roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
+        // mitk::IOUtil::Save(roiImage, (outputFolder + "ROI.nii").toStdString());
 
         ImageType::Pointer lgeFloat = ImageType::New();
         mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
@@ -399,17 +401,18 @@ int main(int argc, char* argv[]) {
         prodFile1 << mean << std::endl;
         prodFile1 << stdv << std::endl;
 
+        QString thres_str = QString::fromStdString(inThresholdString);
 
         bool is_sweep_threshold = false;
         std::vector<double> input_threshold_vector, threshold_vector;
         QStringList thres_list = QStringList();
-        if (thresString.contains(',')){
-            thres_list = thresString.split(',');
-        } else if(thresString.contains(':')){
-            thres_list = thresString.split(':');
+        if (thres_str.contains(',')){
+            thres_list = thres_str.split(',');
+        } else if(thres_str.contains(':')){
+            thres_list = thres_str.split(':');
             is_sweep_threshold = true;
         } else{
-            thres_list << thresString;
+            thres_list << thres_str;
         }
 
         int ix = 0;
@@ -476,4 +479,32 @@ QString ParseArgumentsToOutputFolder(std::string output_subfolder, int method, b
     }
 
     return outputSubFolder;
+}
+
+mitk::Image::Pointer Clean(mitk::Image::Pointer segmentation){
+    using ImageType = itk::Image<float, 3>;
+    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(segmentation, im);
+
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while (!imIter.IsAtEnd()) {
+        float value = imIter.Get();
+
+        if (value == 2) {
+            value = 3;
+        } else if (value > 3){
+            value = 0;
+        }
+        
+        imIter.Set(value);
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outImg = mitk::Image::New();
+    mitk::CastToMitkImage(im, outImg);
+    return outImg;
 }
