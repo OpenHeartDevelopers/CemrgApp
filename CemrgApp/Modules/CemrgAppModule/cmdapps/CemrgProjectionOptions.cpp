@@ -76,6 +76,7 @@ in the framework.
 // helper functions
 QString ParseArgumentsToOutputFolder(std::string output_subfolder, int method, bool svp, bool old, QString limits, QString thresString);
 mitk::Image::Pointer Clean(mitk::Image::Pointer segmentation);
+QString fromBool(bool value);
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -227,30 +228,37 @@ int main(int argc, char* argv[]) {
             // output_dir
             if (json.contains("output_dir")){
                 output_subfolder = json["output_dir"].toString().toStdString();
+                if (verbose) std::cout << "JSON set output subfolder to " << output_subfolder << '\n';
             }
             // thresholds_method
             if (json.contains("thresholds_method")){
                 method = json["thresholds_method"].toInt();
+                if (verbose) std::cout << "JSON set thresholds method to " << method << '\n';
             }
             // threshold_values
             if (json.contains("threshold_values")){
                 inThresholdString = json["threshold_values"].toString().toStdString();
+                if (verbose) std::cout << "JSON set threshold values to " << inThresholdString << '\n';
             }
             // single_voxel_projection
             if (json.contains("single_voxel_projection")){
                 singlevoxelprojection = json["single_voxel_projection"].toBool();
+                if (verbose) std::cout << "JSON set single voxel projection to " << singlevoxelprojection << '\n';
             }
             // roi_radius
             if (json.contains("roi_radius")){
                 roi_radius = json["roi_radius"].toBool();
+                if (verbose) std::cout << "JSON set roi radius to " << roi_radius << '\n';
             }
             // roi_legacy_projection
             if (json.contains("roi_legacy_projection")){
                 legacy_projection = json["roi_legacy_projection"].toBool();
+                if (verbose) std::cout << "JSON set roi legacy projection to " << legacy_projection << '\n';
             }
             // roi_limits
             if (json.contains("roi_limits")){
                 roi_limits = json["roi_limits"].toString().toStdString();
+                if (verbose) std::cout << "JSON set roi limits to " << roi_limits << '\n';
             }
 
             // optsFile = fopts.fileName();
@@ -286,7 +294,7 @@ int main(int argc, char* argv[]) {
 
         QStringList keys, values, types;
         keys << "output_dir" << "thresholds_method" << "threshold_values" << "single_voxel_projection" << "roi_radius" << "roi_legacy_projection" << "roi_limits";
-        values << outputSubfolder << QString::number(method) << thresString << QString::number(singlevoxelprojection) << QString::number(roi_radius) << QString::number(legacy_projection) << roiLimits;
+        values << outputSubfolder << QString::number(method) << thresString << fromBool(singlevoxelprojection) << fromBool(roi_radius) << fromBool(legacy_projection) << roiLimits;
         types << "string" << "int" << "string" << "bool" << "bool" << "bool" << "string";
 
         QJsonObject json = CemrgCommonUtils::CreateJSONObject(keys, values, types);
@@ -329,6 +337,14 @@ int main(int argc, char* argv[]) {
         scar->SetMethodType(measureType);
         scar->SetRoiLegacyNormals(legacy_projection);
         scar->SetRoiRadiusOption(roi_radius);
+
+        if (verbose){
+            std::cout << "Min step: " << minStep << '\n';
+            std::cout << "Max step: " << maxStep << '\n';
+            std::cout << "Measure type: " << measureType << '\n';
+            std::cout << "ROI legacy normals: " << legacy_projection << '\n';
+            std::cout << "ROI radius: " << roi_radius << '\n';
+        }
 
         MITK_INFO(singlevoxelprojection) << "Setting Single voxel projection";
         MITK_INFO(!singlevoxelprojection) << "Setting multiple voxels projection";
@@ -507,4 +523,8 @@ mitk::Image::Pointer Clean(mitk::Image::Pointer segmentation){
     mitk::Image::Pointer outImg = mitk::Image::New();
     mitk::CastToMitkImage(im, outImg);
     return outImg;
+}
+
+QString fromBool(bool value){
+    return (value) ? "true" : "false";
 }
