@@ -77,6 +77,7 @@ in the framework.
 QString ParseArgumentsToOutputFolder(std::string output_subfolder, int method, bool svp, bool old, QString limits, QString thresString);
 mitk::Image::Pointer Clean(mitk::Image::Pointer segmentation);
 QString fromBool(bool value);
+void PrintGeometry(mitk::Image::Pointer someImg, std::string name);
 
 int main(int argc, char* argv[]) {
     mitkCommandLineParser parser;
@@ -356,8 +357,16 @@ int main(int argc, char* argv[]) {
         ImageTypeCHAR::Pointer segITK = ImageTypeCHAR::New();
         ImageTypeSHRT::Pointer lgeITK = ImageTypeSHRT::New();
 
-        mitk::CastToItkImage(Clean(mitk::IOUtil::Load<mitk::Image>((direct + "/" + pveinsname).toStdString())), segITK);
-        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeITK);
+        mitk::Image::Pointer seg = Clean(mitk::IOUtil::Load<mitk::Image>((direct + "/" + pveinsname).toStdString()));
+        mitk::Image::Pointer lge = mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString());
+
+        seg->SetGeometry(lge->GetGeometry());
+
+        PrintGeometry(seg, "Segmentation");
+        PrintGeometry(lge, "LGE");
+
+        mitk::CastToItkImage(seg, segITK);
+        mitk::CastToItkImage(lge, lgeITK);
 
         itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::Pointer resampleFilter;
         resampleFilter = itk::ResampleImageFilter<ImageTypeCHAR, ImageTypeCHAR>::New();
@@ -388,10 +397,13 @@ int main(int argc, char* argv[]) {
         erosionFilter->UpdateLargestPossibleRegion();
         mitk::Image::Pointer roiImage = mitk::Image::New();
         roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
-        // mitk::IOUtil::Save(roiImage, (outputFolder + "ROI.nii").toStdString());
+        roiImage->SetGeometry(lge->GetGeometry());
+        PrintGeometry(roiImage, "ROI");
+
+        mitk::IOUtil::Save(roiImage, (outputFolder + "ROI.nii").toStdString());
 
         ImageType::Pointer lgeFloat = ImageType::New();
-        mitk::CastToItkImage(mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString()), lgeFloat);
+        mitk::CastToItkImage(lge, lgeFloat);
 
         double mean = 0.0, stdv = 0.0;
         scar->CalculateMeanStd(mitk::ImportItkImage(lgeFloat), roiImage, mean, stdv);
@@ -527,4 +539,14 @@ mitk::Image::Pointer Clean(mitk::Image::Pointer segmentation){
 
 QString fromBool(bool value){
     return (value) ? "true" : "false";
+}
+
+void PrintGeometry(mitk::Image::Pointer someImg, std::string name) {
+    std::cout << "Image (" << name << ") Geometry: " << '\n';
+    std::cout << "Origin: " << someImg->GetGeometry()->GetOrigin() << '\n';
+    std::cout << "Spacing: " << someImg->GetGeometry()->GetSpacing() << '\n';
+    std::cout << "Direction: " << '\n';
+    std::cout << someImg->GetGeometry()->GetMatrixColumn(0) << '\n';
+    std::cout << someImg->GetGeometry()->GetMatrixColumn(1) << '\n';
+    std::cout << someImg->GetGeometry()->GetMatrixColumn(2) << '\n';
 }
