@@ -417,7 +417,7 @@ int main(int argc, char* argv[]) {
 
         mitk::IOUtil::Save(scarShell, (outputFolder + outname).toStdString());
         scar->SaveNormalisedScalars(mean, scarShell, outputFolder + "Normalised_" + outname);
-        scar->SaveScarDebugImage("Max_debugScar.nii", outputFolder);
+        scar->SaveScarDebugImage("DEBUG_" + outname , outputFolder);
 
         QFileInfo fi2(outputFolder + outname);
         QString prothresfile = fi2.baseName() + "_prodStats.txt";
