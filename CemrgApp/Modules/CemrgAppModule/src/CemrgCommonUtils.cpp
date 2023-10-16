@@ -1280,6 +1280,57 @@ double CemrgCommonUtils::GetSphereParametersFromLandmarks(mitk::PointSet::Pointe
     return radius;
 }
 
+bool CemrgCommonUtils::GetCellMaxAndMinScalars(mitk::Surface::Pointer surface, double &max, double &min, QString fieldname) {
+    double max_scalar=-1, min_scalar=1e9; 
+
+    vtkCellData *cellData = surface->GetVtkPolyData()->GetCellData();
+    if (!cellData) {
+        MITK_ERROR << "No cell data found";
+        return false;
+    }
+
+    int numArrays = cellData->GetNumberOfArrays();
+
+    // find arrayname=elemtag and if not use 0 
+    int elemTagArrayIndex = 0;
+    int countFails = 0;
+    for (int ix = 0; ix<numArrays; ix++) {
+        vtkDataArray* dataArray = cellData->GetArray(ix);
+        if (!dataArray) {
+            countFails++;
+            continue;
+        }
+
+        const char* arrayName = dataArray->GetName(); 
+        std::cout << "Array name: " << ix << ": " << arrayName << std::endl;
+        QString qArrayName = QString(arrayName);
+        if (qArrayName.contains(fieldname, Qt::CaseInsensitive)) {
+            elemTagArrayIndex = ix;
+            break;
+        }
+    }
+
+    if (countFails == numArrays) {
+        MITK_ERROR << "No cell data found";
+        return false;
+    }
+
+    vtkDataArray *processDataArray = cellData->GetArray(elemTagArrayIndex);
+    for (vtkIdType jx = 0; jx < surface->GetVtkPolyData()->GetNumberOfCells(); jx++) {
+        double s = processDataArray->GetTuple1(jx);
+        if (s > max_scalar)
+            max_scalar = s;
+        if (s < min_scalar)
+            min_scalar = s;
+    }
+
+    max = max_scalar;
+    min = min_scalar;
+
+    return true;
+
+}
+
 //UTILities for CARP - operations with .elem and .pts files
 void CemrgCommonUtils::OriginalCoordinates(QString imagePath, QString pointPath, QString outputPath, double scaling) {
     if (QFileInfo::exists(imagePath) && QFileInfo::exists(pointPath)) {

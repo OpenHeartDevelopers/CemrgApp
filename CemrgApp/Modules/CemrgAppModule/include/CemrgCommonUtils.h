@@ -84,6 +84,8 @@ public:
     static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num=0);
     static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="", int pad_num=0);
     static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre);
+    static bool GetCellMaxAndMinScalars(mitk::Surface::Pointer surface, double &max, double &min, QString fieldname = "scalars");
+    static bool GetPointMaxAndMinScalars(mitk::Surface::Pointer surface, double &max, double &min, QString fieldname = "scalars");
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
