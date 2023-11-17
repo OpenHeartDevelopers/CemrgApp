@@ -89,8 +89,8 @@ public:
     static void FillHoles(mitk::Surface::Pointer surf, QString dir = "", QString vtkname = "");
     static void GetMinMaxScalars(mitk::Surface::Pointer surf, double &min_val, double &max_val, bool fromCellData = false);
 
-    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
-    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath = "");
+    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num = 0);
+    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath = "", int pad_num = 0);
 
     static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double *centre);
 
