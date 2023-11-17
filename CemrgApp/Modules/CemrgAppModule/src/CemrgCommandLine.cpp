@@ -88,6 +88,12 @@ QDialog* CemrgCommandLine::GetDialog() {
     return dial;
 }
 
+QString CemrgCommandLine::GetMirtkPath(QString commandName){
+    QString res = QCoreApplication::applicationDirPath()+"/MLib";
+    res += (!commandName.isEmpty()) ? ("/"+commandName) : "";
+    return res;
+};
+
 /***************************************************************************
  ****************** Execute Plugin Specific Functions **********************
  ***************************************************************************/
@@ -244,7 +250,7 @@ void CemrgCommandLine::ExecuteRegistration(QString dir, QString fixed, QString m
 
     if (!fixedfullpath.contains(".nii", Qt::CaseSensitive)) fixedfullpath += ".nii";
     if (!movingfullpath.contains(".nii", Qt::CaseSensitive)) movingfullpath += ".nii";
-    if (!outAbsolutePath.contains(".dof", Qt::CaseSensitive)) movingfullpath += ".dof";
+    if (!outAbsolutePath.contains(".dof", Qt::CaseSensitive)) outAbsolutePath += ".dof";
 
     MITK_INFO << ("[...] MOVING (source): " + movingfullpath).toStdString();
     MITK_INFO << ("[...] FIXED (target): " + fixedfullpath).toStdString();

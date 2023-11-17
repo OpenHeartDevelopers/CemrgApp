@@ -33,6 +33,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QmitkAbstractView.h>
 #include "ui_QmitkCemrgAppCartoExport.h"
 #include "ui_QmitkCemrgAppImagePadding.h"
+#include "ui_QmitkCemrgAppMirtkOptions.h"
 #include "ui_QmitkCemrgAppCommonToolsControls.h"
 
 /**
@@ -63,6 +64,11 @@ protected slots:
     void BinariseImage();
     void ResampleReorientConvert();
 
+    void MirtkOptsSelection();
+    void MirtkOptsRegister();
+    void MirtkOptsTransform();
+    void MirtkOptsInvRegister();
+    void MirtkOptsBrowse(const QString& buttDir);
 protected:
 
     virtual void CreateQtPartControl(QWidget *parent) override;
@@ -72,6 +78,7 @@ protected:
     Ui::QmitkCemrgAppCommonToolsControls m_Controls;
     Ui::QmitkCemrgAppCartoExport m_CartoUIThresholding;
     Ui::QmitkCemrgAppImagePadding m_ImagePadding;
+    Ui::QmitkCemrgAppMirtkOptions m_MirtkUIOptions;
 };
 
 #endif // QmitkCemrgAppCommonTools_h

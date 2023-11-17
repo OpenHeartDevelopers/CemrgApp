@@ -28,6 +28,8 @@ PURPOSE.  See the above copyright notices for more information.
 
 // ITK
 #include <itkNearestNeighborInterpolateImageFunction.h>
+#include <itkAddImageFilter.h>
+#include <itkSubtractImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkImageRegionIteratorWithIndex.h>
 #include <itkResampleImageFilter.h>
@@ -72,6 +74,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <vtkPolyDataToImageStencil.h>
 #include <vtkImageStencil.h>
 #include <vtkFillHolesFilter.h>
+#include <vtkImplicitPolyDataDistance.h>
 
 // Qmitk
 #include <mitkBoundingObjectCutter.h>
@@ -89,6 +92,7 @@ PURPOSE.  See the above copyright notices for more information.
 // Qt
 #include <QMessageBox>
 #include <QString>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
@@ -167,6 +171,20 @@ mitk::DataNode::Pointer CemrgCommonUtils::GetCuttingNode() {
     return cuttingNode;
 }
 
+QString CemrgCommonUtils::GetFilePath(QString dir, QString nameSubstring, QString extension){
+QString result = "";
+QDirIterator searchit(dir, QDirIterator::Subdirectories);
+while(searchit.hasNext()) {
+    QFileInfo searchfinfo(searchit.next());
+    if (searchfinfo.fileName().contains(extension, Qt::CaseSensitive)) {
+        if (searchfinfo.fileName().contains((nameSubstring), Qt::CaseSensitive))
+            result = searchfinfo.absoluteFilePath();
+    }
+}//_while
+
+return result;
+}
+
 mitk::Image::Pointer CemrgCommonUtils::Downsample(mitk::Image::Pointer image, int factor) {
 
     typedef itk::Image<short, 3> ImageType;
@@ -214,14 +232,14 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(mitk::Image::Poi
         ResampleImageFilterType::Pointer resampler = ResampleImageFilterType::New();
 
         if(isBinary){
+            typedef itk::NearestNeighborInterpolateImageFunction<ImageType, double> NearestInterpolatorType;
+            NearestInterpolatorType::Pointer nnInterp = NearestInterpolatorType::New();
+            resampler->SetInterpolator(nnInterp);
+        } else{
             typedef itk::BSplineInterpolateImageFunction<ImageType, double, double> BSplineInterpolatorType;
             BSplineInterpolatorType::Pointer bsplineInterp = BSplineInterpolatorType::New();
             bsplineInterp->SetSplineOrder(3);
             resampler->SetInterpolator(bsplineInterp);
-        } else{
-            typedef itk::NearestNeighborInterpolateImageFunction<ImageType, double> NearestInterpolatorType;
-            NearestInterpolatorType::Pointer nnInterp = NearestInterpolatorType::New();
-            resampler->SetInterpolator(nnInterp);
         }
 
         resampler->SetInput(itkInputImage);
@@ -269,7 +287,7 @@ mitk::Image::Pointer CemrgCommonUtils::IsoImageResampleReorient(QString imPath, 
     return CemrgCommonUtils::IsoImageResampleReorient(mitk::IOUtil::Load<mitk::Image>(imPath.toStdString()), resample, reorientToRAI, isBinary);
 }
 
-void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
+mitk::Image::Pointer CemrgCommonUtils::ReturnBinarised(mitk::Image::Pointer image){
     using ImageType = itk::Image<float, 3>;
     using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
 
@@ -280,27 +298,7 @@ void CemrgCommonUtils::Binarise(mitk::Image::Pointer image, float background){
 
     imIter.GoToBegin();
     while(!imIter.IsAtEnd()){
-        float value = (imIter.Get() > background) ? 1 : 0;
-        imIter.Set(value);
-
-        ++imIter;
-    }
-
-    image = mitk::ImportItkImage(im)->Clone();
-}
-
-mitk::Image::Pointer CemrgCommonUtils::ReturnBinarised(mitk::Image::Pointer image, float background){
-    using ImageType = itk::Image<float, 3>;
-    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
-
-    ImageType::Pointer im = ImageType::New();
-    mitk::CastToItkImage(image, im);
-
-    IteratorType imIter(im, im->GetLargestPossibleRegion());
-
-    imIter.GoToBegin();
-    while(!imIter.IsAtEnd()){
-        float value = (imIter.Get() > background) ? 1 : 0;
+        float value = (imIter.Get() > 0) ? 1 : 0;
         imIter.Set(value);
 
         ++imIter;
@@ -441,7 +439,96 @@ void CemrgCommonUtils::SetSegmentationEdgesToZero(mitk::Image::Pointer image, QS
     }
 }
 
-void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath) {
+mitk::Image::Pointer CemrgCommonUtils::Zeros(mitk::Image::Pointer image){
+    using ImageType = itk::Image<short,3>;
+
+    ImageType::Pointer outputImg = ImageType::New();
+    mitk::CastToItkImage(image->Clone(), outputImg);
+
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    IteratorType imIter(outputImg, outputImg->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        imIter.Set(0);
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outim = mitk::Image::New();
+    mitk::CastToMitkImage(outputImg, outim);
+
+    return outim;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::Zeros(int sx, int sy, int sz, int ox, int oy, int oz){
+    using ImageType = itk::Image<short,3>;
+
+    ImageType::Pointer outputImg = ImageType::New();
+    ImageType::IndexType start;
+    start[0] = ox; start[1] = oy; start[2] = oz;
+
+    ImageType::SizeType size;
+    size[0] = sx; size[1] = sy; size[2] = sz;
+
+    ImageType::RegionType region;
+    region.SetSize(size);
+    region.SetIndex(start);
+
+    outputImg->SetRegions(region);
+    outputImg->Allocate();
+
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    IteratorType imIter(outputImg, outputImg->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        imIter.Set(0);
+        ++imIter;
+    }
+
+    mitk::Image::Pointer outim = mitk::Image::New();
+    mitk::CastToMitkImage(outputImg, outim);
+
+    return outim;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::AddImage(mitk::Image::Pointer im1, mitk::Image::Pointer im2){
+    using ImageType = itk::Image<short,3>;
+    using AddFilterType = itk::AddImageFilter<ImageType, ImageType, ImageType>;
+
+    ImageType::Pointer itk1 = ImageType::New();
+    ImageType::Pointer itk2 = ImageType::New();
+    CastToItkImage(im1, itk1);
+    CastToItkImage(im2, itk2);
+
+    AddFilterType::Pointer sum = AddFilterType::New();
+    sum->SetInput1(itk1);
+    sum->SetInput2(itk2);
+    sum->Update();
+
+    mitk::Image::Pointer outputIm = mitk::ImportItkImage(sum->GetOutput())->Clone();
+    return outputIm;
+}
+
+mitk::Image::Pointer CemrgCommonUtils::ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background){
+    using ImageType = itk::Image<short, 3>;
+    using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+
+    imIter.GoToBegin();
+    while(!imIter.IsAtEnd()){
+        float value = (imIter.Get() > threshold) ? foreground : background;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    return mitk::ImportItkImage(im)->Clone();
+}
+
+void CemrgCommonUtils::RoundPixelValues(QString pathToImage, QString outputPath){
     QFileInfo fi(pathToImage);
     if (fi.exists()) {
         using ImageType = itk::Image<double, 3>;
@@ -611,7 +698,39 @@ mitk::Surface::Pointer CemrgCommonUtils::ClipWithSphere(mitk::Surface::Pointer s
     return surface;
 }
 
-void CemrgCommonUtils::FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname) {
+void CemrgCommonUtils::ClipWithPolydata(mitk::Surface::Pointer surface, mitk::Surface::Pointer clipper, QString saveToPath){
+
+    vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
+    implicitFn->SetInput(clipper->GetVtkPolyData());
+    vtkMTimeType mtime = implicitFn->GetMTime();
+    std::cout << "MTime: " << mtime<< std::endl ;
+    vtkSmartPointer<vtkClipPolyData> mvclipper = vtkSmartPointer<vtkClipPolyData>::New();
+    mvclipper->SetClipFunction(implicitFn);
+    mvclipper->SetInputData(surface->GetVtkPolyData());
+    mvclipper->InsideOutOff();
+    mvclipper->Update();
+
+    vtkSmartPointer<vtkDataSetSurfaceFilter> surfer = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+    surfer->SetInputData(mvclipper->GetOutput());
+    surfer->Update();
+
+    vtkSmartPointer<vtkCleanPolyData> clean = vtkSmartPointer<vtkCleanPolyData>::New();
+    clean->SetInputConnection(surfer->GetOutputPort());
+    clean->Update();
+
+    vtkSmartPointer<vtkPolyDataConnectivityFilter> lrgRegion = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+    lrgRegion->SetInputConnection(clean->GetOutputPort());
+    lrgRegion->SetExtractionModeToLargestRegion();
+    lrgRegion->Update();
+    clean = vtkSmartPointer<vtkCleanPolyData>::New();
+    clean->SetInputConnection(lrgRegion->GetOutputPort());
+    clean->Update();
+
+    surface->SetVtkPolyData(clean->GetOutput());
+    mitk::IOUtil::Save(surface, saveToPath.toStdString());
+}
+
+void CemrgCommonUtils::FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname){
 
     //Prepare points for MITK visualisation - (CemrgCommonUtils::LoadVTKMesh)
     vtkSmartPointer<vtkPolyData> pd = surf->GetVtkPolyData();
@@ -1278,6 +1397,30 @@ double CemrgCommonUtils::GetSphereParametersFromLandmarks(mitk::PointSet::Pointe
     centre[2] = z_c;
 
     return radius;
+}
+
+void CemrgCommonUtils::GetMinMaxScalars(mitk::Surface::Pointer surf, double& min_val, double& max_val, bool fromCellData){
+    double max_scalar=-1, min_scalar=1e9;
+    vtkIdType total;
+    vtkSmartPointer<vtkFloatArray> scalars = vtkSmartPointer<vtkFloatArray>::New();
+    if (fromCellData){
+        scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetCellData()->GetScalars());
+        total=surf->GetVtkPolyData()->GetNumberOfPoints();
+    } else{
+        scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetPointData()->GetScalars());
+        total=surf->GetVtkPolyData()->GetNumberOfCells();
+    }
+
+    for (vtkIdType i = 0; i < total; i++) {
+        double s = scalars->GetTuple1(i);
+        if (s > max_scalar)
+            max_scalar = s;
+        if (s < min_scalar)
+            min_scalar = s;
+    }
+
+    min_val=min_scalar;
+    max_val=max_scalar;
 }
 
 //UTILities for CARP - operations with .elem and .pts files

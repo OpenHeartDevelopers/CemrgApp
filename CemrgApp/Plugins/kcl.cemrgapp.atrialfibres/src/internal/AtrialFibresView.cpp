@@ -381,7 +381,6 @@ void AtrialFibresView::AnalysisChoice(){
             // CemrgCommonUtils::SavePadImageWithConstant(Path(tagName+".nii"));
 
             mitk::Image::Pointer im = CemrgCommonUtils::ReturnBinarised(mitk::IOUtil::Load<mitk::Image>(StdStringPath(tagName+".nii")));
-            // CemrgCommonUtils::Binarise(im);
             mitk::IOUtil::Save(im, StdStringPath(tagName+".nii"));
             CemrgCommonUtils::AddToStorage(im, tagName.toStdString(), this->GetDataStorage());
 

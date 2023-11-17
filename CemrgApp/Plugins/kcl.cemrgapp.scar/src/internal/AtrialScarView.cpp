@@ -123,6 +123,10 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.button_z, SIGNAL(clicked()), this, SLOT(ClipperMV()));
     connect(m_Controls.button_s, SIGNAL(clicked()), this, SLOT(Sphericity()));
     connect(m_Controls.button_c, SIGNAL(clicked()), this, SLOT(ExtraCalcs()));
+    connect(m_Controls.button_c_fandi, SIGNAL(clicked()), this, SLOT(ExtraCalcsEvaluatePvi()));
+    connect(m_Controls.button_c_extclippers, SIGNAL(clicked()), this, SLOT(ExtraCalcsApplyExternalClippers()));
+    connect(m_Controls.button_c_fixpv, SIGNAL(clicked()), this, SLOT(ExtraCalcsFixClippers()));
+
     connect(m_Controls.button_r, SIGNAL(clicked()), this, SLOT(ResetMain()));
 
     //Sub-buttons signals
@@ -142,6 +146,9 @@ void AtrialScarView::CreateQtPartControl(QWidget *parent) {
     m_Controls.button_y->setVisible(false);
     m_Controls.button_z->setVisible(false);
     m_Controls.button_s->setVisible(false);
+    m_Controls.button_c_fandi->setVisible(false);
+    m_Controls.button_c_extclippers->setVisible(false);
+    m_Controls.button_c_fixpv->setVisible(false);
 
     //Set visibility of sub-buttons
     m_Controls.button_2_1->setVisible(false);
@@ -1123,7 +1130,19 @@ void AtrialScarView::ClipPVeins() {
     this->GetSite()->GetPage()->ShowView("org.mitk.views.scarclipper");
 }
 
-void AtrialScarView::ExtraCalcs() {
+void AtrialScarView::ExtraCalcs(){
+    if(m_Controls.button_c_fandi->isVisible()){
+        m_Controls.button_c_fandi->setVisible(false);
+        m_Controls.button_c_extclippers->setVisible(false);
+        m_Controls.button_c_fixpv->setVisible(false);
+    } else{
+        m_Controls.button_c_fandi->setVisible(true);
+        m_Controls.button_c_extclippers->setVisible(true);
+        m_Controls.button_c_fixpv->setVisible(true);
+    }
+}
+
+void AtrialScarView::ExtraCalcsEvaluatePvi() {
     MITK_INFO << "[INFO] Calling view org.mitk.views.scarcalculations" << std::endl;
     if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
 
@@ -1138,6 +1157,146 @@ void AtrialScarView::ExtraCalcs() {
     }
     ScarCalculationsView::GetInputsFromFile();
     this->GetSite()->GetPage()->ShowView("org.mitk.views.scarcalculations");
+}
+
+void AtrialScarView::ExtraCalcsApplyExternalClippers(){
+    // Check for selection of images
+    QList<mitk::DataNode::Pointer> nodes = this->GetDataManagerSelection();
+    if (nodes.size() != 1) {
+        MITK_WARN << ("[Transform] Problem with selection. Selection size: " + QString::number(nodes.size())).toStdString();
+        QMessageBox::warning(NULL, "Attention", "Please select the corresponding segmentation to transform!");
+        return;
+    }
+
+    if (!RequestProjectDirectoryFromUser()) return; // if the path was chosen incorrectly -> returns.
+
+    // Find the selected node
+    QString path, pathTemp;
+    mitk::DataNode::Pointer segNode = nodes.at(0);
+    mitk::BaseData::Pointer data = segNode->GetData();
+    if (data) {
+        // Test if this data item is an image
+        mitk::Image::Pointer image = dynamic_cast<mitk::Image *>(data.GetPointer());
+        if (image) {
+
+            QStringList options;
+            options << tr("PV") << tr("MV") << tr("Both");
+
+            bool ok;
+            QString item = QInputDialog::getItem(NULL, "User Input", "Clipping option:", options, 1, false, &ok);
+            MITK_INFO << item.toStdString();
+
+            if (ok){
+                bool doPV = (item.contains("PV") || item.contains("Both"));
+                bool doMV = (item.contains("MV") || item.contains("Both"));
+
+                std::string msg;
+                std::string dir = directory.toStdString();
+                QString pveinsCroppedPath = (directory + "/PVeinsCroppedImage.nii");
+                if (doPV) {
+                    msg = "Select the cutter file (normally called: prodCutterN)";
+                    QMessageBox::information(NULL, "Attention!", msg.c_str());
+                    QString input1 = QFileDialog::getOpenFileName(NULL, msg.c_str(), dir.c_str(), QmitkIOUtil::GetFileOpenFilterString());
+                    if (!input1.isEmpty()) {
+                        int reply = Ask("Single Cutter vs Multiple", "Find all available cutters?");
+                        int sizeNameAdjust = (reply == QMessageBox::Yes) ? 1 : 0;
+                        QFileInfo fi(input1);
+                        QString base = fi.baseName().left(fi.baseName().size() - sizeNameAdjust);
+                        QDirIterator qiter(fi.absolutePath(), {base + "*.vtk", base + "*TNormals.txt"}, QDir::Files);
+                        QStringList cutfiles, normfiles;
+                        while (qiter.hasNext()) {
+                            QString thisFile = qiter.next();
+                            if (thisFile.contains("TNormals")) {
+                                normfiles.push_back(thisFile);
+                            }
+                            else {
+                                cutfiles.push_back(thisFile);
+                            }
+                        }
+                        cutfiles.sort();
+                        normfiles.sort();
+
+                        mitk::Surface::Pointer shell = LoadSurfaceFromSegmentation(directory, "segmentation", "LA-reg");
+
+                        vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
+                        deci->SetInputData(shell->GetVtkPolyData());
+                        deci->SetTargetReduction(0.1);
+                        deci->PreserveTopologyOn();
+                        deci->Update();
+                        shell->SetVtkPolyData(deci->GetOutput());
+
+                        std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, shell));
+                        clipper->ClipVeinsImgFromFileList(cutfiles, normfiles, image, "PVeins");
+
+                        int strel_radius = 3;
+                        bool rewriteFile = true;
+
+                        CemrgAtriaClipper::FixClippingErrors(pveinsCroppedPath, strel_radius, rewriteFile);
+
+                        std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+                        QString output2 = cmd->ExecuteSurf(directory, pveinsCroppedPath, "close", 1, .5, 0, 10);
+                        mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
+                    }
+                }
+
+                if (doMV) {
+                    mitk::Surface::Pointer LAShell = LoadSurfaceFromSegmentation(directory, "segmentation", "PVeinsCroppedImage");
+
+                    msg = "Select the mitral valve file (normally called: prodMVI)";
+                    QMessageBox::information(NULL, "Attention!", msg.c_str());
+                    QString mviPath = QFileDialog::getOpenFileName(NULL, msg.c_str(), dir.c_str(), QmitkIOUtil::GetFileOpenFilterString());
+                    if (!mviPath.isEmpty()) {
+                        MITK_INFO << ("Clipping Mitral valve with file: " + mviPath).toStdString();
+                        mitk::Surface::Pointer mvclipper = mitk::IOUtil::Load<mitk::Surface>(mviPath.toStdString());
+                        CemrgCommonUtils::FlipXYPlane(mvclipper, directory, "");
+                        CemrgCommonUtils::ClipWithPolydata(LAShell, mvclipper, directory + "/segmentation.vtk");
+                    }
+                }
+            }
+        } // if_image
+    } // if_data
+}
+
+void AtrialScarView::ExtraCalcsFixClippers(){
+    // load V=PVeinsCroppedImage
+    std::string msg = "Open the PVeinsCroppedImage.nii file";
+    QMessageBox::information(NULL, "Attention", msg.c_str());
+
+    QString pathPVeinsCropped = QFileDialog::getOpenFileName(NULL, msg.c_str());
+    QFileInfo fi(pathPVeinsCropped);
+    mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(pathPVeinsCropped.toStdString());
+
+    if (image) {
+        
+        msg = "Overwrite file: [" + fi.baseName().toStdString() + "]?\n\n";
+        msg += "Click NO to save file as [New_" + fi.baseName().toStdString() + "]";
+
+        int reply = Ask("Question", msg.c_str());
+        
+        QString prefix = (reply == QMessageBox::Yes) ? "" : "New_";
+        QString outputPath = fi.absolutePath() + "/" + prefix + fi.baseName() + "." + fi.completeSuffix();
+
+        // dialog: size of morphological operator (default=3)
+        int strel_radius = 3;
+        int value = 3, min_value = 1, max_value=15, increment=1;
+        QString qmsg = "Set the parameter for the morphological operator (default=3)";
+        strel_radius = QInputDialog::getInt(NULL, "Input parameter", qmsg, value, min_value, max_value, increment);
+
+        MITK_INFO << ("Morphological operator structuring element radius: " + QString::number(strel_radius)).toStdString();
+        mitk::Image::Pointer outputImg = CemrgAtriaClipper::FixClippingErrors(image, strel_radius);
+        if (outputImg){
+            // Save image
+            mitk::IOUtil::Save(outputImg, outputPath.toStdString());
+
+            msg = "File created successfully";
+            QMessageBox::information(NULL, "Attention", msg.c_str());
+
+        } else{
+            msg = "File not created. Errors in processing.";
+            QMessageBox::warning(NULL, "Attention", msg.c_str());
+        }
+
+    } // if_image
 }
 
 void AtrialScarView::CreateSurf() {
@@ -1305,6 +1464,7 @@ void AtrialScarView::SelectLandmarks() {
             if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos)
                 this->GetDataStorage()->Remove(nodeIt->Value());
         CemrgCommonUtils::AddToStorage(mvClipper, "MVClipper", this->GetDataStorage(), false);
+        mitk::IOUtil::Save(mvClipper, (directory+"/prodMVI.vtk").toStdString());
         sob = this->GetDataStorage()->GetAll();
         for (mitk::DataStorage::SetOfObjects::ConstIterator nodeIt = sob->Begin(); nodeIt != sob->End(); ++nodeIt) {
             if (nodeIt->Value()->GetName().find("MVClipper") != nodeIt->Value()->GetName().npos) {
@@ -1431,11 +1591,14 @@ void AtrialScarView::ScarMap() {
                 if (dialogCode == QDialog::Accepted) {
 
                     bool ok1, ok2;
-                    int minStep = m_UIScar.lineEdit_1->text().toInt(&ok1);
-                    int maxStep = m_UIScar.lineEdit_2->text().toInt(&ok2);
+                    int minStep = m_UIScar.line_roi_minStep->text().toInt(&ok1);
+                    int maxStep = m_UIScar.line_roi_maxStep->text().toInt(&ok2);
                     int methodType = m_UIScar.radioButton_1->isChecked() ? 2 : 1;
                     QString meType = m_UIScar.radioButton_1->isChecked() ? "Max" : "Mean";
-                    bool voxelBasedProjection = m_UIScar.checkBox->isChecked();
+                    
+                    bool voxelBasedProjection = m_UIScar.check_roi_voxelBased->isChecked();
+                    bool UseRoiLegacyNormals = m_UIScar.check_roi_legacyNormals->isChecked();
+                    bool UseRoiRadius = m_UIScar.check_roi_radius->isChecked();
 
                     //Set default values
                     if (!ok1 || !ok2)
@@ -1444,6 +1607,19 @@ void AtrialScarView::ScarMap() {
                     if (!ok2) maxStep = 3;
                     //_if
 
+                    std::string msg;
+                    if (UseRoiLegacyNormals){
+                        msg = "Using an old version of the normals algorithm. Setting ROI radius option to ON.";
+                        UseRoiRadius = true;
+                        QMessageBox::warning(NULL, "Attention", msg.c_str());
+                        MITK_WARN << msg; 
+                    }
+
+                    if (!UseRoiRadius){
+                        msg = "The volume of the projection ROI is reduced and might cause a problem with scar calculation.";
+                        QMessageBox::warning(NULL, " Attention ", msg.c_str());
+                        MITK_WARN << msg;
+                    }
                     /*
                      * Producibility Test
                      **/
@@ -1465,6 +1641,9 @@ void AtrialScarView::ScarMap() {
                     scar->SetMaxStep(maxStep);
                     scar->SetMethodType(methodType);
                     scar->SetVoxelBasedProjection(voxelBasedProjection);
+                    scar->SetRoiLegacyNormals(UseRoiLegacyNormals);
+                    scar->SetRoiRadiusOption(UseRoiRadius);
+
                     mitk::Image::Pointer scarSegImg;
                     try {
                         QString path = directory + "/" + fileName;
@@ -1507,7 +1686,8 @@ void AtrialScarView::ScarMap() {
                     mitk::DataNode::Pointer node = CemrgCommonUtils::AddToStorage(shell, (meType + "Scar3D").toStdString(), this->GetDataStorage());
 
                     MITK_INFO << "Saving debug scar map labels.";
-                    scar->SaveScarDebugImage(meType + "_debugSCAR.nii", directory);
+                    // scar->SaveScarDebugImage(meType + "_debugSCAR.nii", directory);
+                    scar->SaveScarDebugImage("DebugSCAR_" + scar->GetPathToScarMap("", ""), directory);
 
                     //Check to remove the previous mesh node
                     sob = this->GetDataStorage()->GetAll();
@@ -1532,7 +1712,7 @@ void AtrialScarView::ScarMap() {
                     //Save the vtk mesh
                     QString name(imgNode->GetName().c_str());
                     name = name.right(name.length() - name.lastIndexOf("-") - 1);
-                    pathToScarMap = directory + "/" + name + "-" + meType + "Scar.vtk";
+                    pathToScarMap = scar->GetPathToScarMap(directory, name);
                     mitk::IOUtil::Save(shell, pathToScarMap.toStdString());
 
                     mitk::ProgressBar::GetInstance()->Progress();
@@ -1636,12 +1816,6 @@ void AtrialScarView::Threshold() {
                     return;
                 }
 
-                if(!pathToScarMap.isEmpty()){
-                    MITK_INFO << "Saving normalised scar map.";
-                    mitk::Surface::Pointer scarShell = mitk::IOUtil::Load<mitk::Surface>(pathToScarMap.toStdString());
-                    scar->SaveNormalisedScalars(mean, scarShell, (directory + "/" + "MaxScar_Normalised.vtk"));
-                }
-
             } else {
                 QMessageBox::warning(NULL, "Attention", "The scar map from the previous step has not been generated!");
                 return;
@@ -1673,7 +1847,9 @@ void AtrialScarView::Threshold() {
         mitk::ProgressBar::GetInstance()->AddStepsToDo(1);
 
         double percentage = 0;
+        double scarArea = 0;
         double thresh = (methodType == 1) ? mean * value : mean + value * stdv;
+        double totalVolume=0.0, totalArea=0.0;
 
         /*
          * Producibility Test
@@ -1683,10 +1859,30 @@ void AtrialScarView::Threshold() {
          * End Test
          **/
 
-        if (scar) percentage = scar->Thresholding(thresh);
+
+        if (scar){
+            percentage = scar->Thresholding(thresh);
+
+            if(pathToScarMap.isEmpty()){
+                pathToScarMap = QFileDialog::getOpenFileName(NULL, "Open Max Scar file", directory.toStdString().c_str(), tr("Mesh (*.vtk)"));
+            }
+
+            mitk::Surface::Pointer scarShell = mitk::IOUtil::Load<mitk::Surface>(pathToScarMap.toStdString());
+
+            MITK_INFO << "Getting Scar Area and shell volume/area";
+            scar->GetSurfaceAreaAndVolume(scarShell, totalVolume, totalArea);
+            scarArea = totalArea * (percentage/100);
+
+            MITK_INFO << "Saving normalised scar map.";
+            scar->SaveNormalisedScalars(mean, scarShell, (directory + "/" + "MaxScar_Normalised.vtk"));
+        }
+
         std::ostringstream os;
         os << std::fixed << std::setprecision(2) << percentage;
-        QString message = "The percentage scar is " + QString::fromStdString(os.str()) + "% of total segmented volume.";
+        QString message = "The percentage scar is " + QString::fromStdString(os.str()) + "% of total segmented volume.\n";
+        message += "\nThe total estimated atrial surface area is " + QString::number(totalArea) + " (mm^2)";
+        message += "\nThe estimated fibrosis area is " + QString::number(scarArea)+ " (mm^2)";
+        message += "\n\nThe estimated atrial volume is " + QString::number(totalVolume) + " (mm^3)";
         QMessageBox::information(NULL, "Scar Quantification", message);
 
         mitk::ProgressBar::GetInstance()->Progress();
@@ -1840,4 +2036,33 @@ bool AtrialScarView::RequestProjectDirectoryFromUser() {
     }//_if
 
     return succesfulAssignment;
+}
+
+int AtrialScarView::Ask(std::string title, std::string msg){
+    return QMessageBox::question(NULL, title.c_str(), msg.c_str(), QMessageBox::Yes, QMessageBox::No);
+}
+
+mitk::Surface::Pointer AtrialScarView::LoadSurfaceFromSegmentation(QString dir, QString meshname, QString segname)
+{
+    mitk::Surface::Pointer shell = mitk::Surface::New();
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+
+    QString segvtk = CemrgCommonUtils::GetFilePath(dir, meshname, ".vtk");
+
+    bool file_found = !segvtk.isEmpty();
+    int reply_execute_surf = QMessageBox::No;
+
+    if (file_found) {
+        reply_execute_surf = Ask("File found. Replace?", "The <segmentation.vtk> file was found in the working folder.\n\n Overwrite it?");
+    }
+
+    bool execute_surf_option = (!file_found) || (reply_execute_surf == QMessageBox::Yes);
+
+    if (execute_surf_option) {
+        QString segCleanPath = CemrgCommonUtils::GetFilePath(dir, segname, ".nii");
+        segvtk = cmd->ExecuteSurf(dir, segCleanPath, "close", 1, .5, 0, 10);
+    }
+
+    shell = mitk::IOUtil::Load<mitk::Surface>(segvtk.toStdString());
+    return shell;
 }

@@ -56,6 +56,8 @@ class AtrialScarView: public QmitkAbstractView {
 public:
 
     static const std::string VIEW_ID;
+    int Ask(std::string title, std::string msg);
+    mitk::Surface::Pointer LoadSurfaceFromSegmentation(QString dir, QString meshname = "segmentation", QString segname = "LA-reg");
     AtrialScarView();
 
 protected slots:
@@ -78,7 +80,12 @@ protected slots:
     void ScarDebug();
     void Threshold();
     void Sphericity();
+    // Advanced Analysis buttons
     void ExtraCalcs();
+    void ExtraCalcsEvaluatePvi();
+    void ExtraCalcsApplyExternalClippers();
+    void ExtraCalcsFixClippers();
+
     void ResetMain();
 
 protected:
@@ -98,6 +105,7 @@ private:
 
     void AutomaticAnalysis();
     void Reset(bool allItems);
+
 
     // helper functions
     bool RequestProjectDirectoryFromUser();

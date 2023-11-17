@@ -48,6 +48,8 @@ public:
     ~CemrgCommandLine();
     QDialog* GetDialog();
 
+    QString GetMirtkPath(QString commandName="");
+
     //Execute Plugin Specific Functions
     QString ExecuteSurf(QString dir, QString segPath, QString morphOperation = "close", int iter = 1, float th = 0.5, int blur = 0, int smth = 10);
     QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName = "converted.inr");

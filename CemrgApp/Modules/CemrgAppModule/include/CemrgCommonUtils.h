@@ -57,8 +57,13 @@ public:
 
     // Image Analysis Utils
     static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
-    static void Binarise(mitk::Image::Pointer image, float background=0);
-    static mitk::Image::Pointer ReturnBinarised(mitk::Image::Pointer image, float background=0);
+    static mitk::Image::Pointer ReturnBinarised(mitk::Image::Pointer image);
+
+    static void Binarise(mitk::Image::Pointer image){image = CemrgCommonUtils::ImageThreshold(image, 0, 1, 0);};
+    static mitk::Image::Pointer ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background);
+    static mitk::Image::Pointer Zeros(int sx, int sy, int sz, int ox=0, int oy=0, int oz=0);
+    static mitk::Image::Pointer Zeros(mitk::Image::Pointer image);
+    static mitk::Image::Pointer AddImage(mitk::Image::Pointer im1, mitk::Image::Pointer im2);
 
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
@@ -69,27 +74,35 @@ public:
 
     // static void RoundPointDataValues(vtkSmartPointer<vtkPolyData> pd);
 
-    //Mesh Utils
+    // Mesh Utils
     static mitk::Surface::Pointer LoadVTKMesh(std::string path);
-    static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh=0.5, double blur=0.8, double smoothIterations=3, double decimation=0.5);
-    static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath="");
-    static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname="segmentation.vtk");
-    static QString M3dlibParamFileGenerator(QString dir, QString filename="param-template.par", QString thicknessCalc="0");
-    static void SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath="", QString fieldname="scalars");
-    static void SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories=false, QString outputPath="");
+    static mitk::Surface::Pointer ExtractSurfaceFromSegmentation(mitk::Image::Pointer image, double thresh = 0.5, double blur = 0.8, double smoothIterations = 3, double decimation = 0.5);
+    static mitk::Surface::Pointer ClipWithSphere(mitk::Surface::Pointer surface, double x_c, double y_c, double z_c, double radius, QString saveToPath = "");
+    static void FlipXYPlane(mitk::Surface::Pointer surf, QString dir, QString vtkname = "segmentation.vtk");
+    static void ClipWithPolydata(mitk::Surface::Pointer surface, mitk::Surface::Pointer clipper, QString saveToPath);
+
+    static QString M3dlibParamFileGenerator(QString dir, QString filename = "param-template.par", QString thicknessCalc = "0");
     static QString OpenCarpParamFileGenerator(QString dir, QString filename, QString meshname, QString zeroBoundaryName, QString oneBoundaryName);
+
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
-    static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
-    static void FillHoles(mitk::Surface::Pointer surf, QString dir="", QString vtkname="");
-    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num=0);
-    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="", int pad_num=0);
-    static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre);
+    static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData> &pd, bool celldata = true);
+    static void FillHoles(mitk::Surface::Pointer surf, QString dir = "", QString vtkname = "");
+    static void GetMinMaxScalars(mitk::Surface::Pointer surf, double &min_val, double &max_val, bool fromCellData = false);
+
+    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
+    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath = "");
+
+    static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double *centre);
+
+    static void SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath = "", QString fieldname = "scalars");
+    static void SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories = false, QString outputPath = "");
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
 
     //Generic
-    static mitk::DataNode::Pointer AddToStorage(mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init = true);
+    static mitk::DataNode::Pointer AddToStorage(mitk::BaseData *data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init = true);
+    static QString GetFilePath(QString dir, QString nameSubstring, QString extension);
     static QJsonObject CreateJSONObject(QStringList keys_list, QStringList values_list, QStringList types_list);
     static QJsonObject ReadJSONFile(QString dir, QString fname);
     static bool WriteJSONFile(QJsonObject json, QString dir, QString fname);

@@ -31,6 +31,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <mitkIOUtil.h>
 #include <mitkImageCast.h>
 #include <mitkITKImageImport.h>
+#include <mitkMorphologicalOperations.h>
 #include "CemrgAtriaClipper.h"
 
 // VTK
@@ -69,6 +70,7 @@ PURPOSE.  See the above copyright notices for more information.
 // Qt
 #include <QDebug>
 #include <QString>
+#include <QFileInfo>
 
 // CemrgApp
 #include "CemrgCommonUtils.h"
@@ -564,6 +566,237 @@ void CemrgAtriaClipper::ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::
     clippedSegImage = pvCropped;
 }
 
+mitk::Image::Pointer CemrgAtriaClipper::CreateImageCutter(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage){
+    // Type definitions for new cut seg images
+    typedef itk::Image<short, 3> ImageType;
+    typedef itk::BinaryBallStructuringElement<ImageType::PixelType, 3> BallType;
+    typedef itk::GrayscaleDilateImageFilter<ImageType, ImageType, BallType> DilationFilterType;
+
+    //Cast Seg to ITK formats
+    ImageType::Pointer segItkImage = ImageType::New();
+    ImageType::Pointer orgSegItkImage = ImageType::New();
+    ImageType::Pointer pvLblsItkImage = ImageType::New();
+    CastToItkImage(segImage, segItkImage);
+    CastToItkImage(segImage, orgSegItkImage);
+    CastToItkImage(segImage, pvLblsItkImage);
+    std::vector<ImageType::Pointer> cutRegions;
+    //Prepare empty image
+    vtkSmartPointer<vtkImageData> whiteImage = vtkSmartPointer<vtkImageData>::New();
+    double spacing[3];
+    segImage->GetVtkImageData()->GetSpacing(spacing);
+    whiteImage->SetSpacing(spacing);
+    int dimensions[3];
+    segImage->GetVtkImageData()->GetDimensions(dimensions);
+    whiteImage->SetDimensions(dimensions);
+    whiteImage->SetExtent(0, dimensions[0] - 1, 0, dimensions[1] - 1, 0, dimensions[2] - 1);
+    double origin[3];
+    segImage->GetGeometry()->GetOrigin().ToArray(origin);
+    whiteImage->SetOrigin(origin);
+    whiteImage->AllocateScalars(VTK_UNSIGNED_CHAR,1);
+    unsigned char otval = 0;
+    unsigned char inval = 255;
+    vtkIdType count = whiteImage->GetNumberOfPoints();
+    for (vtkIdType i = 0; i < count; ++i)
+        whiteImage->GetPointData()->GetScalars()->SetTuple1(i, inval);
+
+    //Sweep polygonal data to create an image
+    vtkSmartPointer<vtkLinearExtrusionFilter> extruder = vtkSmartPointer<vtkLinearExtrusionFilter>::New();
+    extruder->SetInputData(circle);
+    extruder->SetScaleFactor(1.0);
+    extruder->SetExtrusionTypeToNormalExtrusion();
+    extruder->SetVector(cline_normal);
+    extruder->Update();
+    vtkSmartPointer<vtkPolyDataToImageStencil> pol2stenc = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    pol2stenc->SetTolerance(0.5);
+    pol2stenc->SetInputConnection(extruder->GetOutputPort());
+    pol2stenc->SetOutputOrigin(origin);
+    pol2stenc->SetOutputSpacing(spacing);
+    pol2stenc->SetOutputWholeExtent(whiteImage->GetExtent());
+    pol2stenc->Update();
+    vtkSmartPointer<vtkImageStencil> imgstenc = vtkSmartPointer<vtkImageStencil>::New();
+    imgstenc->SetInputData(whiteImage);
+    imgstenc->SetStencilConnection(pol2stenc->GetOutputPort());
+    imgstenc->ReverseStencilOff();
+    imgstenc->SetBackgroundValue(otval);
+    imgstenc->Update();
+
+    //VTK to ITK conversion
+    mitk::Image::Pointer cutImg = mitk::Image::New();
+    cutImg->Initialize(imgstenc->GetOutput());
+    cutImg->SetVolume(imgstenc->GetOutput()->GetScalarPointer());
+    ImageType::Pointer cutItkImage = ImageType::New();
+    CastToItkImage(cutImg, cutItkImage);
+    itk::ResampleImageFilter<ImageType, ImageType>::Pointer resampleFilter;
+    resampleFilter = itk::ResampleImageFilter<ImageType, ImageType >::New();
+    resampleFilter->SetInput(cutItkImage);
+    resampleFilter->SetReferenceImage(segItkImage);
+    resampleFilter->SetUseReferenceImage(true);
+    resampleFilter->SetInterpolator(itk::NearestNeighborInterpolateImageFunction<ImageType>::New());
+    resampleFilter->SetDefaultPixelValue(0);
+    resampleFilter->UpdateLargestPossibleRegion();
+    cutItkImage = resampleFilter->GetOutput();
+
+    //Image Dilation
+    BallType binaryBall;
+    binaryBall.SetRadius(static_cast<unsigned long>(2.0));
+    binaryBall.CreateStructuringElement();
+    DilationFilterType::Pointer dilationFilter = DilationFilterType::New();
+    dilationFilter->SetInput(cutItkImage);
+    dilationFilter->SetKernel(binaryBall);
+    dilationFilter->UpdateLargestPossibleRegion();
+    cutImg = mitk::ImportItkImage(dilationFilter->GetOutput())->Clone();
+
+    return cutImg;
+}
+
+mitk::Image::Pointer CemrgAtriaClipper::SubtractAndLabel(mitk::Image::Pointer im, mitk::Image::Pointer cutIm){
+    //Type definitions for new cut seg images
+    typedef itk::Image<short, 3> ImageType;
+    typedef itk::ImageRegionIteratorWithIndex<ImageType> ItType;
+    typedef itk::SubtractImageFilter<ImageType, ImageType, ImageType> SubtractFilterType;
+
+    //Cast Seg to ITK formats
+    ImageType::Pointer segItkImage = ImageType::New();
+    ImageType::Pointer cutItkImage = ImageType::New();
+    ImageType::Pointer pvLblsItkImage = ImageType::New();
+    CastToItkImage(im, segItkImage);
+    CastToItkImage(im, pvLblsItkImage);
+    CastToItkImage(cutIm, cutItkImage);
+
+    //Subtract images
+    SubtractFilterType::Pointer subFilter = SubtractFilterType::New();
+    subFilter->SetInput1(segItkImage);
+    subFilter->SetInput2(cutItkImage);
+    subFilter->UpdateLargestPossibleRegion();
+
+    //Record voxel locations before cut
+    ItType itSub(subFilter->GetOutput(), subFilter->GetOutput()->GetRequestedRegion());
+    ItType itLbl(pvLblsItkImage, pvLblsItkImage->GetRequestedRegion());
+    itLbl.GoToBegin();
+    for (itSub.GoToBegin(); !itSub.IsAtEnd(); ++itSub) {
+        if ((int)itSub.Get() == -254 || (int)itSub.Get() == -255) {
+                itSub.Set(0);
+            itLbl.Set(0);
+        }//_if
+        ++itLbl;
+    }//_for
+
+    //Relabel the components
+    typedef itk::ConnectedComponentImageFilter<ImageType, ImageType> ConnectedComponentImageFilterType;
+    ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New();
+    connected->SetInput(subFilter->GetOutput());
+    connected->Update();
+    typedef itk::RelabelComponentImageFilter<ImageType, ImageType> RelabelFilterType;
+    RelabelFilterType::Pointer relabeler = RelabelFilterType::New();
+    relabeler->SetInput(connected->GetOutput());
+    relabeler->Update();
+
+    mitk::Image::Pointer returnIm = mitk::ImportItkImage(relabeler->GetOutput())->Clone();
+
+    return returnIm;
+}
+
+void CemrgAtriaClipper::CreateCroppedAndLabelled(QString dir, mitk::Image::Pointer im, mitk::Image::Pointer pieces, mitk::Image::Pointer labcutters, QString croppedName, QString labelledName){
+    //Type definitions for new cut seg images
+    typedef itk::Image<short, 3> ImageType;
+    typedef itk::ImageRegionIteratorWithIndex<ImageType> ItType;
+
+    //Cast Seg to ITK formats
+    ImageType::Pointer segItk = ImageType::New();
+    ImageType::Pointer pveinsLabelledItk = ImageType::New();
+    ImageType::Pointer pveinsCroppedItk = ImageType::New();
+    ImageType::Pointer labcuttersItk = ImageType::New();
+    CastToItkImage(im->Clone(), segItk);
+    CastToItkImage(pieces->Clone(), pveinsLabelledItk);
+    CastToItkImage(pieces->Clone(), pveinsCroppedItk);
+    CastToItkImage(labcutters, labcuttersItk);
+
+    ItType iterSeg(segItk, segItk->GetRequestedRegion());
+    ItType iterCutters(labcuttersItk, labcuttersItk->GetRequestedRegion());
+    ItType iterCropped(pveinsCroppedItk, pveinsCroppedItk->GetRequestedRegion());
+    ItType iterLabelled(pveinsLabelledItk, pveinsLabelledItk->GetRequestedRegion());
+
+    iterSeg.GoToBegin();
+    iterCutters.GoToBegin();
+    iterCropped.GoToBegin();
+    iterLabelled.GoToBegin();
+
+    while(!iterCutters.IsAtEnd()){
+        int cuttersValue = (int) iterCutters.Get();
+        int croppedValue = (int) iterCropped.Get();
+        int segValue = (int) iterSeg.Get();
+
+        if(cuttersValue > 0 && segValue > 0){
+            iterCropped.Set(3);
+            iterLabelled.Set(cuttersValue);
+        } else if(croppedValue > 1){
+            iterCropped.Set(0);
+        }
+
+        ++iterSeg;
+        ++iterCutters;
+        ++iterCropped;
+        ++iterLabelled;
+    }
+
+    mitk::Image::Pointer croppedIm = mitk::ImportItkImage(pveinsCroppedItk);
+    mitk::Image::Pointer labelledIm = mitk::ImportItkImage(pveinsLabelledItk);
+
+    croppedName += (!croppedName.contains(".nii")) ? ".nii" : "";
+    labelledName += (!labelledName.contains(".nii")) ? ".nii" : "";
+
+    mitk::IOUtil::Save(croppedIm, (dir+"/"+croppedName).toStdString());
+    mitk::IOUtil::Save(labelledIm, (dir+"/"+labelledName).toStdString());
+
+}
+
+void CemrgAtriaClipper::ClipVeinsImgFromFileList(QStringList cutters, QStringList normals, mitk::Image::Pointer im, QString outname){
+    CemrgCommonUtils::Binarise(im);
+    QFileInfo qfi(cutters.at(0));
+    QString path2files = qfi.absolutePath();
+
+    mitk::Image::Pointer cuttersAdd = CemrgCommonUtils::Zeros(im);
+    mitk::Image::Pointer cuttersWithLabels = CemrgCommonUtils::Zeros(im);
+    mitk::Image::Pointer originalIm = im->Clone();
+
+    // Search for prodSeedLabels.txt - store labels, depends on the cutters.size()
+    int numFiles = cutters.size();
+    std::vector<int> labels(numFiles, 21); // assume all default
+    QString labelsFile = qfi.absolutePath() + "/prodSeedLabels.txt";
+    if(QFile::exists(labelsFile)){
+        MITK_INFO << ("File found: " + labelsFile).toStdString();
+        std::ifstream fl(labelsFile.toStdString());
+        for (int jx = 0; jx < numFiles; jx++) {
+            if(fl.eof()){
+                MITK_INFO << "File finished prematurely.";
+                break;
+            }
+            fl >> labels[jx];
+        }
+        fl.close();
+    }
+
+    for (int ix = 0; ix < numFiles; ix++) {
+        std::ifstream fi(normals.at(ix).toStdString());
+        double cline_normal[3];
+        fi >> cline_normal[0];
+        fi >> cline_normal[1];
+        fi >> cline_normal[2];
+
+        mitk::Surface::Pointer cutsurf = mitk::IOUtil::Load<mitk::Surface>(cutters.at(ix).toStdString());
+        vtkSmartPointer<vtkPolyData> circle = cutsurf->GetVtkPolyData();
+
+        mitk::Image::Pointer oneCutter = CreateImageCutter(circle, cline_normal, im);
+        cuttersAdd = CemrgCommonUtils::AddImage(cuttersAdd, oneCutter);
+
+        mitk::Image::Pointer oneCutterLabel = CemrgCommonUtils::ImageThreshold(oneCutter, 0, labels.at(ix), 0);
+        cuttersWithLabels = CemrgCommonUtils::AddImage(cuttersWithLabels, oneCutterLabel);
+    }
+
+    mitk::Image::Pointer subIm = SubtractAndLabel(im, cuttersAdd);
+    CreateCroppedAndLabelled(qfi.absolutePath(), originalIm, subIm, cuttersWithLabels, outname+"CroppedImage", outname+"Labelled");
+}
+
 void CemrgAtriaClipper::CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position) {
 
     vtkSmartPointer<vtkPolyData> line = centreLines.at(ctrLineNo)->GetOutput();
@@ -673,4 +906,98 @@ void CemrgAtriaClipper::SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutt
 
     manuals[clippersIndex] = 2;
     centreLinePointPlanes.at(clippersIndex) = pickedCutterSeeds->GetPoints();
+}
+
+mitk::Image::Pointer CemrgAtriaClipper::FixClippingErrors(mitk::Image::Pointer image, int strel_radius){
+    using ImageType = itk::Image<short, 3>;
+    using IteratorType = itk::ImageRegionIterator<ImageType>;
+    using ConnectedComponentImageFilterType = itk::ConnectedComponentImageFilter<ImageType, ImageType>;
+    using LabelShapeKeepNObjImgFilterType = itk::LabelShapeKeepNObjectsImageFilter<ImageType>;
+
+    // start routine
+    mitk::Image::Pointer vimage = image->Clone();
+    ImageType::Pointer veins = ImageType::New();
+
+    ImageType::Pointer im = ImageType::New();
+    mitk::CastToItkImage(image, im);
+
+    // V2=imopen(V==1, strel('sphere', 3))
+    IteratorType imIter(im, im->GetLargestPossibleRegion());
+    imIter.GoToBegin();
+    while (!imIter.IsAtEnd()){
+        short value = (imIter.Get() == 1) ? 1 : 0;
+        imIter.Set(value);
+
+        ++imIter;
+    }
+
+    mitk::Image::Pointer remove_veins = mitk::Image::New();
+    mitk::CastToMitkImage(im, remove_veins);
+
+    try {
+        mitk::MorphologicalOperations::StructuralElementType structuralElement = mitk::MorphologicalOperations::Ball;
+        mitk::MorphologicalOperations::Opening(remove_veins, strel_radius, structuralElement);
+    }
+    catch (const itk::ExceptionObject &exception) {
+        MITK_WARN << "Exception caught: " << exception.GetDescription();
+        return NULL;
+    }
+
+    ImageType::Pointer imop = ImageType::New();
+    mitk::CastToItkImage(remove_veins, imop);
+
+    // Extract largest connected component from V2
+    ConnectedComponentImageFilterType::Pointer conn1 = ConnectedComponentImageFilterType::New();
+    conn1->SetInput(imop);
+    conn1->Update();
+
+    LabelShapeKeepNObjImgFilterType::Pointer keepObjs = LabelShapeKeepNObjImgFilterType::New();
+    keepObjs->SetInput(conn1->GetOutput());
+    keepObjs->SetBackgroundValue(0);
+    keepObjs->SetNumberOfObjects(1);
+    keepObjs->SetAttribute(LabelShapeKeepNObjImgFilterType::LabelObjectType::NUMBER_OF_PIXELS);
+    keepObjs->Update();
+
+    // Iterate to reattach where V==3
+    // mitk::Image::Pointer vimage = mitk::IOUtil::Load<mitk::Image>(pathPVeinsCropped.toStdString());
+    // ImageType::Pointer veins = ImageType::New();
+    mitk::CastToItkImage(vimage, veins);
+
+    ImageType::Pointer outIm = keepObjs->GetOutput();
+    IteratorType outImIter(outIm, outIm->GetLargestPossibleRegion());
+    IteratorType veinsIter(veins, veins->GetLargestPossibleRegion());
+
+    outImIter.GoToBegin();
+    veinsIter.GoToBegin();
+    while (!outImIter.IsAtEnd()){
+        short value = (veinsIter.Get() == 3) ? 3 : outImIter.Get();
+        outImIter.Set(value);
+
+        ++outImIter;
+        ++veinsIter;
+    }
+
+    mitk::Image::Pointer outputImg = mitk::Image::New();
+    mitk::CastToMitkImage(outIm, outputImg);
+
+    return outputImg;
+    // end routine
+}
+
+void CemrgAtriaClipper::FixClippingErrors(QString imagePath, int strel_radius, bool rewrite){
+    QFileInfo fi(imagePath);
+    mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(imagePath.toStdString());
+
+    if (image){
+        QString prefix = (rewrite) ? "" : "New_";
+        QString outputPath = fi.absolutePath() + "/" + prefix + fi.baseName() + "." + fi.completeSuffix();
+
+        mitk::Image::Pointer outputImg = CemrgAtriaClipper::FixClippingErrors(image, strel_radius);
+        if (outputImg) {
+            // Save image
+            mitk::IOUtil::Save(outputImg, outputPath.toStdString());
+        } else {
+            MITK_WARN << "File not created. Errors in processing.";
+        }
+    } // if_image
 }

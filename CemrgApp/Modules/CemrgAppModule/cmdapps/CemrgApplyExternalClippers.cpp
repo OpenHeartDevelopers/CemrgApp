@@ -42,6 +42,7 @@ in the framework.
 #include <vtkCellData.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkIdList.h>
+#include <vtkDecimatePro.h>
 
 // ITK
 #include <itkPoint.h>
@@ -58,7 +59,8 @@ in the framework.
 #include <QString>
 #include <QFileInfo>
 #include <QProcess>
-#include <QMessageBox>
+#include <QDir>
+#include <QDirIterator>
 
 // C++ Standard
 #include <algorithm>
@@ -67,7 +69,7 @@ in the framework.
 
 // CemrgApp
 #include <CemrgScar3D.h>
-#include <CemrgCommandLine.h>
+#include <CemrgAtriaClipper.h>
 #include <CemrgCommonUtils.h>
 
 int main(int argc, char* argv[]) {
@@ -75,9 +77,9 @@ int main(int argc, char* argv[]) {
 
     // Set general information about your command-line app
     parser.setCategory("Pre processing");
-    parser.setTitle("Resample/Reorient Command-line App");
+    parser.setTitle("Apply external clippers Command-line App");
     parser.setContributor("CEMRG, KCL");
-    parser.setDescription("Resample and reorient nifti files.");
+    parser.setDescription("Apply external clippers.");
 
     // How should arguments be prefixed
     parser.setArgumentPrefix("--", "-");
@@ -85,18 +87,14 @@ int main(int argc, char* argv[]) {
     // Add arguments. Unless specified otherwise, each argument is optional.
     parser.addArgument(
         "input", "i", mitkCommandLineParser::String,
-        "NIFTI file path", "Full path of .nii file.",
-        us::Any(), false);
-    parser.addArgument(
-        "output", "o", mitkCommandLineParser::String,
-        "Output file", "Where to save the output.",
+        "Segmentation (LA-reg) NIFTI file path", "Full path of .nii file.",
         us::Any(), false);
     parser.addArgument( // optional
-        "reorient", "ro", mitkCommandLineParser::Bool,
-        "Reorient to RAI", "Whether the nifti should be reoriented to RAI configuration (default=true)");
+        "mitral-valve", "mvname", mitkCommandLineParser::String,
+        "Mitral Valve Name", "Filename of mitral valve file (default=prodMVI)");
     parser.addArgument( // optional
-        "resample", "rs", mitkCommandLineParser::Bool,
-        "Resample to be isotropic", "Whether the nifti should be resampled to isotropic (default=true)");
+        "clip-mv", "mv", mitkCommandLineParser::Bool,
+        "Cip Mitral Valve", "Whether to clip mitral valve (default=false)");
     parser.addArgument( // optional
         "verbose", "v", mitkCommandLineParser::Bool,
         "Verbose Output", "Whether to produce verbose output (default=false)");
@@ -109,29 +107,27 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    if (parsedArgs["input"].Empty() || parsedArgs["output"].Empty()) {
+    if (parsedArgs["input"].Empty()) {
         MITK_INFO << parser.helpText();
         return EXIT_FAILURE;
     }
 
     // Parse, cast and set required arguments
     auto inFilename = us::any_cast<std::string>(parsedArgs["input"]);
-    auto outFilename = us::any_cast<std::string>(parsedArgs["output"]);
 
     // Default values for optional arguments
     auto verbose = false;
-    auto reorientToRAI = true;
-    auto resampleToIso = true;
-
+    auto clipmv = false;
+    std::string inMvname = "prodMVI";
     // Parse, cast and set optional arguments
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
-    if (parsedArgs.end() != parsedArgs.find("reorient")) {
-        reorientToRAI = us::any_cast<bool>(parsedArgs["reorient"]);
+    if (parsedArgs.end() != parsedArgs.find("clip-mv")) {
+        clipmv = us::any_cast<bool>(parsedArgs["clip-mv"]);
     }
-    if (parsedArgs.end() != parsedArgs.find("resample")) {
-        resampleToIso = us::any_cast<bool>(parsedArgs["resample"]);
+    if (parsedArgs.end() != parsedArgs.find("mitral-valve")) {
+        inMvname = us::any_cast<std::string>(parsedArgs["mitral-valve"]);
     }
 
     try {
@@ -140,26 +136,70 @@ int main(int argc, char* argv[]) {
 
         // PARSING ARGUMENTS
         QString inputName = QString::fromStdString(inFilename);
-        QString outname = QString::fromStdString(outFilename);
+        QString mvName = QString::fromStdString(inMvname);
+        mvName += (!mvName.endsWith(".vtk")) ? ".vtk" : "";
 
-        if (!outname.contains(".nii", Qt::CaseSensitive)) {
-            outname = outname + ".nii";
+        QFileInfo fi(inputName);
+        QString base = "prodCutter";
+        QString directory = fi.absolutePath();
+
+        MITK_INFO(verbose) << directory.toStdString();
+        MITK_INFO(verbose) << mvName.toStdString();
+
+        if(!clipmv){
+            MITK_INFO(verbose) << "Looking for prodCutters";
+            QDirIterator qiter(directory, {base + "*.vtk", base + "*TNormals.txt"}, QDir::Files);
+            QStringList cutfiles, normfiles;
+            while (qiter.hasNext())  {
+                QString thisFile = qiter.next();
+                if (thisFile.contains("TNormals")) {
+                    normfiles.push_back(thisFile);
+                }
+                else {
+                    cutfiles.push_back(thisFile);
+                }
+            }
+            cutfiles.sort();
+            normfiles.sort();
+
+            mitk::Surface::Pointer shell = mitk::Surface::New();
+            QString segvtk = CemrgCommonUtils::GetFilePath(directory, "segmentation", ".vtk");
+
+            if(segvtk.isEmpty()){
+                MITK_ERROR << "segmentation.vtk file not found. Create it using MIRTK libraries";
+                return EXIT_FAILURE;
+            }
+
+            shell = mitk::IOUtil::Load<mitk::Surface>(segvtk.toStdString());
+            vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
+            deci->SetInputData(shell->GetVtkPolyData());
+            deci->SetTargetReduction(0.1);
+            deci->PreserveTopologyOn();
+            deci->Update();
+            shell->SetVtkPolyData(deci->GetOutput());
+
+            std::unique_ptr<CemrgAtriaClipper> clipper(new CemrgAtriaClipper(directory, shell));
+            mitk::Image::Pointer image = mitk::IOUtil::Load<mitk::Image>(inputName.toStdString()); // Load segmentation to transform
+            clipper->ClipVeinsImgFromFileList(cutfiles, normfiles, image, "PVeins");
+            int strel_radius = 3;
+            bool rewriteFile = true;
+
+            QString pveinsCroppedPath = directory + "/PVeinsCroppedImage.nii";
+            CemrgAtriaClipper::FixClippingErrors(pveinsCroppedPath, strel_radius, rewriteFile);
+        } else {
+            MITK_INFO(verbose) << "Looking for Mitral Valve";
+            QString output2 = directory + "/segmentation.vtk";
+            mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
+
+            QString mviPath = directory + "/" + mvName;
+            MITK_INFO << ("Clipping Mitral valve with file: " + mviPath).toStdString();
+
+            mitk::Surface::Pointer mvclipper = mitk::IOUtil::Load<mitk::Surface>(mviPath.toStdString());
+            CemrgCommonUtils::FlipXYPlane(mvclipper, directory, "");
+            CemrgCommonUtils::ClipWithPolydata(LAShell, mvclipper, directory + "/segmentation.vtk");
         }
 
-        MITK_INFO(verbose) << "Obtaining input file path and working directory: ";
-
-        // OBTAINING directory and image path variables
-        QFileInfo fi(inputName);
-        QString direct = fi.absolutePath();
-        QString imagePath = fi.absoluteFilePath();
-
-        MITK_INFO << "Resampling image to isometric.";
-        MITK_INFO(verbose && resampleToIso) << "Resampling to Iso.";
-        MITK_INFO(verbose && reorientToRAI) << "Reorienting image to RAI.";
-        mitk::Image::Pointer image = CemrgCommonUtils::IsoImageResampleReorient(imagePath, resampleToIso, reorientToRAI);
-        MITK_INFO << "Saving...";
-        mitk::IOUtil::Save(image, outname.toStdString());
-
+        
         MITK_INFO(verbose) << "Goodbye!";
     } catch (const std::exception &e) {
         MITK_ERROR << e.what();

@@ -53,21 +53,29 @@ public:
     bool ComputeCtrLinesClippers(std::vector<int> pickedSeedLabels);
     void ClipVeinsMesh(std::vector<int> pickedSeedLabels);
     void ClipVeinsImage(std::vector<int> pickedSeedLabels, mitk::Image::Pointer segImage, bool morphAnalysis);
+    void ClipVeinsImgFromFileList(QStringList cutters, QStringList normals, mitk::Image::Pointer im, QString outname);
     void CalcParamsOfPlane(vtkSmartPointer<vtkRegularPolygonSource> plane, int ctrLineNo, int position);
     void ResetCtrLinesClippingPlanes();
 
-    inline mitk::Image::Pointer GetClippedSegImage() const { return clippedSegImage; };
-    inline mitk::Surface::Pointer GetClippedSurface() const { return clippedSurface; };
-    inline std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> GetCentreLines() const { return centreLines; };
-    inline std::vector<vtkSmartPointer<vtkRegularPolygonSource>> GetCentreLinePolyPlanes() const { return centreLinePolyPlanes; };
-    inline std::vector<std::vector<double>> GetMClipperAngles() { return normalPlAngles; };
-    inline std::vector<int> GetManualType() const { return manuals; };
-    inline void SetToAutomaticClipperMode(int clippersIndex) { manuals[clippersIndex] = 0; };
-    inline void SetRadiusAdjustment(double value) { radiusAdj = value; };
-    inline bool GetCentreLinesOrientation() { return ctrlnOrientation; };
+    mitk::Image::Pointer CreateImageCutter(vtkSmartPointer<vtkPolyData> circle, double cline_normal[3], mitk::Image::Pointer segImage);
+    mitk::Image::Pointer SubtractAndLabel(mitk::Image::Pointer im, mitk::Image::Pointer cutIm);
+    void CreateCroppedAndLabelled(QString dir, mitk::Image::Pointer im, mitk::Image::Pointer pieces, mitk::Image::Pointer labcutters, QString croppedName="PVeinsCroppedImage", QString labelledName="PVeinsLabelled");
+
+    inline mitk::Image::Pointer GetClippedSegImage() const{return clippedSegImage;};
+    inline mitk::Surface::Pointer GetClippedSurface() const{return clippedSurface;};
+    inline std::vector<vtkSmartPointer<vtkvmtkPolyDataCenterlines>> GetCentreLines() const{return centreLines;};
+    inline std::vector<vtkSmartPointer<vtkRegularPolygonSource>> GetCentreLinePolyPlanes() const{return centreLinePolyPlanes;};
+    inline std::vector<std::vector<double>> GetMClipperAngles(){return normalPlAngles;};
+    inline std::vector<int> GetManualType() const{return manuals;};
+    inline void SetToAutomaticClipperMode(int clippersIndex){manuals[clippersIndex] = 0;};
+    inline void SetRadiusAdjustment(double value){radiusAdj = value;};
+    inline bool GetCentreLinesOrientation(){return ctrlnOrientation;};
 
     void SetMClipperAngles(double* value, int clippersIndex);
     void SetMClipperSeeds(vtkSmartPointer<vtkPolyData> pickedCutterSeeds, int clippersIndex);
+
+    static mitk::Image::Pointer FixClippingErrors(mitk::Image::Pointer image, int strel_radius = 3);
+    static void FixClippingErrors(QString imagePath, int strel_radius = 3, bool rewrite=false);
 
 private:
 
