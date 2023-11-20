@@ -1399,28 +1399,55 @@ double CemrgCommonUtils::GetSphereParametersFromLandmarks(mitk::PointSet::Pointe
     return radius;
 }
 
-void CemrgCommonUtils::GetMinMaxScalars(mitk::Surface::Pointer surf, double& min_val, double& max_val, bool fromCellData){
-    double max_scalar=-1, min_scalar=1e9;
-    vtkIdType total;
-    vtkSmartPointer<vtkFloatArray> scalars = vtkSmartPointer<vtkFloatArray>::New();
-    if (fromCellData){
-        scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetCellData()->GetScalars());
-        total=surf->GetVtkPolyData()->GetNumberOfPoints();
-    } else{
-        scalars = vtkFloatArray::SafeDownCast(surf->GetVtkPolyData()->GetPointData()->GetScalars());
-        total=surf->GetVtkPolyData()->GetNumberOfCells();
+bool CemrgCommonUtils::GetCellMaxAndMinScalars(mitk::Surface::Pointer surface, double &max, double &min, QString fieldname) {
+    double max_scalar=-1, min_scalar=1e9; 
+
+    vtkCellData *cellData = surface->GetVtkPolyData()->GetCellData();
+    if (!cellData) {
+        MITK_ERROR << "No cell data found";
+        return false;
     }
 
-    for (vtkIdType i = 0; i < total; i++) {
-        double s = scalars->GetTuple1(i);
+    int numArrays = cellData->GetNumberOfArrays();
+
+    // find arrayname=elemtag and if not use 0 
+    int elemTagArrayIndex = 0;
+    int countFails = 0;
+    for (int ix = 0; ix<numArrays; ix++) {
+        vtkDataArray* dataArray = cellData->GetArray(ix);
+        if (!dataArray) {
+            countFails++;
+            continue;
+        }
+
+        const char* arrayName = dataArray->GetName(); 
+        std::cout << "Array name: " << ix << ": " << arrayName << std::endl;
+        QString qArrayName = QString(arrayName);
+        if (qArrayName.contains(fieldname, Qt::CaseInsensitive)) {
+            elemTagArrayIndex = ix;
+            break;
+        }
+    }
+
+    if (countFails == numArrays) {
+        MITK_ERROR << "No cell data found";
+        return false;
+    }
+
+    vtkDataArray *processDataArray = cellData->GetArray(elemTagArrayIndex);
+    for (vtkIdType jx = 0; jx < surface->GetVtkPolyData()->GetNumberOfCells(); jx++) {
+        double s = processDataArray->GetTuple1(jx);
         if (s > max_scalar)
             max_scalar = s;
         if (s < min_scalar)
             min_scalar = s;
     }
 
-    min_val=min_scalar;
-    max_val=max_scalar;
+    max = max_scalar;
+    min = min_scalar;
+
+    return true;
+
 }
 
 //UTILities for CARP - operations with .elem and .pts files

@@ -85,19 +85,20 @@ public:
     static QString OpenCarpParamFileGenerator(QString dir, QString filename, QString meshname, QString zeroBoundaryName, QString oneBoundaryName);
 
     static bool ConvertToCarto(std::string vtkPath, std::vector<double>, double, double, int, bool);
-    static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData> &pd, bool celldata = true);
-    static void FillHoles(mitk::Surface::Pointer surf, QString dir = "", QString vtkname = "");
+    static void CalculatePolyDataNormals(vtkSmartPointer<vtkPolyData>& pd, bool celldata=true);
+    static void FillHoles(mitk::Surface::Pointer surf, QString dir="", QString vtkname="");
     static void GetMinMaxScalars(mitk::Surface::Pointer surf, double &min_val, double &max_val, bool fromCellData = false);
 
-    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num = 0);
-    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath = "", int pad_num = 0);
-
-    static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double *centre);
+    static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3], int pad_num=0);
+    static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="", int pad_num=0);
+    static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre);
+    static bool GetCellMaxAndMinScalars(mitk::Surface::Pointer surface, double &max, double &min, QString fieldname = "scalars");
+    static bool GetPointMaxAndMinScalars(mitk::Surface::Pointer surface, double &max, double &min, QString fieldname = "scalars");
 
     static void SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath = "", QString fieldname = "scalars");
     static void SetPointDataToCellData(mitk::Surface::Pointer surface, bool categories = false, QString outputPath = "");
 
-    //Tracking Utils
+    // Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
 
     //Generic
