@@ -129,6 +129,9 @@ int main(int argc, char* argv[]) {
         "roi-limits", "limits", mitkCommandLineParser::String,
         "Limits(s)", "Limits sent as string with two values separated by a comma (default='-1,3')");
     parser.addArgument( // optional
+        "alternative-geometries", "ang", mitkCommandLineParser::Bool,
+        "Alternative where geometries are not copied ", "Alternative where geometries are not copied ");
+    parser.addArgument( // optional
         "verbose", "v", mitkCommandLineParser::Bool,
         "Verbose Output", "Whether to produce verbose output");
 
@@ -160,6 +163,7 @@ int main(int argc, char* argv[]) {
     auto roi_radius = false;
     std::string roi_limits = "-1,3";
     auto legacy_projection = false;
+    auto ang_flag = false;
     auto verbose = false;
 
     // Parse, cast and set optional argument
@@ -202,7 +206,10 @@ int main(int argc, char* argv[]) {
         legacy_projection = us::any_cast<bool>(parsedArgs["roi-legacy-projection"]);
     }
 
-    if (parsedArgs.end() != parsedArgs.find("verbose")) {
+    if (parsedArgs.end() != parsedArgs.find("alternative-geometries")) {
+        ang_flag = us::any_cast<bool>(parsedArgs["alternative-geometries"]);
+    }
+    if (parsedArgs.end() != parsedArgs.find("alternative-geometries")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
     }
     std::cout << "verbose" << verbose << '\n';
@@ -360,10 +367,14 @@ int main(int argc, char* argv[]) {
         mitk::Image::Pointer seg = Clean(mitk::IOUtil::Load<mitk::Image>((direct + "/" + pveinsname).toStdString()));
         mitk::Image::Pointer lge = mitk::IOUtil::Load<mitk::Image>(lgePath.toStdString());
 
-        seg->SetGeometry(lge->GetGeometry());
-
-        PrintGeometry(seg, "Segmentation");
-        PrintGeometry(lge, "LGE");
+        if (!ang_flag) {
+            seg->SetGeometry(lge->GetGeometry());
+        }
+        // seg->SetGeometry(lge->GetGeometry());
+        if (verbose) {
+            PrintGeometry(seg, "Segmentation");
+            PrintGeometry(lge, "LGE");
+        }
 
         mitk::CastToItkImage(seg, segITK);
         mitk::CastToItkImage(lge, lgeITK);
@@ -397,8 +408,12 @@ int main(int argc, char* argv[]) {
         erosionFilter->UpdateLargestPossibleRegion();
         mitk::Image::Pointer roiImage = mitk::Image::New();
         roiImage = mitk::ImportItkImage(erosionFilter->GetOutput())->Clone();
-        roiImage->SetGeometry(lge->GetGeometry());
-        PrintGeometry(roiImage, "ROI");
+        if (!ang_flag) {
+            roiImage->SetGeometry(lge->GetGeometry());
+        }
+        if (verbose){
+            PrintGeometry(roiImage, "ROI");
+        }
 
         mitk::IOUtil::Save(roiImage, (outputFolder + "ROI.nii").toStdString());
 
