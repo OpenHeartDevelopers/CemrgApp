@@ -174,7 +174,6 @@ mitk::Surface::Pointer CemrgScar3D::Scar3D(std::string directory, mitk::Image::P
             pN[1] = pixelXYZ[1];
             pN[2] = pixelXYZ[2];
         }
-
         double scalar = GetIntensityAlongNormal(scarImage, visitedImage, pN[0], pN[1], pN[2], cX, cY, cZ);
 
         if (scalar > maxScalar) maxScalar = scalar;
@@ -570,7 +569,7 @@ double CemrgScar3D::GetStatisticalMeasure(std::vector<mitk::Point3D> pointsOnAnd
         returnVal = sum;
     }//_if_sum
 
-    if (measure == 4){
+    if (measure == 4){ // Mode
         std::vector<double> values;
         for (int i=0; i<size; i++) {
             pixel_xyz[0] = pointsOnAndAroundNormal.at(i).GetElement(0);
@@ -583,6 +582,10 @@ double CemrgScar3D::GetStatisticalMeasure(std::vector<mitk::Point3D> pointsOnAnd
             }
         }
 
+        if (values.size() == 0){
+            MITK_INFO << "No values found for mode calculation.";
+            return 0;
+        }
 
         std::vector<double> uv(values.begin(), values.end());
         std::sort(uv.begin(), uv.end());
