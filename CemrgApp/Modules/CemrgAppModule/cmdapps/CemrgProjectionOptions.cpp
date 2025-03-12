@@ -300,6 +300,15 @@ int main(int argc, char* argv[]) {
             MITK_WARN << "Measurement type out of bounds. Using default value.";
             measurement = 2;
         }
+
+        QString measurementStr = "";
+        switch measurement {
+            case 1:  measurementStr = "Mean"; break;
+            case 2:  measurementStr = "Max"; break;
+            case 3:  measurementStr = "Cumulative"; break;
+            case 4:  measurementStr = "Mode"; break;
+            default: measurementStr = "Max"; break;
+        }
         
         QString thresString = QString::fromStdString(inThresholdString);
 
@@ -325,10 +334,12 @@ int main(int argc, char* argv[]) {
         MITK_INFO(method == 1) << "IIR METHOD";
         MITK_INFO(method == 2) << "M + SD METHOD";
 
+        
+
         // PARSING ARGUMENTS
         QString pveinsname = QString::fromStdString(segFilename);
         QString segvtk = "segmentation.vtk";
-        QString outname = methodPref + "MaxScar";
+        QString outname = methodPref + measurementStr + "Scar";
         outname += singlevoxelprojection ? "-single-voxel" : "-repeated-voxels";
         outname += ".vtk";
         pveinsname += (!pveinsname.endsWith(".nii")) ? ".nii" : "";
