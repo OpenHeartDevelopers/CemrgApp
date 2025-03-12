@@ -58,11 +58,16 @@ public:
 
     // Image Analysis Utils
     static void SetSegmentationEdgesToZero(mitk::Image::Pointer image, QString outPath="");
+    static mitk::Image::Pointer ImageThreshold(mitk::Image::Pointer image, short threshold, short foreground, short background);
     static void Binarise(mitk::Image::Pointer image, float background=0);
     static mitk::Image::Pointer ReturnBinarised(mitk::Image::Pointer image, float background=0);
     static QString ConvertToInr(mitk::Image::Pointer image, bool convert2uint, QString dir, QString output_name);
     static QString ConvertToInr(QString dir, QString filename, bool convert2uint, QString output_name = "");
     static mitk::Image::Pointer SwapAxes(mitk::Image::Pointer image, const std::vector<int> &orderDimensions = {0, 1, 2});
+
+    static mitk::Image::Pointer Zeros(int sx, int sy, int sz, int ox = 0, int oy = 0, int oz = 0);
+    static mitk::Image::Pointer Zeros(mitk::Image::Pointer image);
+    static mitk::Image::Pointer AddImage(mitk::Image::Pointer im1, mitk::Image::Pointer im2);
 
     //Nifti Conversion Utils
     static bool ConvertToNifti(mitk::BaseData::Pointer oneNode, QString path2file, bool resample=false, bool reorient=false);
@@ -88,11 +93,14 @@ public:
     static mitk::Image::Pointer ImageFromSurfaceMesh(mitk::Surface::Pointer surf, double origin[3], double spacing[3]);
     static void SaveImageFromSurfaceMesh(QString surfPath, double origin[3], double spacing[3], QString outputPath="");
     static double GetSphereParametersFromLandmarks(mitk::PointSet::Pointer landmarks, double * centre);
+    static void ClipWithPolydata(mitk::Surface::Pointer surface, mitk::Surface::Pointer clipper, QString saveToPath);
+    static void GetMinMaxScalars(mitk::Surface::Pointer surf, double &min_val, double &max_val, bool fromCellData = false);
 
     //Tracking Utils
     static void MotionTrackingReport(QString directory, int timePoints);
 
     //Generic
+    static QString GetFilePath(QString dir, QString nameSubstring, QString extension);
     static mitk::DataNode::Pointer AddToStorage(mitk::BaseData* data, std::string nodeName, mitk::DataStorage::Pointer ds, bool init = true);
     static mitk::DataNode::Pointer UpdateFromStorage(mitk::BaseData *data, std::string nodeName, mitk::DataStorage::Pointer ds);
     static QJsonObject CreateJSONObject(QStringList keys_list, QStringList values_list, QStringList types_list);
