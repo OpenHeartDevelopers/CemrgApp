@@ -1124,7 +1124,7 @@ struct HeartLabels {
     }
 };
 
-enum AtrialLandmarksType {NOT_SET = -1, LA_APEX=11, LA_SEPTUM=13, RA_APEX=15, RA_SEPTUM=17, RAA_APEX=19};
+enum AtrialLandmarksType {NOT_SET = -1, LA_APEX=11, LA_SEPTUM=13, RA_APEX=15, RA_SEPTUM=17, RAA_APEX=19, ATRIAL_SEPTUM=21};
 class PickedPointType { 
     public :
         PickedPointType() {

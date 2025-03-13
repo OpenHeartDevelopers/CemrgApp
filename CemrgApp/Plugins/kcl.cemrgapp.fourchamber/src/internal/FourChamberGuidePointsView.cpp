@@ -146,6 +146,7 @@ void FourChamberGuidePointsView::CreateQtPartControl(QWidget *parent) {
 
     //Initialisation
     m_Controls.radio_load_la->setChecked(true);
+    m_Selector.radioBtn_ATRIAL_SEPTUM->setEnabled(false); // Not yet implemented
     iniPreSurf();
     if (surface.IsNotNull()) {
         InitialisePickerObjects();
@@ -388,6 +389,8 @@ void FourChamberGuidePointsView::KeyCallBackFunc(vtkObject*, long unsigned int, 
                 self->m_Selector.radioBtn_RA_SEPTUM->setEnabled(true);
             else if (lastLabel == AtrialLandmarksType::RAA_APEX)
                 self->m_Selector.radioBtn_RAA_APEX->setEnabled(true);
+            else if (lastLabel == AtrialLandmarksType::ATRIAL_SEPTUM) 
+                self->m_Selector.radioBtn_ATRIAL_SEPTUM->setEnabled(true);
             
         }//_if
 
@@ -468,8 +471,12 @@ void FourChamberGuidePointsView::Save() {
 
     // Save points
     for (auto& point : points) {
-        QString savetype = pickedPointsHandler->GetPointData(point).pointName.contains("vtx") ? "vtx" : "coord";
+        bool isVtxType = pickedPointsHandler->GetPointData(point).pointName.contains("vtx");
+        QString savetype = isVtxType ? "vtx" : "coord";
         pickedPointsHandler->SaveToFile(APEX_SEPTUM(point), (QStringList(point)), savetype);
+        if (isVtxType) { 
+            pickedPointsHandler->SaveToFile(APEX_SEPTUM(point), (QStringList(point.replace(".vtx", "_coord.txt"))), "coord");
+        }
     }
     
     QMessageBox::information(NULL, "Info", "Points saved, please close this window.");
@@ -501,7 +508,10 @@ void FourChamberGuidePointsView::UserSelectPvLabel(){
         } else if (m_Selector.radioBtn_RAA_APEX->isChecked()) {
             pushedLabel = AtrialLandmarksType::RAA_APEX; // RAA_APEX
             m_Selector.radioBtn_RAA_APEX->setEnabled(false);
-        } 
+        } else if (m_Selector.radioBtn_ATRIAL_SEPTUM->isChecked()) {
+            pushedLabel = AtrialLandmarksType::ATRIAL_SEPTUM; // ATRIAL_SEPTUM
+            m_Selector.radioBtn_ATRIAL_SEPTUM->setEnabled(false);
+        }
         MITK_INFO << "Label selected: " << pushedLabel;
         
     } else if (dialogCode == QDialog::Rejected) {

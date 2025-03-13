@@ -313,6 +313,11 @@ std::string CemrgMeshPointSelector::PrintManyCoordTxt(QStringList names) {
 }
 
 void CemrgMeshPointSelector::SaveToFile(QString path, QStringList names, QString type ) {
+    // show error if type is not "vtx" or "coord"
+    if (type != "vtx" && type != "coord") {
+        MITK_WARN << "Type must be 'vtx' or 'coord'";
+        return;
+    }
     std::string toPrint;
     if (type == "vtx")     {
         toPrint = PrintManyVtx(names);

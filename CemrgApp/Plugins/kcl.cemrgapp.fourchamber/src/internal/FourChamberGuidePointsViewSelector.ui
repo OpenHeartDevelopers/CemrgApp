@@ -118,6 +118,13 @@
        </property>
       </widget>
      </item>
+     <item row="4" column="0">
+      <widget class="QRadioButton" name="radioBtn_ATRIAL_SEPTUM">
+       <property name="text">
+        <string>Guide Septum</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
