@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     parser.addArgument( // optional
         "measurement-type", "mt", mitkCommandLineParser::Int,
         "Measurement type", "Choose between Mean (1), Max (2), Cumulative (3), Mode (4). (Default=2)"
-    )
+    );
     parser.addArgument( // optional
         "single-voxel-projection", "svp", mitkCommandLineParser::Bool,
         "Single Voxel Projection", "Project LGE voxels onto Scar Map ONLY ONCE (Default=OFF)");
@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
         }
 
         QString measurementStr = "";
-        switch measurement {
+        switch (measurement) {
             case 1:  measurementStr = "Mean"; break;
             case 2:  measurementStr = "Max"; break;
             case 3:  measurementStr = "Cumulative"; break;
