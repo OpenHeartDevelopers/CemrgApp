@@ -115,8 +115,7 @@ int main(int argc, char* argv[]) {
         "Thresholds method", "Choose between IIR*V (1) and M + STDV*V (2). (Default=2)");
     parser.addArgument( // optional
         "measurement-type", "mt", mitkCommandLineParser::Int,
-        "Measurement type", "Choose between Mean (1), Max (2), Cumulative (3), Mode (4). (Default=2)"
-    );
+        "Measurement type", "Choose between Mean (1), Max (2), Cumulative (3), Mode (4). (Default=2)");
     parser.addArgument( // optional
         "single-voxel-projection", "svp", mitkCommandLineParser::Bool,
         "Single Voxel Projection", "Project LGE voxels onto Scar Map ONLY ONCE (Default=OFF)");
@@ -172,47 +171,57 @@ int main(int argc, char* argv[]) {
 
     if (parsedArgs.end() != parsedArgs.find("input-segmentation")) {
         segFilename = us::any_cast<std::string>(parsedArgs["input-segmentation"]);
+        std::cout << "Parsed [segFilename]: " << segFilename << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("output-subfolder")) {
         output_subfolder = us::any_cast<std::string>(parsedArgs["output-subfolder"]);
+        std::cout << "Parsed [output_subfolder]: " << output_subfolder << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("options-file")) {
         options_file = us::any_cast<std::string>(parsedArgs["options-file"]);
+        std::cout << "Parsed [options_file]: " << options_file << '\n';
     }
     
     if (parsedArgs.end() != parsedArgs.find("thresholds-method")) {
         method = us::any_cast<int>(parsedArgs["thresholds-method"]);
+        std::cout << "Parsed [method]: " << method << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("measurement-type")) {
         measurement = us::any_cast<int>(parsedArgs["measurement-type"]);
+        std::cout << "Parsed [measurement]: " << measurement << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("threshold-values")) {
         inThresholdString = us::any_cast<std::string>(parsedArgs["threshold-values"]);
+        std::cout << "Parsed [inThresholdString]: " << inThresholdString << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("single-voxel-projection")) {
         singlevoxelprojection = us::any_cast<bool>(parsedArgs["single-voxel-projection"]);
+        std::cout << "Parsed [singlevoxelprojection]: " << singlevoxelprojection << '\n';
     }
-    std::cout << "single voxel " << singlevoxelprojection << '\n';
 
     if (parsedArgs.end() != parsedArgs.find("roi-radius")) {
         roi_radius = us::any_cast<bool>(parsedArgs["roi-radius"]);
+        std::cout << "Parsed [roi_radius]: " << roi_radius << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("roi-limits")) {
-        roi_limits = us::any_cast<bool>(parsedArgs["roi-limits"]);
+        roi_limits = us::any_cast<std::string>(parsedArgs["roi-limits"]);
+        std::cout << "Parsed [roi_limits]: " << roi_limits << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("roi-legacy-projection")) {
         legacy_projection = us::any_cast<bool>(parsedArgs["roi-legacy-projection"]);
+        std::cout << "Parsed [legacy_projection]: " << legacy_projection << '\n';
     }
 
     if (parsedArgs.end() != parsedArgs.find("verbose")) {
         verbose = us::any_cast<bool>(parsedArgs["verbose"]);
+        std::cout << "Parsed [verbose]: " << verbose << '\n';
     }
     std::cout << "verbose" << verbose << '\n';
 
