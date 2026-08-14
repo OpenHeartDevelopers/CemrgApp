@@ -657,32 +657,70 @@ bool AtrialStrainMotionView::GetUserEditLabelsInputs(){
     return userInputAccepted;
 }
 
+/**
+ * @brief Describe why an expected output file is unusable, or return an empty string if it is fine.
+ *
+ * CemrgCommandLine::IsOutputSuccessful only asks whether a file exists and is non-empty. That
+ * cannot tell "the tool produced a usable result" from "some bytes appeared" - and because
+ * ExecuteCommand pre-creates outputs with ExecuteTouch, a tool that fails after being started
+ * still leaves a file behind. This adds a cheap readability check on top, so the failure is
+ * reported in terms the user can act on.
+ */
+static QString DescribeOutputProblem(QString fullPath) {
+    QFileInfo info(fullPath);
+
+    if (!info.exists())
+        return "was not created";
+
+    if (info.size() == 0)
+        return "is empty - the tool was started but wrote nothing, so it most likely failed part-way";
+
+    QString name = info.fileName();
+    if (name.endsWith(".nii", Qt::CaseInsensitive) || name.endsWith(".nii.gz", Qt::CaseInsensitive)) {
+        QString message;
+        CemrgCommonUtils::NiftiQformStatus status = CemrgCommonUtils::InspectNiftiQform(fullPath, message);
+        if (status == CemrgCommonUtils::NiftiQformStatus::NotNifti ||
+            status == CemrgCommonUtils::NiftiQformStatus::IoError)
+            return "cannot be read as a NIfTI image (" + message + ")";
+        if (status == CemrgCommonUtils::NiftiQformStatus::CannotRepair)
+            return "has a NIfTI header the application cannot use (" + message + ")";
+    }
+
+    if (name.endsWith(".vtk", Qt::CaseInsensitive)) {
+        QFile file(fullPath);
+        if (!file.open(QIODevice::ReadOnly))
+            return "could not be opened for reading";
+        QByteArray head = file.read(16);
+        file.close();
+        if (!head.startsWith("# vtk") && !head.startsWith("<?xml") && !head.startsWith("<VTKFile"))
+            return "does not start with a recognisable VTK header, so it is probably truncated or corrupt";
+    }
+
+    return QString();
+}
+
 bool AtrialStrainMotionView::IsOutputFileCorrect(QString dir, QStringList filenames){
-    bool success = true;
+    QStringList problems;
 
-    int countfails = 0;
-    QString checkOutputMsg = "";
-
-    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     for (int ix = 0; ix < filenames.size(); ix++) {
-        bool okSingleTest = cmd->IsOutputSuccessful(dir + "/" + filenames.at(ix));
+        QString filename = filenames.at(ix);
+        QString problem = DescribeOutputProblem(dir + "/" + filename);
 
-        if (!okSingleTest){
-            MITK_ERROR << ("File(s) not created - " + filenames.at(ix)).toStdString();
-            countfails++;
-            checkOutputMsg += (countfails==1) ? "File(s) not created: " : "";
-            checkOutputMsg += "\n " + filenames.at(ix);
+        if (!problem.isEmpty()) {
+            MITK_ERROR << ("Expected output " + filename + " " + problem).toStdString();
+            problems << "  " + filename + "\n      " + problem;
         }
     }
 
-    if (!checkOutputMsg.isEmpty()){
-        std::string msg = checkOutputMsg.toStdString();
-        QMessageBox::warning(NULL, "Warning", msg.c_str());
-        success = false;
-    }
+    if (problems.isEmpty())
+        return true;
 
-    return success;
-
+    std::string msg = "The following expected output file(s) are missing or unusable:\n\n" +
+        problems.join("\n\n").toStdString() +
+        "\n\nThe step's log entries show the exact command that was run - check that the "
+        "required Docker image is available and that the previous steps completed.";
+    QMessageBox::warning(NULL, "Step did not produce its expected output", msg.c_str());
+    return false;
 }
 
 bool AtrialStrainMotionView::RequestProjectDirectoryFromUser() {
