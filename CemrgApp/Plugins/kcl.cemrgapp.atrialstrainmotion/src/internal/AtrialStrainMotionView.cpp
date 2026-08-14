@@ -268,12 +268,22 @@ int AtrialStrainMotionView::Ask(std::string title, std::string msg){
 }
 
 bool AtrialStrainMotionView::LoadSurfaceChecks(){
-    bool success = true;
-    UserLoadSurface();
 	QString prodPath = directory + "/UAC_CT/" + tagName + ".vtk";
     MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + prodPath).toStdString();
 
-    return success;
+    // Callers already branch on this result, but it used to be hardcoded to true, so a missing or
+    // empty mesh was only discovered when something downstream threw.
+    QFileInfo meshInfo(prodPath);
+    if (!meshInfo.exists() || meshInfo.size() == 0) {
+        std::string msg = "The surface mesh is missing or empty:\n  " + prodPath.toStdString() +
+            "\n\nThe step that should have produced it did not complete. Check the log for the "
+            "command that failed.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Surface mesh not available", msg.c_str());
+        return false;
+    }
+
+    return UserLoadSurface();
 }
 
 void AtrialStrainMotionView::SetLgeAnalysis(bool b){
@@ -281,11 +291,22 @@ void AtrialStrainMotionView::SetLgeAnalysis(bool b){
     // m_Controls.button_z_scar->setEnabled(b);
 }
 
-void AtrialStrainMotionView::CheckLoadedMeshQuality(){
+bool AtrialStrainMotionView::CheckLoadedMeshQuality(){
     QString prodPath = directory + "/UAC_CT/";
     QString meshinput = prodPath + tagName + ".vtk";
 
-    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
+    mitk::Surface::Pointer surface;
+    try {
+        surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
+    } catch (const std::exception& e) {
+        std::string msg = "Could not read the surface mesh:\n  " + meshinput.toStdString() +
+            "\n\n" + e.what() +
+            "\n\nThe file exists but is not a readable VTK surface, so the step that wrote it "
+            "most likely failed part-way.";
+        MITK_ERROR << msg;
+        QMessageBox::critical(NULL, "Could not read surface mesh", msg.c_str());
+        return false;
+    }
 
     vtkSmartPointer<vtkPolyDataConnectivityFilter> cf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
     cf->ScalarConnectivityOff();
@@ -315,6 +336,8 @@ void AtrialStrainMotionView::CheckLoadedMeshQuality(){
             mitk::IOUtil::Save(surface, (prodPath+nameExt).toStdString());
         }
     }
+
+    return true;
 }
 
 void AtrialStrainMotionView::SetAutomaticModeButtons(bool b){
@@ -328,10 +351,10 @@ void AtrialStrainMotionView::SetAutomaticModeButtons(bool b){
     }
 }
 
-void AtrialStrainMotionView::UserLoadSurface(){
+bool AtrialStrainMotionView::UserLoadSurface(){
     QString newpath = directory + "/UAC_CT/" + tagName + ".vtk";
     SetTagNameFromPath(newpath);
-    CheckLoadedMeshQuality();
+    return CheckLoadedMeshQuality();
 }
 
 QString AtrialStrainMotionView::GetFilePath(QString nameSubstring, QString extension){
@@ -899,13 +922,37 @@ void AtrialStrainMotionView::SegmentExtract() {
     QString la_msh_path = directory + "/LA_msh.vtk";
     QString la_msh_smth_path = directory + "/LA_msh_smth.vtk";
     // cmd->ExecuteSurf(directory, directory + "/LA.nii", "close", 0, 0.5, 0, 100);
-    cmd->ExecuteExtractSurface(directory, la_path, la_msh_path, 0.5, 0);
+    QString surfaceResult = cmd->ExecuteExtractSurface(directory, la_path, la_msh_path, 0.5, 0);
     // cmd->ExecuteSmoothSurface(directory, la_msh_path, la_msh_smth_path, 100);
+
+    // ExecuteCommand pre-creates the output with ExecuteTouch, so a failed run still leaves an
+    // empty file behind. Check the size, not just existence, or the empty mesh propagates and
+    // surfaces much later as an opaque read error.
+    if (surfaceResult.compare("ERROR_IN_PROCESSING") == 0 || QFileInfo(la_msh_path).size() == 0) {
+        std::string msg = "Could not extract the LA surface from " + QFileInfo(la_path).fileName().toStdString() +
+            ".\n\nThis step runs MIRTK's 'extract-surface', which CemrgApp expects to find in:\n  " +
+            (QCoreApplication::applicationDirPath() + "/MLib").toStdString() +
+            "\n\nThe MIRTK binaries are not built by CemrgApp - they have to be placed there "
+            "separately. Check that the MLib folder exists and that its executables can run "
+            "(missing shared libraries are a common cause).";
+        MITK_ERROR << msg;
+        QMessageBox::critical(NULL, "Surface extraction failed", msg.c_str());
+        return;
+    }
 
     // mitk::Surface::Pointer la_msh = mitk::IOUtil::Load<mitk::Surface>(la_msh_path.toStdString());
     // CemrgCommonUtils::AddToStorage(la_msh, "la_msh", this->GetDataStorage());
 
-    MITK_INFO(QFile::copy(la_msh_path, directory + "/UAC_CT" + "/LA_msh.vtk")) << "Copied LA_msh.vtk";
+    QString la_msh_uac_path = directory + "/UAC_CT" + "/LA_msh.vtk";
+    if (QFile::exists(la_msh_uac_path))
+        QFile::remove(la_msh_uac_path);
+    if (!QFile::copy(la_msh_path, la_msh_uac_path)) {
+        std::string msg = "Could not copy LA_msh.vtk into the UAC_CT folder.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Attention", msg.c_str());
+        return;
+    }
+    MITK_INFO << "Copied LA_msh.vtk";
 
     // Analysis Selector
     bool userInputsAccepted = GetUserAnalysisSelectorInputs();

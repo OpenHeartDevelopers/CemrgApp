@@ -88,9 +88,9 @@ public:
   int Ask(std::string title, std::string msg);
   bool LoadSurfaceChecks();
   void SetLgeAnalysis(bool b);
-  void UserLoadSurface();
+  bool UserLoadSurface();
   QString GetFilePath(QString type, QString extension);
-  void CheckLoadedMeshQuality();
+  bool CheckLoadedMeshQuality();
   void SetTagNameFromPath(QString path);
   QString UserIncludeLgeAnalysis(QString segPath, ImageType::Pointer seg);
   bool GetUserUacOptionsInputs(bool enableFullUiOptions=true);
