@@ -67,6 +67,28 @@ public:
     static void SavePadImageWithConstant(QString inputPath, QString outputPath="", int vxlsToExtend=2, short constant=0);
     static bool ImageConvertFormat(QString pathToImage, QString pathToOutput, bool optResample=true, bool optReorient=true, bool optImgBinary=false);
 
+    //Nifti Header Repair Utils
+    /**
+     * @brief Outcome of inspecting a NIfTI file's qform/sform declaration.
+     *
+     * ITK (5.2.x) determines image direction from the qform alone. A file with qform_code=0 is
+     * rejected at load with "ITK only supports orthonormal direction cosines. No orthonormal
+     * definition found!" even when its sform is perfectly well formed. Such a file is repairable
+     * when it already carries a quaternion that reproduces its sform.
+     */
+    enum class NiftiQformStatus {
+        NotNifti,       ///< Not a readable NIfTI-1 file.
+        AlreadyValid,   ///< qform_code is already non-zero; nothing to do.
+        Repairable,     ///< qform_code=0 but the stored quaternion matches the sform.
+        CannotRepair,   ///< qform_code=0 and no trustworthy quaternion to enable.
+        Repaired,       ///< qform_code was enabled (RepairNiftiQform only).
+        IoError         ///< The file could not be read or written.
+    };
+
+    static NiftiQformStatus InspectNiftiQform(QString pathToImage, QString& message);
+    static NiftiQformStatus RepairNiftiQform(QString pathToImage, QString& message);
+    static QString NiftiQformStatusToString(NiftiQformStatus status);
+
     // static void RoundPointDataValues(vtkSmartPointer<vtkPolyData> pd);
 
     //Mesh Utils
