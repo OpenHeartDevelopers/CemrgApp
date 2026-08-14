@@ -733,23 +733,114 @@ void AtrialStrainMotionView::SegmentExtract() {
 
     // copy the first image and segment it
     QDir nifti_dir = QDir(directory + "/nifti/");
-    QString input_file_name = nifti_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot)[0];
+    QStringList nifti_entries = nifti_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+    if (nifti_entries.isEmpty()) {
+        std::string msg = "No images were found in:\n" + nifti_dir.absolutePath().toStdString() +
+            "\n\nStep 1 expects the cine frames to be inside a 'nifti' folder in the project directory.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "No input images found", msg.c_str());
+        return;
+    }
+    QString input_file_name = nifti_entries.at(0);
     QString input_file_path = directory + "/" + input_file_name;
     MITK_INFO << input_file_path.toStdString();
 
-    MITK_INFO(QFile::copy(nifti_dir.absolutePath() + "/" + input_file_name, input_file_path)) << "Copied " << input_file_name;
+    // DockerCctaMultilabelSegmentation derives its output name from the input's base name.
+    QString pathToSegmentation = directory + "/" + QFileInfo(input_file_path).baseName() + "_label_maps.nii.gz";
 
-    // extract LA
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
-    QString pathToSegmentation = cmd->DockerCctaMultilabelSegmentation(directory, input_file_path, false);
-    MITK_INFO << pathToSegmentation;
+
+    // Segmenting takes a couple of minutes, so offer to reuse a previous result rather than
+    // silently repeating it. Only offer when the existing output is actually usable.
+    bool reuseExistingSegmentation = false;
+    if (QFileInfo::exists(input_file_path) && QFileInfo(pathToSegmentation).size() > 0) {
+        QString cacheMessage;
+        CemrgCommonUtils::NiftiQformStatus cacheStatus =
+            CemrgCommonUtils::InspectNiftiQform(pathToSegmentation, cacheMessage);
+        bool existingIsUsable = (cacheStatus == CemrgCommonUtils::NiftiQformStatus::AlreadyValid ||
+                                 cacheStatus == CemrgCommonUtils::NiftiQformStatus::Repairable);
+
+        if (existingIsUsable) {
+            std::string msg = "A segmentation already exists for this project:\n\n  " +
+                QFileInfo(input_file_path).fileName().toStdString() + "\n  " +
+                QFileInfo(pathToSegmentation).fileName().toStdString() +
+                "\n\nReuse it and skip the segmentation step?\n\n"
+                "Choosing No re-runs the segmentation and overwrites both files.";
+            reuseExistingSegmentation = (Ask("Existing segmentation found", msg) == QMessageBox::Yes);
+            MITK_INFO << (reuseExistingSegmentation
+                ? "[SegmentExtract] Reusing the existing segmentation."
+                : "[SegmentExtract] Re-running the segmentation at the user's request.");
+        } else {
+            MITK_WARN << ("[SegmentExtract] Ignoring the existing segmentation - " + cacheMessage).toStdString();
+        }
+    }
+
+    if (!reuseExistingSegmentation) {
+        // QFile::copy will not overwrite, so clear any previous working copy first. Without this
+        // the copy fails silently and the pipeline continues against a stale image.
+        if (QFile::exists(input_file_path) && !QFile::remove(input_file_path)) {
+            std::string msg = "Could not replace the existing working copy:\n" + input_file_path.toStdString();
+            MITK_ERROR << msg;
+            QMessageBox::warning(NULL, "Attention", msg.c_str());
+            return;
+        }
+        if (!QFile::copy(nifti_dir.absolutePath() + "/" + input_file_name, input_file_path)) {
+            std::string msg = "Could not copy " + input_file_name.toStdString() +
+                " into the project directory.";
+            MITK_ERROR << msg;
+            QMessageBox::warning(NULL, "Attention", msg.c_str());
+            return;
+        }
+        MITK_INFO << ("Copied " + input_file_name).toStdString();
+
+        // extract LA
+        QString producedSegmentation = cmd->DockerCctaMultilabelSegmentation(directory, input_file_path, false);
+        if (producedSegmentation.isEmpty()) {
+            std::string msg = "The multilabel segmentation did not produce an output.\n\n"
+                "Check that Docker is running and the cemrg/ccta image is available, then see the "
+                "log for the exact command that was issued.";
+            MITK_ERROR << msg;
+            QMessageBox::warning(NULL, "Segmentation failed", msg.c_str());
+            return;
+        }
+        pathToSegmentation = producedSegmentation;
+        MITK_INFO << pathToSegmentation;
+    }
 
     // cmd->DockerAtrialStrainMotion(directory, "fix_vtk_metadata");
 
-    mitk::Image::Pointer segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
+    // The segmentation container rebuilds the NIfTI header from the image affine and leaves
+    // qform_code at 0, which ITK refuses to read. Repair it before loading. Only files this
+    // pipeline created are touched; the originals under nifti/ are left alone.
+    QString qformMessage;
+    CemrgCommonUtils::NiftiQformStatus qformStatus =
+        CemrgCommonUtils::RepairNiftiQform(pathToSegmentation, qformMessage);
+    switch (qformStatus) {
+        case CemrgCommonUtils::NiftiQformStatus::Repaired:
+            MITK_INFO << ("[SegmentExtract] NIfTI header repaired - " + qformMessage).toStdString();
+            break;
+        case CemrgCommonUtils::NiftiQformStatus::AlreadyValid:
+            MITK_INFO << ("[SegmentExtract] NIfTI header needs no repair - " + qformMessage).toStdString();
+            break;
+        default:
+            MITK_WARN << ("[SegmentExtract] NIfTI header could not be repaired (" +
+                CemrgCommonUtils::NiftiQformStatusToString(qformStatus) + ") - " + qformMessage).toStdString();
+            break;
+    }
 
-    if (!segmentation) return ;
+    mitk::Image::Pointer segmentation;
+    try {
+        segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
+    } catch (const std::exception& e) {
+        std::string msg = "Could not read the segmentation produced by the CCTA container:\n\n" +
+            pathToSegmentation.toStdString() + "\n\n" + e.what() +
+            "\n\nAn 'orthonormal direction cosines' error here means the file declares no usable "
+            "spatial transform. See the log for the header check that was attempted.";
+        MITK_ERROR << msg;
+        QMessageBox::critical(NULL, "Could not read segmentation", msg.c_str());
+        return;
+    }
 
     // create CemrgMultilabelSegmntation (cmls)
     std::unique_ptr<CemrgMultilabelSegmentationUtils> cmls(new CemrgMultilabelSegmentationUtils());
