@@ -238,8 +238,11 @@ bool AtrialStrainMotionView::GetUserAnalysisSelectorInputs(){
 
         userInputAccepted=true;
 
-        MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
-
+        // No surface load here. This runs before the caller has set tagName for the step, so it
+        // used to check for "<tagName>.vtk" left over from an unrelated step - reporting
+        // "Labelled.vtk" as missing during step 1, which produces no such file. The result was
+        // discarded by the conditional-log idiom, so the check never did anything either. Callers
+        // that need the surface call LoadSurfaceChecks() themselves once tagName is set.
     }
 
     if(!userInputAccepted){
