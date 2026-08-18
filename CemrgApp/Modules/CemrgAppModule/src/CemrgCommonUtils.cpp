@@ -544,23 +544,21 @@ double SformDeterminant(const NiftiHeaderFields& h) {
 }
 
 /**
- * @brief Largest relative discrepancy between the qform-derived matrix and the sform.
+ * @brief Largest absolute discrepancy between the qform-derived matrix and the sform.
  *
- * Scaled rather than absolute, so the large translation terms are compared on equal footing
- * with the direction terms despite float32 precision falling off with magnitude.
  */
 double MaxMatrixDifference(const double qform[3][4], const NiftiHeaderFields& h) {
     double worst = 0.0;
     for (int r = 0; r < 3; r++) {
         for (int c = 0; c < 4; c++) {
             double q = qform[r][c], s = h.srow[r][c];
-            double scale = std::max(1.0, std::max(std::fabs(q), std::fabs(s)));
-            worst = std::max(worst, std::fabs(q - s) / scale);
+            worst = std::max(worst, std::fabs(q - s));
         }
     }
     return worst;
 }
 
+// Absolute, in the units of the matrix itself: millimetres for the translation column, and mm-per-voxel for the direction/spacing block. 
 const double QFORM_SFORM_TOLERANCE = 1e-4;
 
 /**
@@ -685,13 +683,13 @@ CemrgCommonUtils::NiftiQformStatus AssessNiftiQform(
     double difference = MaxMatrixDifference(qform, fields);
     if (difference > QFORM_SFORM_TOLERANCE) {
         message = "qform_code is 0 and the stored quaternion does not match the sform "
-                  "(max relative difference " + QString::number(difference, 'e', 3) +
+                  "(max difference " + QString::number(difference, 'e', 3) +
                   "). Enabling it would change the image geometry, so it needs manual review.";
         return Status::CannotRepair;
     }
 
     message = "qform_code is 0 but the stored quaternion reproduces the sform "
-              "(max relative difference " + QString::number(difference, 'e', 3) +
+              "(max difference " + QString::number(difference, 'e', 3) +
               "), so enabling it is geometrically lossless.";
     return Status::Repairable;
 }
