@@ -925,23 +925,46 @@ void AtrialStrainMotionView::SegmentExtract() {
 
     bool reuseExistingSegmentation = false;
     if (reuseProblem.isEmpty()) {
-        std::string msg = "Step 1 has already produced a complete set of outputs for this project:\n\n  " +
-            QFileInfo(input_file_path).fileName().toStdString() + "\n  " +
-            QFileInfo(pathToSegmentation).fileName().toStdString() + "\n  " +
-            QFileInfo(la_path).fileName().toStdString() + "\n  " +
-            QFileInfo(la_msh_path).fileName().toStdString() +
-            "\n\nRe-running repeats the multilabel segmentation, which takes a couple of minutes, "
-            "and overwrites all four.\n\n"
-            "Skipping keeps them and rebuilds only the UAC_CT working copies and the editable mask.";
+        QStringList names;
+        names << QFileInfo(input_file_path).fileName()
+              << QFileInfo(pathToSegmentation).fileName()
+              << QFileInfo(la_path).fileName()
+              << QFileInfo(la_msh_path).fileName();
 
-        QMessageBox box(QMessageBox::Question, "Step 1 has already been run", msg.c_str());
-        QPushButton* rerunButton = box.addButton("Re-run and overwrite", QMessageBox::YesRole);
-        QPushButton* skipButton = box.addButton("Skip and use the existing segmentation", QMessageBox::NoRole);
+        QStringList descriptions;
+        descriptions << "the input image"
+                     << "the segmentation"
+                     << "the extracted left atrium"
+                     << "the extracted surface";
+
+        // The file names come from the project, so the column widths have to be measured rather
+        // than hardcoded.
+        int nameWidth = 0;
+        int descriptionWidth = 0;
+        for (int ix = 0; ix < names.size(); ix++) {
+            nameWidth = qMax(nameWidth, names.at(ix).length());
+            descriptionWidth = qMax(descriptionWidth, descriptions.at(ix).length());
+        }
+
+        QString table;
+        for (int ix = 0; ix < names.size(); ix++) {
+            table += names.at(ix).leftJustified(nameWidth + 3) +
+                     descriptions.at(ix).leftJustified(descriptionWidth + 3) + "OK\n";
+        }
+
+        // A message box uses a proportional font, so the columns only line up inside <pre>.
+        QMessageBox box(QMessageBox::Question, "Re-run the segmentation step?", "");
+        box.setTextFormat(Qt::RichText);
+        box.setText("Output files for this step already exist. Re-run the segmentation step?<pre>" +
+                    table.toHtmlEscaped() + "</pre>");
+
+        QPushButton* rerunButton = box.addButton("Yes, re-run", QMessageBox::YesRole);
+        QPushButton* keepButton = box.addButton("No, use existing files", QMessageBox::NoRole);
         box.setDefaultButton(rerunButton);
-        box.setEscapeButton(skipButton); // Escape should take the action that destroys nothing
+        box.setEscapeButton(keepButton); // Escape should take the action that destroys nothing
         box.exec();
 
-        reuseExistingSegmentation = (box.clickedButton() == skipButton);
+        reuseExistingSegmentation = (box.clickedButton() == keepButton);
         MITK_INFO << (reuseExistingSegmentation
             ? "[SegmentExtract] Keeping the existing segmentation and surface at the user's request."
             : "[SegmentExtract] Re-running the segmentation at the user's request.");
