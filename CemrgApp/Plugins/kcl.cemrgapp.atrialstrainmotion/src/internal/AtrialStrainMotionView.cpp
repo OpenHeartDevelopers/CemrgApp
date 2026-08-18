@@ -280,8 +280,8 @@ bool AtrialStrainMotionView::LoadSurfaceChecks(){
     QFileInfo meshInfo(prodPath);
     if (!meshInfo.exists() || meshInfo.size() == 0) {
         std::string msg = "The surface mesh is missing or empty:\n  " + prodPath.toStdString() +
-            "\n\nThe step that should have produced it did not complete. Check the log for the "
-            "command that failed.";
+            "\n\nAn earlier step did not write it. Look in the log for the command that failed. "
+            "Then run that step again.";
         MITK_ERROR << msg;
         QMessageBox::warning(NULL, "Surface mesh not available", msg.c_str());
         return false;
@@ -303,12 +303,12 @@ bool AtrialStrainMotionView::CheckLoadedMeshQuality(){
     try {
         surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
     } catch (const std::exception& e) {
-        std::string msg = "Could not read the surface mesh:\n  " + meshinput.toStdString() +
-            "\n\n" + e.what() +
-            "\n\nThe file exists but is not a readable VTK surface, so the step that wrote it "
-            "most likely failed part-way.";
+        std::string msg = "The application cannot read the surface mesh:\n  " + meshinput.toStdString() +
+            "\n\nThe file exists, but it is not a valid VTK surface. The step that wrote it "
+            "stopped before it finished. The reader reports:\n  " + e.what() +
+            "\n\nRun that step again. Look in the log for the command that failed.";
         MITK_ERROR << msg;
-        QMessageBox::critical(NULL, "Could not read surface mesh", msg.c_str());
+        QMessageBox::critical(NULL, "Could not read the surface mesh", msg.c_str());
         return false;
     }
 
@@ -697,10 +697,10 @@ static QString DescribeOutputProblem(QString fullPath) {
     QFileInfo info(fullPath);
 
     if (!info.exists())
-        return "was not created";
+        return "does not exist";
 
     if (info.size() == 0)
-        return "is empty - the tool was started but wrote nothing, so it most likely failed part-way";
+        return "is empty. The tool started, but it wrote no data";
 
     QString name = info.fileName();
     if (name.endsWith(".nii", Qt::CaseInsensitive) || name.endsWith(".nii.gz", Qt::CaseInsensitive)) {
@@ -708,7 +708,7 @@ static QString DescribeOutputProblem(QString fullPath) {
         CemrgCommonUtils::NiftiQformStatus status = CemrgCommonUtils::InspectNiftiQform(fullPath, message);
         if (status == CemrgCommonUtils::NiftiQformStatus::NotNifti ||
             status == CemrgCommonUtils::NiftiQformStatus::IoError)
-            return "cannot be read as a NIfTI image (" + message + ")";
+            return "is not a valid NIfTI image (" + message + ")";
         if (status == CemrgCommonUtils::NiftiQformStatus::CannotRepair)
             return "has a NIfTI header the application cannot use (" + message + ")";
     }
@@ -716,11 +716,11 @@ static QString DescribeOutputProblem(QString fullPath) {
     if (name.endsWith(".vtk", Qt::CaseInsensitive)) {
         QFile file(fullPath);
         if (!file.open(QIODevice::ReadOnly))
-            return "could not be opened for reading";
+            return "is not readable. Check the file permissions";
         QByteArray head = file.read(16);
         file.close();
         if (!head.startsWith("# vtk") && !head.startsWith("<?xml") && !head.startsWith("<VTKFile"))
-            return "does not start with a recognisable VTK header, so it is probably truncated or corrupt";
+            return "does not start with a VTK header, so it is not a valid VTK file";
     }
 
     return QString();
@@ -785,7 +785,7 @@ static QString DescribeLaLabelProblem(QString laPath) {
     try {
         la = mitk::IOUtil::Load<mitk::Image>(laPath.toStdString());
     } catch (const std::exception& e) {
-        return name + " could not be read (" + QString(e.what()) + ")";
+        return name + " is not readable (" + QString(e.what()) + ")";
     }
 
     std::vector<int> labels;
@@ -808,7 +808,7 @@ static QString DescribeLaLabelProblem(QString laPath) {
 
     if (!unexpected.isEmpty())
         return name + " still contains label(s) " + unexpected.join(", ") +
-            ", which step 1 should have cleared, so its label arithmetic did not finish";
+            ". Step 1 removes these labels, so its label arithmetic did not finish";
 
     return QString();
 }
@@ -829,10 +829,10 @@ bool AtrialStrainMotionView::IsOutputFileCorrect(QString dir, QStringList filena
     if (problems.isEmpty())
         return true;
 
-    std::string msg = "The following expected output file(s) are missing or unusable:\n\n" +
+    std::string msg = "The application cannot use these output files:\n\n" +
         problems.join("\n\n").toStdString() +
-        "\n\nThe step's log entries show the exact command that was run - check that the "
-        "required Docker image is available and that the previous steps completed.";
+        "\n\nLook in the log for the command that the step ran. Check that the Docker image "
+        "is available. Check that the earlier steps completed.";
     QMessageBox::warning(NULL, "Step did not produce its expected output", msg.c_str());
     return false;
 }
@@ -887,8 +887,9 @@ void AtrialStrainMotionView::SegmentExtract() {
     QDir nifti_dir = QDir(directory + "/nifti/");
     QStringList nifti_entries = nifti_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
     if (nifti_entries.isEmpty()) {
-        std::string msg = "No images were found in:\n" + nifti_dir.absolutePath().toStdString() +
-            "\n\nStep 1 expects the cine frames to be inside a 'nifti' folder in the project directory.";
+        std::string msg = "Step 1 found no images in:\n  " + nifti_dir.absolutePath().toStdString() +
+            "\n\nStep 1 expects the cine frames inside a 'nifti' folder in the project directory. "
+            "Put the frames there. Then run step 1 again.";
         MITK_ERROR << msg;
         QMessageBox::warning(NULL, "No input images found", msg.c_str());
         return;
@@ -977,16 +978,19 @@ void AtrialStrainMotionView::SegmentExtract() {
         // QFile::copy will not overwrite, so clear any previous working copy first. Without this
         // the copy fails silently and the pipeline continues against a stale image.
         if (QFile::exists(input_file_path) && !QFile::remove(input_file_path)) {
-            std::string msg = "Could not replace the existing working copy:\n" + input_file_path.toStdString();
+            std::string msg = "The application cannot replace the working copy:\n  " + input_file_path.toStdString() +
+                "\n\nAnother program holds the file open, or the file is read-only. "
+                "Close the other program. Then run step 1 again.";
             MITK_ERROR << msg;
-            QMessageBox::warning(NULL, "Attention", msg.c_str());
+            QMessageBox::warning(NULL, "Could not replace the working copy", msg.c_str());
             return;
         }
         if (!QFile::copy(nifti_dir.absolutePath() + "/" + input_file_name, input_file_path)) {
-            std::string msg = "Could not copy " + input_file_name.toStdString() +
-                " into the project directory.";
+            std::string msg = "The application cannot copy " + input_file_name.toStdString() +
+                " into the project directory:\n  " + directory.toStdString() +
+                "\n\nCheck that the disk has free space. Check that you can write to the folder.";
             MITK_ERROR << msg;
-            QMessageBox::warning(NULL, "Attention", msg.c_str());
+            QMessageBox::warning(NULL, "Could not copy the input image", msg.c_str());
             return;
         }
         MITK_INFO << ("Copied " + input_file_name).toStdString();
@@ -994,9 +998,9 @@ void AtrialStrainMotionView::SegmentExtract() {
         // extract LA
         QString producedSegmentation = cmd->DockerCctaMultilabelSegmentation(directory, input_file_path, false);
         if (producedSegmentation.isEmpty()) {
-            std::string msg = "The multilabel segmentation did not produce an output.\n\n"
-                "Check that Docker is running and the cemrg/ccta image is available, then see the "
-                "log for the exact command that was issued.";
+            std::string msg = "The multilabel segmentation did not produce an output file.\n\n"
+                "Check that Docker runs. Check that the cemrg/ccta image is available. "
+                "Look in the log for the command that step 1 ran.";
             MITK_ERROR << msg;
             QMessageBox::warning(NULL, "Segmentation failed", msg.c_str());
             return;
@@ -1029,12 +1033,13 @@ void AtrialStrainMotionView::SegmentExtract() {
         try {
             segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
         } catch (const std::exception& e) {
-            std::string msg = "Could not read the segmentation produced by the CCTA container:\n\n" +
-                pathToSegmentation.toStdString() + "\n\n" + e.what() +
-                "\n\nAn 'orthonormal direction cosines' error here means the file declares no usable "
-                "spatial transform. See the log for the header check that was attempted.";
+            std::string msg = "The application cannot read the segmentation from the CCTA container:\n  " +
+                pathToSegmentation.toStdString() +
+                "\n\nAn 'orthonormal direction cosines' error means the file declares no usable "
+                "spatial transform. The reader reports:\n  " + e.what() +
+                "\n\nLook in the log for the result of the header check.";
             MITK_ERROR << msg;
-            QMessageBox::critical(NULL, "Could not read segmentation", msg.c_str());
+            QMessageBox::critical(NULL, "Could not read the segmentation", msg.c_str());
             return;
         }
 
@@ -1063,12 +1068,11 @@ void AtrialStrainMotionView::SegmentExtract() {
         // empty file behind. Check the size, not just existence, or the empty mesh propagates and
         // surfaces much later as an opaque read error.
         if (surfaceResult.compare("ERROR_IN_PROCESSING") == 0 || QFileInfo(la_msh_path).size() == 0) {
-            std::string msg = "Could not extract the LA surface from " + QFileInfo(la_path).fileName().toStdString() +
-                ".\n\nThis step runs MIRTK's 'extract-surface', which CemrgApp expects to find in:\n  " +
+            std::string msg = "Step 1 cannot extract the LA surface from " + QFileInfo(la_path).fileName().toStdString() +
+                ".\n\nThis step runs MIRTK's 'extract-surface'. CemrgApp expects that program in:\n  " +
                 (QCoreApplication::applicationDirPath() + "/MLib").toStdString() +
-                "\n\nThe MIRTK binaries are not built by CemrgApp - they have to be placed there "
-                "separately. Check that the MLib folder exists and that its executables can run "
-                "(missing shared libraries are a common cause).";
+                "\n\nCemrgApp does not build the MIRTK binaries. Install them in that folder. "
+                "Then check that the programs run. An absent shared library is a common cause.";
             MITK_ERROR << msg;
             QMessageBox::critical(NULL, "Surface extraction failed", msg.c_str());
             return;
@@ -1082,9 +1086,11 @@ void AtrialStrainMotionView::SegmentExtract() {
     if (QFile::exists(la_msh_uac_path))
         QFile::remove(la_msh_uac_path);
     if (!QFile::copy(la_msh_path, la_msh_uac_path)) {
-        std::string msg = "Could not copy LA_msh.vtk into the UAC_CT folder.";
+        std::string msg = "The application cannot copy LA_msh.vtk into the UAC_CT folder:\n  " +
+            (directory + "/UAC_CT").toStdString() +
+            "\n\nCheck that the disk has free space. Check that you can write to the folder.";
         MITK_ERROR << msg;
-        QMessageBox::warning(NULL, "Attention", msg.c_str());
+        QMessageBox::warning(NULL, "Could not copy the surface mesh", msg.c_str());
         return;
     }
     MITK_INFO << "Copied LA_msh.vtk";
