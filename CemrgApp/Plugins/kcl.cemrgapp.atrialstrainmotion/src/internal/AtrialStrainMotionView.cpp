@@ -1036,12 +1036,9 @@ void AtrialStrainMotionView::SegmentExtract() {
 
         mitk::IOUtil::Save(segmentation, la_path.toStdString());
 
-        // CemrgCommonUtils::AddToStorage(segmentation, "LA", this->GetDataStorage());
 
         // Extract LA Mesh surface
-        // cmd->ExecuteSurf(directory, directory + "/LA.nii", "close", 0, 0.5, 0, 100);
         QString surfaceResult = cmd->ExecuteExtractSurface(directory, la_path, la_msh_path, 0.5, 0);
-        // cmd->ExecuteSmoothSurface(directory, la_msh_path, directory + "/LA_msh_smth.vtk", 100);
 
         // ExecuteCommand pre-creates the output with ExecuteTouch, so a failed run still leaves an
         // empty file behind. Check the size, not just existence, or the empty mesh propagates and
@@ -1057,9 +1054,6 @@ void AtrialStrainMotionView::SegmentExtract() {
             return;
         }
     }
-
-    // mitk::Surface::Pointer la_msh = mitk::IOUtil::Load<mitk::Surface>(la_msh_path.toStdString());
-    // CemrgCommonUtils::AddToStorage(la_msh, "la_msh", this->GetDataStorage());
 
     QString la_msh_uac_path = directory + "/UAC_CT" + "/LA_msh.vtk";
     if (QFile::exists(la_msh_uac_path))
@@ -1270,7 +1264,6 @@ void AtrialStrainMotionView::ClipperPV(){
         }
         fi.close();
 
-		// mitk::Surface::Pointer la_msh = mitk::IOUtil::Load<mitk::Surface>(la_msh_path.toStdString());
         CemrgCommonUtils::AddToStorage(surface, "clipped", this->GetDataStorage());
 
         // save surface
@@ -1280,7 +1273,6 @@ void AtrialStrainMotionView::ClipperPV(){
 
         SetTagNameFromPath(path);
         if(automaticPipeline){
-            ClipperMV();
 
             QString correctLabels = prodPath + "prodSeedLabels.txt";
             QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
