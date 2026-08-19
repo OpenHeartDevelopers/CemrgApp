@@ -9,6 +9,7 @@ set(CPP_FILES
     CemrgAtrialTools.cpp
     CemrgScarAdvanced.cpp
     CemrgMultilabelSegmentationUtils.cpp
+    CemrgNiftiUtils.cpp
     CemrgTests.cpp
 )
 
@@ -26,6 +27,7 @@ set(MOC_H_FILES
   include/CemrgPower.h
   include/CemrgScarAdvanced.h
   include/CemrgMultilabelSegmentationUtils.h
+  include/CemrgNiftiUtils.h
 )
 
 set(RESOURCE_FILES

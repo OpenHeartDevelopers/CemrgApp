@@ -110,6 +110,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //CemrgAppModule
 #include <CemrgCommonUtils.h>
+#include <CemrgNiftiUtils.h>
 #include <CemrgCommandLine.h>
 #include <CemrgMeasure.h>
 #include <CemrgScar3D.h>
@@ -697,11 +698,11 @@ static QString DescribeOutputProblem(QString fullPath) {
     QString name = info.fileName();
     if (name.endsWith(".nii", Qt::CaseInsensitive) || name.endsWith(".nii.gz", Qt::CaseInsensitive)) {
         QString message;
-        CemrgCommonUtils::NiftiQformStatus status = CemrgCommonUtils::InspectNiftiQform(fullPath, message);
-        if (status == CemrgCommonUtils::NiftiQformStatus::NotNifti ||
-            status == CemrgCommonUtils::NiftiQformStatus::IoError)
+        CemrgNiftiUtils::NiftiQformStatus status = CemrgNiftiUtils::InspectNiftiQform(fullPath, message);
+        if (status == CemrgNiftiUtils::NiftiQformStatus::NotNifti ||
+            status == CemrgNiftiUtils::NiftiQformStatus::IoError)
             return "is not a valid NIfTI image (" + message + ")";
-        if (status == CemrgCommonUtils::NiftiQformStatus::CannotRepair)
+        if (status == CemrgNiftiUtils::NiftiQformStatus::CannotRepair)
             return "has a NIfTI header the application cannot use (" + message + ")";
     }
 
@@ -751,8 +752,8 @@ static QString DescribeReusableOutputProblem(const QStringList& copiedPaths, con
                        name.endsWith(".nii.gz", Qt::CaseInsensitive);
         if (isNifti && writtenPaths.contains(fullPath)) {
             QString message;
-            if (CemrgCommonUtils::InspectNiftiQform(fullPath, message) !=
-                CemrgCommonUtils::NiftiQformStatus::AlreadyValid)
+            if (CemrgNiftiUtils::InspectNiftiQform(fullPath, message) !=
+                CemrgNiftiUtils::NiftiQformStatus::AlreadyValid)
                 return name + " does not already declare a usable qform (" + message + ")";
         }
     }
@@ -995,18 +996,18 @@ void AtrialStrainMotionView::SegmentExtract() {
         // qform_code at 0, which ITK refuses to read. Repair it before loading. Only files this
         // pipeline created are touched; the originals under nifti/ are left alone.
         QString qformMessage;
-        CemrgCommonUtils::NiftiQformStatus qformStatus =
-            CemrgCommonUtils::RepairNiftiQform(pathToSegmentation, qformMessage);
+        CemrgNiftiUtils::NiftiQformStatus qformStatus =
+            CemrgNiftiUtils::RepairNiftiQform(pathToSegmentation, qformMessage);
         switch (qformStatus) {
-            case CemrgCommonUtils::NiftiQformStatus::Repaired:
+            case CemrgNiftiUtils::NiftiQformStatus::Repaired:
                 MITK_INFO << ("[SegmentExtract] NIfTI header repaired - " + qformMessage).toStdString();
                 break;
-            case CemrgCommonUtils::NiftiQformStatus::AlreadyValid:
+            case CemrgNiftiUtils::NiftiQformStatus::AlreadyValid:
                 MITK_INFO << ("[SegmentExtract] NIfTI header needs no repair - " + qformMessage).toStdString();
                 break;
             default:
                 MITK_WARN << ("[SegmentExtract] NIfTI header could not be repaired (" +
-                    CemrgCommonUtils::NiftiQformStatusToString(qformStatus) + ") - " + qformMessage).toStdString();
+                    CemrgNiftiUtils::NiftiQformStatusToString(qformStatus) + ") - " + qformMessage).toStdString();
                 break;
         }
 
