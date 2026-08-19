@@ -103,7 +103,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <cstring>
 #include <vector>
 
-// zlib - NIfTI files may be gzipped; used for header inspection and repair
 #include <zlib.h>
 
 #include "CemrgCommonUtils.h"
