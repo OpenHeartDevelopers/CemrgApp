@@ -890,8 +890,6 @@ void AtrialStrainMotionView::SegmentExtract() {
     // DockerCctaMultilabelSegmentation derives its output name from the input's base name.
     QString pathToSegmentation = directory + "/" + QFileInfo(input_file_path).baseName() + "_label_maps.nii.gz";
 
-    // Declared here rather than where they are written, because the reuse check below has to
-    // validate them before deciding whether anything gets written at all.
     QString la_path = directory + "/LA.nii";
     QString la_msh_path = directory + "/LA_msh.vtk";
 
