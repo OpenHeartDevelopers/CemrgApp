@@ -896,11 +896,6 @@ void AtrialStrainMotionView::SegmentExtract() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    // Segmenting takes a couple of minutes, so offer to keep a previous result rather than silently
-    // repeating it. Only offer that when the whole of the previous run can be trusted: these four
-    // files are exactly what reuse would leave untouched, so any doubt about one of them means the
-    // step runs in full, with no prompt. The UAC_CT copies and prodMetadata.txt are deliberately
-    // absent - both paths rebuild those below, so their state cannot make reuse unsafe.
     QStringList copiedOutputs;
     copiedOutputs << input_file_path;
     QStringList writtenOutputs;
