@@ -1025,8 +1025,6 @@ void AtrialStrainMotionView::SegmentExtract() {
         }
 
         // create CemrgMultilabelSegmntation (cmls)
-        // Keep this in step with DescribeLaLabelProblem, which reads LA.nii back and expects
-        // LA_LABEL to be the only label left.
         std::unique_ptr<CemrgMultilabelSegmentationUtils> cmls(new CemrgMultilabelSegmentationUtils());
         segmentation = cmls->ReplaceLabel(segmentation, 8, LA_LABEL);
         segmentation = cmls->ReplaceLabel(segmentation, 9, LA_LABEL);
