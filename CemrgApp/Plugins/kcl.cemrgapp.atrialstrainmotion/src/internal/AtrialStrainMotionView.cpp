@@ -957,8 +957,7 @@ void AtrialStrainMotionView::SegmentExtract() {
     }
 
     if (!reuseExistingSegmentation) {
-        // QFile::copy will not overwrite, so clear any previous working copy first. Without this
-        // the copy fails silently and the pipeline continues against a stale image.
+        // QFile::copy will not overwrite, clear any previous working copy first.
         if (QFile::exists(input_file_path) && !QFile::remove(input_file_path)) {
             std::string msg = "The application cannot replace the working copy:\n  " + input_file_path.toStdString() +
                 "\n\nAnother program holds the file open, or the file is read-only. "
