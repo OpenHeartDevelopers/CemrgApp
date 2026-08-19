@@ -239,11 +239,6 @@ bool AtrialStrainMotionView::GetUserAnalysisSelectorInputs(){
 
         userInputAccepted=true;
 
-        // No surface load here. This runs before the caller has set tagName for the step, so it
-        // used to check for "<tagName>.vtk" left over from an unrelated step - reporting
-        // "Labelled.vtk" as missing during step 1, which produces no such file. The result was
-        // discarded by the conditional-log idiom, so the check never did anything either. Callers
-        // that need the surface call LoadSurfaceChecks() themselves once tagName is set.
     }
 
     if(!userInputAccepted){
@@ -275,8 +270,7 @@ bool AtrialStrainMotionView::LoadSurfaceChecks(){
 	QString prodPath = directory + "/UAC_CT/" + tagName + ".vtk";
     MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + prodPath).toStdString();
 
-    // Callers already branch on this result, but it used to be hardcoded to true, so a missing or
-    // empty mesh was only discovered when something downstream threw.
+    // A failed step still leaves a 0-byte mesh behind, so check the size as well as existence.
     QFileInfo meshInfo(prodPath);
     if (!meshInfo.exists() || meshInfo.size() == 0) {
         std::string msg = "The surface mesh is missing or empty:\n  " + prodPath.toStdString() +
