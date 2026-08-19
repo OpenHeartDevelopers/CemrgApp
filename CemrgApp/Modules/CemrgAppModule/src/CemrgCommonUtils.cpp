@@ -97,11 +97,6 @@ PURPOSE.  See the above copyright notices for more information.
 #include <QJsonDocument>
 #include <QJsonArray>
 
-// Standard library
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
 #include "CemrgCommonUtils.h"
 
 

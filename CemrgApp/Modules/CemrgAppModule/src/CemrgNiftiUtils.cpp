@@ -25,7 +25,7 @@ PURPOSE.  See the above copyright notices for more information.
  *
 =========================================================================*/
 
-// Qmitk
+// MITK
 #include <mitkLogMacros.h>
 
 // Qt
