@@ -545,7 +545,6 @@ double SformDeterminant(const NiftiHeaderFields& h) {
 
 /**
  * @brief Largest absolute discrepancy between the qform-derived matrix and the sform.
- *
  */
 double MaxMatrixDifference(const double qform[3][4], const NiftiHeaderFields& h) {
     double worst = 0.0;
@@ -558,7 +557,7 @@ double MaxMatrixDifference(const double qform[3][4], const NiftiHeaderFields& h)
     return worst;
 }
 
-// Absolute, in the units of the matrix itself: millimetres for the translation column, and mm-per-voxel for the direction/spacing block. 
+// Absolute, in the units of the matrix itself: millimetres for the translation column, and mm-per-voxel for the direction/spacing block.
 const double QFORM_SFORM_TOLERANCE = 1e-4;
 
 /**
