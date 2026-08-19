@@ -1334,7 +1334,8 @@ void AtrialStrainMotionView::UacCalculationVerifyLabels(){
     }
 	MITK_INFO << tagName;
 
-    MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
+    if (!LoadSurfaceChecks()) return;
+    MITK_INFO << ("Loaded surface " + tagName).toStdString();
     std::string title, msg;
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(StdStringPath("UAC_CT/" + tagName + ".vtk"));
     std::vector<int> incorrectLabels;
