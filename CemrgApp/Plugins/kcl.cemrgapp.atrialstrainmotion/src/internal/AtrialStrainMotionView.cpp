@@ -679,13 +679,11 @@ bool AtrialStrainMotionView::GetUserEditLabelsInputs(){
 }
 
 /**
- * @brief Describe why an expected output file is unusable, or return an empty string if it is fine.
+ * @brief Describe why an output file is unusable. Return an empty string if the file is usable.
  *
- * CemrgCommandLine::IsOutputSuccessful only asks whether a file exists and is non-empty. That
- * cannot tell "the tool produced a usable result" from "some bytes appeared" - and because
- * ExecuteCommand pre-creates outputs with ExecuteTouch, a tool that fails after being started
- * still leaves a file behind. This adds a cheap readability check on top, so the failure is
- * reported in terms the user can act on.
+ * CemrgCommandLine::IsOutputSuccessful tests only that a file exists and is not empty.
+ * ExecuteCommand also pre-creates each output with ExecuteTouch. A failed tool thus leaves a
+ * file that passes these two criteria but may not be usuable. This function reads the file and names the fault.
  */
 static QString DescribeOutputProblem(QString fullPath) {
     QFileInfo info(fullPath);
@@ -720,25 +718,23 @@ static QString DescribeOutputProblem(QString fullPath) {
     return QString();
 }
 
-// The label the CCTA container gives the LA body. SegmentExtract folds 8, 9 and 10 into it and
-// zeroes every other label, so it is the only value a finished LA.nii should contain.
+// The label that the CCTA container gives to the LA body. SegmentExtract changes labels 8, 9
+// and 10 to this value. It changes all other labels to 0. A complete LA.nii holds only this value.
 static const int LA_LABEL = 4;
 
 /**
- * @brief Describe why an existing output cannot be reused, or return an empty string if it can.
+ * @brief Describe why the application cannot reuse an output file. Return an empty string if the
+ *        application can reuse the file.
  *
- * Asks a stricter question than DescribeOutputProblem. That one asks "can this file be read",
- * which is the right test for a file about to be repaired and loaded. Reuse instead leaves the
- * file exactly as it was found, so the test becomes "can this file be trusted untouched".
+ * This test is stricter than DescribeOutputProblem. That function tests a file that the
+ * application repairs and then loads. Reuse does not change the file, so this function tests the
+ * file in its current state.
  *
- * Which files that applies to depends on how each was produced:
- *
- * @param copiedPaths  taken verbatim from the source data. The pipeline never rewrites their
- *                     headers - the segmentation container reads them, not ITK - so they carry
- *                     whatever the source declared and only have to be readable.
- * @param writtenPaths produced by the pipeline, which repairs the qform on the way out. A finished
- *                     run therefore leaves these already valid, so a merely *repairable* one did
- *                     not come from a finished run, and a clean re-run is the honest answer.
+ * @param copiedPaths  Files that the pipeline copies from the source data. The pipeline does not
+ *                     change their headers. They must only be readable.
+ * @param writtenPaths Files that the pipeline writes. The pipeline repairs the qform of each file,
+ *                     so a complete run leaves a valid qform. A repairable qform shows an
+ *                     incomplete run.
  */
 static QString DescribeReusableOutputProblem(const QStringList& copiedPaths, const QStringList& writtenPaths) {
     QStringList allPaths = copiedPaths + writtenPaths;
@@ -765,12 +761,11 @@ static QString DescribeReusableOutputProblem(const QStringList& copiedPaths, con
 }
 
 /**
- * @brief Check that LA.nii still holds what step 1's label arithmetic leaves behind: only LA_LABEL.
+ * @brief Check that LA.nii holds only LA_LABEL. Return an empty string if it does.
  *
- * The file checks cannot see this - an image can be a perfectly valid NIfTI and still be the wrong
- * image, for instance the raw multilabel segmentation saved under the wrong name, or the output of
- * a run that died between the first and last ReplaceLabel call. Reuse hands this file to every
- * later step, so it is worth one pass over the volume before offering that choice.
+ * The file checks cannot find this fault. A valid NIfTI file can still hold the wrong image, for
+ * example the multilabel segmentation with the wrong name. Reuse gives this file to all later
+ * steps, so the application reads the volume one time before it offers reuse.
  */
 static QString DescribeLaLabelProblem(QString laPath) {
     QString name = QFileInfo(laPath).fileName();
