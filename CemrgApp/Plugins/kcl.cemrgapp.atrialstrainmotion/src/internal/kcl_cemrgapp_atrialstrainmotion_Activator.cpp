@@ -48,10 +48,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace mitk
 {
+  ctkPluginContext* kcl_cemrgapp_atrialstrainmotion_Activator::pluginContext = nullptr;
+
   void kcl_cemrgapp_atrialstrainmotion_Activator::start(ctkPluginContext *context)
   {
     BERRY_REGISTER_EXTENSION_CLASS(AtrialStrainMotionView, context)
+    pluginContext = context;
   }
 
-  void kcl_cemrgapp_atrialstrainmotion_Activator::stop(ctkPluginContext *context) { Q_UNUSED(context) }
+  void kcl_cemrgapp_atrialstrainmotion_Activator::stop(ctkPluginContext *context)
+  {
+    Q_UNUSED(context)
+    pluginContext = nullptr;
+  }
+
+  ctkPluginContext* kcl_cemrgapp_atrialstrainmotion_Activator::getContext() { return pluginContext; }
 }

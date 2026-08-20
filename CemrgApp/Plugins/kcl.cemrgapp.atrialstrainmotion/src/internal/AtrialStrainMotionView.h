@@ -139,8 +139,13 @@ protected slots:
   void PlotAreaStrain();
   void CalcFiberStrains();
   void PlotFibersTrains();
+  // Panel
+  void Reset();
 
 private:
+  // Sets the panel state that CreateQtPartControl and Reset both use.
+  void SetDefaultPanelState();
+
   double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
   QString directory, tagName, cnnPath;
   std::unique_ptr<CemrgAtrialTools> atrium;

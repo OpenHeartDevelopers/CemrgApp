@@ -59,6 +59,10 @@ namespace mitk
   public:
     void start(ctkPluginContext *context);
     void stop(ctkPluginContext *context);
+    static ctkPluginContext* getContext();
+
+  private:
+    static ctkPluginContext* pluginContext;
 
   }; // kcl_cemrgapp_atrialstrainmotion_Activator
 }

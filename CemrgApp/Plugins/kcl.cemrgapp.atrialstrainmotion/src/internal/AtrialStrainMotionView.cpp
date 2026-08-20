@@ -48,6 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Blueberry
 #include <berryISelectionService.h>
 #include <berryIWorkbenchWindow.h>
+#include <berryIWorkbenchPage.h>
 
 //Micro services
 #include <usModuleRegistry.h>
@@ -189,17 +190,24 @@ void AtrialStrainMotionView::CreateQtPartControl(QWidget *parent)
   // Plot Fiber Strain
   connect(m_Controls.plot_fibers_trains, SIGNAL(clicked()), this, SLOT(PlotFibersTrains()));
   m_Controls.plot_fibers_trains->setStyleSheet("Text-align:left");
+  // Reset
+  connect(m_Controls.button_reset, SIGNAL(clicked()), this, SLOT(Reset()));
 
+  SetDefaultPanelState();
+}
 
-  // Set default variables
+void AtrialStrainMotionView::SetDefaultPanelState()
+{
   atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
   tagName = "Labelled";
+  // AutomaticAnalysis reuses cnnPath when it is not empty, and cnnPath points into the
+  // project folder. Clear it, or the next project reads the segmentation of this one.
+  cnnPath.clear();
   uiSelector_pipeline = 0;
   uiSelector_imgauto_skipCemrgNet = false;
   uiSelector_imgauto_skipLabel = false;
   uiSelector_img_scar = false;
   uiSelector_man_useCemrgNet = false;
-
 }
 
 void AtrialStrainMotionView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/,
@@ -1700,6 +1708,57 @@ void AtrialStrainMotionView::PlotFibersTrains() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
     cmd->DockerAtrialStrainMotion(Path(), "plotFiberStrains");
+}
+
+void AtrialStrainMotionView::Reset() {
+
+    try {
+
+        ctkPluginContext* context = mitk::kcl_cemrgapp_atrialstrainmotion_Activator::getContext();
+        mitk::IDataStorageService* dss = 0;
+        ctkServiceReference dsRef = context->getServiceReference<mitk::IDataStorageService>();
+
+        if (dsRef)
+            dss = context->getService<mitk::IDataStorageService>(dsRef);
+
+        if (!dss) {
+            MITK_WARN << "The IDataStorageService is not available. The application cannot reset the project.";
+        } else {
+            mitk::IDataStorageReference::Pointer dataStorageRef = dss->GetActiveDataStorage();
+            if (dataStorageRef.IsNull()) {
+                // No editor is active, so use the default data storage.
+                dataStorageRef = dss->GetDefaultDataStorage();
+            }
+
+            mitk::DataStorage::Pointer dataStorage = dataStorageRef->GetDataStorage();
+            if (dataStorage.IsNull()) {
+                MITK_WARN << "No data storage is available. The application cannot reset the project.";
+            } else {
+                // Remove the nodes of the project and keep the helper objects. The Standard
+                // Display draws its crosshair planes from the helper objects.
+                mitk::NodePredicateNot::Pointer isNotHelper = mitk::NodePredicateNot::New(
+                            mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true)));
+                dataStorage->Remove(dataStorage->GetSubset(isNotHelper));
+            }
+        }
+
+        if (dsRef)
+            context->ungetService(dsRef);
+
+    } catch (std::exception& e) {
+
+        MITK_ERROR << "The application cannot reset the project: " << e.what();
+        QString projectFolder = directory.isEmpty() ? QString("the project folder") : directory;
+        QMessageBox::warning(
+            NULL, "Could not reset the project",
+            QString("The application cannot reset the project. The files in %1 are not changed. "
+                    "Restart CemrgApp, then try again.\n\nDetails: %2").arg(projectFolder).arg(e.what()));
+    }//_try
+
+    // Reset the panel state. The files in the project folder stay on disk.
+    directory.clear();
+    SetDefaultPanelState();
+    this->GetSite()->GetPage()->ResetPerspective();
 }
 
 
