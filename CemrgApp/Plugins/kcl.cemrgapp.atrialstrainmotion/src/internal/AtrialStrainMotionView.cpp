@@ -133,9 +133,8 @@ void AtrialStrainMotionView::CreateQtPartControl(QWidget *parent)
   connect(m_Controls.segment_extract, SIGNAL(clicked()), this, SLOT(SegmentExtract()));
   m_Controls.segment_extract->setStyleSheet("Text-align:left");
   // 2. Post processing
-  // m_Controls.button_man4_2_postproc->setVisible(false);
   connect(m_Controls.button_man4_2_postproc, SIGNAL(clicked()), this, SLOT(SegmentationPostprocessing()));
-  m_Controls.button_man4_2_postproc->setStyleSheet("Text-align:left");
+  m_Controls.button_man4_2_postproc->setStyleSheet("Text-align:left; color: rgb(132, 174, 235)");
   // 3. Identify PVs
   connect(m_Controls.button_man5_idPV, SIGNAL(clicked()), this, SLOT(IdentifyPV()));
   m_Controls.button_man5_idPV->setStyleSheet("Text-align:left");
@@ -147,7 +146,7 @@ void AtrialStrainMotionView::CreateQtPartControl(QWidget *parent)
   m_Controls.button_auto4_meshpreproc->setStyleSheet("Text-align:left");
   // 6. Verify Labels
   connect(m_Controls.button_0_3_checklabels, SIGNAL(clicked()), this, SLOT(UacCalculationVerifyLabels()));
-  m_Controls.button_0_3_checklabels->setStyleSheet("Text-align:left");
+  m_Controls.button_0_3_checklabels->setStyleSheet("Text-align:left; color: rgb(132, 174, 235)");
   // 7. Clip PV
   connect(m_Controls.button_man8_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
   m_Controls.button_man8_clipPV->setStyleSheet("Text-align:left");
