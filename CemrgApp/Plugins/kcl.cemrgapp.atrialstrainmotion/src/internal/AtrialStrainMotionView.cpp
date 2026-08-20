@@ -83,6 +83,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Qt
 #include <QMessageBox>
+#include <QPushButton>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QDirIterator>
@@ -109,6 +110,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //CemrgAppModule
 #include <CemrgCommonUtils.h>
+#include <CemrgNiftiUtils.h>
 #include <CemrgCommandLine.h>
 #include <CemrgMeasure.h>
 #include <CemrgScar3D.h>
@@ -238,8 +240,6 @@ bool AtrialStrainMotionView::GetUserAnalysisSelectorInputs(){
 
         userInputAccepted=true;
 
-        MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
-
     }
 
     if(!userInputAccepted){
@@ -268,12 +268,21 @@ int AtrialStrainMotionView::Ask(std::string title, std::string msg){
 }
 
 bool AtrialStrainMotionView::LoadSurfaceChecks(){
-    bool success = true;
-    UserLoadSurface();
 	QString prodPath = directory + "/UAC_CT/" + tagName + ".vtk";
     MITK_INFO << ("[LoadSurfaceChecks] Loading surface: " + prodPath).toStdString();
 
-    return success;
+    // A failed step still leaves a 0-byte mesh behind, so check the size as well as existence.
+    QFileInfo meshInfo(prodPath);
+    if (!meshInfo.exists() || meshInfo.size() == 0) {
+        std::string msg = "The surface mesh is missing or empty:\n  " + prodPath.toStdString() +
+            "\n\nAn earlier step did not write it. Look in the log for the command that failed. "
+            "Then run that step again.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Surface mesh not available", msg.c_str());
+        return false;
+    }
+
+    return UserLoadSurface();
 }
 
 void AtrialStrainMotionView::SetLgeAnalysis(bool b){
@@ -281,11 +290,22 @@ void AtrialStrainMotionView::SetLgeAnalysis(bool b){
     // m_Controls.button_z_scar->setEnabled(b);
 }
 
-void AtrialStrainMotionView::CheckLoadedMeshQuality(){
+bool AtrialStrainMotionView::CheckLoadedMeshQuality(){
     QString prodPath = directory + "/UAC_CT/";
     QString meshinput = prodPath + tagName + ".vtk";
 
-    mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
+    mitk::Surface::Pointer surface;
+    try {
+        surface = mitk::IOUtil::Load<mitk::Surface>(meshinput.toStdString());
+    } catch (const std::exception& e) {
+        std::string msg = "The application cannot read the surface mesh:\n  " + meshinput.toStdString() +
+            "\n\nThe file exists, but it is not a valid VTK surface. The step that wrote it "
+            "stopped before it finished. The reader reports:\n  " + e.what() +
+            "\n\nRun that step again. Look in the log for the command that failed.";
+        MITK_ERROR << msg;
+        QMessageBox::critical(NULL, "Could not read the surface mesh", msg.c_str());
+        return false;
+    }
 
     vtkSmartPointer<vtkPolyDataConnectivityFilter> cf = vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
     cf->ScalarConnectivityOff();
@@ -315,6 +335,8 @@ void AtrialStrainMotionView::CheckLoadedMeshQuality(){
             mitk::IOUtil::Save(surface, (prodPath+nameExt).toStdString());
         }
     }
+
+    return true;
 }
 
 void AtrialStrainMotionView::SetAutomaticModeButtons(bool b){
@@ -328,10 +350,10 @@ void AtrialStrainMotionView::SetAutomaticModeButtons(bool b){
     }
 }
 
-void AtrialStrainMotionView::UserLoadSurface(){
+bool AtrialStrainMotionView::UserLoadSurface(){
     QString newpath = directory + "/UAC_CT/" + tagName + ".vtk";
     SetTagNameFromPath(newpath);
-    CheckLoadedMeshQuality();
+    return CheckLoadedMeshQuality();
 }
 
 QString AtrialStrainMotionView::GetFilePath(QString nameSubstring, QString extension){
@@ -657,32 +679,152 @@ bool AtrialStrainMotionView::GetUserEditLabelsInputs(){
     return userInputAccepted;
 }
 
-bool AtrialStrainMotionView::IsOutputFileCorrect(QString dir, QStringList filenames){
-    bool success = true;
+/**
+ * @brief Describe why an output file is unusable. Return an empty string if the file is usable.
+ *
+ * CemrgCommandLine::IsOutputSuccessful tests only that a file exists and is not empty.
+ * ExecuteCommand also pre-creates each output with ExecuteTouch. A failed tool thus leaves a
+ * file that passes these two criteria but may not be usuable. This function reads the file and names the fault.
+ */
+static QString DescribeOutputProblem(QString fullPath) {
+    QFileInfo info(fullPath);
 
-    int countfails = 0;
-    QString checkOutputMsg = "";
+    if (!info.exists())
+        return "does not exist";
 
-    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-    for (int ix = 0; ix < filenames.size(); ix++) {
-        bool okSingleTest = cmd->IsOutputSuccessful(dir + "/" + filenames.at(ix));
+    if (info.size() == 0)
+        return "is empty. The tool started, but it wrote no data";
 
-        if (!okSingleTest){
-            MITK_ERROR << ("File(s) not created - " + filenames.at(ix)).toStdString();
-            countfails++;
-            checkOutputMsg += (countfails==1) ? "File(s) not created: " : "";
-            checkOutputMsg += "\n " + filenames.at(ix);
+    QString name = info.fileName();
+    if (name.endsWith(".nii", Qt::CaseInsensitive) || name.endsWith(".nii.gz", Qt::CaseInsensitive)) {
+        QString message;
+        CemrgNiftiUtils::NiftiQformStatus status = CemrgNiftiUtils::InspectNiftiQform(fullPath, message);
+        if (status == CemrgNiftiUtils::NiftiQformStatus::NotNifti ||
+            status == CemrgNiftiUtils::NiftiQformStatus::IoError)
+            return "is not a valid NIfTI image (" + message + ")";
+        if (status == CemrgNiftiUtils::NiftiQformStatus::CannotRepair)
+            return "has a NIfTI header the application cannot use (" + message + ")";
+    }
+
+    if (name.endsWith(".vtk", Qt::CaseInsensitive)) {
+        QFile file(fullPath);
+        if (!file.open(QIODevice::ReadOnly))
+            return "is not readable. Check the file permissions";
+        QByteArray head = file.read(16);
+        file.close();
+        if (!head.startsWith("# vtk") && !head.startsWith("<?xml") && !head.startsWith("<VTKFile"))
+            return "does not start with a VTK header, so it is not a valid VTK file";
+    }
+
+    return QString();
+}
+
+// The label that the CCTA container gives to the LA body. SegmentExtract changes labels 8, 9
+// and 10 to this value. It changes all other labels to 0. A complete LA.nii holds only this value.
+static const int LA_LABEL = 4;
+
+/**
+ * @brief Describe why the application cannot reuse an output file. Return an empty string if the
+ *        application can reuse the file.
+ *
+ * This test is stricter than DescribeOutputProblem. That function tests a file that the
+ * application repairs and then loads. Reuse does not change the file, so this function tests the
+ * file in its current state.
+ *
+ * @param copiedPaths  Files that the pipeline copies from the source data. The pipeline does not
+ *                     change their headers. They must only be readable.
+ * @param writtenPaths Files that the pipeline writes. The pipeline repairs the qform of each file,
+ *                     so a complete run leaves a valid qform. A repairable qform shows an
+ *                     incomplete run.
+ */
+static QString DescribeReusableOutputProblem(const QStringList& copiedPaths, const QStringList& writtenPaths) {
+    QStringList allPaths = copiedPaths + writtenPaths;
+
+    for (int ix = 0; ix < allPaths.size(); ix++) {
+        QString fullPath = allPaths.at(ix);
+        QString name = QFileInfo(fullPath).fileName();
+
+        QString problem = DescribeOutputProblem(fullPath);
+        if (!problem.isEmpty())
+            return name + " " + problem;
+
+        bool isNifti = name.endsWith(".nii", Qt::CaseInsensitive) ||
+                       name.endsWith(".nii.gz", Qt::CaseInsensitive);
+        if (isNifti && writtenPaths.contains(fullPath)) {
+            QString message;
+            if (CemrgNiftiUtils::InspectNiftiQform(fullPath, message) !=
+                CemrgNiftiUtils::NiftiQformStatus::AlreadyValid)
+                return name + " does not already declare a usable qform (" + message + ")";
         }
     }
 
-    if (!checkOutputMsg.isEmpty()){
-        std::string msg = checkOutputMsg.toStdString();
-        QMessageBox::warning(NULL, "Warning", msg.c_str());
-        success = false;
+    return QString();
+}
+
+/**
+ * @brief Check that LA.nii holds only LA_LABEL. Return an empty string if it does.
+ *
+ * The file checks cannot find this fault. A valid NIfTI file can still hold the wrong image, for
+ * example the multilabel segmentation with the wrong name. Reuse gives this file to all later
+ * steps, so the application reads the volume one time before it offers reuse.
+ */
+static QString DescribeLaLabelProblem(QString laPath) {
+    QString name = QFileInfo(laPath).fileName();
+
+    mitk::Image::Pointer la;
+    try {
+        la = mitk::IOUtil::Load<mitk::Image>(laPath.toStdString());
+    } catch (const std::exception& e) {
+        return name + " is not readable (" + QString(e.what()) + ")";
     }
 
-    return success;
+    std::vector<int> labels;
+    std::unique_ptr<CemrgMultilabelSegmentationUtils> cmls(new CemrgMultilabelSegmentationUtils());
+    cmls->GetLabels(la, labels); // background is excluded
 
+    QStringList unexpected;
+    bool foundLa = false;
+    for (size_t ix = 0; ix < labels.size(); ix++) {
+        if (labels.at(ix) == LA_LABEL)
+            foundLa = true;
+        else
+            unexpected << QString::number(labels.at(ix));
+    }
+
+    if (!foundLa) {
+        QString found = unexpected.isEmpty() ? "nothing but background" : ("only " + unexpected.join(", "));
+        return name + " contains no LA label (" + QString::number(LA_LABEL) + ") - it holds " + found;
+    }
+
+    if (!unexpected.isEmpty())
+        return name + " still contains label(s) " + unexpected.join(", ") +
+            ". Step 1 removes these labels, so its label arithmetic did not finish";
+
+    return QString();
+}
+
+bool AtrialStrainMotionView::IsOutputFileCorrect(QString dir, QStringList filenames){
+    QStringList problems;
+
+    for (int ix = 0; ix < filenames.size(); ix++) {
+        QString filename = filenames.at(ix);
+        QString problem = DescribeOutputProblem(dir + "/" + filename);
+
+        if (!problem.isEmpty()) {
+            MITK_ERROR << ("Expected output " + filename + " " + problem).toStdString();
+            problems << "  " + filename + "\n      " + problem;
+        }
+    }
+
+    if (problems.isEmpty())
+        return true;
+
+    std::string msg = "The application cannot use these output files:\n\n" +
+        problems.join("\n\n").toStdString() +
+        "\n\nLook in the log for the command that the step ran. Check that the Docker image "
+        "is available. Check that the earlier steps completed.";
+    QMessageBox::warning(NULL, "Step did not produce its expected output", msg.c_str());
+    return false;
 }
 
 bool AtrialStrainMotionView::RequestProjectDirectoryFromUser() {
@@ -733,50 +875,199 @@ void AtrialStrainMotionView::SegmentExtract() {
 
     // copy the first image and segment it
     QDir nifti_dir = QDir(directory + "/nifti/");
-    QString input_file_name = nifti_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot)[0];
+    QStringList nifti_entries = nifti_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot);
+    if (nifti_entries.isEmpty()) {
+        std::string msg = "Step 1 found no images in:\n  " + nifti_dir.absolutePath().toStdString() +
+            "\n\nStep 1 expects the cine frames inside a 'nifti' folder in the project directory. "
+            "Put the frames there. Then run step 1 again.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "No input images found", msg.c_str());
+        return;
+    }
+    QString input_file_name = nifti_entries.at(0);
     QString input_file_path = directory + "/" + input_file_name;
     MITK_INFO << input_file_path.toStdString();
 
-    MITK_INFO(QFile::copy(nifti_dir.absolutePath() + "/" + input_file_name, input_file_path)) << "Copied " << input_file_name;
-
-    // extract LA
-    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-    cmd->SetUseDockerContainers(true);
-    QString pathToSegmentation = cmd->DockerCctaMultilabelSegmentation(directory, input_file_path, false);
-    MITK_INFO << pathToSegmentation;
-
-    // cmd->DockerAtrialStrainMotion(directory, "fix_vtk_metadata");
-
-    mitk::Image::Pointer segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
-
-    if (!segmentation) return ;
-
-    // create CemrgMultilabelSegmntation (cmls)
-    std::unique_ptr<CemrgMultilabelSegmentationUtils> cmls(new CemrgMultilabelSegmentationUtils());
-    segmentation = cmls->ReplaceLabel(segmentation, 8, 4);
-    segmentation = cmls->ReplaceLabel(segmentation, 9, 4);
-    segmentation = cmls->ReplaceLabel(segmentation, 10, 4);
-    for (int i = 1; i <= 7; i++) {
-        if (i != 4)
-            segmentation = cmls->ReplaceLabel(segmentation, i, 0);
-    }
+    // DockerCctaMultilabelSegmentation derives its output name from the input's base name.
+    QString pathToSegmentation = directory + "/" + QFileInfo(input_file_path).baseName() + "_label_maps.nii.gz";
 
     QString la_path = directory + "/LA.nii";
-    mitk::IOUtil::Save(segmentation, la_path.toStdString());
-
-    // CemrgCommonUtils::AddToStorage(segmentation, "LA", this->GetDataStorage());
-
-    // Extract LA Mesh surface
     QString la_msh_path = directory + "/LA_msh.vtk";
-    QString la_msh_smth_path = directory + "/LA_msh_smth.vtk";
-    // cmd->ExecuteSurf(directory, directory + "/LA.nii", "close", 0, 0.5, 0, 100);
-    cmd->ExecuteExtractSurface(directory, la_path, la_msh_path, 0.5, 0);
-    // cmd->ExecuteSmoothSurface(directory, la_msh_path, la_msh_smth_path, 100);
 
-    // mitk::Surface::Pointer la_msh = mitk::IOUtil::Load<mitk::Surface>(la_msh_path.toStdString());
-    // CemrgCommonUtils::AddToStorage(la_msh, "la_msh", this->GetDataStorage());
+    std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
+    cmd->SetUseDockerContainers(true);
 
-    MITK_INFO(QFile::copy(la_msh_path, directory + "/UAC_CT" + "/LA_msh.vtk")) << "Copied LA_msh.vtk";
+    QStringList copiedOutputs;
+    copiedOutputs << input_file_path;
+    QStringList writtenOutputs;
+    writtenOutputs << pathToSegmentation << la_path << la_msh_path;
+
+    MITK_INFO << "[SegmentExtract] Checking whether the previous run's output can be reused.";
+    QString reuseProblem = DescribeReusableOutputProblem(copiedOutputs, writtenOutputs);
+    if (reuseProblem.isEmpty())
+        reuseProblem = DescribeLaLabelProblem(la_path);
+
+    bool reuseExistingSegmentation = false;
+    if (reuseProblem.isEmpty()) {
+        QStringList names;
+        names << QFileInfo(input_file_path).fileName()
+              << QFileInfo(pathToSegmentation).fileName()
+              << QFileInfo(la_path).fileName()
+              << QFileInfo(la_msh_path).fileName();
+
+        QStringList descriptions;
+        descriptions << "the input image"
+                     << "the segmentation"
+                     << "the extracted left atrium"
+                     << "the extracted surface";
+
+        // The file names come from the project, so the column widths have to be measured rather
+        // than hardcoded.
+        int nameWidth = 0;
+        int descriptionWidth = 0;
+        for (int ix = 0; ix < names.size(); ix++) {
+            nameWidth = qMax(nameWidth, names.at(ix).length());
+            descriptionWidth = qMax(descriptionWidth, descriptions.at(ix).length());
+        }
+
+        QString table;
+        for (int ix = 0; ix < names.size(); ix++) {
+            table += names.at(ix).leftJustified(nameWidth + 3) +
+                     descriptions.at(ix).leftJustified(descriptionWidth + 3) + "OK\n";
+        }
+
+        // A message box uses a proportional font, so the columns only line up inside <pre>.
+        QMessageBox box(QMessageBox::Question, "Re-run the segmentation step?", "");
+        box.setTextFormat(Qt::RichText);
+        box.setText("Output files for this step already exist. Re-run the segmentation step?<pre>" +
+                    table.toHtmlEscaped() + "</pre>");
+
+        QPushButton* rerunButton = box.addButton("Yes, re-run", QMessageBox::YesRole);
+        QPushButton* keepButton = box.addButton("No, use existing files", QMessageBox::NoRole);
+        box.setDefaultButton(rerunButton);
+        box.setEscapeButton(keepButton); // Escape should take the action that destroys nothing
+        box.exec();
+
+        reuseExistingSegmentation = (box.clickedButton() == keepButton);
+        MITK_INFO << (reuseExistingSegmentation
+            ? "[SegmentExtract] Keeping the existing segmentation and surface at the user's request."
+            : "[SegmentExtract] Re-running the segmentation at the user's request.");
+    } else {
+        // Say which file failed, so the log explains why no prompt appeared.
+        MITK_INFO << ("[SegmentExtract] Running the step in full - " + reuseProblem).toStdString();
+    }
+
+    if (!reuseExistingSegmentation) {
+        // QFile::copy will not overwrite, clear any previous working copy first.
+        if (QFile::exists(input_file_path) && !QFile::remove(input_file_path)) {
+            std::string msg = "The application cannot replace the working copy:\n  " + input_file_path.toStdString() +
+                "\n\nAnother program holds the file open, or the file is read-only. "
+                "Close the other program. Then run step 1 again.";
+            MITK_ERROR << msg;
+            QMessageBox::warning(NULL, "Could not replace the working copy", msg.c_str());
+            return;
+        }
+        if (!QFile::copy(nifti_dir.absolutePath() + "/" + input_file_name, input_file_path)) {
+            std::string msg = "The application cannot copy " + input_file_name.toStdString() +
+                " into the project directory:\n  " + directory.toStdString() +
+                "\n\nCheck that the disk has free space. Check that you can write to the folder.";
+            MITK_ERROR << msg;
+            QMessageBox::warning(NULL, "Could not copy the input image", msg.c_str());
+            return;
+        }
+        MITK_INFO << ("Copied " + input_file_name).toStdString();
+
+        // extract LA
+        QString producedSegmentation = cmd->DockerCctaMultilabelSegmentation(directory, input_file_path, false);
+        if (producedSegmentation.isEmpty()) {
+            std::string msg = "The multilabel segmentation did not produce an output file.\n\n"
+                "Check that Docker runs. Check that the cemrg/ccta image is available. "
+                "Look in the log for the command that step 1 ran.";
+            MITK_ERROR << msg;
+            QMessageBox::warning(NULL, "Segmentation failed", msg.c_str());
+            return;
+        }
+        pathToSegmentation = producedSegmentation;
+        MITK_INFO << pathToSegmentation;
+
+        // cmd->DockerAtrialStrainMotion(directory, "fix_vtk_metadata");
+
+        // The segmentation container rebuilds the NIfTI header from the image affine and leaves
+        // qform_code at 0, which ITK refuses to read. Repair it before loading. Only files this
+        // pipeline created are touched; the originals under nifti/ are left alone.
+        QString qformMessage;
+        CemrgNiftiUtils::NiftiQformStatus qformStatus =
+            CemrgNiftiUtils::RepairNiftiQform(pathToSegmentation, qformMessage);
+        switch (qformStatus) {
+            case CemrgNiftiUtils::NiftiQformStatus::Repaired:
+                MITK_INFO << ("[SegmentExtract] NIfTI header repaired - " + qformMessage).toStdString();
+                break;
+            case CemrgNiftiUtils::NiftiQformStatus::AlreadyValid:
+                MITK_INFO << ("[SegmentExtract] NIfTI header needs no repair - " + qformMessage).toStdString();
+                break;
+            default:
+                MITK_WARN << ("[SegmentExtract] NIfTI header could not be repaired (" +
+                    CemrgNiftiUtils::NiftiQformStatusToString(qformStatus) + ") - " + qformMessage).toStdString();
+                break;
+        }
+
+        mitk::Image::Pointer segmentation;
+        try {
+            segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
+        } catch (const std::exception& e) {
+            std::string msg = "The application cannot read the segmentation from the CCTA container:\n  " +
+                pathToSegmentation.toStdString() +
+                "\n\nAn 'orthonormal direction cosines' error means the file declares no usable "
+                "spatial transform. The reader reports:\n  " + e.what() +
+                "\n\nLook in the log for the result of the header check.";
+            MITK_ERROR << msg;
+            QMessageBox::critical(NULL, "Could not read the segmentation", msg.c_str());
+            return;
+        }
+
+        // create CemrgMultilabelSegmntation (cmls)
+        std::unique_ptr<CemrgMultilabelSegmentationUtils> cmls(new CemrgMultilabelSegmentationUtils());
+        segmentation = cmls->ReplaceLabel(segmentation, 8, LA_LABEL);
+        segmentation = cmls->ReplaceLabel(segmentation, 9, LA_LABEL);
+        segmentation = cmls->ReplaceLabel(segmentation, 10, LA_LABEL);
+        for (int i = 1; i <= 7; i++) {
+            if (i != LA_LABEL)
+                segmentation = cmls->ReplaceLabel(segmentation, i, 0);
+        }
+
+        mitk::IOUtil::Save(segmentation, la_path.toStdString());
+
+
+        // Extract LA Mesh surface
+        QString surfaceResult = cmd->ExecuteExtractSurface(directory, la_path, la_msh_path, 0.5, 0);
+
+        // ExecuteCommand pre-creates the output with ExecuteTouch, so a failed run still leaves an
+        // empty file behind. Check the size, not just existence, or the empty mesh propagates and
+        // surfaces much later as an opaque read error.
+        if (surfaceResult.compare("ERROR_IN_PROCESSING") == 0 || QFileInfo(la_msh_path).size() == 0) {
+            std::string msg = "Step 1 cannot extract the LA surface from " + QFileInfo(la_path).fileName().toStdString() +
+                ".\n\nThis step runs MIRTK's 'extract-surface'. CemrgApp expects that program in:\n  " +
+                (QCoreApplication::applicationDirPath() + "/MLib").toStdString() +
+                "\n\nCemrgApp does not build the MIRTK binaries. Install them in that folder. "
+                "Then check that the programs run. An absent shared library is a common cause.";
+            MITK_ERROR << msg;
+            QMessageBox::critical(NULL, "Surface extraction failed", msg.c_str());
+            return;
+        }
+    }
+
+    QString la_msh_uac_path = directory + "/UAC_CT" + "/LA_msh.vtk";
+    if (QFile::exists(la_msh_uac_path))
+        QFile::remove(la_msh_uac_path);
+    if (!QFile::copy(la_msh_path, la_msh_uac_path)) {
+        std::string msg = "The application cannot copy LA_msh.vtk into the UAC_CT folder:\n  " +
+            (directory + "/UAC_CT").toStdString() +
+            "\n\nCheck that the disk has free space. Check that you can write to the folder.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Could not copy the surface mesh", msg.c_str());
+        return;
+    }
+    MITK_INFO << "Copied LA_msh.vtk";
 
     // Analysis Selector
     bool userInputsAccepted = GetUserAnalysisSelectorInputs();
@@ -974,7 +1265,6 @@ void AtrialStrainMotionView::ClipperPV(){
         }
         fi.close();
 
-		// mitk::Surface::Pointer la_msh = mitk::IOUtil::Load<mitk::Surface>(la_msh_path.toStdString());
         CemrgCommonUtils::AddToStorage(surface, "clipped", this->GetDataStorage());
 
         // save surface
@@ -984,7 +1274,6 @@ void AtrialStrainMotionView::ClipperPV(){
 
         SetTagNameFromPath(path);
         if(automaticPipeline){
-            ClipperMV();
 
             QString correctLabels = prodPath + "prodSeedLabels.txt";
             QString naiveLabels = prodPath + "prodNaiveSeedLabels.txt";
@@ -1028,7 +1317,8 @@ void AtrialStrainMotionView::UacCalculationVerifyLabels(){
     }
 	MITK_INFO << tagName;
 
-    MITK_INFO(LoadSurfaceChecks()) << ("Loaded surface" + tagName).toStdString();
+    if (!LoadSurfaceChecks()) return;
+    MITK_INFO << ("Loaded surface " + tagName).toStdString();
     std::string title, msg;
     mitk::Surface::Pointer surface = mitk::IOUtil::Load<mitk::Surface>(StdStringPath("UAC_CT/" + tagName + ".vtk"));
     std::vector<int> incorrectLabels;
