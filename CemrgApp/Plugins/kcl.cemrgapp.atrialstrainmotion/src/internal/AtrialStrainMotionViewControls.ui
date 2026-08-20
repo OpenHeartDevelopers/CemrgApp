@@ -40,7 +40,7 @@
    <item>
     <widget class="QPushButton" name="button_man4_2_postproc">
      <property name="text">
-      <string>(optional) 2. Post Processing</string>
+      <string>(optional) Post Processing</string>
      </property>
     </widget>
    </item>
@@ -68,7 +68,7 @@
    <item>
     <widget class="QPushButton" name="button_0_3_checklabels">
      <property name="text">
-      <string>(optional) 6. Verify Labels</string>
+      <string>(optional) Verify Labels</string>
      </property>
     </widget>
    </item>
