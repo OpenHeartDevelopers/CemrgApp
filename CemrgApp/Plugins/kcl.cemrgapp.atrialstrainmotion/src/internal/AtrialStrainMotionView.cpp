@@ -1153,6 +1153,7 @@ void AtrialStrainMotionView::IdentifyPV(){
 
     MITK_INFO << "Loading org.mitk.views.atrialfibresclipperview";
     this->GetSite()->GetPage()->ResetPerspective();
+    AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), "segmentation.vtk", false); 
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
 }
 
@@ -1218,10 +1219,8 @@ void AtrialStrainMotionView::MeshPreprocessing(){
 
     //Show the plugin
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresClipperView::output_directory(); // directory is empty
-    // AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", true);
+    AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), tagName+".vtk", true);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
-    AtrialFibresClipperView::output_directory(); // directory is empty
 }
 
 
@@ -1347,7 +1346,7 @@ void AtrialStrainMotionView::UacCalculationVerifyLabels(){
 
             //Show the plugin
             this->GetSite()->GetPage()->ResetPerspective();
-            // AtrialFibresClipperView::SetDirectoryFile(directory, tagName+".vtk", true);
+            AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), tagName+".vtk", true);
             this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
         }
 
