@@ -14,6 +14,18 @@ if(MITK_USE_VMTK)
   if(NOT DEFINED ${proj}_DIR)
     set(additional_cmake_args)
 
+    # VMTK needs the ITK and VTK BUILD trees: the install-tree
+    # vtk-config.cmake re-runs find_package(Qt5), which VMTK's nested build
+    # cannot satisfy. Defaults to the local build trees; pass -DVMTK_ITK_DIR
+    # and -DVMTK_VTK_DIR when ITK and VTK come from a shared external prefix.
+    if(NOT VMTK_ITK_DIR)
+      set(VMTK_ITK_DIR ${ep_prefix}/src/ITK-build)
+    endif()
+
+    if(NOT VMTK_VTK_DIR)
+      set(VMTK_VTK_DIR ${ep_prefix}/src/VTK-build)
+    endif()
+
     if(CTEST_USE_LAUNCHERS)
       list(APPEND additional_cmake_args
       -DCMAKE_PROJECT_VTK_VMTK_INCLUDE:FILEPATH=${CMAKE_ROOT}/Modules/CTestUseLaunchers.cmake
@@ -48,9 +60,9 @@ if(MITK_USE_VMTK)
         ${ep_common_args}
         -DSUPERBUILD_INSTALL_PREFIX:PATH=${ep_prefix}
         -DUSE_SYSTEM_ITK:BOOL=ON
-        -DITK_DIR:PATH=${ep_prefix}/src/ITK-build
+        -DITK_DIR:PATH=${VMTK_ITK_DIR}
         -DUSE_SYSTEM_VTK:BOOL=ON
-        -DVTK_DIR:PATH=${ep_prefix}/src/VTK-build
+        -DVTK_DIR:PATH=${VMTK_VTK_DIR}
         ${additional_cmake_args}
         CMAKE_CACHE_ARGS ${ep_common_cache_args}
         -DGSL_CXX_STANDARD:STRING=${MITK_CXX_STANDARD}
@@ -70,9 +82,9 @@ if(MITK_USE_VMTK)
         ${ep_common_args}
         -DSUPERBUILD_INSTALL_PREFIX:PATH=${ep_prefix}
         -DUSE_SYSTEM_ITK:BOOL=ON
-        -DITK_DIR:PATH=${ep_prefix}/src/ITK-build
+        -DITK_DIR:PATH=${VMTK_ITK_DIR}
         -DUSE_SYSTEM_VTK:BOOL=ON
-        -DVTK_DIR:PATH=${ep_prefix}/src/VTK-build
+        -DVTK_DIR:PATH=${VMTK_VTK_DIR}
         ${additional_cmake_args}
         CMAKE_CACHE_ARGS ${ep_common_cache_args}
         -DGSL_CXX_STANDARD:STRING=${MITK_CXX_STANDARD}
