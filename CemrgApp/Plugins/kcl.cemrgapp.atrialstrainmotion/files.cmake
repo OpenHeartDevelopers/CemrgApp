@@ -7,7 +7,6 @@ include_directories(../kcl.cemrgapp.atrialfibres/src/internal)
 set(INTERNAL_CPP_FILES
         kcl_cemrgapp_atrialstrainmotion_Activator.cpp
         AtrialStrainMotionView.cpp
-        ../../../kcl.cemrgapp.atrialfibres/src/internal/AtrialFibresClipperView.cpp
 )
 
 set(UI_FILES
@@ -32,7 +31,6 @@ set(UI_FILES
 set(MOC_H_FILES
         src/internal/kcl_cemrgapp_atrialstrainmotion_Activator.h
         src/internal/AtrialStrainMotionView.h
-        ../kcl.cemrgapp.atrialfibres/src/internal/AtrialFibresClipperView.h
 )
 
 # list of resource files which can be used by the plug-in
