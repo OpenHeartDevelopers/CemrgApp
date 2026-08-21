@@ -200,8 +200,6 @@ void AtrialStrainMotionView::SetDefaultPanelState()
 {
   atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
   tagName = "Labelled";
-  // AutomaticAnalysis reuses cnnPath when it is not empty, and cnnPath points into the
-  // project folder. Clear it, or the next project reads the segmentation of this one.
   cnnPath.clear();
   uiSelector_pipeline = 0;
   uiSelector_imgauto_skipCemrgNet = false;
@@ -1755,7 +1753,6 @@ void AtrialStrainMotionView::Reset() {
                     "Restart CemrgApp, then try again.\n\nDetails: %2").arg(projectFolder).arg(e.what()));
     }//_try
 
-    // Reset the panel state. The files in the project folder stay on disk.
     directory.clear();
     SetDefaultPanelState();
     this->GetSite()->GetPage()->ResetPerspective();
