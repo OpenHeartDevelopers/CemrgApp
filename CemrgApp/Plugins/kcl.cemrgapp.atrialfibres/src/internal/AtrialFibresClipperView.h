@@ -29,6 +29,7 @@ PURPOSE.  See the above copyright notices for more information.
 #ifndef AtrialFibresClipperView_h
 #define AtrialFibresClipperView_h
 
+#include <kcl_cemrgapp_atrialfibres_Export.h>
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
 #include <QMessageBox>
@@ -52,7 +53,7 @@ PURPOSE.  See the above copyright notices for more information.
   \ingroup ${plugin_target}_internal
 */
 typedef std::pair<vtkIdType, double> SeedRadiusPairType;
-class AtrialFibresClipperView : public QmitkAbstractView {
+class ATRIALFIBRES_EXPORT AtrialFibresClipperView : public QmitkAbstractView {
 
     // this is needed for all Qt objects that should have a Qt meta-object
     // (everything that derives from QObject and wants to have signal/slots)
@@ -84,7 +85,6 @@ public:
     inline void SetDebug(bool b){debugging = b;};
     inline void SetDebugOn(){SetDebug(true);};
     inline void SetDebugOff(){SetDebug(false);};
-	inline void static output_directory(){MITK_INFO << "Hi: " << directory;};
 
 protected slots:
 
