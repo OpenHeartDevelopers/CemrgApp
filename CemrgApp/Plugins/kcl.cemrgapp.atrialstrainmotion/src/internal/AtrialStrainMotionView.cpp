@@ -344,17 +344,6 @@ bool AtrialStrainMotionView::CheckLoadedMeshQuality(){
     return true;
 }
 
-void AtrialStrainMotionView::SetAutomaticModeButtons(bool b){
-    m_Controls.button_auto4_meshpreproc->setVisible(b);
-    // m_Controls.button_auto5_clipPV->setVisible(b);
-
-    if(b){
-        // m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
-        // m_Controls.button_0_calculateUac->setText("    Step7: Calculate UAC");
-        // m_Controls.button_0_fibreMapUac->setText("    Step8: Fibre Mapping");
-    }
-}
-
 bool AtrialStrainMotionView::UserLoadSurface(){
     QString newpath = directory + "/UAC_CT/" + tagName + ".vtk";
     SetTagNameFromPath(newpath);
