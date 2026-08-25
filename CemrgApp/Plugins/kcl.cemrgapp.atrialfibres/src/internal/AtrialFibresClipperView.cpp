@@ -148,8 +148,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     renderer->SetBackground(0.5,0.5,0.5);
     renderer->AutomaticLightCreationOn();
     renderer->LightFollowCameraOn();
-    // renderer->TwoSidedLightingOn();
-    // renderer->UpdateLightsGeometryToFollowCamera();
+
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
