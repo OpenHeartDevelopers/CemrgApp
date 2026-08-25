@@ -140,6 +140,7 @@ protected slots:
 
 private:
    void SetDefaultPanelState();
+   bool LoadSegmentationIntoStorage();
 
   double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
   QString directory, tagName, cnnPath;

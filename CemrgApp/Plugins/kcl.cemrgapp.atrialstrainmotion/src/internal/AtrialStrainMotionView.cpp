@@ -97,6 +97,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mitkLog.h>
 #include <mitkProgressBar.h>
 #include <mitkIDataStorageService.h>
+#include <mitkDataNodeSelection.h>
 #include <mitkNodePredicateNot.h>
 #include <mitkNodePredicateProperty.h>
 #include <mitkDataStorageEditorInput.h>
@@ -206,6 +207,44 @@ void AtrialStrainMotionView::SetDefaultPanelState()
   uiSelector_imgauto_skipLabel = false;
   uiSelector_img_scar = false;
   uiSelector_man_useCemrgNet = false;
+}
+
+bool AtrialStrainMotionView::LoadSegmentationIntoStorage()
+{
+  QString segPath = Path("UAC_CT/LA_msh.nii");
+  if (!QFileInfo::exists(segPath)) {
+    segPath = Path("UAC_CT/" + tagName + ".nii");
+  }
+
+  if (!QFileInfo::exists(segPath)) {
+    std::string msg = "The segmentation image is missing:\n\n" + StdStringPath("UAC_CT/LA_msh.nii") +
+        "\n\nRun step 1 to create it. You can also load the image into the Data Manager.";
+    QMessageBox::warning(NULL, "Segmentation image not available", msg.c_str());
+    return false;
+  }
+
+  std::string nodeName = QFileInfo(segPath).baseName().toStdString();
+  mitk::DataNode::Pointer segNode = this->GetDataStorage()->GetNamedNode(nodeName);
+
+  if (segNode.IsNull()) {
+    try {
+      segNode = CemrgCommonUtils::AddToStorage(
+          mitk::IOUtil::Load<mitk::Image>(segPath.toStdString()), nodeName, this->GetDataStorage());
+    } catch (...) {
+      std::string msg = "The application cannot read the segmentation image:\n\n" + segPath.toStdString() +
+          "\n\nCheck that the file is complete, then run step 1 again.";
+      QMessageBox::warning(NULL, "Segmentation image not available", msg.c_str());
+      return false;
+    }
+  }
+
+  if (segNode.IsNull()) return false;
+
+  // "Mark PV start on Image" reads the Data Manager selection, so select the image here.
+  berry::ISelection::ConstPointer selection(new mitk::DataNodeSelection(segNode));
+  this->SetDataManagerSelection(selection);
+
+  return true;
 }
 
 void AtrialStrainMotionView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/,
@@ -1147,7 +1186,10 @@ void AtrialStrainMotionView::IdentifyPV(){
 
     MITK_INFO << "Loading org.mitk.views.atrialfibresclipperview";
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), "segmentation.vtk", false); 
+
+    if (!LoadSegmentationIntoStorage()) return;
+
+    AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), "segmentation.vtk", false);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
 }
 
