@@ -260,12 +260,12 @@ void AtrialFibresClipperView::Help(){
         msg += "(optional) To correct a label, mark a corridor with seed points, then click \"Fix mesh labelling\" and provide the correct label.\n\n";
         msg += "1. Place a point on each of the following: RSPV, RIPV, LSPV, LIPV, LAA and MV. The application will ask for the label.\n";
         msg += "Then click \"Store Landmarks and Labels\".\n\n";
-        msg += "2. Click \"Display PV Clippers\", adjust using the controls at the bottom, then click \"Save clippers\".\n";
+        msg += "2. Click \"Display PV Clippers\", adjust using the controls at the bottom, then click \"Save clippers\" and close this view.\n";
     } else{
         msg += "1. Place a point on each of the following: RSPV, RIPV, LSPV, LIPV, and LAA. The application will ask for the label.\n";
         msg += "Then click \"Find Centrelines\".\n\n";
         msg += "2. Click \"Display Clippers\" to show the clipper planes, adjust using the controls at the bottom so that none intersect.\n\n";
-        msg += "3. Click \"Mark PV start on Image\" to finish.\n";
+        msg += "3. Click \"Mark PV start on Image\" to finish, then close this view.\n";
     }
 
     QMessageBox::information(NULL, "Help", msg.c_str());
