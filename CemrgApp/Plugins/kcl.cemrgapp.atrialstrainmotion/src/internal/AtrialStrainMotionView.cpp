@@ -48,6 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Blueberry
 #include <berryISelectionService.h>
 #include <berryIWorkbenchWindow.h>
+#include <berryIWorkbenchPage.h>
 
 //Micro services
 #include <usModuleRegistry.h>
@@ -96,6 +97,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mitkLog.h>
 #include <mitkProgressBar.h>
 #include <mitkIDataStorageService.h>
+#include <mitkDataNodeSelection.h>
 #include <mitkNodePredicateNot.h>
 #include <mitkNodePredicateProperty.h>
 #include <mitkDataStorageEditorInput.h>
@@ -133,9 +135,8 @@ void AtrialStrainMotionView::CreateQtPartControl(QWidget *parent)
   connect(m_Controls.segment_extract, SIGNAL(clicked()), this, SLOT(SegmentExtract()));
   m_Controls.segment_extract->setStyleSheet("Text-align:left");
   // 2. Post processing
-  // m_Controls.button_man4_2_postproc->setVisible(false);
   connect(m_Controls.button_man4_2_postproc, SIGNAL(clicked()), this, SLOT(SegmentationPostprocessing()));
-  m_Controls.button_man4_2_postproc->setStyleSheet("Text-align:left");
+  m_Controls.button_man4_2_postproc->setStyleSheet("Text-align:left; color: rgb(132, 174, 235)");
   // 3. Identify PVs
   connect(m_Controls.button_man5_idPV, SIGNAL(clicked()), this, SLOT(IdentifyPV()));
   m_Controls.button_man5_idPV->setStyleSheet("Text-align:left");
@@ -147,7 +148,7 @@ void AtrialStrainMotionView::CreateQtPartControl(QWidget *parent)
   m_Controls.button_auto4_meshpreproc->setStyleSheet("Text-align:left");
   // 6. Verify Labels
   connect(m_Controls.button_0_3_checklabels, SIGNAL(clicked()), this, SLOT(UacCalculationVerifyLabels()));
-  m_Controls.button_0_3_checklabels->setStyleSheet("Text-align:left");
+  m_Controls.button_0_3_checklabels->setStyleSheet("Text-align:left; color: rgb(132, 174, 235)");
   // 7. Clip PV
   connect(m_Controls.button_man8_clipPV, SIGNAL(clicked()), this, SLOT(ClipperPV()));
   m_Controls.button_man8_clipPV->setStyleSheet("Text-align:left");
@@ -190,17 +191,60 @@ void AtrialStrainMotionView::CreateQtPartControl(QWidget *parent)
   // Plot Fiber Strain
   connect(m_Controls.plot_fibers_trains, SIGNAL(clicked()), this, SLOT(PlotFibersTrains()));
   m_Controls.plot_fibers_trains->setStyleSheet("Text-align:left");
+  // Reset
+  connect(m_Controls.button_reset, SIGNAL(clicked()), this, SLOT(Reset()));
 
+  SetDefaultPanelState();
+}
 
-  // Set default variables
+void AtrialStrainMotionView::SetDefaultPanelState()
+{
   atrium = std::unique_ptr<CemrgAtrialTools>(new CemrgAtrialTools());
   tagName = "Labelled";
+  cnnPath.clear();
   uiSelector_pipeline = 0;
   uiSelector_imgauto_skipCemrgNet = false;
   uiSelector_imgauto_skipLabel = false;
   uiSelector_img_scar = false;
   uiSelector_man_useCemrgNet = false;
+}
 
+bool AtrialStrainMotionView::LoadSegmentationIntoStorage()
+{
+  QString segPath = Path("UAC_CT/LA_msh.nii");
+  if (!QFileInfo::exists(segPath)) {
+    segPath = Path("UAC_CT/" + tagName + ".nii");
+  }
+
+  if (!QFileInfo::exists(segPath)) {
+    std::string msg = "The segmentation image is missing:\n\n" + StdStringPath("UAC_CT/LA_msh.nii") +
+        "\n\nRun step 1 to create it. You can also load the image into the Data Manager.";
+    QMessageBox::warning(NULL, "Segmentation image not available", msg.c_str());
+    return false;
+  }
+
+  std::string nodeName = QFileInfo(segPath).baseName().toStdString();
+  mitk::DataNode::Pointer segNode = this->GetDataStorage()->GetNamedNode(nodeName);
+
+  if (segNode.IsNull()) {
+    try {
+      segNode = CemrgCommonUtils::AddToStorage(
+          mitk::IOUtil::Load<mitk::Image>(segPath.toStdString()), nodeName, this->GetDataStorage());
+    } catch (...) {
+      std::string msg = "The application cannot read the segmentation image:\n\n" + segPath.toStdString() +
+          "\n\nCheck that the file is complete, then run step 1 again.";
+      QMessageBox::warning(NULL, "Segmentation image not available", msg.c_str());
+      return false;
+    }
+  }
+
+  if (segNode.IsNull()) return false;
+
+  // "Mark PV start on Image" reads the Data Manager selection, so select the image here.
+  berry::ISelection::ConstPointer selection(new mitk::DataNodeSelection(segNode));
+  this->SetDataManagerSelection(selection);
+
+  return true;
 }
 
 void AtrialStrainMotionView::OnSelectionChanged(berry::IWorkbenchPart::Pointer /*source*/,
@@ -337,17 +381,6 @@ bool AtrialStrainMotionView::CheckLoadedMeshQuality(){
     }
 
     return true;
-}
-
-void AtrialStrainMotionView::SetAutomaticModeButtons(bool b){
-    m_Controls.button_auto4_meshpreproc->setVisible(b);
-    // m_Controls.button_auto5_clipPV->setVisible(b);
-
-    if(b){
-        // m_Controls.button_0_landmarks->setText("    Step6: Select Landmarks");
-        // m_Controls.button_0_calculateUac->setText("    Step7: Calculate UAC");
-        // m_Controls.button_0_fibreMapUac->setText("    Step8: Fibre Mapping");
-    }
 }
 
 bool AtrialStrainMotionView::UserLoadSurface(){
@@ -1153,7 +1186,10 @@ void AtrialStrainMotionView::IdentifyPV(){
 
     MITK_INFO << "Loading org.mitk.views.atrialfibresclipperview";
     this->GetSite()->GetPage()->ResetPerspective();
-    AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), "segmentation.vtk", false); 
+
+    if (!LoadSegmentationIntoStorage()) return;
+
+    AtrialFibresClipperView::SetDirectoryFile(Path("UAC_CT"), "segmentation.vtk", false);
     this->GetSite()->GetPage()->ShowView("org.mitk.views.atrialfibresclipperview");
 }
 
@@ -1700,6 +1736,56 @@ void AtrialStrainMotionView::PlotFibersTrains() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
     cmd->DockerAtrialStrainMotion(Path(), "plotFiberStrains");
+}
+
+void AtrialStrainMotionView::Reset() {
+
+    try {
+
+        ctkPluginContext* context = mitk::kcl_cemrgapp_atrialstrainmotion_Activator::getContext();
+        mitk::IDataStorageService* dss = 0;
+        ctkServiceReference dsRef = context->getServiceReference<mitk::IDataStorageService>();
+
+        if (dsRef)
+            dss = context->getService<mitk::IDataStorageService>(dsRef);
+
+        if (!dss) {
+            MITK_WARN << "The IDataStorageService is not available. The application cannot reset the project.";
+        } else {
+            mitk::IDataStorageReference::Pointer dataStorageRef = dss->GetActiveDataStorage();
+            if (dataStorageRef.IsNull()) {
+                // No editor is active, so use the default data storage.
+                dataStorageRef = dss->GetDefaultDataStorage();
+            }
+
+            mitk::DataStorage::Pointer dataStorage = dataStorageRef->GetDataStorage();
+            if (dataStorage.IsNull()) {
+                MITK_WARN << "No data storage is available. The application cannot reset the project.";
+            } else {
+                // Remove the nodes of the project and keep the helper objects. The Standard
+                // Display draws its crosshair planes from the helper objects.
+                mitk::NodePredicateNot::Pointer isNotHelper = mitk::NodePredicateNot::New(
+                            mitk::NodePredicateProperty::New("helper object", mitk::BoolProperty::New(true)));
+                dataStorage->Remove(dataStorage->GetSubset(isNotHelper));
+            }
+        }
+
+        if (dsRef)
+            context->ungetService(dsRef);
+
+    } catch (std::exception& e) {
+
+        MITK_ERROR << "The application cannot reset the project: " << e.what();
+        QString projectFolder = directory.isEmpty() ? QString("the project folder") : directory;
+        QMessageBox::warning(
+            NULL, "Could not reset the project",
+            QString("The application cannot reset the project. The files in %1 are not changed. "
+                    "Restart CemrgApp, then try again.\n\nDetails: %2").arg(projectFolder).arg(e.what()));
+    }//_try
+
+    directory.clear();
+    SetDefaultPanelState();
+    this->GetSite()->GetPage()->ResetPerspective();
 }
 
 

@@ -40,7 +40,7 @@
    <item>
     <widget class="QPushButton" name="button_man4_2_postproc">
      <property name="text">
-      <string>2. Postprocess Segmentation</string>
+      <string>(optional) Post Processing</string>
      </property>
     </widget>
    </item>
@@ -167,6 +167,20 @@
     <widget class="QPushButton" name="plot_fibers_trains">
      <property name="text">
       <string>20. plot Fiber Strains</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line_1">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="button_reset">
+     <property name="text">
+      <string>Reset</string>
      </property>
     </widget>
    </item>

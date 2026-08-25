@@ -75,15 +75,12 @@ public:
   static const std::string VIEW_ID;
   bool RequestProjectDirectoryFromUser();
   bool GetUserAnalysisSelectorInputs();
-  void SetAutomaticModeButtons(bool b);
   void AutomaticAnalysis();
   bool GetUserMeshingInputs();
 
   inline QString Path(QString fnameExt=""){return (directory+"/"+fnameExt);};
   inline std::string StdStringPath(QString fnameExt=""){return (Path(fnameExt).toStdString());};
   inline void SetAutomaticPipeline(bool isAuto){automaticPipeline=isAuto;};
-  inline void SetAutomaticModeButtonsOn(){SetAutomaticModeButtons(true);};
-  inline void SetAutomaticModeButtonsOff(){SetAutomaticModeButtons(false);};
 
   int Ask(std::string title, std::string msg);
   bool LoadSurfaceChecks();
@@ -139,8 +136,12 @@ protected slots:
   void PlotAreaStrain();
   void CalcFiberStrains();
   void PlotFibersTrains();
+  void Reset();
 
 private:
+   void SetDefaultPanelState();
+   bool LoadSegmentationIntoStorage();
+
   double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
   QString directory, tagName, cnnPath;
   std::unique_ptr<CemrgAtrialTools> atrium;

@@ -106,6 +106,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     MITK_INFO << "[AtrialFibresClipperView] Plugin start ";
     // create GUI widgets from the Qt Designer's .ui file
     m_Controls.setupUi(parent);
+    connect(m_Controls.button_guide, SIGNAL(clicked()), this, SLOT(Help()));
     connect(m_Controls.button_man1_ctrlines, SIGNAL(clicked()), this, SLOT(CtrLines()));
     connect(m_Controls.button_man2_clippers, SIGNAL(clicked()), this, SLOT(CtrPlanes()));
     connect(m_Controls.button_man3_clipseg, SIGNAL(clicked()), this, SLOT(ClipperImage()));
@@ -147,14 +148,7 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
     renderer->SetBackground(0.5,0.5,0.5);
     renderer->AutomaticLightCreationOn();
     renderer->LightFollowCameraOn();
-    // renderer->TwoSidedLightingOn();
-    // renderer->UpdateLightsGeometryToFollowCamera();
-    vtkSmartPointer<vtkTextActor> txtActor = vtkSmartPointer<vtkTextActor>::New();
-    std::string shortcuts = GetShortcuts();
-    txtActor->SetInput(shortcuts.c_str());
-    txtActor->GetTextProperty()->SetFontSize(14);
-    txtActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
-    renderer->AddActor2D(txtActor);
+
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow =
             vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
@@ -179,6 +173,14 @@ void AtrialFibresClipperView::CreateQtPartControl(QWidget *parent) {
         Visualiser();
         SetDebugOff();
     }
+
+    vtkSmartPointer<vtkTextActor> txtActor = vtkSmartPointer<vtkTextActor>::New();
+    std::string shortcuts = GetShortcuts();
+    txtActor->SetInput(shortcuts.c_str());
+    txtActor->GetTextProperty()->SetFontSize(14);
+    txtActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    renderer->AddActor2D(txtActor);
+
     if(automaticPipeline){
         m_Controls.button_auto2_clippers->setEnabled(false);
         m_Controls.slider_auto->setEnabled(false);
@@ -248,6 +250,24 @@ void AtrialFibresClipperView::iniPreSurf() {
 
     MITK_INFO << ("[iniPreSurf] Opened file: " + path).toStdString();
     surface = shell;
+}
+
+void AtrialFibresClipperView::Help(){
+    std::string msg = "HELP\n\n";
+
+    if(automaticPipeline){
+        msg += "(optional) To correct a label, mark a corridor with seed points, then click \"Fix mesh labelling\" and provide the correct label.\n\n";
+        msg += "1. Place a point on each of the following: RSPV, RIPV, LSPV, LIPV, LAA and MV. The application will ask for the label.\n";
+        msg += "Then click \"Store Landmarks and Labels\".\n\n";
+        msg += "2. Click \"Display PV Clippers\", adjust using the controls at the bottom, then click \"Save clippers\" and close this view.\n";
+    } else{
+        msg += "1. Place a point on each of the following: RSPV, RIPV, LSPV, LIPV, and LAA. The application will ask for the label.\n";
+        msg += "Then click \"Find Centrelines\".\n\n";
+        msg += "2. Click \"Display Clippers\" to show the clipper planes, adjust using the controls at the bottom so that none intersect.\n\n";
+        msg += "3. Click \"Mark PV start on Image\" to finish, then close this view.\n";
+    }
+
+    QMessageBox::information(NULL, "Help", msg.c_str());
 }
 
 // Manual pipeline
@@ -1354,10 +1374,19 @@ bool AtrialFibresClipperView::IsClipperManualControlsAvailable(){
 std::string AtrialFibresClipperView::GetShortcuts(){
     std::string res = "";
     if(automaticPipeline){
-        res += "POINT SELECTION:\n\tSpace: select landmark\n\tDelete: remove point";
-        res += "\nINTER PV CORRECTION:\n\tX: add seed point\n\tD: remove point";
+        res += "KEYS\n";
+        res += "Point at the mesh, then press a key.\n\n";
+        res += "MESH LABEL CORRECTION:\n";
+        res += "X: add a corridor point\n";
+        res += "D: remove the last corridor point\n\n";
+        res += "LANDMARK SELECTION:\n";
+        res += "Space: add a point\n";
+        res += "Delete: remove the last point\n";
     } else{
-        res += "R: reset centrelines\nSpace: add seed point\nDelete: remove seed point";
+        res += "KEYS\n";
+        res += "Point at the mesh, then press a key.\n\n";
+        res += "Space: add a point\n";
+        res += "Delete: remove the last point\n\n";
     }
     return res;
 }
