@@ -89,6 +89,8 @@ public:
 protected slots:
 
     /// \brief Called when the user clicks the GUI button
+    void Help();
+
     // Manual Pipeline
     void CtrLines();
     void CtrPlanes();
