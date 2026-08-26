@@ -37,6 +37,7 @@ PURPOSE.  See the above copyright notices for more information.
 // VTK
 #include <vtkPolyData.h>
 #include <vtkPolyDataReader.h>
+#include <vtkPolyDataWriter.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPointData.h>
 #include <vtkCellData.h>
@@ -527,6 +528,58 @@ mitk::Surface::Pointer CemrgCommonUtils::ExtractSurfaceFromSegmentation(mitk::Im
 
     mitk::Surface::Pointer shell = im2surf->GetOutput();
     return shell;
+}
+
+bool CemrgCommonUtils::ConvertVtkToLegacy42(QString vtkPath) {
+    // meshtool reads VTK legacy version 4.2 only. VTK 9 writes version 5.1.
+
+    QFile vtkFile(vtkPath);
+    if (!vtkFile.exists()) {
+        MITK_WARN << ("The application cannot find the file: " + vtkPath).toStdString();
+        return false;
+    }
+
+    if (!vtkFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        MITK_WARN << ("The application cannot open the file: " + vtkPath).toStdString();
+        return false;
+    }
+    QTextStream headerStream(&vtkFile);
+    QString header = headerStream.readLine();
+    vtkFile.close();
+
+    if (header.contains("Version 4.2")) {
+        return true;
+    }
+
+    MITK_INFO << ("Rewrite in VTK legacy version 4.2: " + vtkPath).toStdString();
+
+    vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
+    reader->SetFileName(vtkPath.toStdString().c_str());
+    reader->ReadAllScalarsOn();
+    reader->ReadAllVectorsOn();
+    reader->ReadAllNormalsOn();
+    reader->ReadAllTensorsOn();
+    reader->ReadAllColorScalarsOn();
+    reader->ReadAllTCoordsOn();
+    reader->ReadAllFieldsOn();
+    reader->Update();
+
+    QString tempPath = vtkPath + ".legacy42";
+    vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
+    writer->SetFileName(tempPath.toStdString().c_str());
+    writer->SetInputData(reader->GetOutput());
+    writer->SetFileVersion(vtkPolyDataWriter::VTK_LEGACY_READER_VERSION_4_2);
+    writer->Write();
+
+    QFileInfo tempInfo(tempPath);
+    if (!tempInfo.exists() || tempInfo.size() == 0) {
+        MITK_WARN << ("The application cannot write the file: " + tempPath).toStdString();
+        QFile::remove(tempPath);
+        return false;
+    }
+
+    QFile::remove(vtkPath);
+    return QFile::rename(tempPath, vtkPath);
 }
 
 void CemrgCommonUtils::SetCellDataToPointData(mitk::Surface::Pointer surface, QString outputPath, QString fieldname){
