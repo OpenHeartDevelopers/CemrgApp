@@ -994,6 +994,7 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
 
 QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType){
     // Method equivalent to: meshtool interpolate dataType
+    // dataType accepts nodedata, elemdata or clouddata.
     SetDockerImageOpenCarp();
     QString executablePath = "";
 #if defined(__APPLE__)
@@ -1004,7 +1005,7 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
 
     QDir home(dir);
     if(!dataType.contains("elemdata") && !dataType.contains("nodedata") && !dataType.contains("clouddata")){
-        MITK_ERROR << "Incorrect parameter seleted";
+        MITK_ERROR << "Incorrect parameter selected";
     } else{
         QStringList meshPaths;
         if (!dataType.contains("clouddata")) {
