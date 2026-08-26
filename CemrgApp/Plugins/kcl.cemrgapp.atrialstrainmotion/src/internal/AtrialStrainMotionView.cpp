@@ -969,7 +969,6 @@ void AtrialStrainMotionView::SegmentExtract() {
                      descriptions.at(ix).leftJustified(descriptionWidth + 3) + "OK\n";
         }
 
-        // A message box uses a proportional font, so the columns only line up inside <pre>.
         QMessageBox box(QMessageBox::Question, "Re-run the segmentation step?", "");
         box.setTextFormat(Qt::RichText);
         box.setText("Output files for this step already exist. Re-run the segmentation step?<pre>" +
@@ -978,7 +977,7 @@ void AtrialStrainMotionView::SegmentExtract() {
         QPushButton* rerunButton = box.addButton("Yes, re-run", QMessageBox::YesRole);
         QPushButton* keepButton = box.addButton("No, use existing files", QMessageBox::NoRole);
         box.setDefaultButton(rerunButton);
-        box.setEscapeButton(keepButton); // Escape should take the action that destroys nothing
+        box.setEscapeButton(keepButton);
         box.exec();
 
         reuseExistingSegmentation = (box.clickedButton() == keepButton);
@@ -986,7 +985,6 @@ void AtrialStrainMotionView::SegmentExtract() {
             ? "[SegmentExtract] Keeping the existing segmentation and surface at the user's request."
             : "[SegmentExtract] Re-running the segmentation at the user's request.");
     } else {
-        // Say which file failed, so the log explains why no prompt appeared.
         MITK_INFO << ("[SegmentExtract] Running the step in full - " + reuseProblem).toStdString();
     }
 
@@ -1022,8 +1020,6 @@ void AtrialStrainMotionView::SegmentExtract() {
         }
         pathToSegmentation = producedSegmentation;
         MITK_INFO << pathToSegmentation;
-
-        // cmd->DockerAtrialStrainMotion(directory, "fix_vtk_metadata");
 
         // The segmentation container rebuilds the NIfTI header from the image affine and leaves
         // qform_code at 0, which ITK refuses to read. Repair it before loading. Only files this
