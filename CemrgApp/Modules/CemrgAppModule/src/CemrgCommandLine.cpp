@@ -45,6 +45,7 @@ PURPOSE.  See the above copyright notices for more information.
 #include <chrono>
 #include <sys/stat.h>
 #include "CemrgCommandLine.h"
+#include "CemrgCommonUtils.h"
 
 CemrgCommandLine::CemrgCommandLine() {
 
@@ -875,7 +876,7 @@ QString CemrgCommandLine::DockerUacFibreMappingMode(QString dir, QString atrium,
 
 QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
     // Method equivalent to:  meshtool extract surface
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    SetDockerImageOpenCarp();
     QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -887,7 +888,12 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
 
     outname += (outputSuffix.at(0)=="_") ? outputSuffix : ("_"+outputSuffix);
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    QString meshPath = home.absolutePath() + "/" + meshname + ".vtk";
+    if (QFile::exists(meshPath)) {
+        CemrgCommonUtils::ConvertVtkToLegacy42(meshPath);
+    }
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "extract" << "surface";
     arguments << ("-msh="+meshname);
     arguments << ("-op="+op);
@@ -907,8 +913,8 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
 }
 
 QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad){
-    // Method equivalent to:  meshtool extract surface
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    // Method equivalent to:  meshtool extract gradient
+    SetDockerImageOpenCarp();
     QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -918,7 +924,12 @@ QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, Q
 
     QDir home(dir);
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    QString meshPath = home.absolutePath() + "/" + meshname + ".vtk";
+    if (QFile::exists(meshPath)) {
+        CemrgCommonUtils::ConvertVtkToLegacy42(meshPath);
+    }
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "extract" << "gradient";
     arguments << ("-msh="+meshname);
     arguments << ("-idat="+home.relativeFilePath(idatName));
@@ -942,7 +953,7 @@ QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, Q
 
 QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QString outname, double hmax, double hmin, double havg, double surfCorr){
     // Method equivalent to: meshtool resample surfmesh
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    SetDockerImageOpenCarp();
     QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -952,7 +963,9 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
 
     QDir home(dir);
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    CemrgCommonUtils::ConvertVtkToLegacy42(home.absolutePath() + "/" + meshname + ".vtk");
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "resample" << "surfmesh";
     arguments << ("-msh="+meshname);
     arguments << ("-ifmt=vtk");
@@ -971,7 +984,7 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
     if (successful) {
-        MITK_INFO << "Surface remeshing successful.";
+        MITK_INFO << "Remesh Surface successful.";
         outAbsolutePath = outPath;
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
@@ -981,7 +994,8 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
 
 QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType){
     // Method equivalent to: meshtool interpolate dataType
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    // dataType accepts nodedata, elemdata or clouddata.
+    SetDockerImageOpenCarp();
     QString executablePath = "";
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -991,9 +1005,20 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
 
     QDir home(dir);
     if(!dataType.contains("elemdata") && !dataType.contains("nodedata") && !dataType.contains("clouddata")){
-        MITK_ERROR << "Incorrect parameter seleted";
+        MITK_ERROR << "Incorrect parameter selected";
     } else{
-        QStringList arguments = GetDockerArguments(home.absolutePath());
+        QStringList meshPaths;
+        if (!dataType.contains("clouddata")) {
+            meshPaths << (home.absolutePath() + "/" + meshname + ".vtk");
+        }
+        meshPaths << (home.absolutePath() + "/" + outmesh + ".vtk");
+        for (int ix = 0; ix < meshPaths.size(); ix++) {
+            if (QFile::exists(meshPaths.at(ix))) {
+                CemrgCommonUtils::ConvertVtkToLegacy42(meshPaths.at(ix));
+            }
+        }
+
+        QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
         arguments << "interpolate" << dataType;
         if(dataType.contains("clouddata")){
             arguments << ("-pts="+meshname);
@@ -1020,7 +1045,7 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
 
 QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QString ifmt, QString omsh, QString ofmt, double scale){
     // Method equivalent to: meshtool convert
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    SetDockerImageOpenCarp();
     QString executablePath = "";
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -1030,7 +1055,11 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
 
     QDir home(dir);
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    if (ifmt.compare("vtk", Qt::CaseInsensitive) == 0) {
+        CemrgCommonUtils::ConvertVtkToLegacy42(home.absolutePath() + "/" + imsh + ".vtk");
+    }
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "convert";
     arguments << ("-imsh="+imsh);
     arguments << ("-ifmt="+ifmt);
@@ -1049,7 +1078,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
     bool successful = ExecuteCommand(executableName, arguments, outPath, !isConvertToCarp);
 
     if (successful) {
-        MITK_INFO << "Surface remeshing successful.";
+        MITK_INFO << "Convert Mesh Format successful.";
         outAbsolutePath = outPath;
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
@@ -1059,7 +1088,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
 
 void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QString outMesh, double qualityThres, QString ifmt, QString ofmt){
     // Method equivalent to: meshtool clean quality
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    SetDockerImageOpenCarp();
     QString executablePath = "";
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -1072,7 +1101,11 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
     double smth=0.75;
     int iter=200;
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    if (ifmt.compare("vtk", Qt::CaseInsensitive) == 0) {
+        CemrgCommonUtils::ConvertVtkToLegacy42(home.absolutePath() + "/" + meshname + ".vtk");
+    }
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "clean" << "quality";
     arguments << ("-msh="+meshname);
     arguments << ("-ifmt="+ifmt);
@@ -1089,7 +1122,7 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
     if (successful) {
-        MITK_INFO << "Surface remeshing successful.";
+        MITK_INFO << "Clean Mesh Quality successful.";
 
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
@@ -1120,7 +1153,24 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
     return argumentList;
 }
 
-QStringList CemrgCommandLine::GetOpenCarpDockerDefaultArguments(QString volume){
+QStringList CemrgCommandLine::GetOpenCarpDockerCoreArguments(QString volume){
+
+    QStringList coreArguments;
+    coreArguments << "run" << "--rm" << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
+    coreArguments << _dockerimage;
+
+    return coreArguments;
+}
+
+QStringList CemrgCommandLine::GetMeshtoolDockerArguments(QString volume){
+
+    QStringList meshtoolArguments = GetOpenCarpDockerCoreArguments(volume);
+    meshtoolArguments << "meshtool";
+
+    return meshtoolArguments;
+}
+
+QStringList CemrgCommandLine::GetOpenCarpDockerLaplaceSolverArguments(QString volume){
 
     QString petscPath = QCoreApplication::applicationDirPath() + "/petsc_opts";
     QString parab="ilu_cg_opts", ellip="amg_cg_opts";
@@ -1144,21 +1194,19 @@ QStringList CemrgCommandLine::GetOpenCarpDockerDefaultArguments(QString volume){
     }
 
     QDir home(volume);
-    QStringList defaultArguments;
-    defaultArguments << "run" << "--rm" << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
-    defaultArguments << "docker.opencarp.org/opencarp/opencarp:latest";
-    defaultArguments << "openCARP";
-    defaultArguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
-    defaultArguments << "-parab_options_file";
-    defaultArguments << home.relativeFilePath(parab);
-    defaultArguments << "-ellip_options_file";
-    defaultArguments << home.relativeFilePath(ellip);
+    QStringList solverArguments = GetOpenCarpDockerCoreArguments(volume);
+    solverArguments << "openCARP";
+    solverArguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
+    solverArguments << "-parab_options_file";
+    solverArguments << home.relativeFilePath(parab);
+    solverArguments << "-ellip_options_file";
+    solverArguments << home.relativeFilePath(ellip);
 
-    return defaultArguments;
+    return solverArguments;
 }
 
 QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshName, QString outName, QStringList zeroName, QStringList oneName, QStringList regionLabels){
-    SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
+    SetDockerImageOpenCarp();
     QString executablePath;
     #if defined(__APPLE__)
             executablePath = "/usr/local/bin/";
@@ -1175,7 +1223,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
         if(!outDir.exists()){
             MITK_INFO << ("Error creating directory: " + outPath).toStdString();
         } else{
-            QStringList arguments = GetOpenCarpDockerDefaultArguments(home.absolutePath());
+            QStringList arguments = GetOpenCarpDockerLaplaceSolverArguments(home.absolutePath());
             arguments << "-simID" << home.relativeFilePath(outPath);
             arguments << "-meshname" << meshName;
             arguments << "-experiment" << "2";
@@ -1237,7 +1285,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
 }
 
 QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString simID){
-    SetDockerImage("docker.opencarp.org/opencarp/opencarp:latest");
+    SetDockerImageOpenCarp();
     QString executablePath;
     #if defined(__APPLE__)
             executablePath = "/usr/local/bin/";
@@ -1254,7 +1302,7 @@ QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString
         if(!outDir.exists()){
             MITK_INFO << ("Error creating directory: " + outPath).toStdString();
         } else{
-            QStringList arguments = GetOpenCarpDockerDefaultArguments(home.absolutePath());
+            QStringList arguments = GetOpenCarpDockerLaplaceSolverArguments(home.absolutePath());
 
             arguments << "+F" << home.relativeFilePath(paramfile);
             arguments << "-simID" << home.relativeFilePath(outPath);
