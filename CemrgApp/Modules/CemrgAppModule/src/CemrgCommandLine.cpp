@@ -876,7 +876,7 @@ QString CemrgCommandLine::DockerUacFibreMappingMode(QString dir, QString atrium,
 
 QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, QString outname, QString op, QString outputSuffix){
     // Method equivalent to:  meshtool extract surface
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    SetDockerImageOpenCarp();
     QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -888,7 +888,12 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
 
     outname += (outputSuffix.at(0)=="_") ? outputSuffix : ("_"+outputSuffix);
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    QString meshPath = home.absolutePath() + "/" + meshname + ".vtk";
+    if (QFile::exists(meshPath)) {
+        CemrgCommonUtils::ConvertVtkToLegacy42(meshPath);
+    }
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "extract" << "surface";
     arguments << ("-msh="+meshname);
     arguments << ("-op="+op);
@@ -908,8 +913,8 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
 }
 
 QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, QString idatName, QString odatName, bool elemGrad){
-    // Method equivalent to:  meshtool extract surface
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    // Method equivalent to:  meshtool extract gradient
+    SetDockerImageOpenCarp();
     QString executablePath;
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -919,7 +924,12 @@ QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, Q
 
     QDir home(dir);
 
-    QStringList arguments = GetDockerArguments(home.absolutePath());
+    QString meshPath = home.absolutePath() + "/" + meshname + ".vtk";
+    if (QFile::exists(meshPath)) {
+        CemrgCommonUtils::ConvertVtkToLegacy42(meshPath);
+    }
+
+    QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
     arguments << "extract" << "gradient";
     arguments << ("-msh="+meshname);
     arguments << ("-idat="+home.relativeFilePath(idatName));
@@ -984,7 +994,7 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
 
 QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, QString outmesh, QString idatExt, QString odatExt, QString dataType){
     // Method equivalent to: meshtool interpolate dataType
-    SetDockerImage("alonsojasl/cemrg-meshtool:v1.0");
+    SetDockerImageOpenCarp();
     QString executablePath = "";
 #if defined(__APPLE__)
         executablePath = "/usr/local/bin/";
@@ -996,7 +1006,18 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
     if(!dataType.contains("elemdata") && !dataType.contains("nodedata") && !dataType.contains("clouddata")){
         MITK_ERROR << "Incorrect parameter seleted";
     } else{
-        QStringList arguments = GetDockerArguments(home.absolutePath());
+        QStringList meshPaths;
+        if (!dataType.contains("clouddata")) {
+            meshPaths << (home.absolutePath() + "/" + meshname + ".vtk");
+        }
+        meshPaths << (home.absolutePath() + "/" + outmesh + ".vtk");
+        for (int ix = 0; ix < meshPaths.size(); ix++) {
+            if (QFile::exists(meshPaths.at(ix))) {
+                CemrgCommonUtils::ConvertVtkToLegacy42(meshPaths.at(ix));
+            }
+        }
+
+        QStringList arguments = GetMeshtoolDockerArguments(home.absolutePath());
         arguments << "interpolate" << dataType;
         if(dataType.contains("clouddata")){
             arguments << ("-pts="+meshname);
