@@ -984,7 +984,7 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
     if (successful) {
-        MITK_INFO << "Surface remeshing successful.";
+        MITK_INFO << "Remesh Surface successful.";
         outAbsolutePath = outPath;
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
@@ -1077,7 +1077,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
     bool successful = ExecuteCommand(executableName, arguments, outPath, !isConvertToCarp);
 
     if (successful) {
-        MITK_INFO << "Surface remeshing successful.";
+        MITK_INFO << "Convert Mesh Format successful.";
         outAbsolutePath = outPath;
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
@@ -1121,7 +1121,7 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
     bool successful = ExecuteCommand(executableName, arguments, outPath);
 
     if (successful) {
-        MITK_INFO << "Surface remeshing successful.";
+        MITK_INFO << "Clean Mesh Quality successful.";
 
     } else{
         MITK_WARN << "Error with MESHTOOL Docker container.";
