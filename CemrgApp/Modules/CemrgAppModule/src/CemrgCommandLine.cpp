@@ -636,7 +636,7 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
         QString dockerimage = "orodrazeghi/cemrgnet";
         QStringList arguments;
         arguments << "run" << "--rm";
-        // TODO: could add GetDockerUserArguments() here to remove need for ExecuteTouch
+        // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
         arguments << "--volume="+cemrgnethome.absolutePath()+":/data";
         arguments << dockerimage;
 
@@ -697,7 +697,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
         QString executableName = executablePath+"docker";
 
         QStringList arguments;
-        // TODO: could add GetDockerUserArguments() here to remove need for ExecuteTouch
+        // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
         arguments << "run" << "--rm"  << "--volume="+dicomhome.absolutePath()+":/Data";
         arguments << "orodrazeghi/dicom-converter" << ".";
         arguments << "--gantry" << "--inconsistent";
@@ -1289,7 +1289,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
                 QString outPathFile = "/" + meshName + "_" + outName + "_potential.dat";
 
                 arguments.clear();
-                /// TODO: could add GetDockerUserArguments() here to remove need for ExecuteTouch
+                // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
                 arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
                 arguments << "docker.opencarp.org/opencarp/opencarp:latest";
                 arguments << "igbextract" << home.relativeFilePath(outIgbFile) << "-O";
@@ -1534,7 +1534,7 @@ void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
 
     QStringList arguments;
     arguments << "run" << "--rm";
-    // TODO: could add GetDockerUserArguments() here to remove need for ExecuteTouch
+    // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
     arguments << "--volume="+dir+"/:/data/";
     // arguments << "--volume="+dir+"UAC_CT/:/data/UAC_CT/";
     // arguments << "--volume="+dir+"UAC_CT_aligned/:/data/UAC_CT_aligned/";
