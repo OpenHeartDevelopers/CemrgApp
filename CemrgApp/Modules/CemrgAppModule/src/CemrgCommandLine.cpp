@@ -636,7 +636,7 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
         QString dockerimage = "orodrazeghi/cemrgnet";
         QStringList arguments;
         arguments << "run" << "--rm";
-        // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
+        // TODO: add GetDockerUserArguments() to run container as the host user
         arguments << "--volume="+cemrgnethome.absolutePath()+":/data";
         arguments << dockerimage;
 
@@ -697,7 +697,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
         QString executableName = executablePath+"docker";
 
         QStringList arguments;
-        // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
+        // TODO: add GetDockerUserArguments() to run container as the host user
         arguments << "run" << "--rm"  << "--volume="+dicomhome.absolutePath()+":/Data";
         arguments << "orodrazeghi/dicom-converter" << ".";
         arguments << "--gantry" << "--inconsistent";
@@ -1162,8 +1162,8 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
 
 QStringList CemrgCommandLine::GetDockerUserArguments() {
 
-    // Docker creates files as root. This argument runs the container as the host user instead, so the
-    // user owns the output and can modify or delete it.
+    // By default, Docker creates files as root. This argument runs the container as the host user 
+    // instead, so the user owns the output and can modify or delete it.
     QStringList userArguments;
 #ifndef _WIN32
     userArguments << "--user" << (QString::number(static_cast<uint>(getuid())) + ":" +
@@ -1289,7 +1289,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
                 QString outPathFile = "/" + meshName + "_" + outName + "_potential.dat";
 
                 arguments.clear();
-                // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
+                // TODO: add GetDockerUserArguments() to run container as the host user
                 arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
                 arguments << "docker.opencarp.org/opencarp/opencarp:latest";
                 arguments << "igbextract" << home.relativeFilePath(outIgbFile) << "-O";
@@ -1449,7 +1449,7 @@ bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList argume
     MITK_INFO << PrintFullCommand(executableName, arguments);
 
     if (shouldTouchOutputFirst) {
-        // Creating an empty file first with touch ensures the user owns the output that the tool writes.
+        // Creating an empty file first with touch ensures the user owns the output that the tool writes. Needed unless docker is run with --user.
         MITK_INFO << ("[ExecuteCommand] Creating empty file at output:" + outputPath).toStdString();
         ExecuteTouch(outputPath);
     }
@@ -1534,7 +1534,7 @@ void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
 
     QStringList arguments;
     arguments << "run" << "--rm";
-    // TODO: add GetDockerUserArguments() here to remove need for ExecuteTouch
+    // TODO: add GetDockerUserArguments() to run container as the host user
     arguments << "--volume="+dir+"/:/data/";
     // arguments << "--volume="+dir+"UAC_CT/:/data/UAC_CT/";
     // arguments << "--volume="+dir+"UAC_CT_aligned/:/data/UAC_CT_aligned/";
