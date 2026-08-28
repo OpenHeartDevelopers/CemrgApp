@@ -44,6 +44,9 @@ PURPOSE.  See the above copyright notices for more information.
 #include <thread>
 #include <chrono>
 #include <sys/stat.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #include "CemrgCommandLine.h"
 #include "CemrgCommonUtils.h"
 
@@ -633,6 +636,7 @@ QString CemrgCommandLine::DockerCemrgNetPrediction(QString mra) {
         QString dockerimage = "orodrazeghi/cemrgnet";
         QStringList arguments;
         arguments << "run" << "--rm";
+        // TODO: add GetDockerUserArguments() to run container as the host user
         arguments << "--volume="+cemrgnethome.absolutePath()+":/data";
         arguments << dockerimage;
 
@@ -693,6 +697,7 @@ QString CemrgCommandLine::DockerDicom2Nifti(QString path2dicomfolder) {
         QString executableName = executablePath+"docker";
 
         QStringList arguments;
+        // TODO: add GetDockerUserArguments() to run container as the host user
         arguments << "run" << "--rm"  << "--volume="+dicomhome.absolutePath()+":/Data";
         arguments << "orodrazeghi/dicom-converter" << ".";
         arguments << "--gantry" << "--inconsistent";
@@ -737,7 +742,7 @@ QString CemrgCommandLine::DockerUniversalAtrialCoordinates(QString dir, QString 
 
     // output filename checked when running ExecuteCommand
     QString outPath = home.absolutePath() + "/" + outnameext;
-    bool successful = ExecuteCommand(executableName, arguments, outPath, outnameext.isEmpty());
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if(successful){
         MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
@@ -808,7 +813,7 @@ QString CemrgCommandLine::DockerUacMainMode(QString dir, QString stage, QString 
 
    QString outPath = home.absolutePath() + "/" + outputs.at(0);
    MITK_INFO << "outPath: " << outPath.toStdString();
-   bool successful = ExecuteCommand(executableName, arguments, outPath);
+   bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if(successful){
         MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
@@ -862,7 +867,7 @@ QString CemrgCommandLine::DockerUacFibreMappingMode(QString dir, QString atrium,
    outputs << omsh+".pts" << omsh+".elem";
 
    QString outPath = home.absolutePath() + "/" + outputs.at(0);
-   bool successful = ExecuteCommand(executableName, arguments, outPath);
+   bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if(successful){
         MITK_INFO << ("UAC command: " + uaccmd + " successful").toStdString();
@@ -901,7 +906,7 @@ QString CemrgCommandLine::DockerSurfaceFromMesh(QString dir, QString meshname, Q
 
     QString outPath = home.absolutePath() + "/" + outname + ".surf.vtx";
 
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if (successful) {
         MITK_INFO << "Surface extraction successful.";
@@ -940,7 +945,7 @@ QString CemrgCommandLine::DockerExtractGradient(QString dir, QString meshname, Q
 
     QString outPath = home.absolutePath() + "/" + odatName + ".grad.vec";
 
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if (successful) {
         MITK_INFO << "Gradient extraction successful.";
@@ -981,7 +986,7 @@ QString CemrgCommandLine::DockerRemeshSurface(QString dir, QString meshname, QSt
 
     QString outPath = home.absolutePath() + "/" + outname + ".vtk";
 
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if (successful) {
         MITK_INFO << "Remesh Surface successful.";
@@ -1031,7 +1036,7 @@ QString CemrgCommandLine::DockerInterpolateData(QString dir, QString meshname, Q
 
         QString outPath = home.absolutePath() + "/" + odatExt;
 
-        bool successful = ExecuteCommand(executableName, arguments, outPath);
+        bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
         if (successful) {
             MITK_INFO << "Interpolating data successful.";
@@ -1075,7 +1080,7 @@ QString CemrgCommandLine::DockerConvertMeshFormat(QString dir, QString imsh, QSt
     bool isConvertToCarp = ofmt.contains("carp", Qt::CaseInsensitive);
     outPath += (isConvertToCarp) ? ".pts" : ".vtk";
 
-    bool successful = ExecuteCommand(executableName, arguments, outPath, !isConvertToCarp);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if (successful) {
         MITK_INFO << "Convert Mesh Format successful.";
@@ -1119,7 +1124,7 @@ void CemrgCommandLine::DockerCleanMeshQuality(QString dir, QString meshname, QSt
     QString outPath = home.absolutePath() + "/" + outMesh;
     outPath += (ofmt.contains("carp", Qt::CaseInsensitive)) ? ".pts" : ".vtk";
 
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
 
     if (successful) {
         MITK_INFO << "Clean Mesh Quality successful.";
@@ -1146,17 +1151,33 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
 
     bool mirtkTest = QString::compare(_dockerimage, "biomedia/mirtk:v1.1.0", Qt::CaseSensitive);
     QStringList argumentList;
-    argumentList << "run" << "--rm"  << "--volume="+volume+":/data";
+    argumentList << "run" << "--rm";
+    argumentList << GetDockerUserArguments();
+    argumentList << "--volume="+volume+":/data";
     argumentList << _dockerimage;
     if (mirtkTest == 0)
         argumentList << dockerexe;
     return argumentList;
 }
 
+QStringList CemrgCommandLine::GetDockerUserArguments() {
+
+    // By default, Docker creates files as root. This argument runs the container as the host user 
+    // instead, so the user owns the output and can modify or delete it.
+    QStringList userArguments;
+#ifndef _WIN32
+    userArguments << "--user" << (QString::number(static_cast<uint>(getuid())) + ":" +
+                                  QString::number(static_cast<uint>(getgid())));
+#endif
+    return userArguments;
+}
+
 QStringList CemrgCommandLine::GetOpenCarpDockerCoreArguments(QString volume){
 
     QStringList coreArguments;
-    coreArguments << "run" << "--rm" << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
+    coreArguments << "run" << "--rm";
+    coreArguments << GetDockerUserArguments();
+    coreArguments << ("--volume="+volume+":/shared:z") << "--workdir=/shared";
     coreArguments << _dockerimage;
 
     return coreArguments;
@@ -1261,13 +1282,14 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
                 arguments << "-gregion[0].ID[" +QString::number(ix)+ "]"<< regionLabels.at(ix);
             }
 
-            bool successful = ExecuteCommand(executableName, arguments, outIgbFile);
+            bool successful = ExecuteCommand(executableName, arguments, outIgbFile, false);
 
             if (successful) {
                 MITK_INFO << "Laplace solves generation successful. Creating .dat file";
                 QString outPathFile = "/" + meshName + "_" + outName + "_potential.dat";
 
                 arguments.clear();
+                // TODO: add GetDockerUserArguments() to run container as the host user
                 arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
                 arguments << "docker.opencarp.org/opencarp/opencarp:latest";
                 arguments << "igbextract" << home.relativeFilePath(outIgbFile) << "-O";
@@ -1422,11 +1444,12 @@ std::string CemrgCommandLine::PrintFullCommand(QString command, QStringList argu
     return (command + " " + argumentList).toStdString();
 }
 
-bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList arguments, QString outputPath, bool isOutputFile) {
+bool CemrgCommandLine::ExecuteCommand(QString executableName, QStringList arguments, QString outputPath, bool shouldTouchOutputFirst) {
 
     MITK_INFO << PrintFullCommand(executableName, arguments);
 
-    if(isOutputFile){ // if false, the output is a folder and does not need touch
+    if (shouldTouchOutputFirst) {
+        // Creating an empty file first with touch ensures the user owns the output that the tool writes. Needed unless docker is run with --user.
         MITK_INFO << ("[ExecuteCommand] Creating empty file at output:" + outputPath).toStdString();
         ExecuteTouch(outputPath);
     }
@@ -1488,7 +1511,7 @@ QString CemrgCommandLine::DockerCctaMultilabelSegmentation(QString dir, QString 
         arguments << "--saveas-nifti";
     }
     QString outPath = home.absolutePath() + "/" + outname;
-    bool successful = ExecuteCommand(executableName, arguments, outPath);
+    bool successful = ExecuteCommand(executableName, arguments, outPath, false);
     QString res="";
     if (successful) {
         MITK_INFO << "Successful mutilabel segmentation";
@@ -1511,6 +1534,7 @@ void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
 
     QStringList arguments;
     arguments << "run" << "--rm";
+    // TODO: add GetDockerUserArguments() to run container as the host user
     arguments << "--volume="+dir+"/:/data/";
     // arguments << "--volume="+dir+"UAC_CT/:/data/UAC_CT/";
     // arguments << "--volume="+dir+"UAC_CT_aligned/:/data/UAC_CT_aligned/";

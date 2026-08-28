@@ -1408,7 +1408,6 @@ void AtrialStrainMotionView::MeshImprovement() {
     QString refinedPath = cmd->DockerRemeshSurface(Path("UAC_CT/"), meshname, outname, hmax, hmin, havg, surfCorr);
 
     // Mesh Improvement: Cleaning
-    cmd->ExecuteTouch(Path("UAC_CT/") + "clean-Labelled-refined.vtk");
     cmd->DockerCleanMeshQuality(Path("UAC_CT/"), "Labelled-refined", "clean-Labelled-refined", 0.2, "vtk", "vtk_polydata");
     cmd->DockerCleanMeshQuality(Path("UAC_CT/"), "clean-Labelled-refined", "clean-Labelled-refined", 0.1, "vtk", "vtk_polydata");
 
