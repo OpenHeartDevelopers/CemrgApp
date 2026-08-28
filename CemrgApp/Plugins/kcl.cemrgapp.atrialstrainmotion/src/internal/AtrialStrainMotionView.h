@@ -58,6 +58,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "CemrgAtrialTools.h"
+
+class CemrgCommandLine;
+
 /**
   \brief AtrialStrainMotionView
 
@@ -93,6 +96,7 @@ public:
   bool GetUserUacOptionsInputs(bool enableFullUiOptions=true);
   bool GetUserEditLabelsInputs();
   bool IsOutputFileCorrect(QString dir, QStringList filenames);
+  bool RunAndCheckDockerAtrialStrainMotionSubcommand(CemrgCommandLine* cmd, QString function, QString expectedOutput);
 
 protected:
   virtual void CreateQtPartControl(QWidget *parent) override;

@@ -1154,6 +1154,9 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
     argumentList << "run" << "--rm";
     argumentList << GetDockerUserArguments();
     argumentList << "--volume="+volume+":/data";
+    // Some container scripts write temporary files to the working directory. The uac image sets
+    // that directory to /code, which the host user cannot write to. Point it at the mount.
+    argumentList << "--workdir=/data";
     argumentList << _dockerimage;
     if (mirtkTest == 0)
         argumentList << dockerexe;
@@ -1523,8 +1526,8 @@ QString CemrgCommandLine::DockerCctaMultilabelSegmentation(QString dir, QString 
 }
 
 
-void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
-    // Note: dir should be directory + "/", not director + "/UCT_CT"
+bool CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function, QString expectedOutput) {
+    // Note: dir is the project directory, not the UAC_CT subfolder.
     SetDockerImage("afmotion");
     QString executablePath = "";
 #if defined(__APPLE__)
@@ -1534,21 +1537,20 @@ void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
 
     QStringList arguments;
     arguments << "run" << "--rm";
-    // TODO: add GetDockerUserArguments() to run container as the host user
+    arguments << GetDockerUserArguments();
     arguments << "--volume="+dir+"/:/data/";
-    // arguments << "--volume="+dir+"UAC_CT/:/data/UAC_CT/";
-    // arguments << "--volume="+dir+"UAC_CT_aligned/:/data/UAC_CT_aligned/";
     arguments << "afmotion";
     arguments << function;
+    // The container needs the host path as well as the mount. The registration subcommand writes
+    // the host path into tracking/imgTimes.lst, and the host MIRTK register reads that file.
     arguments << dir;
 
-    ExecuteCommand(executableName, arguments, "", false);
-    /***
+    bool successful = ExecuteCommand(executableName, arguments, expectedOutput, false);
     if (successful) {
         MITK_INFO << "Successful " << function.toStdString();
     } else {
         MITK_WARN << "Unsuccessful " << function.toStdString();
     }
-    ***/
 
+    return successful;
 }

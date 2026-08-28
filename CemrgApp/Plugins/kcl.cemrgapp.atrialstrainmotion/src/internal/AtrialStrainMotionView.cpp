@@ -860,6 +860,23 @@ bool AtrialStrainMotionView::IsOutputFileCorrect(QString dir, QStringList filena
     return false;
 }
 
+/**
+ * @brief Run one afmotion subcommand. Warn the user if it did not write its output.
+ */
+bool AtrialStrainMotionView::RunAndCheckDockerAtrialStrainMotionSubcommand(CemrgCommandLine* cmd, QString function, QString expectedOutput) {
+    bool successful = cmd->DockerAtrialStrainMotion(Path(), function, expectedOutput);
+
+    if (!successful) {
+        QString filename = QFileInfo(expectedOutput).fileName();
+        std::string msg = ("The step afmotion " + function + " did not write " + filename + ".\n\n"
+            "Look in the log for the command that the step ran. Check that the Docker image "
+            "afmotion is available. Check that the earlier steps completed.").toStdString();
+        QMessageBox::warning(NULL, "Step did not produce its expected output", msg.c_str());
+    }
+
+    return successful;
+}
+
 bool AtrialStrainMotionView::RequestProjectDirectoryFromUser() {
 
   bool succesfulAssignment = true;
@@ -1422,14 +1439,7 @@ void AtrialStrainMotionView::AutoLandMark() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    QString outputFullPath = Path("UAC_CT/") + "prodRefinedLandmarks.txt";
-    cmd->ExecuteTouch(outputFullPath);
-    cmd->DockerAtrialStrainMotion(Path(), "autoLM");
-
-    QFileInfo finfo(outputFullPath);
-    bool fileExists = finfo.exists();
-
-    MITK_INFO << (fileExists ? "Final decision: Done" : "Final decision: Output file not found.");
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "autoLM", Path("UAC_CT/") + "prodRefinedLandmarks.txt");
 }
 
 void AtrialStrainMotionView::UAC_Stage1(){
@@ -1517,7 +1527,6 @@ void AtrialStrainMotionView::UAC_Stage2(){
     uda_par = CemrgCommonUtils::OpenCarpParamFileGenerator(directory + "/UAC_CT", carpf_ud+"_A.par", "AnteriorMesh", "", "Ant_Strength_Test_PA1");
 
     cmd->SetDockerImageOpenCarp();
-    cmd->ExecuteTouch(Path("UAC_CT/") + "Labelled_Coords_2D_Rescaling_v3_C.vtk");
 
     QString lrpLapSolve, udpLapSolve, lraLapSolve, udaLapSolve;
     lrpLapSolve = cmd->OpenCarpDocker(directory + "/UAC_CT", lrp_par, "LR_Post_UAC");
@@ -1557,19 +1566,18 @@ void AtrialStrainMotionView::CreateModel() {
     MITK_INFO(QFile::copy(directory + "/UAC_CT/" + "outputLabelled_Endo.lon", directory + "/UAC_CT/" + "outputLabelled_Endo_avg.lon")) << "Copied Labelled_Endo.lon";
     MITK_INFO(QFile::copy(directory + "/UAC_CT/" + "outputLabelled_Epi.lon", directory + "/UAC_CT/" + "outputLabelled_Epi_avg.lon")) << "Copied Labelled_Epi.lon";
 
-    // generateLabelledMsh
-    cmd->ExecuteTouch(Path("UAC_CT/") + "clean-Labelled-refined-aligned.vtk");
-    cmd->ExecuteTouch(Path("UAC_CT/") + "clean-Labelled-refined-aligned.vtp");
-    cmd->DockerAtrialStrainMotion(Path(), "generateLabelledMsh");
+    // Each of the four steps reads what the step before it wrote. Stop at the first failure.
+    if (!RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "generateLabelledMsh", Path("UAC_CT/") + "Labelled_Coords_2D_Rescaling_v3_C.vtk"))
+        return;
 
-    // appendFibres
-    cmd->DockerAtrialStrainMotion(Path(), "appendFibres");
+    if (!RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "appendFibres", Path("UAC_CT/") + "clean-Labelled-refined.vtk"))
+        return;
 
-    // rotateSegMsh
-    cmd->DockerAtrialStrainMotion(Path(), "rotateSegMsh");
+    if (!RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "rotateSegMsh", Path("UAC_CT_aligned/") + "segmentation-rot.vtk"))
+        return;
 
-    // alignMesh
-    cmd->DockerAtrialStrainMotion(Path(), "alignMesh");
+    // alignMesh writes the .vtk file and then the .vtp file, so the .vtp file arrives last.
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "alignMesh", Path("UAC_CT/") + "clean-Labelled-refined-aligned.vtp");
 }
 
 
@@ -1646,10 +1654,8 @@ void AtrialStrainMotionView::Registration() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    cmd->ExecuteTouch(Path("tracking/") + "Final.cfg");
-    cmd->ExecuteTouch(Path("tracking/") + "imgTimes.lst");
-
-    cmd->DockerAtrialStrainMotion(Path(), "registration");
+    if (!RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "registration", Path("tracking/") + "imgTimes.lst"))
+        return;
 
     cmd->ExecuteTracking(Path(), Path("tracking/imgTimes.lst"), Path("tracking/Final.cfg"), Path("tracking/tsffd.dof"));
 }
@@ -1678,15 +1684,10 @@ void AtrialStrainMotionView::GenerateCellAreaStrains() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    for (int frame = 0; frame < 10; frame ++) {
-        QString clr_aligned = "cLr-aligned-" + QString::number(frame) + "-areas.txt";
-        cmd->ExecuteTouch(Path("tracking/") + clr_aligned);
-
-        QString area_strains = "area-strains-" + QString::number(frame) + ".csv";
-        cmd->ExecuteTouch(Path("tracking/") + area_strains);
-    }
-
-    cmd->DockerAtrialStrainMotion(Path(), "generateCellAreaStrains");
+    // The container loops over frames 0 to 9 in bash, and the loop does not stop on an error.
+    // A run that failed on every frame still writes the last file, so this check can pass on a
+    // partial run.
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "generateCellAreaStrains", Path("tracking/") + "area-strains-9.csv");
 }
 
 void AtrialStrainMotionView::JacobianThreshold() {
@@ -1697,13 +1698,10 @@ void AtrialStrainMotionView::JacobianThreshold() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    for (int frame = 1; frame < 10; frame ++) {
-        QString clr_aligned = "cLr-fibres-aligned-" + QString::number(frame) + "-scal_jacob-thr0.2.txt";
-        cmd->ExecuteTouch(Path("tracking/") + clr_aligned);
-    }
-
-
-    cmd->DockerAtrialStrainMotion(Path(), "jacobianThreshold");
+    // The container loops over frames 1 to 9 in Python and stops at the first error, so the last
+    // file shows that every frame finished.
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "jacobianThreshold",
+        Path("tracking/") + "cLr-fibres-aligned-9-scal_jacob-thr0.2.txt");
 }
 
 void AtrialStrainMotionView::PlotAreaStrain() {
@@ -1712,7 +1710,9 @@ void AtrialStrainMotionView::PlotAreaStrain() {
     MITK_INFO << "PlotAreaStrain";
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
-    cmd->DockerAtrialStrainMotion(Path(), "plotAreaStrain");
+    // The container plots the global pass and then the regional pass, so the regional image
+    // arrives last.
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "plotAreaStrain", Path("tracking/") + "area_strains_regional_excl_PVs_mshqual.png");
 }
 
 void AtrialStrainMotionView::CalcFiberStrains() {
@@ -1721,7 +1721,10 @@ void AtrialStrainMotionView::CalcFiberStrains() {
     MITK_INFO << "CalcFiberStrains";
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
-    cmd->DockerAtrialStrainMotion(Path(), "calcFiberStrains");
+    // The container loops over frames 1 to 9 in bash, and the loop does not stop on an error.
+    // A run that failed on every frame still writes the last file, so this check can pass on a
+    // partial run.
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "calcFiberStrains", Path("tracking/") + "endo_avg-strains-t9.txt");
 }
 
 void AtrialStrainMotionView::PlotFibersTrains() {
@@ -1730,7 +1733,9 @@ void AtrialStrainMotionView::PlotFibersTrains() {
     MITK_INFO << "PlotFibersTrains";
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
-    cmd->DockerAtrialStrainMotion(Path(), "plotFiberStrains");
+    // The container plots the global pass and then the regional pass, so the regional image
+    // arrives last.
+    RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "plotFiberStrains", Path("tracking/") + "endo_avg_excl_PVs_mshqual_regional.png");
 }
 
 void AtrialStrainMotionView::Reset() {
