@@ -90,7 +90,7 @@ class MITKCEMRGAPPMODULE_EXPORT CemrgAtrialTools {
 public:
     CemrgAtrialTools();
     void SetDefaultSegmentationTags();
-    ImageType::Pointer LoadImage(QString imagePath, bool binarise=false);
+    ImageType::Pointer CemrgLoadImage(QString imagePath, bool binarise = false);
     ShortImageType::Pointer LoadShortImage(QString imagePath);
 
     inline void SetDebugMode(bool s2d){debugSteps=s2d; debugMessages=s2d;};

@@ -125,7 +125,7 @@ ShortImageType::Pointer LoadShortImage(QString imagePath){
     return itkImage;
 }
 
-ImageType::Pointer CemrgAtrialTools::LoadImage(QString imagePath, bool binarise){
+ImageType::Pointer CemrgAtrialTools::CemrgLoadImage(QString imagePath, bool binarise){
     mitk::Image::Pointer mitkImage = mitk::IOUtil::Load<mitk::Image>(imagePath.toStdString());
     ImageType::Pointer itkImage = ImageType::New();
     mitk::CastToItkImage(mitkImage, itkImage);
@@ -177,9 +177,9 @@ void CemrgAtrialTools::AdjustSegmentationLabelToImage(QString segImPath, QString
 
 void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QString imPath, QString outImPath){
     MITK_INFO(debugMessages) << ("[ResampleSegmentationLabelToImage] Loading " + segImPath).toStdString();
-    ImageType::Pointer segItk = LoadImage(segImPath);
+    ImageType::Pointer segItk = CemrgLoadImage(segImPath);
     MITK_INFO(debugMessages) << ("[ResampleSegmentationLabelToImage] Loading " + imPath).toStdString();
-    ImageType::Pointer im = LoadImage(imPath);
+    ImageType::Pointer im = CemrgLoadImage(imPath);
 
     itk::ResampleImageFilter<ImageType, ImageType>::Pointer resampleFilter;
     resampleFilter = itk::ResampleImageFilter<ImageType, ImageType>::New();
@@ -199,7 +199,7 @@ void CemrgAtrialTools::ResampleSegmentationLabelToImage(QString segImPath, QStri
 
 ImageType::Pointer CemrgAtrialTools::RemoveNoiseFromAutomaticSegmentation(QString dir, QString segName){
     QString inputPath = dir + "/" + segName;
-    ImageType::Pointer orgSegImage = LoadImage(inputPath);
+    ImageType::Pointer orgSegImage = CemrgLoadImage(inputPath);
 
     MITK_INFO << "Extracting clean segmentation.";
     ConnectedComponentImageFilterType::Pointer conn1 = ConnectedComponentImageFilterType::New();
@@ -242,7 +242,7 @@ void CemrgAtrialTools::QuickBinarise(ImageType::Pointer imToBin){
 
 ImageType::Pointer CemrgAtrialTools::CleanAutomaticSegmentation(QString dir, QString segName, QString cleanName){
     QString inputPath = dir + "/" + segName;
-    ImageType::Pointer orgSegImage = LoadImage(inputPath);
+    ImageType::Pointer orgSegImage = CemrgLoadImage(inputPath);
     ImageType::Pointer atriumCoarse = RemoveNoiseFromAutomaticSegmentation(dir, segName);
 
     if(!cleanName.isEmpty()){

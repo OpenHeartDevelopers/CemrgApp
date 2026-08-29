@@ -581,7 +581,7 @@ void AtrialFibresView::SegmentIMGS() {
                 }
             }
 
-            ImageType::Pointer segImage = atrium->LoadImage(path);
+            ImageType::Pointer segImage = atrium->CemrgLoadImage(path);
             path = UserIncludeLgeAnalysis(path, segImage);
 
             mitk::Image::Pointer im = mitk::ImportItkImage(segImage);
@@ -705,7 +705,7 @@ void AtrialFibresView::CreateLabelledMesh(){
 
     QString prodPath =  directory + "/";
 
-    ImageType::Pointer pveins = atrium->LoadImage(prodPath+"PVeinsLabelled.nii");
+    ImageType::Pointer pveins = atrium->CemrgLoadImage(prodPath+"PVeinsLabelled.nii");
     if(!tagName.contains("Labelled")){
         std::string msg = "Changing working name from " + tagName.toStdString() + " to 'Labelled'";
         QMessageBox::information(NULL, "Attention", msg.c_str());
@@ -1554,7 +1554,7 @@ void AtrialFibresView::ScarProjection(){
         MITK_INFO << "[SCAR_PROJECTION][5] Thresholding";
         double mean = 0.0, stdv = 0.0;
         bool binarise=true;
-        ImageType::Pointer segITK = atrium->LoadImage(segPath, binarise);
+        ImageType::Pointer segITK = atrium->CemrgLoadImage(segPath, binarise);
         mitk::IOUtil::Save(atrium->ImErode(segITK), Path("roi.nii").toStdString());
 
         atrium->ResampleSegmentationLabelToImage(Path("roi.nii"), lgePath);
@@ -2340,7 +2340,7 @@ QString AtrialFibresView::UserIncludeLgeAnalysis(QString segPath, ImageType::Poi
         cmd->ExecuteRegistration(directory, lgePath, mraPath); // rigid.dof is the default name
         cmd->ExecuteTransformation(directory, segPath, segRegPath);
 
-        segImage = atrium->LoadImage(segRegPath);
+        segImage = atrium->CemrgLoadImage(segRegPath);
 
         resultString = segRegPath;
         tagName += "-reg";
