@@ -544,7 +544,7 @@ void AtrialScarView::AutomaticAnalysis() {
             MITK_INFO << ("[...][3.1] Saved file: " + segCleanPath).toStdString();
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][4] Vein clipping mesh";
-            QString output1 = cmd->ExecuteSurf(direct, segCleanPath, "close", 1, .5, 0, 10);
+            QString output1 = cmd->ExecuteSurf(direct, segCleanPath, .5, 0, 10);
             mitk::Surface::Pointer shell = mitk::IOUtil::Load<mitk::Surface>(output1.toStdString());
             vtkSmartPointer<vtkDecimatePro> deci = vtkSmartPointer<vtkDecimatePro>::New();
             deci->SetInputData(shell->GetVtkPolyData());
@@ -666,7 +666,7 @@ void AtrialScarView::AutomaticAnalysis() {
             MITK_INFO << "[...][7.3] ClipVeinsImage finished .";
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][8] Create a mesh from clipped segmentation of veins";
-            QString output2 = cmd->ExecuteSurf(direct, (direct + "/PVeinsCroppedImage.nii"), "close", 1, .5, 0, 10);
+            QString output2 = cmd->ExecuteSurf(direct, (direct + "/PVeinsCroppedImage.nii"), .5, 0, 10);
             mitk::Surface::Pointer LAShell = mitk::IOUtil::Load<mitk::Surface>(output2.toStdString());
 
             MITK_INFO << "[AUTOMATIC_ANALYSIS][9] Clip the mitral valve";
@@ -697,7 +697,7 @@ void AtrialScarView::AutomaticAnalysis() {
             mitk::IOUtil::Save(mitk::ImportItkImage(mvImage), (direct + "/prodMVI.nii").toStdString());
 
             // Make vtk of prodMVI
-            QString mviShellPath = cmd->ExecuteSurf(direct, "prodMVI.nii", "close", 1, 0.5, 0, 10);
+            QString mviShellPath = cmd->ExecuteSurf(direct, "prodMVI.nii", 0.5, 0, 10);
             // Implement code from command line tool
             mitk::Surface::Pointer ClipperSurface = mitk::IOUtil::Load<mitk::Surface>(mviShellPath.toStdString());
             vtkSmartPointer<vtkImplicitPolyDataDistance> implicitFn = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
@@ -1180,19 +1180,17 @@ void AtrialScarView::CreateSurf() {
             //Act on dialog return code
             if (dialogCode == QDialog::Accepted) {
 
-                bool ok1, ok2, ok3, ok4;
-                int iter = m_UIMeshing.lineEdit_1->text().toInt(&ok1);
-                float th = m_UIMeshing.lineEdit_2->text().toFloat(&ok2);
-                int blur = m_UIMeshing.lineEdit_3->text().toInt(&ok3);
-                int smth = m_UIMeshing.lineEdit_4->text().toInt(&ok4);
+                bool ok1, ok2, ok3;
+                float th = m_UIMeshing.lineEdit_1->text().toFloat(&ok1);
+                int blur = m_UIMeshing.lineEdit_2->text().toInt(&ok2);
+                int smth = m_UIMeshing.lineEdit_3->text().toInt(&ok3);
 
                 //Set default values
-                if (!ok1 || !ok2 || !ok3 || !ok4)
+                if (!ok1 || !ok2 || !ok3)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if (!ok1) iter = 1;
-                if (!ok2) th = 0.5;
-                if (!ok3) blur = 0;
-                if (!ok4) smth = 10;
+                if (!ok1) th = 0.5;
+                if (!ok2) blur = 0;
+                if (!ok3) smth = 10;
                 //_if
 
                 this->BusyCursorOn();
@@ -1201,7 +1199,7 @@ void AtrialScarView::CreateSurf() {
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(3);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
                 cmd->SetUseDockerContainers(_useDockerInPlugin);
-                path = cmd->ExecuteSurf(directory, pathTemp, "close", iter, th, blur, smth);
+                path = cmd->ExecuteSurf(directory, pathTemp, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
 

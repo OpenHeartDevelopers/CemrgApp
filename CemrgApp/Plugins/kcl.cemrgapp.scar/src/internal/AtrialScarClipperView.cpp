@@ -190,20 +190,18 @@ void AtrialScarClipperView::iniPreSurf() {
             //Act on dialog return code
             if (dialogCode == QDialog::Accepted) {
 
-                bool ok1, ok2, ok3, ok4;
-                int iter = m_UIMeshing.lineEdit_1->text().toInt(&ok1);
-                float th = m_UIMeshing.lineEdit_2->text().toFloat(&ok2);
-                int blur = m_UIMeshing.lineEdit_3->text().toInt(&ok3);
-                int smth = m_UIMeshing.lineEdit_4->text().toInt(&ok4);
+                bool ok1, ok2, ok3;
+                float th = m_UIMeshing.lineEdit_1->text().toFloat(&ok1);
+                int blur = m_UIMeshing.lineEdit_2->text().toInt(&ok2);
+                int smth = m_UIMeshing.lineEdit_3->text().toInt(&ok3);
                 float ds = 0.1;
 
                 //Set default values
-                if (!ok1 || !ok2 || !ok3 || !ok4)
+                if (!ok1 || !ok2 || !ok3)
                     QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
-                if (!ok1) iter = 1;
-                if (!ok2) th = 0.5;
-                if (!ok3) blur = 0;
-                if (!ok4) smth = 10;
+                if (!ok1) th = 0.5;
+                if (!ok2) blur = 0;
+                if (!ok3) smth = 10;
                 //_if
 
                 this->BusyCursorOn();
@@ -211,7 +209,7 @@ void AtrialScarClipperView::iniPreSurf() {
                 mitk::IOUtil::Save(image, path.toStdString());
                 mitk::ProgressBar::GetInstance()->AddStepsToDo(3);
                 std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
-                QString output = cmd->ExecuteSurf(directory, path, "close", iter, th, blur, smth);
+                QString output = cmd->ExecuteSurf(directory, path, th, blur, smth);
                 QMessageBox::information(NULL, "Attention", "Command Line Operations Finished!");
                 this->BusyCursorOff();
 

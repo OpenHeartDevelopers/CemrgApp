@@ -123,17 +123,14 @@ void TestCemrgCommandLine::cleanupTestCase() {
 
 void TestCemrgCommandLine::ExecuteSurf_data() {
     QTest::addColumn<QString>("segPath");
-    QTest::addColumn<QString>("morphOperation");
-    QTest::addColumn<int>("iterations");
     QTest::addColumn<float>("threshold");
     QTest::addColumn<int>("blur");
     QTest::addColumn<int>("smoothness");
     QTest::addColumn<QString>("result");
 
-    const array<tuple<QString, QString, int, float, int, int, QString>, 3> surfData { {
-        {"sphere_initial.nii", "close", 1, 0.5, 0, 10, "/surf_expected_1.vtk"},
-        {"sphere_shifted.nii", "dilate", 1, 0.5, 0, 10, "/surf_expected_2.vtk"},
-        {"sphere_initial.nii", "erode", 1, 0.5, 0, 10, "/surf_expected_3.vtk"}
+    const array<tuple<QString, QString, int, float, int, int, QString>, 2> surfData { {
+        {"sphere_initial.nii", 0.5, 0, 10, "/surf_expected_1.vtk"},
+        {"sphere_shifted.nii", 0.5, 0, 10, "/surf_expected_2.vtk"},
     } };
 
     for (size_t i = 0; i < surfData.size(); i++)
@@ -142,14 +139,12 @@ void TestCemrgCommandLine::ExecuteSurf_data() {
 
 void TestCemrgCommandLine::ExecuteSurf() {
     QFETCH(QString, segPath);
-    QFETCH(QString, morphOperation);
-    QFETCH(int, iterations);
     QFETCH(float, threshold);
     QFETCH(int, blur);
     QFETCH(int, smoothness);
     QFETCH(QString, result);
 
-    QString surfOutput = cemrgCommandLine->ExecuteSurf(dataPath, segPath, morphOperation, iterations, threshold, blur, smoothness);
+    QString surfOutput = cemrgCommandLine->ExecuteSurf(dataPath, segPath, threshold, blur, smoothness);
     QVERIFY2(EqualFiles(surfOutput, dataPath + result), "The function output is different from the expected output!");
 }
 

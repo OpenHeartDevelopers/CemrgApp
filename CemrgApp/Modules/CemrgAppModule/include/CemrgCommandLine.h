@@ -49,7 +49,7 @@ public:
     QDialog* GetDialog();
 
     //Execute Plugin Specific Functions
-    QString ExecuteSurf(QString dir, QString segPath, QString morphOperation = "close", int iter = 1, float th = 0.5, int blur = 0, int smth = 10);
+    QString ExecuteSurf(QString dir, QString segPath, float th = 0.5, int blur = 0, int smth = 10);
     QString ExecuteCreateCGALMesh(QString dir, QString outputName, QString paramsFullPath, QString segmentationName = "converted.inr");
     void ExecuteTracking(QString dir, QString imgTimes, QString param, QString output = "tsffd.dof");
     void ExecuteApplying(QString dir, QString inputMesh, double iniTime, QString dofin, int noFrames, int smooth);
@@ -58,9 +58,6 @@ public:
     void ExecuteSimpleTranslation(QString dir, QString sourceMeshP, QString targetMeshP, QString transformFileName = "init.dof", bool transformThePoints = true);
 
     //Execute MIRTK Specific Functions
-    QString ExecuteMorphologicalOperation(QString operation, QString dir, QString segPath, QString outputPath = "segmentation.s.nii", int iter = 1);
-    QString ExecuteExtractSurface(QString dir, QString segPath, QString outputPath = "segmentation.vtk", float th = 0.5, int blur = 0);
-    QString ExecuteSmoothSurface(QString dir, QString segPath, QString outputPath, int smth = 10);
     void ExecuteTransformationOnPoints(QString dir, QString meshFullPath, QString outputMeshFullPath, QString transformFileFullPath, double applyingIniTime = -100);
     void ExecuteResamplingOnNifti(QString niiFullPath, QString outputNiiFullPath, int isovalue);
 

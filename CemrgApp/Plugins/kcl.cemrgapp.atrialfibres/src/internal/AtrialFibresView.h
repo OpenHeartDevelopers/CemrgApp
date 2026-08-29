@@ -173,7 +173,7 @@ private:
     bool automaticPipeline, analysisOnLge, resurfaceMesh, userHasSetMeshingParams;
 
     // user-defined parameters
-    double uiMesh_th, uiMesh_bl, uiMesh_smth, uiMesh_iter;
+    double uiMesh_th, uiMesh_bl, uiMesh_smth;
     double uiRemesh_max, uiRemesh_avrg, uiRemesh_min, uiRemesh_surfcorr;
     bool uiRemesh_isscalar, uiRemesh_extractParts, uiRemesh_cleanmesh;
     int uiScar_minStep, uiScar_maxStep, uiScar_projectionMethod, uiScar_thresholdMethod, uiFormat_scale;

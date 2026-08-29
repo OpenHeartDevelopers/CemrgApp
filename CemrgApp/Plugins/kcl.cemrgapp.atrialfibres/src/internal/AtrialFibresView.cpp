@@ -472,7 +472,7 @@ void AtrialFibresView::AutomaticAnalysis(){
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
 
-        cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
+        cmd->ExecuteSurf(directory, Path("prodClean.nii"), uiMesh_th, uiMesh_bl, uiMesh_smth);
         atrium->ProjectTagsOnExistingSurface(tagAtriumAuto, directory, tagName+".vtk");
 
         MITK_INFO << "[AUTOMATIC_PIPELINE] Add the mesh to storage";
@@ -673,7 +673,7 @@ void AtrialFibresView::IdentifyPV(){
                     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
                     cmd->SetUseDockerContainers(true);
 
-                    cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
+                    cmd->ExecuteSurf(directory, Path("prodClean.nii"), uiMesh_th, uiMesh_bl, uiMesh_smth);
 
                     //Add the mesh to storage
                     std::string meshName = segNode->GetName() + "-Mesh";
@@ -728,7 +728,7 @@ void AtrialFibresView::CreateLabelledMesh(){
         std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
         cmd->SetUseDockerContainers(true);
 
-        cmd->ExecuteSurf(directory, Path("prodClean.nii"), "close", uiMesh_iter, uiMesh_th, uiMesh_bl, uiMesh_smth);
+        cmd->ExecuteSurf(directory, Path("prodClean.nii"), uiMesh_th, uiMesh_bl, uiMesh_smth);
         atrium->ProjectTagsOnExistingSurface(pveins, directory, tagName+".vtk");
 
         MITK_INFO << "Add the mesh to storage";
@@ -1996,7 +1996,6 @@ bool AtrialFibresView::GetUserMeshingInputs(){
 
     if(userHasSetMeshingParams){
         QString msg = "The parameters have been set already, change them?\n";
-        msg += "close iter= " + QString::number(uiMesh_iter) + '\n';
         msg += "threshold= " + QString::number(uiMesh_th) + '\n';
         msg += "blur= " + QString::number(uiMesh_bl) + '\n';
         msg += "smooth iter= " + QString::number(uiMesh_smth);
@@ -2017,19 +2016,17 @@ bool AtrialFibresView::GetUserMeshingInputs(){
         //Act on dialog return code
         if (dialogCode == QDialog::Accepted) {
 
-            bool ok1, ok2, ok3, ok4;
+            bool ok1, ok2, ok3;
             uiMesh_th= m_UIMeshing.lineEdit_1->text().toDouble(&ok1);
             uiMesh_bl= m_UIMeshing.lineEdit_2->text().toDouble(&ok2);
             uiMesh_smth= m_UIMeshing.lineEdit_3->text().toDouble(&ok3);
-            uiMesh_iter= m_UIMeshing.lineEdit_4->text().toDouble(&ok4);
 
             //Set default values
-            if (!ok1 || !ok2 || !ok3 || !ok4)
+            if (!ok1 || !ok2 || !ok3)
             QMessageBox::warning(NULL, "Attention", "Reverting to default parameters!");
             if (!ok1) uiMesh_th=0.5;
             if (!ok2) uiMesh_bl=0.0;
             if (!ok3) uiMesh_smth=10;
-            if (!ok4) uiMesh_iter=0;
 
             inputs->deleteLater();
             userInputAccepted=true;
