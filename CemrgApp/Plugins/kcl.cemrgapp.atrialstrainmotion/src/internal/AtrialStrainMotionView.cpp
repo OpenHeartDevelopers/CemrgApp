@@ -1684,9 +1684,9 @@ void AtrialStrainMotionView::GenerateCellAreaStrains() {
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
-    // The container loops over frames 0 to 9 in bash, and the loop does not stop on an error.
-    // A run that failed on every frame still writes the last file, so this check can pass on a
-    // partial run.
+    // Warning: Do not trust this check on a partial run. The container loops over frames
+    // 0 to 9 in bash, and the loop does not stop on an error. A run that failed on every
+    // frame still writes the last file.
     RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "generateCellAreaStrains", Path("tracking/") + "area-strains-9.csv");
 }
 
@@ -1721,9 +1721,9 @@ void AtrialStrainMotionView::CalcFiberStrains() {
     MITK_INFO << "CalcFiberStrains";
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
-    // The container loops over frames 1 to 9 in bash, and the loop does not stop on an error.
-    // A run that failed on every frame still writes the last file, so this check can pass on a
-    // partial run.
+    // Warning: Do not trust this check on a partial run. The container loops over frames
+    // 1 to 9 in bash, and the loop does not stop on an error. A run that failed on every
+    // frame still writes the last file.
     RunAndCheckDockerAtrialStrainMotionSubcommand(cmd.get(), "calcFiberStrains", Path("tracking/") + "endo_avg-strains-t9.txt");
 }
 
