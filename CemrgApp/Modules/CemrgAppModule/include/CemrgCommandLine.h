@@ -100,6 +100,7 @@ public:
     inline QString GetDockerImage() {return _dockerimage;};
     inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
     inline void SetDockerImageUac(QString uac_tag="latest"){_dockerimage = "cemrg/uac:"+uac_tag;};// modify when docker image has been pushed to hub
+    inline void SetDockerImageAfmotion(QString afmotion_tag="1.0"){_dockerimage = "cemrg/afmotion:"+afmotion_tag;};
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
     QStringList GetDockerUserArguments();
     QStringList GetOpenCarpDockerCoreArguments(QString volume);

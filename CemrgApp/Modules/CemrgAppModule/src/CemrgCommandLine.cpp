@@ -1528,7 +1528,7 @@ QString CemrgCommandLine::DockerCctaMultilabelSegmentation(QString dir, QString 
 
 bool CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function, QString expectedOutput) {
     // Note: dir is the project directory, not the UAC_CT subfolder.
-    SetDockerImage("afmotion");
+    SetDockerImageAfmotion();
     QString executablePath = "";
 #if defined(__APPLE__)
     executablePath = "/usr/local/bin/";
@@ -1539,7 +1539,7 @@ bool CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function, Q
     arguments << "run" << "--rm";
     arguments << GetDockerUserArguments();
     arguments << "--volume="+dir+"/:/data/";
-    arguments << "afmotion";
+    arguments << GetDockerImage();
     arguments << function;
     // The container needs the host path as well as the mount. The registration subcommand writes
     // the host path into tracking/imgTimes.lst, and the host MIRTK register reads that file.
