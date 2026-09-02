@@ -59,6 +59,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CemrgAtrialTools.h"
 
+// RunAndCheckDockerAtrialStrainMotionSubcommand takes a CemrgCommandLine pointer.
+// For a pointer, the compiler only needs the name of the class, not the full definition.
+// An include of CemrgCommandLine.h also works, but is unnecessary in this header.
 class CemrgCommandLine;
 
 /**
