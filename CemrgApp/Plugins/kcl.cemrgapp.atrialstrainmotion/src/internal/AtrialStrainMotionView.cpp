@@ -1483,6 +1483,9 @@ void AtrialStrainMotionView::UAC_Stage1(){
     paLapSolve = cmd->OpenCarpDocker(directory + "/UAC_CT" , pa_par, "PA_UAC_N2");
     MITK_INFO << ("TIMELOG|UacCalculation_Stage1| openCARP end " + lrLapSolve + " - " + paLapSolve).toStdString();
 
+    // The Laplace solves write these fields. Step 11 reads them.
+    outputFiles << "LR_UAC_N2/phie.igb" << "PA_UAC_N2/phie.igb";
+
     bool uacOutputSuccess = IsOutputFileCorrect(directory + "/UAC_CT", outputFiles);
     MITK_ERROR(!uacOutputSuccess) << "problem in UAC_Stage1";
     std::string msg = "UAC Calculation - Stage 1 ";
@@ -1535,6 +1538,14 @@ void AtrialStrainMotionView::UAC_Stage2(){
     udaLapSolve = cmd->OpenCarpDocker(directory + "/UAC_CT", uda_par, "UD_Ant_UAC");
     MITK_INFO << ("TIMELOG|UacCalculation_Stage2| openCARP - End " + lrpLapSolve + "-" + udpLapSolve + "-" + lraLapSolve + "-" + udaLapSolve).toStdString();
 
+    outputFiles.clear();
+    outputFiles << "LR_Post_UAC/phie.igb" << "UD_Post_UAC/phie.igb";
+    outputFiles << "LR_Ant_UAC/phie.igb" << "UD_Ant_UAC/phie.igb";
+
+    if (!IsOutputFileCorrect(directory + "/UAC_CT", outputFiles)){
+        MITK_INFO << "TIMELOG|UacCalculation_Stage2| End (FAILED)";
+        return;
+    }
 
     outputFiles.clear();
     outputFiles << "Labelled_Coords_2D_Rescaling_v3_C.vtk";
