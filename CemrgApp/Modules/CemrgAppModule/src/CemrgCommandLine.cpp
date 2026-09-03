@@ -1154,6 +1154,9 @@ QStringList CemrgCommandLine::GetDockerArguments(QString volume, QString dockere
     argumentList << "run" << "--rm";
     argumentList << GetDockerUserArguments();
     argumentList << "--volume="+volume+":/data";
+    // Some container scripts write temporary files to the working directory. The uac image sets
+    // that directory to /code, which the host user cannot write to. Point it at the mount.
+    argumentList << "--workdir=/data";
     argumentList << _dockerimage;
     if (mirtkTest == 0)
         argumentList << dockerexe;
@@ -1218,10 +1221,24 @@ QStringList CemrgCommandLine::GetOpenCarpDockerLaplaceSolverArguments(QString vo
     QStringList solverArguments = GetOpenCarpDockerCoreArguments(volume);
     solverArguments << "openCARP";
     solverArguments << "-ellip_use_pt" << "0" << "-parab_use_pt" << "0";
-    solverArguments << "-parab_options_file";
-    solverArguments << home.relativeFilePath(parab);
-    solverArguments << "-ellip_options_file";
-    solverArguments << home.relativeFilePath(ellip);
+
+    if (QFile::exists(parabDestination)) {
+        solverArguments << "-parab_options_file";
+        solverArguments << home.relativeFilePath(parab);
+    } else {
+        MITK_WARN << ("The application cannot find the PETSc option file " + parabDestination +
+            ". openCARP uses its default parabolic solver settings. To use the project settings, "
+            "put the petsc_opts folder next to the CemrgApp executable.").toStdString();
+    }
+
+    if (QFile::exists(ellipDestination)) {
+        solverArguments << "-ellip_options_file";
+        solverArguments << home.relativeFilePath(ellip);
+    } else {
+        MITK_WARN << ("The application cannot find the PETSc option file " + ellipDestination +
+            ". openCARP uses its default elliptic solver settings. To use the project settings, "
+            "put the petsc_opts folder next to the CemrgApp executable.").toStdString();
+    }
 
     return solverArguments;
 }
@@ -1291,7 +1308,7 @@ QString CemrgCommandLine::OpenCarpDockerLaplaceSolves(QString dir, QString meshN
                 arguments.clear();
                 // TODO: add GetDockerUserArguments() to run container as the host user
                 arguments << "run" << "--rm" << ("--volume="+home.absolutePath()+":/shared:z") << "--workdir=/shared";
-                arguments << "docker.opencarp.org/opencarp/opencarp:latest";
+                arguments << _dockerimage;
                 arguments << "igbextract" << home.relativeFilePath(outIgbFile) << "-O";
                 arguments << home.relativeFilePath(outPathFile) << "-o" << "ascii_1pL";
                 successful = ExecuteCommand(executableName, arguments, outPathFile);
@@ -1317,7 +1334,7 @@ QString CemrgCommandLine::OpenCarpDocker(QString dir, QString paramfile, QString
 
         QDir home(dir);
         QString outPath = home.absolutePath() + "/" + simID;
-        QString outPhieFilePath = outPath; // + "/phie.igb";
+        QString outPhieFilePath = outPath + "/phie.igb";
         QDir outDir(outPath);
 
         MITK_INFO(outDir.mkpath(outPath)) << "Output directory created.";
@@ -1523,9 +1540,9 @@ QString CemrgCommandLine::DockerCctaMultilabelSegmentation(QString dir, QString 
 }
 
 
-void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
-    // Note: dir should be directory + "/", not director + "/UCT_CT"
-    SetDockerImage("afmotion");
+bool CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function, QString expectedOutput) {
+    // Note: dir is the project directory, not the UAC_CT subfolder.
+    SetDockerImageAfmotion();
     QString executablePath = "";
 #if defined(__APPLE__)
     executablePath = "/usr/local/bin/";
@@ -1534,21 +1551,20 @@ void CemrgCommandLine::DockerAtrialStrainMotion(QString dir, QString function) {
 
     QStringList arguments;
     arguments << "run" << "--rm";
-    // TODO: add GetDockerUserArguments() to run container as the host user
+    arguments << GetDockerUserArguments();
     arguments << "--volume="+dir+"/:/data/";
-    // arguments << "--volume="+dir+"UAC_CT/:/data/UAC_CT/";
-    // arguments << "--volume="+dir+"UAC_CT_aligned/:/data/UAC_CT_aligned/";
-    arguments << "afmotion";
+    arguments << GetDockerImage();
     arguments << function;
+    // The container needs the host path as well as the mount. The registration subcommand writes
+    // the host path into tracking/imgTimes.lst, and the host MIRTK register reads that file.
     arguments << dir;
 
-    ExecuteCommand(executableName, arguments, "", false);
-    /***
+    bool successful = ExecuteCommand(executableName, arguments, expectedOutput, false);
     if (successful) {
         MITK_INFO << "Successful " << function.toStdString();
     } else {
         MITK_WARN << "Unsuccessful " << function.toStdString();
     }
-    ***/
 
+    return successful;
 }

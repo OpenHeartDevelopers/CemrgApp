@@ -98,8 +98,9 @@ public:
     inline void SetUseDockerContainersOff() {SetUseDockerContainers(false);};
     inline void SetDockerImage(QString dockerimage) {_dockerimage = dockerimage;};
     inline QString GetDockerImage() {return _dockerimage;};
-    inline void SetDockerImageOpenCarp(){_dockerimage = "docker.opencarp.org/opencarp/opencarp:latest";};
+    inline void SetDockerImageOpenCarp(QString opencarp_tag="v19-0"){_dockerimage = "docker.opencarp.org/opencarp/opencarp:"+opencarp_tag;};
     inline void SetDockerImageUac(QString uac_tag="latest"){_dockerimage = "cemrg/uac:"+uac_tag;};// modify when docker image has been pushed to hub
+    inline void SetDockerImageAfmotion(QString afmotion_tag="1.0"){_dockerimage = "cemrg/afmotion:"+afmotion_tag;};
     QStringList GetDockerArguments(QString volume, QString dockerexe = "");
     QStringList GetDockerUserArguments();
     QStringList GetOpenCarpDockerCoreArguments(QString volume);
@@ -115,8 +116,7 @@ public:
 
     QString DockerCctaMultilabelSegmentation(QString dir, QString path_to_f, bool saveas_nifti);
 
-    // TODO: added a function to run the afmotion image
-    void DockerAtrialStrainMotion(QString dir, QString function);
+    bool DockerAtrialStrainMotion(QString dir, QString function, QString expectedOutput);
 
 protected slots:
 
