@@ -232,9 +232,7 @@ pure confusion, and `GetUserAnalysisSelectorInputs` never shows the dialog it ex
   `plotFiberStrains` must not change. Widget names still carry meaningless `man`/`auto` prefixes
   from `atrialfibres`, and the panel has no button 6 — steps 2 and 6 read "(optional)" instead of a
   number.
-- **Documentation.** `documentation/UserManual/Manual.dox` and `documentation/doxygen/modules.dox`
-  are unedited MITK templates. The manual still claims the plugin "Generates PhD thesis" and "Brings
-  world peace". `AtrialStrainMotionView.h` still carries the generated warning *"This class is not
+- **Documentation.** `AtrialStrainMotionView.h` still carries the generated warning *"This class is not
   yet documented. Use 'git blame' and ask the author to provide basic documentation"*. Replace all
   three; [`pipeline-state.md`](pipeline-state.md) §1 and §5 can be adapted directly.
 - **Tests.** Nothing under `Modules/CemrgAppModule/test/` covers this plugin or the two
