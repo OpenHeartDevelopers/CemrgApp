@@ -6,12 +6,75 @@
 \tableofcontents
 
 \section kcl_cemrgapp_atrialstrainmotionOverview Overview
-Describe the features of your awesome plugin here
+
+This plugin measures the regional strain of the left atrium from cine CT.
+
+\warning Do not use this plugin for the diagnosis or the treatment of patients. It is research
+software, and it comes with no warranty and no support.
+
+The plugin reads a time series of cardiac CT frames. It builds a labelled surface mesh of the left
+atrium, maps the fibre directions onto that mesh, and then tracks the mesh through the cardiac
+cycle. The result is one strain value for each cell of the mesh at each time point.
+
+The plugin gives two measures of strain:
+
 <ul>
-<li>Increases productivity
-<li>Creates beautiful images
-<li>Generates PhD thesis
-<li>Brings world peace
+<li>Area strain - the change in the area of each cell of the mesh.
+<li>Fibre strain - the change along the local fibre direction of each cell.
 </ul>
+
+\section kcl_cemrgapp_atrialstrainmotionPrereq Before you start
+
+The plugin works inside one project directory. Select that directory when the plugin asks for it.
+The path must contain no spaces.
+
+Put the cine CT frames in a folder named \c nifti inside the project directory. Name the frames
+\c dcm-0.nii, \c dcm-1.nii and so on. The plugin does not create this folder, and it does not
+change the frames you supply.
+
+The plugin also needs these external tools:
+
+<ul>
+<li>Docker. The plugin pulls the \c cemrg/ccta, \c cemrg/uac, \c cemrg/afmotion and openCARP images
+on first use.
+<li>The MIRTK binaries, in an \c MLib folder beside the CemrgApp executable.
+<li>The PETSc option files, in a \c petsc_opts folder beside the CemrgApp executable.
+</ul>
+
+\section kcl_cemrgapp_atrialstrainmotionUsage The pipeline
+
+The panel holds twenty buttons. Press them in order. Two steps are optional, and the panel shows
+them in blue.
+
+The first twelve buttons build the model:
+
+<ul>
+<li>Steps 1 and 2 segment the left atrium and extract its surface.
+<li>Steps 3 to 7 identify the pulmonary veins and clip them.
+<li>Step 8 improves the mesh and converts it to the CARP format.
+<li>Steps 9 to 11 select the landmarks and calculate the Universal Atrial Coordinates.
+<li>Step 12 maps the fibres onto the mesh and aligns the mesh to the image.
+</ul>
+
+Steps 3, 5 and 6 open the Atrial Fibres Clipper view. Follow the instructions in that view, then
+return to this panel.
+
+The last eight buttons measure the motion:
+
+<ul>
+<li>Steps 13 and 14 crop each frame and register every frame to the reference frame.
+<li>Step 15 warps the mesh to each frame of the cardiac cycle.
+<li>Steps 16 to 20 calculate the area strains and the fibre strains, then plot them.
+</ul>
+
+The \c Reset button clears the memory the plugin holds of the project. It changes no file on disk.
+
+\section kcl_cemrgapp_atrialstrainmotionResults The results
+
+The plugin writes the model into a \c UAC_CT folder, and the strain results and the plots into a
+\c tracking folder. Both folders sit inside the project directory.
+
+The plugin also writes a log into the project directory. The name of that file starts with
+\c afib_log. Read the log when a step reports a failure. It holds the command that the step ran.
 
 */

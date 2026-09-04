@@ -2,7 +2,14 @@
   \defgroup kcl_cemrgapp_atrialstrainmotion kcl.cemrgapp.atrialstrainmotion
   \ingroup MITKPlugins
 
-  \brief Describe your plugin here.
+  \brief Regional strain of the left atrium from cine CT.
+
+  The plugin builds a labelled, fibre-annotated surface mesh of the left atrium, tracks that mesh
+  through the cardiac cycle, and turns the deformation into area strains and fibre strains. It
+  holds no algorithms of its own. Every step calls into MitkCemrgAppModule, which runs the MIRTK
+  binaries and the Docker images that do the work.
+
+  See \ref kcl_cemrgapp_atrialstrainmotion for the user manual.
 
 */
 
