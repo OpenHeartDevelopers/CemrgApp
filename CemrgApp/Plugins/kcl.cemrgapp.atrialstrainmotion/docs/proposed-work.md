@@ -6,10 +6,11 @@ Handover document, 2026-09-04. It proposes what is left before
 Read [`pipeline-state.md`](pipeline-state.md) first. It describes what the pipeline does now, what
 the external tools are, and what one full run produced. This document assumes it.
 
-**Every claim below was checked against the code on `plugin/atrialstrainmotion-fix-step-13-crop` on
-2026-09-04.** Where a claim comes from reading the `afmotion` container rather than this
-repository, it names the file in `discovery_report/recovered/code/` inside the `charlie_pipeline`
-hand-over bundle.
+**Every claim below was checked against the code on 2026-09-04.**
+[PR #97](https://github.com/OpenHeartDevelopers/CemrgApp/pull/97) merged that code into
+`plugin/atrailstrainmotion` on 2026-09-07. Where a claim comes from reading the `afmotion` container
+rather than this repository, it names the file in `discovery_report/recovered/code/` inside the
+`charlie_pipeline` hand-over bundle.
 
 ---
 

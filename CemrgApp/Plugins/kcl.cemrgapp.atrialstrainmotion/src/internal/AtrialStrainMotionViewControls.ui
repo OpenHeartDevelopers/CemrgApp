@@ -124,7 +124,7 @@
    <item>
     <widget class="QPushButton" name="registration">
      <property name="text">
-      <string>14. registration</string>
+      <string>14. Registration</string>
      </property>
     </widget>
    </item>
@@ -145,28 +145,28 @@
    <item>
     <widget class="QPushButton" name="jacobian_threshold">
      <property name="text">
-      <string>17. jacobianThreshold</string>
+      <string>17. Jacobian Threshold</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="plot_area_strain">
      <property name="text">
-      <string>18. plotAreaStrain</string>
+      <string>18. Plot Area Strain</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="calc_fiber_strains">
      <property name="text">
-      <string>19. Calc Fiber Strains</string>
+      <string>19. Calculate Fibre Strains</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QPushButton" name="plot_fibers_trains">
      <property name="text">
-      <string>20. plot Fiber Strains</string>
+      <string>20. Plot Fibre Strains</string>
      </property>
     </widget>
    </item>

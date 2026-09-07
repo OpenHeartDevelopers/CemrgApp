@@ -90,8 +90,7 @@ phase-B step behaves oddly — the image has no source in this repository.
 | Thing | Location |
 |---|---|
 | Integration branch | `plugin/atrailstrainmotion` — **the branch name carries a typo and that is the real name**. |
-| Open work | [PR #97](https://github.com/OpenHeartDevelopers/CemrgApp/pull/97), branch `plugin/atrialstrainmotion-fix-step-13-crop` — "Unblock step 13 and write the cropped cine frames". Base is `plugin/atrailstrainmotion`. Not yet merged. |
-| Merge target | `development`. `plugin/atrailstrainmotion` is 75 commits ahead of it and 0 behind. |
+| Merge target | `development`. `plugin/atrailstrainmotion` is 77 commits ahead of it and 0 behind. |
 | The motion/strain image | `cemrg/afmotion:1.0` on Docker Hub, public. |
 
 
@@ -99,6 +98,7 @@ Merged branches that shaped the current code, newest first:
 
 | PR | What it did |
 |---|---|
+| [#97](https://github.com/OpenHeartDevelopers/CemrgApp/pull/97) | Unblocked step 13 and the rest of the pipeline. The step measures the atrium, crops every cine frame on the host, and writes `nifti/dcm-crop-<N>.nii`. |
 | [#96](https://github.com/OpenHeartDevelopers/CemrgApp/pull/96) | Pinned the openCARP image to `v19-0` and added the PETSc option-file fallback. Unblocked steps 10 and 11. |
 | [#95](https://github.com/OpenHeartDevelopers/CemrgApp/pull/95) | Published `cemrg/afmotion:1.0`, made `DockerAtrialStrainMotion` return `bool` with a real output path, restored its logging. |
 | [#94](https://github.com/OpenHeartDevelopers/CemrgApp/pull/94) | Ran the Docker containers as the host user with `--user <uid>:<gid>`. |
