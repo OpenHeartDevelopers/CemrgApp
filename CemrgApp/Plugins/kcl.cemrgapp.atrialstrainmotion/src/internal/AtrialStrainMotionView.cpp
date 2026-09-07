@@ -82,6 +82,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "itkLabelMapToLabelImageFilter.h"
 #include "itkLabelSelectionLabelMapFilter.h"
 
+// std
+#include <algorithm>
+
 // Qt
 #include <QMessageBox>
 #include <QPushButton>
@@ -756,6 +759,10 @@ static QString DescribeOutputProblem(QString fullPath) {
 // and 10 to this value. It changes all other labels to 0. A complete LA.nii holds only this value.
 static const int LA_LABEL = 4;
 
+// The share of each axis' own length that CropImage adds to both ends of the atrium bounding box.
+// The atrium moves through the cardiac cycle, so the crop box must hold it at every frame.
+static const double CROP_PADDING_FRACTION = 0.3;
+
 /**
  * @brief Describe why the application cannot reuse an output file. Return an empty string if the
  *        application can reuse the file.
@@ -834,6 +841,46 @@ static QString DescribeLaLabelProblem(QString laPath) {
             ". Step 1 removes these labels, so its label arithmetic did not finish";
 
     return QString();
+}
+
+/**
+ * @brief Load one cine frame. Return a null pointer and set message on a fault.
+ *
+ * ITK refuses to load frames if they declare qform_code = 0. This function
+ * repairs a copy using RepairNiftiQform and reads that. The original frames in nifti/ do not change.
+ */
+static mitk::Image::Pointer LoadFrameThroughRepairedCopy(QString sourcePath, QString scratchPath, QString& message) {
+    // QFile::copy will not overwrite, clear any previous scratch file first.
+    if (QFile::exists(scratchPath) && !QFile::remove(scratchPath)) {
+        message = "the application cannot replace the working copy at " + scratchPath;
+        return nullptr;
+    }
+
+    if (!QFile::copy(sourcePath, scratchPath)) {
+        message = "the application cannot copy it to " + scratchPath;
+        return nullptr;
+    }
+
+    QString qformMessage;
+    CemrgNiftiUtils::NiftiQformStatus qformStatus = CemrgNiftiUtils::RepairNiftiQform(scratchPath, qformMessage);
+    if (qformStatus != CemrgNiftiUtils::NiftiQformStatus::Repaired &&
+        qformStatus != CemrgNiftiUtils::NiftiQformStatus::AlreadyValid) {
+        message = "the application cannot use its NIfTI header (" +
+            CemrgNiftiUtils::NiftiQformStatusToString(qformStatus) + " - " + qformMessage + ")";
+        QFile::remove(scratchPath);
+        return nullptr;
+    }
+
+    mitk::Image::Pointer frame;
+    try {
+        frame = mitk::IOUtil::Load<mitk::Image>(scratchPath.toStdString());
+    } catch (const std::exception& e) {
+        message = "the application cannot read it (" + QString(e.what()) + ")";
+        frame = nullptr;
+    }
+
+    QFile::remove(scratchPath);
+    return frame;
 }
 
 bool AtrialStrainMotionView::IsOutputFileCorrect(QString dir, QStringList filenames){
@@ -1596,24 +1643,92 @@ void AtrialStrainMotionView::CreateModel() {
 
 void AtrialStrainMotionView::CropImage() {
     MITK_INFO << "crop image";
-    // TODO: automate finding x_start, y_start, z_start ...
     if (!RequestProjectDirectoryFromUser()) return;
 
     std::unique_ptr<CemrgCommandLine> cmd(new CemrgCommandLine());
     cmd->SetUseDockerContainers(true);
 
     QDir nifti_dir = QDir(directory + "/nifti/");
-    // QString input_file_name = nifti_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot)[8];
+    QString reference_frame_path = nifti_dir.absolutePath() + "/" + "dcm-10.nii";
+    if (!QFile::exists(reference_frame_path)) {
+        std::string msg = "Step 13 cannot find the frame that it measures the atrium on:\n  " +
+            reference_frame_path.toStdString() +
+            "\n\nStep 13 expects the cine frames inside a 'nifti' folder in the project directory. "
+            "Put the frames there. Then run step 13 again.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "No reference frame found", msg.c_str());
+        return;
+    }
+
     QString input_file_path = directory + "/" + "dcm-10.nii";
     MITK_INFO << input_file_path.toStdString();
 
-    MITK_INFO(QFile::copy(nifti_dir.absolutePath() + "/" + "dcm-10.nii", input_file_path)) << "Copied " << "dcm-10.nii";
+    // QFile::copy will not overwrite, clear any previous working copy first.
+    if (QFile::exists(input_file_path) && !QFile::remove(input_file_path)) {
+        std::string msg = "The application cannot replace the working copy:\n  " + input_file_path.toStdString() +
+            "\n\nAnother program holds the file open, or the file is read-only. "
+            "Close the other program. Then run step 13 again.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Could not replace the working copy", msg.c_str());
+        return;
+    }
+    if (!QFile::copy(reference_frame_path, input_file_path)) {
+        std::string msg = "The application cannot copy dcm-10.nii into the project directory:\n  " +
+            directory.toStdString() +
+            "\n\nCheck that the disk has free space. Check that you can write to the folder.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Could not copy the reference frame", msg.c_str());
+        return;
+    }
+    MITK_INFO << "Copied dcm-10.nii";
+
     QString pathToSegmentation = cmd->DockerCctaMultilabelSegmentation(directory, input_file_path, false);
-    mitk::Image::Pointer segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
+    if (pathToSegmentation.isEmpty()) {
+        std::string msg = "The multilabel segmentation did not produce an output file.\n\n"
+            "Check that Docker runs. Check that the cemrg/ccta image is available. "
+            "Look in the log for the command that step 13 ran.";
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "Segmentation failed", msg.c_str());
+        return;
+    }
+
+    // The segmentation container rebuilds the NIfTI header from the image affine and leaves
+    // qform_code at 0, which ITK refuses to read. Repair it before the load. Only files this
+    // pipeline created are touched; the originals under nifti/ are left alone.
+    QString qformMessage;
+    CemrgNiftiUtils::NiftiQformStatus qformStatus =
+        CemrgNiftiUtils::RepairNiftiQform(pathToSegmentation, qformMessage);
+    switch (qformStatus) {
+        case CemrgNiftiUtils::NiftiQformStatus::Repaired:
+            MITK_INFO << ("[CropImage] NIfTI header repaired - " + qformMessage).toStdString();
+            break;
+        case CemrgNiftiUtils::NiftiQformStatus::AlreadyValid:
+            MITK_INFO << ("[CropImage] NIfTI header needs no repair - " + qformMessage).toStdString();
+            break;
+        default:
+            MITK_WARN << ("[CropImage] NIfTI header could not be repaired (" +
+                CemrgNiftiUtils::NiftiQformStatusToString(qformStatus) + ") - " + qformMessage).toStdString();
+            break;
+    }
+
+    mitk::Image::Pointer segmentation;
+    try {
+        segmentation = mitk::IOUtil::Load<mitk::Image>(pathToSegmentation.toStdString());
+    } catch (const std::exception& e) {
+        std::string msg = "The application cannot read the segmentation from the CCTA container:\n  " +
+            pathToSegmentation.toStdString() +
+            "\n\nAn 'orthonormal direction cosines' error means the file declares no usable "
+            "spatial transform. The reader reports:\n  " + e.what() +
+            "\n\nLook in the log for the result of the header check.";
+        MITK_ERROR << msg;
+        QMessageBox::critical(NULL, "Could not read the segmentation", msg.c_str());
+        return;
+    }
+
     std::unique_ptr<CemrgMultilabelSegmentationUtils> cmls(new CemrgMultilabelSegmentationUtils());
-    segmentation = cmls->ReplaceLabel(segmentation, 8, 4);
-    segmentation = cmls->ReplaceLabel(segmentation, 9, 4);
-    segmentation = cmls->ReplaceLabel(segmentation, 10, 4);
+    segmentation = cmls->ReplaceLabel(segmentation, 8, LA_LABEL);
+    segmentation = cmls->ReplaceLabel(segmentation, 9, LA_LABEL);
+    segmentation = cmls->ReplaceLabel(segmentation, 10, LA_LABEL);
 
     using LabelStatisticsFilterType = itk::LabelStatisticsImageFilter<ImageType, ImageType>;
     ImageType::Pointer itkImage = ImageType::New();
@@ -1623,40 +1738,97 @@ void AtrialStrainMotionView::CropImage() {
     labelStats->SetLabelInput(itkImage); // Use the segmentation image as label
     labelStats->Update();
 
-    LabelStatisticsFilterType::LabelPixelType labelValue = 4;
-    LabelStatisticsFilterType::BoundingBoxType bb = labelStats->GetBoundingBox(labelValue);
 
-     std::vector<int> cogIndx{};
-     for (int ix = 1; ix <= 6; ix++) {
-         int value = bb[ix - 1];
-         if (ix % 2 == 0) {
-             int max_value = value + value * 0.3;
-             std::cout << max_value << std::endl;
-             cogIndx.push_back(max_value);
-         }
-         else {
-             int min_value = value - value * 0.3;
-             std::cout << min_value << std::endl;
-             cogIndx.push_back(min_value);
-         }
+    if (!labelStats->HasLabel(LA_LABEL)) {
+        std::string msg = "Step 13 found no left atrium (Label 4) in the segmentation of dcm-10.nii.\n\n"
+            "The CCTA container gives the atrium labels 8, 9 and 10, and this segmentation holds "
+            "none of them. Look at the segmentation in:\n  " + pathToSegmentation.toStdString();
+        MITK_ERROR << msg;
+        QMessageBox::warning(NULL, "No left atrium in the segmentation", msg.c_str());
+        return;
     }
 
-    for (auto & c1 : cogIndx)
-        std::cout << c1 << " ";
-    std::cout << std::endl;
-    for (auto & c : bb)
-        std::cout << c << " ";
-    std::cout << std::endl;
+    LabelStatisticsFilterType::BoundingBoxType bb = labelStats->GetBoundingBox(LA_LABEL);
+    QString boxText;
+    for (size_t ix = 0; ix < bb.size(); ix++)
+        boxText += QString::number(bb.at(ix)) + " ";
+    MITK_INFO << ("[CropImage] Atrium bounding box (xmin xmax ymin ymax zmin zmax): " + boxText).toStdString();
 
+    // Add the padding to both ends of each axis, then hold the box inside the image.
+    ImageType::SizeType imageSize = itkImage->GetLargestPossibleRegion().GetSize();
+    mitk::BaseGeometry::BoundsArrayType cropBounds;
+    QString cropText;
+    for (int axis = 0; axis < 3; axis++) {
+        int lo = static_cast<int>(bb.at(2 * axis));
+        int hi = static_cast<int>(bb.at(2 * axis + 1));
+        int pad = static_cast<int>((hi - lo) * CROP_PADDING_FRACTION);
+        lo = std::max(0, lo - pad);
+        hi = std::min(static_cast<int>(imageSize[axis]) - 1, hi + pad);
 
+        // MITK bounds count the corners of the voxels, and the bounding box holds both of its end
+        // voxels. So the voxels lo to hi span the corners lo to hi + 1.
+        cropBounds[2 * axis] = lo;
+        cropBounds[2 * axis + 1] = hi + 1;
+        cropText += QString::number(lo) + " " + QString::number(hi) + " ";
+    }
+    MITK_INFO << ("[CropImage] Crop box (xmin xmax ymin ymax zmin zmax): " + cropText).toStdString();
 
+    // FitGeometry fits the cube to a whole geometry, so describe the crop box as one. Clone the
+    // segmentation geometry rather than build a new one: the clone keeps the image-geometry flag,
+    // which moves the centre back by half a voxel. Without it the cube sits half a voxel out.
+    mitk::BaseGeometry::Pointer boxGeometry = segmentation->GetGeometry()->Clone();
+    boxGeometry->SetBounds(cropBounds);
 
-    // for (int frame = 0; frame <= 20; frame ++) {
-    //     QString cropped_img_name = "dcm-crop-" + QString::number(frame) + ".nii";
-    //    cmd->ExecuteTouch(Path("nifti/") + cropped_img_name);
-    // }
+    mitk::Cuboid::Pointer cuttingCube = mitk::Cuboid::New();
+    cuttingCube->FitGeometry(boxGeometry);
+    CemrgCommonUtils::SetCuttingCube(cuttingCube.GetPointer());
 
-    // cmd->DockerAtrialStrainMotion(Path(), "cropImages");
+    QString scratchPath = Path("crop-input.nii");
+    int croppedFrames = 0;
+
+    this->BusyCursorOn();
+    mitk::ProgressBar::GetInstance()->AddStepsToDo(21);
+    for (int frame = 0; frame <= 20; frame++) {
+        QString frameName = "dcm-" + QString::number(frame) + ".nii";
+        QString framePath = nifti_dir.absolutePath() + "/" + frameName;
+        if (!QFile::exists(framePath)) {
+            mitk::ProgressBar::GetInstance()->Progress();
+            continue;
+        }
+
+        QString problem;
+        mitk::Image::Pointer image = LoadFrameThroughRepairedCopy(framePath, scratchPath, problem);
+        if (image.IsNull()) {
+            this->BusyCursorOff();
+            std::string msg = "Step 13 cannot read " + frameName.toStdString() + ":\n  " +
+                problem.toStdString() +
+                "\n\nLook in the log for the frames that step 13 cropped before this one.";
+            MITK_ERROR << msg;
+            QMessageBox::critical(NULL, "Could not read a frame", msg.c_str());
+            return;
+        }
+
+        CemrgCommonUtils::SetImageToCut(image);
+        mitk::Image::Pointer cropped = CemrgCommonUtils::CropImage();
+        if (cropped.IsNull()) {
+            this->BusyCursorOff();
+            std::string msg = "Step 13 cannot crop " + frameName.toStdString() +
+                ".\n\nThe frame and the crop box do not meet, so this frame sits on a different "
+                "grid from dcm-10.nii. Check that every frame comes from the same reconstruction.";
+            MITK_ERROR << msg;
+            QMessageBox::critical(NULL, "Could not crop a frame", msg.c_str());
+            return;
+        }
+
+        QString croppedPath = nifti_dir.absolutePath() + "/dcm-crop-" + QString::number(frame) + ".nii";
+        mitk::IOUtil::Save(cropped, croppedPath.toStdString());
+        croppedFrames++;
+        MITK_INFO << ("[CropImage] Wrote " + QFileInfo(croppedPath).fileName()).toStdString();
+        mitk::ProgressBar::GetInstance()->Progress();
+    }
+    this->BusyCursorOff();
+
+    MITK_INFO << ("[CropImage] Step 13 cropped " + QString::number(croppedFrames) + " frames.").toStdString();
 }
 
 void AtrialStrainMotionView::Registration() {
