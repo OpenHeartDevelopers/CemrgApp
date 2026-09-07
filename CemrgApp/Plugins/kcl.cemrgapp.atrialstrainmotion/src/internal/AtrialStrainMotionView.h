@@ -67,8 +67,6 @@ class CemrgCommandLine;
 /**
   \brief AtrialStrainMotionView
 
-  \warning  This class is not yet documented. Use "git blame" and ask the author to provide basic documentation.
-
   \sa QmitkAbstractView
   \ingroup ${plugin_target}_internal
 */
